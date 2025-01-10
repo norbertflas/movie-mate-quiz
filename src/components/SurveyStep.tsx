@@ -22,6 +22,12 @@ export const SurveyStep = ({
   type,
   selectedOptions,
 }: SurveyStepProps) => {
+  const handleNextStep = () => {
+    if (type === "multiple" && selectedOptions.length > 0) {
+      onSelect("NEXT_STEP");
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -67,7 +73,7 @@ export const SurveyStep = ({
         {type === "multiple" && selectedOptions.length > 0 && (
           <div className="flex justify-end">
             <Button
-              onClick={() => onSelect(selectedOptions[0])}
+              onClick={handleNextStep}
               className="w-full md:w-auto"
             >
               Dalej

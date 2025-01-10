@@ -40,6 +40,7 @@ const SURVEY_STEPS: SurveyStepType[] = [
     id: "length",
     question: "Preferowana długość:",
     type: "single",
+    options: [],
     getDynamicOptions: (answers: Record<string, any>) => {
       if (answers.type === "Film") {
         return ["Do 1.5h", "1.5h - 2h", "Powyżej 2h"];
@@ -51,8 +52,8 @@ const SURVEY_STEPS: SurveyStepType[] = [
     id: "seasons",
     question: "Preferowana ilość sezonów:",
     type: "single",
-    shouldShow: (answers: Record<string, any>) => answers.type === "Serial",
     options: ["1 sezon", "2-3 sezony", "4+ sezonów"],
+    shouldShow: (answers: Record<string, any>) => answers.type === "Serial",
   },
   {
     id: "genre",
@@ -149,15 +150,29 @@ const Index = () => {
     const currentQuestion = SURVEY_STEPS[currentStep];
 
     if (currentQuestion.type === "multiple") {
-      const currentAnswers = answers[currentQuestion.id] || [];
-      const updatedAnswers = currentAnswers.includes(option)
-        ? currentAnswers.filter((item: string) => item !== option)
-        : [...currentAnswers, option];
+      if (option === "NEXT_STEP") {
+        if (currentStep < SURVEY_STEPS.length - 1) {
+          const nextStep = currentStep + 1;
+          const nextQuestion = SURVEY_STEPS[nextStep];
+          if (nextQuestion.shouldShow && !nextQuestion.shouldShow(answers)) {
+            setCurrentStep(nextStep + 1);
+          } else {
+            setCurrentStep(nextStep);
+          }
+        } else {
+          setShowResults(true);
+        }
+      } else {
+        const currentAnswers = answers[currentQuestion.id] || [];
+        const updatedAnswers = currentAnswers.includes(option)
+          ? currentAnswers.filter((item: string) => item !== option)
+          : [...currentAnswers, option];
 
-      setAnswers({
-        ...answers,
-        [currentQuestion.id]: updatedAnswers,
-      });
+        setAnswers({
+          ...answers,
+          [currentQuestion.id]: updatedAnswers,
+        });
+      }
     } else {
       setAnswers({
         ...answers,
