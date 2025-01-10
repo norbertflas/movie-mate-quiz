@@ -1,10 +1,19 @@
 import { Button } from "./ui/button";
 import { Dice6 } from "lucide-react";
+import { useToast } from "./ui/use-toast";
+import { SAMPLE_RECOMMENDATIONS } from "./QuizSection";
 
 export const QuickActions = () => {
+  const { toast } = useToast();
+
   const handleRandomPick = () => {
-    // TODO: Implement random movie/show selection
-    console.log("Picking random title...");
+    const randomIndex = Math.floor(Math.random() * SAMPLE_RECOMMENDATIONS.length);
+    const randomTitle = SAMPLE_RECOMMENDATIONS[randomIndex];
+    
+    toast({
+      title: "Wylosowany tytuł",
+      description: `${randomTitle.title} (${randomTitle.year}) - ${randomTitle.platform}`,
+    });
   };
 
   return (

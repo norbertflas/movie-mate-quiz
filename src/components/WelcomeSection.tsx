@@ -1,7 +1,11 @@
 import { Button } from "./ui/button";
 import { PlayCircle } from "lucide-react";
 
-export const WelcomeSection = () => {
+interface WelcomeSectionProps {
+  onStartQuiz: () => void;
+}
+
+export const WelcomeSection = ({ onStartQuiz }: WelcomeSectionProps) => {
   return (
     <div className="text-center mb-12">
       <h1 className="text-4xl font-bold tracking-tight mb-4">
@@ -10,7 +14,7 @@ export const WelcomeSection = () => {
       <p className="text-lg text-muted-foreground mb-8">
         Odpowiedz na kilka pytań, a my pomożemy Ci wybrać coś dla Ciebie
       </p>
-      <Button size="lg" className="gap-2">
+      <Button size="lg" className="gap-2" onClick={onStartQuiz}>
         <PlayCircle className="h-5 w-5" />
         Rozpocznij quiz
       </Button>

@@ -2,14 +2,34 @@ import { useState } from "react";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Search } from "lucide-react";
+import { useToast } from "./ui/use-toast";
+import { SAMPLE_RECOMMENDATIONS } from "./QuizSection";
 
 export const SearchBar = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const { toast } = useToast();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement search functionality
-    console.log("Searching for:", searchQuery);
+    
+    const results = SAMPLE_RECOMMENDATIONS.filter(
+      (item) =>
+        item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.description.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    if (results.length > 0) {
+      toast({
+        title: "Znalezione tytuły",
+        description: `Znaleziono ${results.length} tytułów pasujących do zapytania "${searchQuery}"`,
+      });
+    } else {
+      toast({
+        title: "Brak wyników",
+        description: `Nie znaleziono tytułów pasujących do zapytania "${searchQuery}"`,
+        variant: "destructive",
+      });
+    }
   };
 
   return (

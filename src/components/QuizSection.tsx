@@ -83,7 +83,7 @@ const SURVEY_STEPS: SurveyStepType[] = [
   },
 ];
 
-const SAMPLE_RECOMMENDATIONS = [
+export const SAMPLE_RECOMMENDATIONS = [
   {
     title: "Stranger Things",
     year: "2016",
