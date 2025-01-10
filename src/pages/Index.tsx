@@ -2,7 +2,6 @@ import { useState } from "react";
 import { SurveyStep } from "@/components/SurveyStep";
 import { MovieCard } from "@/components/MovieCard";
 import { motion, AnimatePresence } from "framer-motion";
-import { Checkbox } from "@/components/ui/checkbox";
 
 const VOD_SERVICES = [
   "Netflix",
@@ -15,7 +14,16 @@ const VOD_SERVICES = [
   "Player",
 ];
 
-const SURVEY_STEPS = [
+type SurveyStepType = {
+  id: string;
+  question: string;
+  type: "single" | "multiple";
+  options: string[];
+  getDynamicOptions?: (answers: Record<string, any>) => string[];
+  shouldShow?: (answers: Record<string, any>) => boolean;
+};
+
+const SURVEY_STEPS: SurveyStepType[] = [
   {
     id: "vod",
     question: "Wybierz serwisy VOD, z których korzystasz:",
