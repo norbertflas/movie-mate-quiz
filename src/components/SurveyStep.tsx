@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
+import { Checkbox } from "./ui/checkbox";
 
 interface SurveyStepProps {
   question: string;
@@ -8,6 +9,8 @@ interface SurveyStepProps {
   onSelect: (option: string) => void;
   currentStep: number;
   totalSteps: number;
+  type: "single" | "multiple";
+  selectedOptions: string[];
 }
 
 export const SurveyStep = ({
@@ -16,6 +19,8 @@ export const SurveyStep = ({
   onSelect,
   currentStep,
   totalSteps,
+  type,
+  selectedOptions,
 }: SurveyStepProps) => {
   return (
     <motion.div
@@ -33,16 +38,42 @@ export const SurveyStep = ({
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {options.map((option) => (
-            <Button
-              key={option}
-              variant="outline"
-              className="h-auto py-4 px-6 text-left justify-start card-hover"
-              onClick={() => onSelect(option)}
-            >
-              {option}
-            </Button>
+            type === "multiple" ? (
+              <div
+                key={option}
+                className="flex items-center space-x-2 p-4 border rounded-lg hover:bg-accent cursor-pointer"
+                onClick={() => onSelect(option)}
+              >
+                <Checkbox
+                  checked={selectedOptions.includes(option)}
+                  onCheckedChange={() => onSelect(option)}
+                />
+                <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  {option}
+                </label>
+              </div>
+            ) : (
+              <Button
+                key={option}
+                variant="outline"
+                className="h-auto py-4 px-6 text-left justify-start card-hover"
+                onClick={() => onSelect(option)}
+              >
+                {option}
+              </Button>
+            )
           ))}
         </div>
+        {type === "multiple" && selectedOptions.length > 0 && (
+          <div className="flex justify-end">
+            <Button
+              onClick={() => onSelect(selectedOptions[0])}
+              className="w-full md:w-auto"
+            >
+              Dalej
+            </Button>
+          </div>
+        )}
       </Card>
     </motion.div>
   );
