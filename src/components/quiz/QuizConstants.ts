@@ -1,3 +1,5 @@
+import type { SurveyStepType } from "./QuizTypes";
+
 export const VOD_SERVICES = [
   "Netflix",
   "HBO Max",
@@ -86,7 +88,7 @@ export const MOVIE_CATEGORIES = [
   "Wojenny",
   "Muzyczny",
   "Sportowy",
-] as const;
+];
 
 export const SAMPLE_RECOMMENDATIONS = [
   {
