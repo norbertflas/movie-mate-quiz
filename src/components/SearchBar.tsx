@@ -19,7 +19,10 @@ export const SearchBar = () => {
         (item) =>
           item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
           item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          item.genre.toLowerCase().includes(searchQuery.toLowerCase())
+          item.genre.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          item.tags?.some(tag => 
+            tag.toLowerCase().includes(searchQuery.toLowerCase())
+          )
       );
       setSuggestions(results);
       setOpen(true);
@@ -36,7 +39,10 @@ export const SearchBar = () => {
       (item) =>
         item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.genre.toLowerCase().includes(searchQuery.toLowerCase())
+        item.genre.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.tags?.some(tag => 
+          tag.toLowerCase().includes(searchQuery.toLowerCase())
+        )
     );
 
     if (results.length > 0) {
@@ -60,7 +66,7 @@ export const SearchBar = () => {
           <PopoverTrigger asChild>
             <Input
               type="text"
-              placeholder="Szukaj po tytule, gatunku lub opisie..."
+              placeholder="Szukaj po tytule, gatunku, tagach lub opisie..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full"
@@ -82,8 +88,13 @@ export const SearchBar = () => {
                       <div className="flex flex-col">
                         <span>{item.title}</span>
                         <span className="text-sm text-muted-foreground">
-                          {item.genre} • {item.year}
+                          {item.genre} • {item.year} • {item.platform}
                         </span>
+                        {item.tags && (
+                          <span className="text-sm text-muted-foreground">
+                            {item.tags.join(" • ")}
+                          </span>
+                        )}
                       </div>
                     </CommandItem>
                   ))}

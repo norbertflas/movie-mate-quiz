@@ -1,7 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
-import { Heart, Star } from "lucide-react";
+import { Heart, Star, ThumbsUp, ThumbsDown } from "lucide-react";
 import { useState } from "react";
+import { Badge } from "./ui/badge";
+import { useToast } from "./ui/use-toast";
 
 interface MovieCardProps {
   title: string;
@@ -12,6 +14,7 @@ interface MovieCardProps {
   description: string;
   trailerUrl: string;
   rating: number;
+  tags?: string[];
 }
 
 export const MovieCard = ({
@@ -23,9 +26,20 @@ export const MovieCard = ({
   description,
   trailerUrl,
   rating,
+  tags,
 }: MovieCardProps) => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
+  const [userRating, setUserRating] = useState<"like" | "dislike" | null>(null);
+  const { toast } = useToast();
+
+  const handleRating = (rating: "like" | "dislike") => {
+    setUserRating(rating);
+    toast({
+      title: "Ocena zapisana",
+      description: `Dziękujemy za ocenę filmu "${title}"!`,
+    });
+  };
 
   return (
     <Card className="overflow-hidden card-hover">
@@ -87,7 +101,7 @@ export const MovieCard = ({
       </CardHeader>
       <CardContent>
         <p className="text-sm text-muted-foreground mb-4">{description}</p>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 mb-4">
           <span className="text-sm px-2 py-1 bg-secondary rounded-md">{year}</span>
           <span className="text-sm px-2 py-1 bg-secondary rounded-md">
             {platform}
@@ -95,6 +109,33 @@ export const MovieCard = ({
           <span className="text-sm px-2 py-1 bg-secondary rounded-md">
             {genre}
           </span>
+        </div>
+        {tags && tags.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-4">
+            {tags.map((tag) => (
+              <Badge key={tag} variant="outline">
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        )}
+        <div className="flex justify-center gap-2">
+          <Button
+            variant={userRating === "like" ? "default" : "outline"}
+            size="sm"
+            onClick={() => handleRating("like")}
+          >
+            <ThumbsUp className="h-4 w-4 mr-2" />
+            Podoba mi się
+          </Button>
+          <Button
+            variant={userRating === "dislike" ? "default" : "outline"}
+            size="sm"
+            onClick={() => handleRating("dislike")}
+          >
+            <ThumbsDown className="h-4 w-4 mr-2" />
+            Nie podoba mi się
+          </Button>
         </div>
       </CardContent>
     </Card>

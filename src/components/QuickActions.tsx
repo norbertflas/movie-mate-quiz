@@ -1,7 +1,7 @@
 import { Button } from "./ui/button";
 import { Dice6 } from "lucide-react";
 import { useToast } from "./ui/use-toast";
-import { SAMPLE_RECOMMENDATIONS } from "./QuizSection";
+import { SAMPLE_RECOMMENDATIONS } from "./quiz/QuizConstants";
 
 export const QuickActions = () => {
   const { toast } = useToast();
