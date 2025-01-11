@@ -9,7 +9,7 @@ export const VOD_SERVICES = [
   "Player",
 ];
 
-export const SURVEY_STEPS = [
+export const SURVEY_STEPS: SurveyStepType[] = [
   {
     id: "vod",
     question: "Wybierz serwisy VOD, z których korzystasz:",
