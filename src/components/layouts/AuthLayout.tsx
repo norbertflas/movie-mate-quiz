@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
+import { Navigation } from "../Navigation";
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -38,5 +39,12 @@ export const AuthLayout = ({ children }: AuthLayoutProps) => {
     return null;
   }
 
-  return <>{children}</>;
+  return (
+    <div className="min-h-screen">
+      <Navigation />
+      <main className="container mx-auto py-6">
+        {children}
+      </main>
+    </div>
+  );
 };
