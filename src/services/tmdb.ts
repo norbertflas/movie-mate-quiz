@@ -14,8 +14,9 @@ export interface TMDBMovie {
 }
 
 async function getTMDBApiKey() {
-  const { data: { TMDB_API_KEY } } = await supabase.functions.invoke('get-tmdb-key');
-  return TMDB_API_KEY;
+  const { data, error } = await supabase.functions.invoke('get-tmdb-key');
+  if (error) throw error;
+  return data.TMDB_API_KEY;
 }
 
 export async function searchMovies(query: string): Promise<TMDBMovie[]> {
@@ -23,17 +24,28 @@ export async function searchMovies(query: string): Promise<TMDBMovie[]> {
   const response = await fetch(
     `${TMDB_BASE_URL}/search/movie?api_key=${apiKey}&query=${encodeURIComponent(query)}&language=pl-PL`
   );
+  if (!response.ok) {
+    throw new Error(`TMDB API error: ${response.status} ${response.statusText}`);
+  }
   const data = await response.json();
   return data.results;
 }
 
 export async function getPopularMovies(): Promise<TMDBMovie[]> {
-  const apiKey = await getTMDBApiKey();
-  const response = await fetch(
-    `${TMDB_BASE_URL}/movie/popular?api_key=${apiKey}&language=pl-PL`
-  );
-  const data = await response.json();
-  return data.results;
+  try {
+    const apiKey = await getTMDBApiKey();
+    const response = await fetch(
+      `${TMDB_BASE_URL}/movie/popular?api_key=${apiKey}&language=pl-PL`
+    );
+    if (!response.ok) {
+      throw new Error(`TMDB API error: ${response.status} ${response.statusText}`);
+    }
+    const data = await response.json();
+    return data.results;
+  } catch (error) {
+    console.error('Error fetching popular movies:', error);
+    throw error;
+  }
 }
 
 export async function getMovieRecommendations(movieId: number): Promise<TMDBMovie[]> {
@@ -41,6 +53,9 @@ export async function getMovieRecommendations(movieId: number): Promise<TMDBMovi
   const response = await fetch(
     `${TMDB_BASE_URL}/movie/${movieId}/recommendations?api_key=${apiKey}&language=pl-PL`
   );
+  if (!response.ok) {
+    throw new Error(`TMDB API error: ${response.status} ${response.statusText}`);
+  }
   const data = await response.json();
   return data.results;
 }
