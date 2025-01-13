@@ -6,12 +6,14 @@ import { useToast } from "./ui/use-toast";
 import { MovieCard } from "./MovieCard";
 import { searchMovies } from "@/services/tmdb";
 import type { TMDBMovie } from "@/services/tmdb";
+import { useTranslation } from "react-i18next";
 
 export const SearchBar = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<TMDBMovie[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,21 +26,21 @@ export const SearchBar = () => {
       
       if (results.length > 0) {
         toast({
-          title: "Znalezione tytuły",
-          description: `Znaleziono ${results.length} tytułów pasujących do zapytania "${searchQuery}"`,
+          title: t("search.resultsFound"),
+          description: t("search.resultsDescription", { count: results.length, query: searchQuery }),
         });
       } else {
         toast({
-          title: "Brak wyników",
-          description: `Nie znaleziono tytułów pasujących do zapytania "${searchQuery}"`,
+          title: t("search.noResults"),
+          description: t("search.noResultsDescription", { query: searchQuery }),
           variant: "destructive",
         });
       }
     } catch (error) {
       console.error("Search error:", error);
       toast({
-        title: "Błąd wyszukiwania",
-        description: "Wystąpił problem podczas wyszukiwania. Spróbuj ponownie później.",
+        title: t("search.error"),
+        description: t("search.errorDescription"),
         variant: "destructive",
       });
     } finally {
@@ -47,18 +49,18 @@ export const SearchBar = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <form onSubmit={handleSearch} className="flex gap-2 max-w-2xl mx-auto">
+    <div className="space-y-6 w-full px-4 md:px-0">
+      <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2 max-w-2xl mx-auto">
         <Input
           type="text"
-          placeholder="Szukaj filmów..."
+          placeholder={t("search.placeholder")}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="flex-1"
         />
-        <Button type="submit" disabled={isSearching}>
+        <Button type="submit" disabled={isSearching} className="w-full sm:w-auto">
           <Search className="mr-2 h-4 w-4" />
-          {isSearching ? "Szukam..." : "Szukaj"}
+          {isSearching ? t("search.searching") : t("search.button")}
         </Button>
       </form>
 
@@ -70,7 +72,7 @@ export const SearchBar = () => {
               title={movie.title}
               year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "N/A"}
               platform="TMDB"
-              genre={movie.genre_ids?.length ? movie.genre_ids[0].toString() : "Film"}
+              genre={movie.genre_ids?.length ? movie.genre_ids[0].toString() : t("common.movie")}
               imageUrl={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
               description={movie.overview}
               trailerUrl={`https://www.youtube.com/watch?v=${movie.video_id || ''}`}
