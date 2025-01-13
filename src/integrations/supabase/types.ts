@@ -9,6 +9,92 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      favorite_creators: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          role: string
+          tmdb_person_id: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          role: string
+          tmdb_person_id: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          role?: string
+          tmdb_person_id?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      movie_list_items: {
+        Row: {
+          added_at: string
+          id: string
+          list_id: string
+          title: string
+          tmdb_id: number
+        }
+        Insert: {
+          added_at?: string
+          id?: string
+          list_id: string
+          title: string
+          tmdb_id: number
+        }
+        Update: {
+          added_at?: string
+          id?: string
+          list_id?: string
+          title?: string
+          tmdb_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "movie_list_items_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "movie_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      movie_lists: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_public: boolean | null
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       quiz_groups: {
         Row: {
           created_at: string
@@ -147,6 +233,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      watched_movies: {
+        Row: {
+          id: string
+          rating: number | null
+          title: string
+          tmdb_id: number
+          user_id: string
+          watched_at: string
+        }
+        Insert: {
+          id?: string
+          rating?: number | null
+          title: string
+          tmdb_id: number
+          user_id: string
+          watched_at?: string
+        }
+        Update: {
+          id?: string
+          rating?: number | null
+          title?: string
+          tmdb_id?: number
+          user_id?: string
+          watched_at?: string
+        }
+        Relationships: []
       }
     }
     Views: {
