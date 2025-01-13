@@ -5,6 +5,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "./ui/sheet";
 import { Filter, X } from "lucide-react";
 import { Button } from "./ui/button";
+import { Badge } from "./ui/badge";
 import { FilterHeader } from "./filters/FilterHeader";
 import { FilterButtons } from "./filters/FilterButtons";
 import { TagsFilter } from "./filters/TagsFilter";
