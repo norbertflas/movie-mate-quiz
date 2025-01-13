@@ -47,15 +47,23 @@ export const MovieCard = ({
     });
   };
 
+  // Convert YouTube URL to embed URL
+  const getEmbedUrl = (url: string) => {
+    if (!url) return '';
+    const videoId = url.match(/(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=|\/watch\?.+&v=))([^"&?\/\s]{11})/)?.[1];
+    return videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=0` : '';
+  };
+
   return (
     <Card className="overflow-hidden card-hover">
       <div className="aspect-video relative overflow-hidden">
-        {showTrailer ? (
+        {showTrailer && trailerUrl ? (
           <iframe
-            src={trailerUrl}
+            src={getEmbedUrl(trailerUrl)}
             className="w-full h-full"
             allowFullScreen
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            title={`${title} trailer`}
           />
         ) : (
           <img
@@ -74,14 +82,14 @@ export const MovieCard = ({
                 <Star
                   key={index}
                   className={`h-4 w-4 ${
-                    index < Math.round(rating / 2)
+                    index < rating / 2
                       ? "fill-yellow-400 text-yellow-400"
                       : "text-gray-300"
                   }`}
                 />
               ))}
               <span className="text-sm text-muted-foreground ml-2">
-                {rating.toFixed(1)}/10
+                {rating.toFixed(1)}
               </span>
             </div>
           </div>
@@ -135,14 +143,16 @@ export const MovieCard = ({
                 ))}
               </div>
             )}
-            <Button
-              variant="secondary"
-              size="sm"
-              className="w-full"
-              onClick={() => setShowTrailer(!showTrailer)}
-            >
-              {showTrailer ? "Pokaż zdjęcie" : "Obejrzyj trailer"}
-            </Button>
+            {trailerUrl && (
+              <Button
+                variant="secondary"
+                size="sm"
+                className="w-full"
+                onClick={() => setShowTrailer(!showTrailer)}
+              >
+                {showTrailer ? "Pokaż zdjęcie" : "Obejrzyj trailer"}
+              </Button>
+            )}
             <div className="flex justify-center gap-2">
               <Button
                 variant={userRating === "like" ? "default" : "outline"}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Search } from "lucide-react";
@@ -73,8 +73,8 @@ export const SearchBar = () => {
               genre={movie.genre_ids?.length ? movie.genre_ids[0].toString() : "Film"}
               imageUrl={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
               description={movie.overview}
-              trailerUrl=""
-              rating={movie.vote_average * 10}
+              trailerUrl={`https://www.youtube.com/watch?v=${movie.video_id || ''}`}
+              rating={movie.vote_average}
             />
           ))}
         </div>
