@@ -37,15 +37,41 @@ export const pl = {
     reset: "Resetuj Filtry",
   },
   quiz: {
-    start: "Rozpocznij Quiz",
-    next: "Dalej",
-    previous: "Wstecz",
-    submit: "Zatwierdź",
-    recommendations: "Twoje Rekomendacje",
-    loading: "Ładowanie rekomendacji...",
-    error: "Błąd ładowania rekomendacji",
-    welcome: "Znajdź idealny film lub serial",
-    description: "Odpowiedz na kilka pytań, a my pomożemy Ci wybrać coś dla Ciebie",
+    questions: {
+      platforms: "Z jakich platform streamingowych korzystasz?",
+      contentType: "Co Cię interesuje?",
+      length: "Preferowana długość:",
+      seasons: "Preferowana ilość sezonów:",
+      genre: "Jaki gatunek Cię interesuje?",
+      mood: "Jaki nastrój Cię interesuje?",
+    },
+    options: {
+      movie: "Film",
+      series: "Serial",
+      length: {
+        short: "Do 1.5h",
+        medium: "1.5h - 2h",
+        long: "Powyżej 2h"
+      },
+      episodes: {
+        short: "20-30 min",
+        medium: "40-50 min",
+        long: "Powyżej 1h"
+      },
+      seasons: {
+        one: "1 sezon",
+        twoThree: "2-3 sezony",
+        fourPlus: "4+ sezonów"
+      },
+      mood: {
+        light: "Lekki/Zabawny",
+        serious: "Poważny/Dramatyczny",
+        suspense: "Trzymający w napięciu",
+        inspiring: "Inspirujący"
+      }
+    },
+    loading: "Ładowanie quizu...",
+    error: "Błąd podczas ładowania quizu",
   },
   services: {
     preferences: "Serwisy streamingowe",

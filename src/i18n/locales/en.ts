@@ -26,4 +26,39 @@ export const en = {
     createdDescription: "Your movie list has been created successfully",
     nameRequired: "Please enter a list name",
   },
+  quiz: {
+    questions: {
+      platforms: "Which streaming platforms do you use?",
+      contentType: "What are you interested in?",
+      length: "Preferred length:",
+      seasons: "Preferred number of seasons:",
+      genre: "Which genre interests you?",
+      mood: "What mood are you looking for?",
+    },
+    options: {
+      movie: "Movie",
+      series: "TV Series",
+      length: {
+        short: "Up to 1.5h",
+        medium: "1.5h - 2h",
+        long: "Over 2h"
+      },
+      episodes: {
+        short: "20-30 min",
+        medium: "40-50 min",
+        long: "Over 1h"
+      },
+      seasons: {
+        one: "1 season",
+        twoThree: "2-3 seasons",
+        fourPlus: "4+ seasons"
+      },
+      mood: {
+        light: "Light/Fun",
+        serious: "Serious/Dramatic",
+        suspense: "Suspenseful",
+        inspiring: "Inspiring"
+      }
+    },
+  },
 };

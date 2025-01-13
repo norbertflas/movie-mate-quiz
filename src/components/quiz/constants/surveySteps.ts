@@ -1,64 +1,79 @@
-import { VOD_SERVICES } from "./streamingServices";
+import { useTranslation } from "react-i18next";
 import type { SurveyStepType } from "../QuizTypes";
+import { VOD_SERVICES } from "./streamingServices";
 
-export const SURVEY_STEPS: SurveyStepType[] = [
-  {
-    id: "vod",
-    question: "Wybierz serwisy VOD, z których korzystasz:",
-    type: "multiple",
-    options: VOD_SERVICES,
-  },
-  {
-    id: "type",
-    question: "Co Cię interesuje?",
-    type: "single",
-    options: ["Film", "Serial"],
-  },
-  {
-    id: "length",
-    question: "Preferowana długość:",
-    type: "single",
-    options: [],
-    getDynamicOptions: (answers: Record<string, any>) => {
-      if (answers.type === "Film") {
-        return ["Do 1.5h", "1.5h - 2h", "Powyżej 2h"];
-      }
-      return ["20-30 min", "40-50 min", "Powyżej 1h"];
+export const useSurveySteps = (): SurveyStepType[] => {
+  const { t } = useTranslation();
+
+  return [
+    {
+      id: "vod",
+      question: t("quiz.questions.platforms"),
+      type: "multiple",
+      options: VOD_SERVICES,
     },
-  },
-  {
-    id: "seasons",
-    question: "Preferowana ilość sezonów:",
-    type: "single",
-    options: ["1 sezon", "2-3 sezony", "4+ sezonów"],
-    shouldShow: (answers: Record<string, any>) => answers.type === "Serial",
-  },
-  {
-    id: "genre",
-    question: "Jaki gatunek Cię interesuje?",
-    type: "single",
-    options: [
-      "Akcja",
-      "Komedia",
-      "Dramat",
-      "Sci-Fi",
-      "Horror",
-      "Romans",
-      "Thriller",
-      "Dokument",
-    ],
-  },
-  {
-    id: "mood",
-    question: "Jaki nastrój Cię interesuje?",
-    type: "single",
-    options: [
-      "Lekki/Zabawny",
-      "Poważny/Dramatyczny",
-      "Trzymający w napięciu",
-      "Inspirujący",
-    ],
-  },
-];
-
-export const QUIZ_QUESTIONS = SURVEY_STEPS;
+    {
+      id: "type",
+      question: t("quiz.questions.contentType"),
+      type: "single",
+      options: [t("quiz.options.movie"), t("quiz.options.series")],
+    },
+    {
+      id: "length",
+      question: t("quiz.questions.length"),
+      type: "single",
+      options: [],
+      getDynamicOptions: (answers: Record<string, any>) => {
+        if (answers.type === t("quiz.options.movie")) {
+          return [
+            t("quiz.options.length.short"),
+            t("quiz.options.length.medium"),
+            t("quiz.options.length.long")
+          ];
+        }
+        return [
+          t("quiz.options.episodes.short"),
+          t("quiz.options.episodes.medium"),
+          t("quiz.options.episodes.long")
+        ];
+      },
+    },
+    {
+      id: "seasons",
+      question: t("quiz.questions.seasons"),
+      type: "single",
+      options: [
+        t("quiz.options.seasons.one"),
+        t("quiz.options.seasons.twoThree"),
+        t("quiz.options.seasons.fourPlus")
+      ],
+      shouldShow: (answers: Record<string, any>) => answers.type === t("quiz.options.series"),
+    },
+    {
+      id: "genre",
+      question: t("quiz.questions.genre"),
+      type: "single",
+      options: [
+        t("movie.action"),
+        t("movie.comedy"),
+        t("movie.drama"),
+        t("movie.sciFi"),
+        t("movie.horror"),
+        t("movie.romance"),
+        t("movie.thriller"),
+        t("movie.documentary"),
+      ],
+    },
+    {
+      id: "mood",
+      question: t("quiz.questions.mood"),
+      type: "single",
+      options: [
+        t("quiz.options.mood.light"),
+        t("quiz.options.mood.serious"),
+        t("quiz.options.mood.suspense"),
+        t("quiz.options.mood.inspiring"),
+      ],
+    },
+  ];
+};

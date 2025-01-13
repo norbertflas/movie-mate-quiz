@@ -5,13 +5,14 @@ import { QuizResults } from "./quiz/QuizResults";
 import { QuizProgressBar } from "./quiz/QuizProgressBar";
 import { useQuizLogic } from "./quiz/QuizLogic";
 import { QuizAnswer } from "./quiz/QuizTypes";
-import { QUIZ_QUESTIONS } from "./quiz/QuizConstants";
+import { useSurveySteps } from "./quiz/constants/surveySteps";
 
 export const QuizSection = () => {
   const [showQuiz, setShowQuiz] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const { processAnswers } = useQuizLogic();
   const [answers, setAnswers] = useState<QuizAnswer[]>([]);
+  const questions = useSurveySteps();
 
   const handleStartQuiz = () => {
     setShowQuiz(true);
@@ -35,10 +36,10 @@ export const QuizSection = () => {
     <div className="space-y-8">
       <QuizProgressBar 
         currentStep={answers.length} 
-        totalSteps={QUIZ_QUESTIONS.length} 
+        totalSteps={questions.length} 
       />
       <QuizQuestions
-        questions={QUIZ_QUESTIONS}
+        questions={questions}
         onComplete={handleQuizComplete}
       />
     </div>
