@@ -53,6 +53,11 @@ export default {
           foreground: "hsl(var(--card-foreground))",
         },
       },
+      borderRadius: {
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
+      },
       keyframes: {
         "fade-in": {
           "0%": { opacity: "0", transform: "translateY(10px)" },
@@ -70,17 +75,38 @@ export default {
           "0%": { transform: "translateX(0)" },
           "100%": { transform: "translateX(-100%)" },
         },
+        "scale-in": {
+          "0%": { transform: "scale(0.95)", opacity: "0" },
+          "100%": { transform: "scale(1)", opacity: "1" },
+        },
+        "scale-out": {
+          "0%": { transform: "scale(1)", opacity: "1" },
+          "100%": { transform: "scale(0.95)", opacity: "0" },
+        },
+        "rotate-180": {
+          "0%": { transform: "rotate(0deg)" },
+          "100%": { transform: "rotate(180deg)" },
+        },
+        "rotate-360": {
+          "0%": { transform: "rotate(0deg)" },
+          "100%": { transform: "rotate(360deg)" },
+        },
+        shimmer: {
+          "100%": {
+            transform: "translateX(100%)",
+          },
+        },
       },
       animation: {
         "fade-in": "fade-in 0.3s ease-out",
         "fade-out": "fade-out 0.3s ease-out",
         "slide-in": "slide-in 0.3s ease-out",
         "slide-out": "slide-out 0.3s ease-out",
-      },
-      borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        "scale-in": "scale-in 0.3s ease-out",
+        "scale-out": "scale-out 0.3s ease-out",
+        "rotate-180": "rotate-180 0.3s ease-out",
+        "rotate-360": "rotate-360 0.6s linear infinite",
+        shimmer: "shimmer 2s linear infinite",
       },
     },
   },

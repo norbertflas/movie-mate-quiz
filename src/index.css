@@ -23,7 +23,7 @@
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
+    --radius: 0.75rem;
   }
  
   .dark {
@@ -59,41 +59,75 @@
 
   /* Light theme gradient */
   :root body {
-    background: linear-gradient(109.6deg, rgba(223,234,247,1) 11.2%, rgba(244,248,252,1) 91.1%);
+    background: linear-gradient(135deg, 
+      rgba(238,244,255,1) 0%,
+      rgba(236,252,255,1) 50%,
+      rgba(244,247,255,1) 100%);
   }
 
   /* Dark theme gradient */
   .dark body {
-    background: linear-gradient(to right, #243949 0%, #517fa4 100%);
+    background: linear-gradient(135deg,
+      rgba(17,24,39,1) 0%,
+      rgba(29,35,42,1) 50%,
+      rgba(24,31,41,1) 100%);
   }
 }
 
-/* Utility classes */
+/* Glass effect utilities */
+.glass-panel {
+  @apply backdrop-blur-lg bg-white/10 border border-white/20 
+         dark:bg-black/10 dark:border-white/10
+         shadow-lg hover:shadow-xl transition-all duration-300;
+}
+
 .glass-card {
-  @apply backdrop-blur-md bg-white/10 border border-white/20 transition-all duration-300;
+  @apply backdrop-blur-md bg-white/10 border border-white/20 
+         dark:bg-black/10 dark:border-white/10
+         transition-all duration-300 hover:scale-[1.02];
 }
 
-.dark .glass-card {
-  @apply bg-black/10 border-white/10;
-}
-
+/* Text gradient utilities */
 .gradient-text {
-  @apply bg-gradient-to-r from-blue-600 via-violet-600 to-purple-600 bg-clip-text text-transparent;
+  @apply bg-gradient-to-r from-blue-600 via-violet-600 to-purple-600 
+         bg-clip-text text-transparent font-bold;
 }
 
-/* Animation classes */
+.gradient-text-subtle {
+  @apply bg-gradient-to-r from-gray-700 via-gray-900 to-black 
+         dark:from-gray-200 dark:via-gray-300 dark:to-white
+         bg-clip-text text-transparent;
+}
+
+/* Animation utilities */
 .animate-fade-in {
-  animation: fadeIn 0.3s ease-out;
+  animation: fadeIn 0.5s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.5s ease-out;
 }
 
 .animate-scale-in {
-  animation: scaleIn 0.2s ease-out;
+  animation: scaleIn 0.3s ease-out;
 }
 
+/* Keyframe animations */
 @keyframes fadeIn {
   from {
     opacity: 0;
     transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
   }
   to {
     opacity: 1;
@@ -113,14 +147,60 @@
 }
 
 /* Interactive elements */
-.hover-scale {
-  @apply transition-transform duration-200 hover:scale-105;
-}
-
 .hover-lift {
   @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-lg;
 }
 
 .interactive-card {
-  @apply transition-all duration-300 hover:shadow-xl hover:scale-[1.02] hover:bg-accent/5;
+  @apply transition-all duration-300 
+         hover:shadow-xl hover:scale-[1.02] hover:bg-accent/5
+         active:scale-[0.98];
+}
+
+/* Loading skeleton animation */
+.skeleton {
+  @apply animate-pulse bg-gray-200 dark:bg-gray-700 rounded-md;
+}
+
+/* Navigation elements */
+.nav-link {
+  @apply relative px-3 py-2 text-sm font-medium rounded-md
+         transition-all duration-200
+         hover:bg-accent/10 hover:text-accent-foreground
+         focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent;
+}
+
+.nav-link-active {
+  @apply bg-primary/10 text-primary hover:bg-primary/20;
+}
+
+/* Button animations */
+.btn-bounce {
+  @apply active:scale-95 transition-transform duration-200;
+}
+
+/* Scroll animations */
+.scroll-fade {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.6s ease-out;
+}
+
+.scroll-fade.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-400/50 dark:bg-gray-600/50 rounded-full
+         hover:bg-gray-500/50 dark:hover:bg-gray-500/50;
 }

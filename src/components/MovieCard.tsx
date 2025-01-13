@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader } from "./ui/card";
-import { MovieStreamingServices } from "./movie/MovieStreamingServices";
-import { MovieCardHeader } from "./movie/MovieCardHeader";
+import { MovieStreamingServices } from "./MovieStreamingServices";
+import { MovieCardHeader } from "./MovieCardHeader";
 import { motion, AnimatePresence } from "framer-motion";
 import { MovieFavoriteHandler } from "./movie/MovieFavoriteHandler";
 import { MovieRatingHandler } from "./movie/MovieRatingHandler";
@@ -62,7 +62,8 @@ export const MovieCard = ({
       className="h-full"
     >
       <Card 
-        className="group relative overflow-hidden h-full flex flex-col bg-gradient-to-br from-background/80 via-background/50 to-purple-500/5 dark:from-background/80 dark:via-background/50 dark:to-purple-500/10 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-accent/20 hover:shadow-xl transition-all duration-300 cursor-pointer" 
+        className="group relative overflow-hidden h-full flex flex-col glass-card
+                   hover:shadow-xl dark:hover:shadow-primary/10 transition-all duration-300" 
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <MovieMediaSection
@@ -102,9 +103,10 @@ export const MovieCard = ({
         </CardContent>
 
         <motion.div 
-          className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+          className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent"
           initial={{ opacity: 0 }}
           whileHover={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
         />
       </Card>
     </motion.div>

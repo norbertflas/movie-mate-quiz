@@ -10,26 +10,42 @@ export const Navigation = () => {
 
   return (
     <motion.nav 
-      className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+      className="sticky top-0 z-50 w-full border-b glass-panel"
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.5, type: "spring", stiffness: 100 }}
     >
       <div className="container flex h-16 items-center">
-        <div className="mr-4 hidden md:flex md:flex-1">
+        <motion.div 
+          className="mr-4 hidden md:flex md:flex-1"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2 }}
+        >
           <NavLinks />
-        </div>
+        </motion.div>
         
         <div className="flex md:hidden">
           <MobileNav />
         </div>
 
-        <UserActions />
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <UserActions />
+        </motion.div>
       </div>
       
-      <div className="container py-2">
+      <motion.div 
+        className="container py-2"
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+      >
         <Breadcrumbs path={location.pathname} />
-      </div>
+      </motion.div>
     </motion.nav>
   );
 };
