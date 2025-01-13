@@ -23,7 +23,7 @@ const calculateRecommendationScore = async (
   let score = 0;
   const explanations: string[] = [];
 
-  // Genre match
+  // Genre match with higher granularity
   if (answers.genre && (
     movie.genre.toLowerCase() === answers.genre.toLowerCase() ||
     movie.tags?.some(tag => tag.toLowerCase() === answers.genre.toLowerCase())
@@ -32,13 +32,13 @@ const calculateRecommendationScore = async (
     explanations.push(`Matches your preferred genre: ${answers.genre}`);
   }
 
-  // Mood match
+  // Enhanced mood matching
   if (answers.mood) {
     const moodMatches = {
-      "Lekki/Zabawny": ["Komedia", "Familijny", "Feel Good"],
-      "Poważny/Dramatyczny": ["Dramat", "Biograficzny", "Wojenny"],
-      "Trzymający w napięciu": ["Thriller", "Horror", "Kryminał", "Mystery"],
-      "Inspirujący": ["Biograficzny", "Dokumentalny", "Sport", "Muzyczny"]
+      "Lekki/Zabawny": ["Komedia", "Familijny", "Feel Good", "Animacja"],
+      "Poważny/Dramatyczny": ["Dramat", "Biograficzny", "Wojenny", "Historyczny"],
+      "Trzymający w napięciu": ["Thriller", "Horror", "Kryminał", "Mystery", "Akcja"],
+      "Inspirujący": ["Biograficzny", "Dokumentalny", "Sport", "Muzyczny", "Przygodowy"]
     };
 
     const relevantMoods = moodMatches[answers.mood] || [];
@@ -51,13 +51,20 @@ const calculateRecommendationScore = async (
     }
   }
 
-  // Platform availability
-  if (answers.vod && movie.platform && answers.vod.includes(movie.platform)) {
-    score += WEIGHT_FACTORS.platform;
-    explanations.push(`Available on your preferred platform: ${movie.platform}`);
+  // Platform availability with user preferences
+  if (answers.vod && movie.platform) {
+    const userPreferences = await supabase
+      .from('user_streaming_preferences')
+      .select('service_id')
+      .eq('user_id', (await supabase.auth.getUser()).data.user?.id);
+
+    if (userPreferences.data?.some(pref => pref.service_id === movie.platform)) {
+      score += WEIGHT_FACTORS.platform;
+      explanations.push(`Available on your preferred platform: ${movie.platform}`);
+    }
   }
 
-  // Watch history integration
+  // Watch history integration with sophisticated matching
   try {
     const { data: watchHistory } = await supabase
       .from('watched_movies')
@@ -72,47 +79,33 @@ const calculateRecommendationScore = async (
       
       if (similarGenreMovies.length > 0) {
         score += WEIGHT_FACTORS.watchHistory;
-        explanations.push("Similar to movies you've enjoyed");
+        explanations.push("Similar to movies you've enjoyed in the past");
+      }
+
+      // Penalize if user has recently watched similar movies
+      const recentlyWatched = watchHistory.some(watched => 
+        watched.tmdb_id === movie.tmdbId
+      );
+      
+      if (recentlyWatched) {
+        score -= WEIGHT_FACTORS.watchHistory;
+        explanations.push("You've recently watched this movie");
       }
     }
   } catch (error) {
     console.error('Error fetching watch history:', error);
   }
 
-  // Rating factor
+  // Rating factor with weighted scoring
   if (movie.rating > 75) {
     score += WEIGHT_FACTORS.rating;
     explanations.push("Highly rated by other users");
+  } else if (movie.rating > 60) {
+    score += WEIGHT_FACTORS.rating / 2;
+    explanations.push("Moderately well-rated by other users");
   }
 
   return { score, explanations };
-};
-
-export const getRecommendations = async (answers: Record<string, any>): Promise<MovieRecommendation[]> => {
-  let recommendations = [...SAMPLE_RECOMMENDATIONS];
-  
-  // Score each movie based on enhanced criteria
-  const scoredRecommendationsPromises = recommendations.map(async movie => {
-    const { score, explanations } = await calculateRecommendationScore(movie, answers);
-    return {
-      ...movie,
-      score,
-      explanations
-    };
-  });
-
-  const scoredRecommendations = await Promise.all(scoredRecommendationsPromises);
-
-  // Sort by score (highest first) and normalize ratings
-  const sortedRecommendations = scoredRecommendations
-    .sort((a, b) => (b.score || 0) - (a.score || 0))
-    .map(movie => ({
-      ...movie,
-      rating: Math.round(movie.rating * 10)
-    }));
-
-  // Return top 5 recommendations
-  return sortedRecommendations.slice(0, 5);
 };
 
 export const useQuizLogic = () => {
@@ -124,9 +117,31 @@ export const useQuizLogic = () => {
       [curr.questionId]: curr.answer
     }), {});
 
-    const processedRecommendations = await getRecommendations(answersMap);
-    setRecommendations(processedRecommendations);
-    return processedRecommendations;
+    let recommendations = [...SAMPLE_RECOMMENDATIONS];
+    
+    // Score each movie based on enhanced criteria
+    const scoredRecommendationsPromises = recommendations.map(async movie => {
+      const { score, explanations } = await calculateRecommendationScore(movie, answersMap);
+      return {
+        ...movie,
+        score,
+        explanations
+      };
+    });
+
+    const scoredRecommendations = await Promise.all(scoredRecommendationsPromises);
+
+    // Sort by score (highest first) and normalize ratings
+    const sortedRecommendations = scoredRecommendations
+      .sort((a, b) => (b.score || 0) - (a.score || 0))
+      .map(movie => ({
+        ...movie,
+        rating: Math.round(movie.rating * 10)
+      }));
+
+    // Store top 5 recommendations
+    setRecommendations(sortedRecommendations.slice(0, 5));
+    return recommendations;
   };
 
   return {

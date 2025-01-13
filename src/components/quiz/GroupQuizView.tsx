@@ -12,14 +12,14 @@ export const GroupQuizView = () => {
   const { processAnswers } = useQuizLogic();
   const questions = useSurveySteps();
 
-  const handleQuizComplete = (quizAnswers: QuizAnswer[]) => {
+  const handleQuizComplete = async (quizAnswers: QuizAnswer[]) => {
     setAnswers(quizAnswers);
+    await processAnswers(quizAnswers);
     setShowResults(true);
   };
 
   if (showResults) {
-    const recommendations = processAnswers(answers);
-    return <QuizResults recommendations={recommendations} />;
+    return <QuizResults isGroupQuiz />;
   }
 
   return (

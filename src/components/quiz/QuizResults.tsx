@@ -1,9 +1,15 @@
 import { motion } from "framer-motion";
 import { MovieCard } from "../MovieCard";
-import type { MovieRecommendation, QuizResultsProps } from "./QuizTypes";
 import { Card } from "../ui/card";
+import { useQuizLogic } from "./QuizLogic";
 
-export const QuizResults = ({ recommendations, isGroupQuiz }: QuizResultsProps) => {
+interface QuizResultsProps {
+  isGroupQuiz?: boolean;
+}
+
+export const QuizResults = ({ isGroupQuiz }: QuizResultsProps) => {
+  const { recommendations } = useQuizLogic();
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -15,7 +21,7 @@ export const QuizResults = ({ recommendations, isGroupQuiz }: QuizResultsProps) 
         {isGroupQuiz ? "Rekomendacje grupowe:" : "Twoje rekomendacje:"}
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {recommendations.map((movie: MovieRecommendation) => (
+        {recommendations.map((movie) => (
           <div key={movie.title} className="space-y-4">
             <MovieCard {...movie} />
             {movie.explanations && movie.explanations.length > 0 && (

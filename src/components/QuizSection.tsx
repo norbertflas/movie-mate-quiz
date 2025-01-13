@@ -18,8 +18,9 @@ export const QuizSection = () => {
     setShowQuiz(true);
   };
 
-  const handleQuizComplete = (quizAnswers: QuizAnswer[]) => {
+  const handleQuizComplete = async (quizAnswers: QuizAnswer[]) => {
     setAnswers(quizAnswers);
+    await processAnswers(quizAnswers);
     setShowResults(true);
   };
 
@@ -28,8 +29,7 @@ export const QuizSection = () => {
   }
 
   if (showResults) {
-    const recommendations = processAnswers(answers);
-    return <QuizResults recommendations={recommendations} />;
+    return <QuizResults />;
   }
 
   return (
