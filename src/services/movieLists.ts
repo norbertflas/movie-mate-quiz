@@ -1,5 +1,4 @@
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/use-toast";
 
 export interface MovieList {
   id: string;
@@ -16,12 +15,16 @@ export interface CreateMovieListInput {
 }
 
 export const createMovieList = async (input: CreateMovieListInput) => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
   const { data, error } = await supabase
     .from('movie_lists')
     .insert({
       name: input.name,
       description: input.description,
       is_public: input.is_public ?? false,
+      user_id: user.id
     })
     .select()
     .single();

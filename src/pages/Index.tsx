@@ -1,16 +1,15 @@
 import { useState, useEffect } from "react";
 import { QuizSection } from "@/components/QuizSection";
 import { SearchBar } from "@/components/SearchBar";
-import { QuickActions } from "@/components/QuickActions";
-import { WelcomeSection } from "@/components/WelcomeSection";
-import { MovieFilters, type MovieFilters as MovieFiltersType } from "@/components/MovieFilters";
-import { MovieCard } from "@/components/MovieCard";
 import { UserStreamingPreferences } from "@/components/UserStreamingPreferences";
 import { FavoriteCreators } from "@/components/creators/FavoriteCreators";
 import { MovieLists } from "@/components/movie/MovieLists";
-import { getPopularMovies, type TMDBMovie, getImageUrl } from "@/services/tmdb";
+import { HomeHeader } from "@/components/home/HomeHeader";
+import { MovieSection } from "@/components/home/MovieSection";
+import { getPopularMovies, type TMDBMovie } from "@/services/tmdb";
 import { useToast } from "@/components/ui/use-toast";
 import { useTranslation } from "react-i18next";
+import type { MovieFilters as MovieFiltersType } from "@/components/MovieFilters";
 
 const Index = () => {
   const [showQuiz, setShowQuiz] = useState(false);
@@ -67,44 +66,18 @@ const Index = () => {
       <SearchBar />
       {!showQuiz ? (
         <>
-          <WelcomeSection onStartQuiz={handleStartQuiz} />
-          <QuickActions />
+          <HomeHeader onStartQuiz={handleStartQuiz} />
           <div className="mb-8">
             <FavoriteCreators />
           </div>
           <div className="mb-8">
             <MovieLists />
           </div>
-          <div className="flex flex-col lg:flex-row gap-6">
-            <aside className="w-full lg:w-64">
-              <MovieFilters onFilterChange={handleFilterChange} />
-            </aside>
-            <main className="flex-1">
-              {isLoading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {[...Array(6)].map((_, i) => (
-                    <div key={i} className="h-[400px] bg-gray-200 animate-pulse rounded-lg" />
-                  ))}
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredMovies.map((movie) => (
-                    <MovieCard
-                      key={movie.id}
-                      title={movie.title}
-                      year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "N/A"}
-                      platform="TMDB"
-                      genre="Film"
-                      imageUrl={getImageUrl(movie.poster_path)}
-                      description={movie.overview}
-                      trailerUrl=""
-                      rating={movie.vote_average * 10}
-                    />
-                  ))}
-                </div>
-              )}
-            </main>
-          </div>
+          <MovieSection 
+            movies={filteredMovies}
+            isLoading={isLoading}
+            onFilterChange={handleFilterChange}
+          />
         </>
       ) : (
         <QuizSection />
