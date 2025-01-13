@@ -23,6 +23,12 @@ export const FilterSheet = ({
   isOpen,
   setIsOpen,
 }: FilterSheetProps) => {
+  const handleRatingChange = (values: number[]) => {
+    if (values.length > 0) {
+      setMinRating(values[0]);
+    }
+  };
+
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
@@ -80,7 +86,7 @@ export const FilterSheet = ({
               max={100}
               step={1}
               value={[minRating]}
-              onValueChange={(value) => setMinRating(value[0])}
+              onValueChange={handleRatingChange}
               className="bg-gradient-to-r from-blue-600 via-violet-600 to-purple-600"
             />
             <div className="text-sm text-muted-foreground">
