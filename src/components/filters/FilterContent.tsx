@@ -1,13 +1,12 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
-import { useTranslation } from "react-i18next";
+import { MovieFilters } from "../MovieFilters";
 import { PlatformFilter } from "./PlatformFilter";
 import { GenreFilter } from "./GenreFilter";
-import { TagsFilter } from "./TagsFilter";
 import { RangeFilter } from "./RangeFilter";
+import { TagsFilter } from "./TagsFilter";
 import { FilterButtons } from "./FilterButtons";
-import { MOVIE_CATEGORIES } from "../quiz/QuizConstants";
-import type { MovieFilters } from "../MovieFilters";
+import { useTranslation } from "react-i18next";
+import { MOVIE_TAGS } from "../quiz/QuizConstants";
 
 interface FilterContentProps {
   onFilterChange: (filters: MovieFilters) => void;
@@ -15,83 +14,74 @@ interface FilterContentProps {
   isMobile?: boolean;
 }
 
-export const FilterContent = ({ onFilterChange, currentFilters, isMobile }: FilterContentProps) => {
+export const FilterContent = ({
+  onFilterChange,
+  currentFilters,
+  isMobile,
+}: FilterContentProps) => {
   const { t } = useTranslation();
   const currentYear = new Date().getFullYear();
-  const [yearRange, setYearRange] = useState<[number, number]>(currentFilters.yearRange);
-  const [minRating, setMinRating] = useState(currentFilters.minRating);
-  const [platform, setPlatform] = useState(currentFilters.platform);
-  const [genre, setGenre] = useState(currentFilters.genre);
-  const [tags, setTags] = useState(currentFilters.tags || []);
+  const [selectedTags, setSelectedTags] = useState<string[]>(currentFilters.tags || []);
 
-  const handleApplyFilters = () => {
-    onFilterChange({
-      platform,
-      genre,
-      yearRange,
-      minRating,
-      tags,
-    });
-    if (isMobile) {
-      // Mobile sheet will handle its own closing
-    }
+  const handleTagSelect = (tag: string) => {
+    const newTags = selectedTags.includes(tag)
+      ? selectedTags.filter((t) => t !== tag)
+      : [...selectedTags, tag];
+    setSelectedTags(newTags);
+    onFilterChange({ ...currentFilters, tags: newTags });
   };
 
-  const handleClearFilters = () => {
-    setPlatform(undefined);
-    setGenre(undefined);
-    setYearRange([2000, currentYear]);
-    setMinRating(0);
-    setTags([]);
+  const handleClear = () => {
+    setSelectedTags([]);
     onFilterChange({
       yearRange: [2000, currentYear],
       minRating: 0,
     });
   };
 
-  const handleTagSelect = (tag: string) => {
-    setTags(prev => 
-      prev.includes(tag) 
-        ? prev.filter(t => t !== tag)
-        : [...prev, tag]
-    );
+  const handleApply = () => {
+    onFilterChange({ ...currentFilters });
   };
 
   return (
-    <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="space-y-6"
-    >
-      <PlatformFilter value={platform} onChange={setPlatform} />
-      <GenreFilter value={genre} onChange={setGenre} />
-
-      <TagsFilter
-        tags={MOVIE_CATEGORIES}
-        selectedTags={tags}
-        onTagSelect={handleTagSelect}
+    <div className="space-y-6">
+      <PlatformFilter
+        value={currentFilters.platform}
+        onChange={(platform) => onFilterChange({ ...currentFilters, platform })}
       />
-
+      <GenreFilter
+        value={currentFilters.genre}
+        onChange={(genre) => onFilterChange({ ...currentFilters, genre })}
+      />
       <RangeFilter
-        label={t("filters.yearRange")}
+        label={t("filters.year")}
         min={1900}
         max={currentYear}
         step={1}
-        value={yearRange}
-        onValueChange={(value) => setYearRange(value as [number, number])}
+        value={currentFilters.yearRange}
+        onValueChange={(yearRange) =>
+          onFilterChange({ ...currentFilters, yearRange })
+        }
       />
-
       <RangeFilter
-        label={t("filters.minRating")}
+        label={t("filters.rating")}
         min={0}
         max={100}
-        step={1}
-        value={[minRating]}
-        onValueChange={(value) => setMinRating(value[0])}
-        displayValue={(value) => `${value}/100`}
+        step={10}
+        value={[currentFilters.minRating]}
+        onValueChange={([minRating]) =>
+          onFilterChange({ ...currentFilters, minRating })
+        }
+        displayValue={(v) => `${v}%`}
       />
-
-      <FilterButtons onApply={handleApplyFilters} onClear={handleClearFilters} />
-    </motion.div>
+      <TagsFilter
+        tags={MOVIE_TAGS}
+        selectedTags={selectedTags}
+        onTagSelect={handleTagSelect}
+      />
+      {isMobile && (
+        <FilterButtons onApply={handleApply} onClear={handleClear} />
+      )}
+    </div>
   );
 };
