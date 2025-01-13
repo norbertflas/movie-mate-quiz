@@ -11,6 +11,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useTranslation } from "react-i18next";
 import type { MovieFilters as MovieFiltersType } from "@/components/MovieFilters";
 import { Card } from "@/components/ui/card";
+import { motion } from "framer-motion";
 
 const Index = () => {
   const [showQuiz, setShowQuiz] = useState(false);
@@ -60,48 +61,84 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background/80 to-background/40">
       <div className="container mx-auto px-4 py-8 space-y-8">
-        <Card className="p-6 shadow-lg bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="mb-8">
-            <UserStreamingPreferences />
-          </div>
-          
-          <div className="mb-8">
-            <SearchBar />
-          </div>
-        </Card>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <Card className="p-6 shadow-xl bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-accent/20">
+            <div className="mb-8">
+              <UserStreamingPreferences />
+            </div>
+            
+            <div className="mb-8">
+              <SearchBar />
+            </div>
+          </Card>
+        </motion.div>
 
         {!showQuiz ? (
           <div className="space-y-8">
-            <Card className="p-6 shadow-lg bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-              <HomeHeader onStartQuiz={handleStartQuiz} />
-            </Card>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              <Card className="p-6 shadow-xl bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-accent/20">
+                <HomeHeader onStartQuiz={handleStartQuiz} />
+              </Card>
+            </motion.div>
 
-            <Card className="p-6 shadow-lg bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-              <div className="mb-8">
-                <FavoriteCreators />
-              </div>
-            </Card>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+            >
+              <Card className="p-6 shadow-xl bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-accent/20">
+                <div className="mb-8">
+                  <FavoriteCreators />
+                </div>
+              </Card>
+            </motion.div>
 
-            <Card className="p-6 shadow-lg bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-              <div className="mb-8">
-                <MovieLists />
-              </div>
-            </Card>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+            >
+              <Card className="p-6 shadow-xl bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-accent/20">
+                <div className="mb-8">
+                  <MovieLists />
+                </div>
+              </Card>
+            </motion.div>
 
-            <Card className="p-6 shadow-lg bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-              <MovieSection 
-                movies={filteredMovies}
-                isLoading={isLoading}
-                onFilterChange={handleFilterChange}
-              />
-            </Card>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.5 }}
+            >
+              <Card className="p-6 shadow-xl bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-accent/20">
+                <MovieSection 
+                  movies={filteredMovies}
+                  isLoading={isLoading}
+                  onFilterChange={handleFilterChange}
+                />
+              </Card>
+            </motion.div>
           </div>
         ) : (
-          <Card className="p-6 shadow-lg bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <QuizSection />
-          </Card>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <Card className="p-6 shadow-xl bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-accent/20">
+              <QuizSection />
+            </Card>
+          </motion.div>
         )}
       </div>
     </div>
