@@ -6,3 +6,4 @@ export * from "./trending";
 export * from "./utils";
 export * from "./keywords";
 export * from "./config";
+export * from "./movies";

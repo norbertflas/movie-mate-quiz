@@ -2,7 +2,7 @@ import { useState } from "react";
 import { getCollaborativeRecommendations } from "@/utils/collaborativeFiltering";
 import { supabase } from "@/integrations/supabase/client";
 import type { QuizAnswer, MovieRecommendation } from "./QuizTypes";
-import { TMDBMovie, getMovieDetails } from "@/services/tmdb";
+import { getMovieDetails } from "@/services/tmdb";
 
 export const useQuizLogic = () => {
   const [recommendations, setRecommendations] = useState<MovieRecommendation[]>([]);

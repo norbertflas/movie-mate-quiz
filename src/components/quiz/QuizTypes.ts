@@ -36,7 +36,7 @@ export interface QuizResultsProps {
 export interface NavigationButtonsProps {
   currentStep: number;
   canGoNext: boolean;
-  onNext: () => Promise<void>;
+  onNext: () => void;
   onPrevious: () => void;
   totalSteps: number;
 }
