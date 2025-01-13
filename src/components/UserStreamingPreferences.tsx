@@ -4,6 +4,7 @@ import { Checkbox } from "./ui/checkbox";
 import { useToast } from "./ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "react-i18next";
+import { motion } from "framer-motion";
 
 interface StreamingService {
   id: string;
@@ -119,21 +120,39 @@ export const UserStreamingPreferences = () => {
   };
 
   if (isLoading) {
-    return <div className="animate-pulse">{t("common.loading")}</div>;
+    return (
+      <div className="animate-pulse p-4 space-y-4">
+        <div className="h-8 bg-muted rounded w-1/3"></div>
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-12 bg-muted rounded"></div>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (
-    <Card>
+    <Card className="shadow-lg bg-gradient-to-br from-background/80 to-background border-blue-600/20">
       <CardHeader>
-        <CardTitle>{t("services.preferences")}</CardTitle>
+        <CardTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-violet-600 to-purple-600 bg-clip-text text-transparent">
+          {t("services.preferences")}
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {services.map((service) => (
-          <div key={service.id} className="flex items-center space-x-2">
+          <motion.div
+            key={service.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="flex items-center space-x-2 p-3 rounded-lg hover:bg-accent/50 transition-colors"
+          >
             <Checkbox
               id={service.id}
               checked={selectedServices.includes(service.id)}
               onCheckedChange={() => handleServiceToggle(service.id)}
+              className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
             />
             <div className="flex items-center space-x-2">
               {service.logo_url && (
@@ -150,7 +169,7 @@ export const UserStreamingPreferences = () => {
                 {service.name}
               </label>
             </div>
-          </div>
+          </motion.div>
         ))}
       </CardContent>
     </Card>

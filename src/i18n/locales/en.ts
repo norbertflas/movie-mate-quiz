@@ -42,6 +42,60 @@ export const en = {
     removed: "Service removed",
     preferencesUpdated: "Your streaming preferences have been updated",
   },
+  recommendations: {
+    title: "Movie Recommendations",
+    randomMovie: "Random Movie",
+    filters: "Filters",
+    filterSettings: "Filter Settings",
+    noMoviesFound: "No movies found",
+    tryDifferentFilters: "Try different filters",
+    randomPick: "Here's your random pick",
+    topRated: "Top Rated Movies"
+  },
+  filters: {
+    title: "Filters",
+    active: "active filters",
+    genre: "Genre",
+    selectGenre: "Select a genre",
+    minRating: "Minimum Rating",
+    platform: "Platform",
+    selectPlatform: "Select a platform",
+    year: "Release Year",
+    apply: "Apply Filters",
+    clear: "Clear Filters",
+    tags: "Tags"
+  },
+  creators: {
+    favoriteCreators: "Favorite Creators",
+    add: "Add Creator",
+    name: "Name",
+    namePlaceholder: "Enter creator's name",
+    role: "Role",
+    selectRole: "Select a role",
+    added: "Creator Added",
+    addedDescription: "The creator has been added to your favorites",
+    removed: "Creator Removed",
+    removedDescription: "The creator has been removed from your favorites",
+    requiredFields: "Name and role are required"
+  },
+  movieLists: {
+    myLists: "My Movie Lists",
+    createList: "Create List",
+    name: "List Name",
+    namePlaceholder: "Enter list name",
+    description: "Description",
+    descriptionPlaceholder: "Enter list description (optional)",
+    makePublic: "Make this list public",
+    create: "Create List",
+    created: "List Created",
+    createdDescription: "Your movie list has been created",
+    nameRequired: "List name is required"
+  },
+  common: {
+    error: "Error",
+    loading: "Loading...",
+    success: "Success"
+  },
   site: {
     author: "Created with ❤️ by MovieMate Team",
     description: "Your personal movie recommendation assistant",
