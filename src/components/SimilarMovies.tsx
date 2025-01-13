@@ -1,12 +1,15 @@
 import { MovieCard } from "./MovieCard";
 import { SAMPLE_RECOMMENDATIONS } from "./quiz/QuizConstants";
 import type { MovieRecommendation } from "./quiz/QuizTypes";
+import { useTranslation } from "react-i18next";
 
 interface SimilarMoviesProps {
   currentMovie: MovieRecommendation;
 }
 
 export const SimilarMovies = ({ currentMovie }: SimilarMoviesProps) => {
+  const { t } = useTranslation();
+
   const getSimilarMovies = () => {
     return SAMPLE_RECOMMENDATIONS
       .filter(movie => 
@@ -21,7 +24,7 @@ export const SimilarMovies = ({ currentMovie }: SimilarMoviesProps) => {
 
   return similarMovies.length > 0 ? (
     <div className="mt-8">
-      <h3 className="text-xl font-semibold mb-4">Podobne tytuły</h3>
+      <h3 className="text-xl font-semibold mb-4">{t("similarTitles")}</h3>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {similarMovies.map((movie) => (
           <MovieCard key={movie.title} {...movie} />

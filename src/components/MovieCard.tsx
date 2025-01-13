@@ -59,6 +59,11 @@ export const MovieCard = ({
     });
   };
 
+  const getTranslatedGenre = (genre: string) => {
+    const genreKey = genre.toLowerCase().replace(/[\s-]/g, '');
+    return t(`movie.${genreKey}`, { defaultValue: genre });
+  };
+
   return (
     <motion.div
       layout
@@ -101,8 +106,8 @@ export const MovieCard = ({
                 year={year}
                 description={description}
                 rating={rating}
-                genre={genre}
-                tags={tags}
+                genre={getTranslatedGenre(genre)}
+                tags={tags?.map(getTranslatedGenre)}
                 onWatchTrailer={() => setShowTrailer(!showTrailer)}
                 showTrailer={showTrailer}
               />

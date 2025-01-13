@@ -48,6 +48,32 @@ export const SearchBar = () => {
     }
   };
 
+  const getGenreTranslationKey = (genreId: number): string => {
+    // Map TMDB genre IDs to translation keys
+    const genreMap: Record<number, string> = {
+      28: "action",
+      12: "adventure",
+      16: "animation",
+      35: "comedy",
+      80: "crime",
+      99: "documentary",
+      18: "drama",
+      10751: "family",
+      14: "fantasy",
+      36: "history",
+      27: "horror",
+      10402: "music",
+      9648: "mystery",
+      10749: "romance",
+      878: "sciFi",
+      10770: "tvMovie",
+      53: "thriller",
+      10752: "war",
+      37: "western"
+    };
+    return genreMap[genreId] || "other";
+  };
+
   return (
     <div className="space-y-6 w-full px-4 md:px-0">
       <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2 max-w-2xl mx-auto">
@@ -72,7 +98,7 @@ export const SearchBar = () => {
               title={movie.title}
               year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "N/A"}
               platform="TMDB"
-              genre={movie.genre_ids?.length ? movie.genre_ids[0].toString() : t("common.movie")}
+              genre={t(`movie.${getGenreTranslationKey(movie.genre_ids?.[0] || 0)}`)}
               imageUrl={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
               description={movie.overview}
               trailerUrl={`https://www.youtube.com/watch?v=${movie.video_id || ''}`}
