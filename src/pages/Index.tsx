@@ -1,17 +1,13 @@
 import { useState, useEffect } from "react";
-import { QuizSection } from "@/components/QuizSection";
-import { HomeHeader } from "@/components/home/HomeHeader";
 import { getPopularMovies, type TMDBMovie } from "@/services/tmdb";
 import { useToast } from "@/components/ui/use-toast";
 import { useTranslation } from "react-i18next";
 import type { MovieFilters as MovieFiltersType } from "@/components/MovieFilters";
-import { Card } from "@/components/ui/card";
-import { motion } from "framer-motion";
 import { SearchSection } from "@/components/sections/SearchSection";
-import { PreferencesSection } from "@/components/sections/PreferencesSection";
-import { ContentSection } from "@/components/sections/ContentSection";
-import { MovieFilterSection } from "@/components/sections/MovieFilterSection";
-import { Footer } from "@/components/Footer";
+import { PageContainer } from "@/components/home/PageContainer";
+import { ServicesSection } from "@/components/home/ServicesSection";
+import { MainContent } from "@/components/home/MainContent";
+import { QuizContent } from "@/components/home/QuizContent";
 
 const Index = () => {
   const [showQuiz, setShowQuiz] = useState(false);
@@ -61,61 +57,20 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50/80 via-violet-50/80 to-purple-50/80 dark:from-blue-950/50 dark:via-violet-950/50 dark:to-purple-950/50">
-      <div className="container mx-auto px-4 py-8 space-y-8 flex-grow">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="space-y-8"
-        >
-          <Card className="p-6 shadow-xl bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-blue-200/20 dark:border-blue-800/20 hover:shadow-2xl transition-all duration-300">
-            <h1 className="text-4xl md:text-5xl font-bold text-center bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-violet-600 to-purple-600 mb-6">
-              {t("services.title")}
-            </h1>
-            <p className="text-center text-muted-foreground mb-8 text-lg">
-              {t("services.description")}
-            </p>
-            <PreferencesSection />
-          </Card>
-
-          <SearchSection />
-
-          {!showQuiz ? (
-            <div className="space-y-8">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-              >
-                <Card className="p-6 shadow-xl bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-blue-200/20 dark:border-blue-800/20 hover:shadow-2xl transition-all duration-300">
-                  <HomeHeader onStartQuiz={handleStartQuiz} />
-                </Card>
-              </motion.div>
-
-              <ContentSection />
-              
-              <MovieFilterSection 
-                movies={filteredMovies}
-                isLoading={isLoading}
-                onFilterChange={handleFilterChange}
-              />
-            </div>
-          ) : (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              <Card className="p-6 shadow-xl bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-blue-200/20 dark:border-blue-800/20 hover:shadow-2xl transition-all duration-300">
-                <QuizSection />
-              </Card>
-            </motion.div>
-          )}
-        </motion.div>
-      </div>
-      <Footer />
-    </div>
+    <PageContainer>
+      <ServicesSection />
+      <SearchSection />
+      {!showQuiz ? (
+        <MainContent
+          onStartQuiz={handleStartQuiz}
+          filteredMovies={filteredMovies}
+          isLoading={isLoading}
+          onFilterChange={handleFilterChange}
+        />
+      ) : (
+        <QuizContent />
+      )}
+    </PageContainer>
   );
 };
 
