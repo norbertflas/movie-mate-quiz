@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader } from "./ui/card";
 import { MovieStreamingServices } from "./movie/MovieStreamingServices";
 import { MovieCardHeader } from "./movie/MovieCardHeader";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { MovieFavoriteHandler } from "./movie/MovieFavoriteHandler";
 import { MovieRatingHandler } from "./movie/MovieRatingHandler";
 import { MovieMediaSection } from "./movie/MovieMediaSection";
@@ -67,13 +67,14 @@ export const MovieCard = ({
   return (
     <motion.div
       layout
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ duration: 0.3 }}
       className="h-full"
     >
       <Card 
-        className="overflow-hidden group cursor-pointer h-full flex flex-col bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-accent/20 hover:shadow-xl transition-all duration-300" 
+        className="group relative overflow-hidden h-full flex flex-col bg-gradient-to-br from-background/80 via-background/50 to-purple-500/5 dark:from-background/80 dark:via-background/50 dark:to-purple-500/10 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-accent/20 hover:shadow-xl transition-all duration-300 cursor-pointer" 
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <MovieMediaSection
@@ -94,33 +95,37 @@ export const MovieCard = ({
         <CardContent className="space-y-4 flex-grow p-4">
           <MovieStreamingServices services={streamingServices} />
           
-          {isExpanded && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
-              className="space-y-6"
-            >
-              <MovieMetadata
-                year={year}
-                genre={genre}
-                rating={rating}
-              />
-              
-              <MovieDescription description={description} />
-              
-              <MovieTags tags={tags || []} />
+          <AnimatePresence>
+            {isExpanded && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3 }}
+                className="space-y-6"
+              >
+                <MovieMetadata
+                  year={year}
+                  genre={genre}
+                  rating={rating}
+                />
+                
+                <MovieDescription description={description} />
+                
+                <MovieTags tags={tags || []} />
 
-              <MovieActions
-                userRating={userRating}
-                showTrailer={showTrailer}
-                onToggleTrailer={handleTrailerToggle}
-                onRate={handleRateClick}
-              />
-            </motion.div>
-          )}
+                <MovieActions
+                  userRating={userRating}
+                  showTrailer={showTrailer}
+                  onToggleTrailer={handleTrailerToggle}
+                  onRate={handleRateClick}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </CardContent>
+
+        <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </Card>
     </motion.div>
   );

@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
-import { Search } from "lucide-react";
+import { Search, Loader2 } from "lucide-react";
 import { useToast } from "./ui/use-toast";
 import { MovieCard } from "./MovieCard";
 import { searchMovies } from "@/services/tmdb";
 import type { TMDBMovie } from "@/services/tmdb";
 import { useTranslation } from "react-i18next";
+import { motion, AnimatePresence } from "framer-motion";
 
 export const SearchBar = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -28,6 +29,7 @@ export const SearchBar = () => {
         toast({
           title: t("search.resultsFound"),
           description: t("search.resultsDescription", { count: results.length, query: searchQuery }),
+          className: "bg-gradient-to-r from-blue-500 to-purple-500 text-white",
         });
       } else {
         toast({
@@ -75,38 +77,71 @@ export const SearchBar = () => {
   };
 
   return (
-    <div className="space-y-6 w-full px-4 md:px-0">
-      <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2 max-w-2xl mx-auto">
-        <Input
-          type="text"
-          placeholder={t("search.placeholder")}
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="flex-1"
-        />
-        <Button type="submit" disabled={isSearching} className="w-full sm:w-auto">
-          <Search className="mr-2 h-4 w-4" />
-          {isSearching ? t("search.searching") : t("search.button")}
-        </Button>
-      </form>
-
-      {searchResults.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {searchResults.map((movie) => (
-            <MovieCard
-              key={movie.id}
-              title={movie.title}
-              year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "N/A"}
-              platform="TMDB"
-              genre={t(`movie.${getGenreTranslationKey(movie.genre_ids?.[0] || 0)}`)}
-              imageUrl={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
-              description={movie.overview}
-              trailerUrl={`https://www.youtube.com/watch?v=${movie.video_id || ''}`}
-              rating={movie.vote_average}
+    <div className="space-y-8 w-full px-4 md:px-0 max-w-7xl mx-auto">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3 max-w-2xl mx-auto">
+          <div className="relative flex-1">
+            <Input
+              type="text"
+              placeholder={t("search.placeholder")}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-12 pl-12 pr-4 rounded-xl border-2 border-gray-200 dark:border-gray-800 focus:border-purple-500 dark:focus:border-purple-400 transition-colors"
             />
-          ))}
-        </div>
-      )}
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+          </div>
+          <Button 
+            type="submit" 
+            disabled={isSearching} 
+            className="h-12 px-8 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all duration-300"
+          >
+            {isSearching ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <>
+                <Search className="mr-2 h-5 w-5" />
+                {t("search.button")}
+              </>
+            )}
+          </Button>
+        </form>
+      </motion.div>
+
+      <AnimatePresence mode="wait">
+        {searchResults.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.5 }}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          >
+            {searchResults.map((movie, index) => (
+              <motion.div
+                key={movie.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <MovieCard
+                  title={movie.title}
+                  year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "N/A"}
+                  platform="TMDB"
+                  genre={t(`movie.${getGenreTranslationKey(movie.genre_ids?.[0] || 0)}`)}
+                  imageUrl={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+                  description={movie.overview}
+                  trailerUrl={`https://www.youtube.com/watch?v=${movie.video_id || ''}`}
+                  rating={movie.vote_average}
+                />
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
