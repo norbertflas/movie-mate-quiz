@@ -1,5 +1,40 @@
-export { VOD_SERVICES } from './constants/streamingServices';
-export { MOVIE_CATEGORIES } from './constants/movieCategories';
-export { SAMPLE_RECOMMENDATIONS } from './constants/sampleRecommendations';
-export { useSurveySteps } from './constants/surveySteps';
-export { MOVIE_TAGS } from './constants/movieTags';
+import type { MovieRecommendation } from "./QuizTypes";
+
+export const SAMPLE_RECOMMENDATIONS: MovieRecommendation[] = [
+  {
+    id: 1,
+    title: "The Matrix",
+    year: "1999",
+    platform: "Netflix",
+    genre: "Sci-Fi",
+    imageUrl: "/placeholder.svg",
+    description: "A computer programmer discovers a mysterious world beneath reality.",
+    trailerUrl: "https://www.youtube.com/watch?v=m8e-FF8MsqU",
+    rating: 87,
+    tags: ["action", "sci-fi", "cyberpunk"]
+  },
+  {
+    id: 2,
+    title: "Inception",
+    year: "2010",
+    platform: "HBO Max",
+    genre: "Sci-Fi",
+    imageUrl: "/placeholder.svg",
+    description: "A thief who steals corporate secrets through dream-sharing technology.",
+    trailerUrl: "https://www.youtube.com/watch?v=YoHD9XEInc0",
+    rating: 88,
+    tags: ["action", "sci-fi", "thriller"]
+  },
+  {
+    id: 3,
+    title: "The Shawshank Redemption",
+    year: "1994",
+    platform: "Prime Video",
+    genre: "Drama",
+    imageUrl: "/placeholder.svg",
+    description: "Two imprisoned men bond over a number of years.",
+    trailerUrl: "https://www.youtube.com/watch?v=6hB3S9bIaco",
+    rating: 93,
+    tags: ["drama", "prison", "friendship"]
+  }
+];

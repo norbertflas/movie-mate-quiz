@@ -12,6 +12,7 @@ import { MovieTags } from "./movie/MovieTags";
 import { MovieActions } from "./movie/MovieActions";
 
 interface MovieCardProps {
+  id?: number;
   title: string;
   year: string;
   platform: string;
@@ -26,6 +27,7 @@ interface MovieCardProps {
 }
 
 export const MovieCard = ({
+  id,
   title,
   year,
   platform,

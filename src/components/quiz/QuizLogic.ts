@@ -83,9 +83,12 @@ export const useQuizLogic = () => {
       [curr.questionId]: curr.answer
     }), {});
 
-    let recommendations = [...SAMPLE_RECOMMENDATIONS];
+    const initialRecommendations: MovieRecommendation[] = SAMPLE_RECOMMENDATIONS.map(movie => ({
+      ...movie,
+      id: movie.tmdbId || Math.floor(Math.random() * 10000) // Fallback ID if tmdbId is not available
+    }));
     
-    const scoredRecommendationsPromises = recommendations.map(async movie => {
+    const scoredRecommendationsPromises = initialRecommendations.map(async movie => {
       const { score, explanations } = await calculateRecommendationScore(movie, answersMap);
       return {
         ...movie,
