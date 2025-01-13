@@ -1,15 +1,9 @@
 import { motion } from "framer-motion";
 import { MovieCard } from "../MovieCard";
 import { Card } from "../ui/card";
-import { useQuizLogic } from "./QuizLogic";
+import type { QuizResultsProps } from "./QuizTypes";
 
-interface QuizResultsProps {
-  isGroupQuiz?: boolean;
-}
-
-export const QuizResults = ({ isGroupQuiz }: QuizResultsProps) => {
-  const { recommendations } = useQuizLogic();
-
+export const QuizResults = ({ recommendations, isGroupQuiz = false }: QuizResultsProps) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}

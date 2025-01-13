@@ -1,19 +1,14 @@
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
-
-interface NavigationButtonsProps {
-  currentStep: number;
-  canGoNext: boolean;
-  onPrevious: () => void;
-  onNext: () => void;
-}
+import type { NavigationButtonsProps } from "./QuizTypes";
 
 export const NavigationButtons = ({
   currentStep,
   canGoNext,
   onPrevious,
   onNext,
+  totalSteps
 }: NavigationButtonsProps) => {
   const { t } = useTranslation();
 
@@ -30,7 +25,7 @@ export const NavigationButtons = ({
         </Button>
       )}
       
-      {canGoNext && (
+      {canGoNext && currentStep < totalSteps && (
         <Button
           onClick={onNext}
           className="gap-2 ml-auto bg-blue-600 hover:bg-blue-700"
