@@ -4,5 +4,7 @@ export const WEIGHT_FACTORS = {
   platform: 20,
   watchHistory: 15,
   rating: 10,
-  collaborative: 20
+  collaborative: 20,
+  seasonal: 15,
+  popularity: 10
 };
