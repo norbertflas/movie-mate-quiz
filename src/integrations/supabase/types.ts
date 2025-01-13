@@ -95,6 +95,30 @@ export type Database = {
         }
         Relationships: []
       }
+      streaming_services: {
+        Row: {
+          created_at: string
+          id: string
+          logo_url: string | null
+          name: string
+          regions: string[]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name: string
+          regions: string[]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name?: string
+          regions?: string[]
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

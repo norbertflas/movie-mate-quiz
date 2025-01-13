@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Slider } from "./ui/slider";
-import { MOVIE_CATEGORIES, VOD_SERVICES } from "./quiz/QuizConstants";
+import { MOVIE_CATEGORIES } from "./quiz/QuizConstants";
+import { getStreamingServicesByRegion, languageToRegion } from "@/utils/streamingServices";
+import { useTranslation } from "react-i18next";
 
 interface MovieFiltersProps {
   onFilterChange: (filters: MovieFilters) => void;
@@ -21,6 +23,18 @@ export const MovieFilters = ({ onFilterChange }: MovieFiltersProps) => {
   const [minRating, setMinRating] = useState(0);
   const [platform, setPlatform] = useState<string>();
   const [genre, setGenre] = useState<string>();
+  const [streamingServices, setStreamingServices] = useState<any[]>([]);
+  const { i18n } = useTranslation();
+
+  useEffect(() => {
+    const fetchStreamingServices = async () => {
+      const region = languageToRegion[i18n.language] || 'en';
+      const services = await getStreamingServicesByRegion(region);
+      setStreamingServices(services);
+    };
+
+    fetchStreamingServices();
+  }, [i18n.language]);
 
   const handleApplyFilters = () => {
     onFilterChange({
@@ -43,9 +57,9 @@ export const MovieFilters = ({ onFilterChange }: MovieFiltersProps) => {
               <SelectValue placeholder="Wybierz platformę" />
             </SelectTrigger>
             <SelectContent>
-              {VOD_SERVICES.map((service) => (
-                <SelectItem key={service} value={service}>
-                  {service}
+              {streamingServices.map((service) => (
+                <SelectItem key={service.id} value={service.name}>
+                  {service.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -88,14 +102,14 @@ export const MovieFilters = ({ onFilterChange }: MovieFiltersProps) => {
           <label className="text-sm font-medium">Minimalna ocena</label>
           <Slider
             min={0}
-            max={10}
-            step={0.1}
+            max={100}
+            step={1}
             value={[minRating]}
             onValueChange={(value) => setMinRating(value[0])}
             className="mt-2"
           />
           <div className="text-sm text-muted-foreground">
-            {minRating.toFixed(1)}/10
+            {minRating}/100
           </div>
         </div>
 

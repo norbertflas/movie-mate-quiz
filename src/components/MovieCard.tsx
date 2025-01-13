@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Heart, ChevronDown } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { useToast } from "./ui/use-toast";
+import { useTranslation } from "react-i18next";
 import {
   Collapsible,
   CollapsibleContent,
@@ -12,6 +13,7 @@ import {
 import { MovieRating } from "./movie/MovieRating";
 import { MovieTrailer } from "./movie/MovieTrailer";
 import { MovieActions } from "./movie/MovieActions";
+import { getStreamingServicesByRegion, languageToRegion } from "@/utils/streamingServices";
 
 interface MovieCardProps {
   title: string;
@@ -42,7 +44,19 @@ export const MovieCard = ({
   const [showTrailer, setShowTrailer] = useState(false);
   const [userRating, setUserRating] = useState<"like" | "dislike" | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [availableServices, setAvailableServices] = useState<any[]>([]);
   const { toast } = useToast();
+  const { i18n } = useTranslation();
+
+  useEffect(() => {
+    const fetchStreamingServices = async () => {
+      const region = languageToRegion[i18n.language] || 'en';
+      const services = await getStreamingServicesByRegion(region);
+      setAvailableServices(services);
+    };
+
+    fetchStreamingServices();
+  }, [i18n.language]);
 
   const handleRating = (rating: "like" | "dislike") => {
     setUserRating(rating);
@@ -96,12 +110,12 @@ export const MovieCard = ({
           </span>
         </div>
 
-        {streamingServices && streamingServices.length > 0 && (
+        {availableServices.length > 0 && (
           <div className="flex flex-wrap gap-2">
             <span className="text-sm font-semibold">Dostępne na:</span>
-            {streamingServices.map((service) => (
-              <Badge key={service} variant="secondary">
-                {service}
+            {availableServices.map((service) => (
+              <Badge key={service.id} variant="secondary">
+                {service.name}
               </Badge>
             ))}
           </div>
