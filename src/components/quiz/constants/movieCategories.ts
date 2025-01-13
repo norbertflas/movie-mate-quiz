@@ -1,0 +1,18 @@
+export const MOVIE_CATEGORIES = [
+  "Akcja",
+  "Komedia",
+  "Dramat",
+  "Sci-Fi",
+  "Horror",
+  "Romans",
+  "Thriller",
+  "Dokument",
+  "Animacja",
+  "Fantasy",
+  "Kryminał",
+  "Przygodowy",
+  "Biograficzny",
+  "Wojenny",
+  "Muzyczny",
+  "Sportowy",
+];
