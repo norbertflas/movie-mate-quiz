@@ -29,9 +29,13 @@ export const FavoriteCreatorsList = () => {
   const { data: creators, isLoading } = useQuery({
     queryKey: ['favorite-creators'],
     queryFn: async () => {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session?.user) throw new Error('Not authenticated');
+
       const { data, error } = await supabase
         .from('favorite_creators')
-        .select('*');
+        .select('*')
+        .eq('user_id', session.session.user.id);
       
       if (error) throw error;
       return data as Creator[];
@@ -40,13 +44,17 @@ export const FavoriteCreatorsList = () => {
 
   const addCreator = useMutation({
     mutationFn: async (creator: { name: string; role: string }) => {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session?.user) throw new Error('Not authenticated');
+
       const { error } = await supabase
         .from('favorite_creators')
         .insert([
           { 
             name: creator.name,
             role: creator.role,
-            tmdb_person_id: 0 // We'll implement TMDB search in a future update
+            tmdb_person_id: 0, // We'll implement TMDB search in a future update
+            user_id: session.session.user.id
           }
         ]);
       
