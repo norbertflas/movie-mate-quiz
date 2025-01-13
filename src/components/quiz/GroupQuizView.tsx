@@ -45,6 +45,7 @@ export const GroupQuizView = () => {
         .insert({
           group_id: groupId,
           answers: quizAnswers,
+          user_id: (await supabase.auth.getUser()).data.user?.id
         });
 
       if (error) throw error;
@@ -61,7 +62,8 @@ export const GroupQuizView = () => {
   };
 
   if (showResults) {
-    return <QuizResults answers={answers} onProcessAnswers={processAnswers} isGroupQuiz />;
+    const recommendations = processAnswers(answers);
+    return <QuizResults recommendations={recommendations} isGroupQuiz />;
   }
 
   return (

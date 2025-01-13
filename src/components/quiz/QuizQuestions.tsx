@@ -46,7 +46,10 @@ export const QuizQuestions = ({ questions, onComplete }: QuizQuestionsProps) => 
         question={questions[currentStep].question}
         options={questions[currentStep].options}
         onSelect={handleAnswer}
-        selectedOption={answers[currentStep]?.answer}
+        currentStep={currentStep + 1}
+        totalSteps={questions.length}
+        type="single"
+        selectedOptions={[answers[currentStep]?.answer].filter(Boolean)}
       />
       
       <div className="flex justify-between">

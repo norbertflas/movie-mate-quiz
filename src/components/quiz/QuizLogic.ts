@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { MovieRecommendation } from "./QuizTypes";
 import { SAMPLE_RECOMMENDATIONS } from "./QuizConstants";
 
@@ -87,4 +88,19 @@ export const getRecommendations = (answers: Record<string, any>): MovieRecommend
 
   // Return top 5 recommendations
   return sortedRecommendations.slice(0, 5);
+};
+
+export const useQuizLogic = () => {
+  const [recommendations, setRecommendations] = useState<MovieRecommendation[]>([]);
+
+  const processAnswers = (answers: Record<string, any>) => {
+    const processedRecommendations = getRecommendations(answers);
+    setRecommendations(processedRecommendations);
+    return processedRecommendations;
+  };
+
+  return {
+    recommendations,
+    processAnswers
+  };
 };

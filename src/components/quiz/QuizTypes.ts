@@ -20,3 +20,13 @@ export type MovieRecommendation = {
   score?: number;
   explanations?: string[];
 };
+
+export type QuizAnswer = {
+  questionId: string;
+  answer: string;
+};
+
+export interface QuizResultsProps {
+  recommendations: MovieRecommendation[];
+  isGroupQuiz?: boolean;
+}
