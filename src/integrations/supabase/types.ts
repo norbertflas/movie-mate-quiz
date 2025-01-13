@@ -122,12 +122,34 @@ export type Database = {
         }
         Relationships: []
       }
+      quiz_history: {
+        Row: {
+          answers: Json
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          answers: Json
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       quiz_responses: {
         Row: {
           answers: Json
           created_at: string
           group_id: string
           id: string
+          recommendation_explanations: Json | null
           user_id: string
         }
         Insert: {
@@ -135,6 +157,7 @@ export type Database = {
           created_at?: string
           group_id: string
           id?: string
+          recommendation_explanations?: Json | null
           user_id: string
         }
         Update: {
@@ -142,6 +165,7 @@ export type Database = {
           created_at?: string
           group_id?: string
           id?: string
+          recommendation_explanations?: Json | null
           user_id?: string
         }
         Relationships: [

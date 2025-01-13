@@ -17,4 +17,6 @@ export type MovieRecommendation = {
   trailerUrl: string;
   rating: number;
   tags?: string[];
+  score?: number;
+  explanations?: string[];
 };
