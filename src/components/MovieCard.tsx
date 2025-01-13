@@ -23,6 +23,7 @@ interface MovieCardProps {
   trailerUrl: string;
   rating: number;
   tags?: string[];
+  streamingServices?: string[];
 }
 
 export const MovieCard = ({
@@ -35,6 +36,7 @@ export const MovieCard = ({
   trailerUrl,
   rating,
   tags,
+  streamingServices = [],
 }: MovieCardProps) => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
@@ -93,6 +95,17 @@ export const MovieCard = ({
             {genre}
           </span>
         </div>
+
+        {streamingServices && streamingServices.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            <span className="text-sm font-semibold">Dostępne na:</span>
+            {streamingServices.map((service) => (
+              <Badge key={service} variant="secondary">
+                {service}
+              </Badge>
+            ))}
+          </div>
+        )}
 
         <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
           <CollapsibleTrigger asChild>
