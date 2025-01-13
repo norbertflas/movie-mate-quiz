@@ -119,6 +119,35 @@ export type Database = {
         }
         Relationships: []
       }
+      user_streaming_preferences: {
+        Row: {
+          created_at: string
+          id: string
+          service_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          service_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          service_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_streaming_preferences_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "streaming_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

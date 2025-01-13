@@ -5,8 +5,10 @@ import { QuickActions } from "@/components/QuickActions";
 import { WelcomeSection } from "@/components/WelcomeSection";
 import { MovieFilters, type MovieFilters as MovieFiltersType } from "@/components/MovieFilters";
 import { MovieCard } from "@/components/MovieCard";
+import { UserStreamingPreferences } from "@/components/UserStreamingPreferences";
 import { getPopularMovies, type TMDBMovie, getImageUrl } from "@/services/tmdb";
 import { useToast } from "@/components/ui/use-toast";
+import { useTranslation } from "react-i18next";
 
 const Index = () => {
   const [showQuiz, setShowQuiz] = useState(false);
@@ -14,6 +16,7 @@ const Index = () => {
   const [filteredMovies, setFilteredMovies] = useState<TMDBMovie[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   useEffect(() => {
     const fetchMovies = async () => {
@@ -24,8 +27,8 @@ const Index = () => {
       } catch (error) {
         console.error('Error fetching movies:', error);
         toast({
-          title: "Błąd",
-          description: "Nie udało się pobrać filmów. Spróbuj ponownie później.",
+          title: t("errors.loadingServices"),
+          description: t("errors.errorDescription"),
           variant: "destructive",
         });
       } finally {
@@ -61,9 +64,12 @@ const Index = () => {
         <>
           <WelcomeSection onStartQuiz={handleStartQuiz} />
           <QuickActions />
-          <div className="flex gap-6">
-            <aside className="w-64 hidden lg:block">
-              <MovieFilters onFilterChange={handleFilterChange} />
+          <div className="flex flex-col lg:flex-row gap-6">
+            <aside className="w-full lg:w-64">
+              <div className="space-y-6">
+                <MovieFilters onFilterChange={handleFilterChange} />
+                <UserStreamingPreferences />
+              </div>
             </aside>
             <main className="flex-1">
               {isLoading ? (

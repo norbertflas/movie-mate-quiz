@@ -6,6 +6,7 @@ import { MovieActions } from "./movie/MovieActions";
 import { MovieStreamingServices } from "./movie/MovieStreamingServices";
 import { MovieCardHeader } from "./movie/MovieCardHeader";
 import { MovieDetailsExpanded } from "./movie/MovieDetailsExpanded";
+import { MovieRating } from "./movie/MovieRating";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface MovieCardProps {
@@ -73,7 +74,7 @@ export const MovieCard = ({
           whileHover={{ scale: 1.02 }}
           transition={{ duration: 0.3 }}
         >
-          {showTrailer && trailerUrl ? (
+          {showTrailer ? (
             <MovieTrailer trailerUrl={trailerUrl} title={title} />
           ) : (
             <motion.img
@@ -92,6 +93,7 @@ export const MovieCard = ({
             isFavorite={isFavorite}
             onToggleFavorite={handleToggleFavorite}
           />
+          <MovieRating rating={rating} />
         </CardHeader>
 
         <CardContent className="space-y-4 flex-grow p-4">

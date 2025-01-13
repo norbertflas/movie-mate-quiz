@@ -42,6 +42,19 @@ const resources = {
         loading: "Loading recommendations...",
         error: "Error loading recommendations",
       },
+      services: {
+        preferences: "Streaming Services",
+        added: "Service added",
+        removed: "Service removed",
+        preferencesUpdated: "Your streaming preferences have been updated",
+      },
+      errors: {
+        loadingServices: "Error loading services",
+        loadingPreferences: "Error loading preferences",
+        addingService: "Error adding service",
+        removingService: "Error removing service",
+      },
+      availableOn: "Available on",
     },
   },
   pl: {
@@ -84,6 +97,19 @@ const resources = {
         loading: "Ładowanie rekomendacji...",
         error: "Błąd ładowania rekomendacji",
       },
+      services: {
+        preferences: "Serwisy streamingowe",
+        added: "Dodano serwis",
+        removed: "Usunięto serwis",
+        preferencesUpdated: "Twoje preferencje zostały zaktualizowane",
+      },
+      errors: {
+        loadingServices: "Błąd ładowania serwisów",
+        loadingPreferences: "Błąd ładowania preferencji",
+        addingService: "Błąd dodawania serwisu",
+        removingService: "Błąd usuwania serwisu",
+      },
+      availableOn: "Dostępne na",
     },
   },
 };
