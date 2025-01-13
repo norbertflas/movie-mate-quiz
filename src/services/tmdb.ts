@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import i18n from "@/i18n";
 
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
 const TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
@@ -22,8 +23,9 @@ async function getTMDBApiKey() {
 
 export async function searchMovies(query: string): Promise<TMDBMovie[]> {
   const apiKey = await getTMDBApiKey();
+  const currentLang = i18n.language;
   const response = await fetch(
-    `${TMDB_BASE_URL}/search/multi?api_key=${apiKey}&query=${encodeURIComponent(query)}&language=pl-PL`
+    `${TMDB_BASE_URL}/search/multi?api_key=${apiKey}&query=${encodeURIComponent(query)}&language=${currentLang}`
   );
   if (!response.ok) {
     throw new Error(`TMDB API error: ${response.status} ${response.statusText}`);
@@ -35,8 +37,9 @@ export async function searchMovies(query: string): Promise<TMDBMovie[]> {
 export async function getPopularMovies(): Promise<TMDBMovie[]> {
   try {
     const apiKey = await getTMDBApiKey();
+    const currentLang = i18n.language;
     const response = await fetch(
-      `${TMDB_BASE_URL}/movie/popular?api_key=${apiKey}&language=pl-PL`
+      `${TMDB_BASE_URL}/movie/popular?api_key=${apiKey}&language=${currentLang}`
     );
     if (!response.ok) {
       throw new Error(`TMDB API error: ${response.status} ${response.statusText}`);
@@ -51,8 +54,9 @@ export async function getPopularMovies(): Promise<TMDBMovie[]> {
 
 export async function getMovieRecommendations(movieId: number): Promise<TMDBMovie[]> {
   const apiKey = await getTMDBApiKey();
+  const currentLang = i18n.language;
   const response = await fetch(
-    `${TMDB_BASE_URL}/movie/${movieId}/recommendations?api_key=${apiKey}&language=pl-PL`
+    `${TMDB_BASE_URL}/movie/${movieId}/recommendations?api_key=${apiKey}&language=${currentLang}`
   );
   if (!response.ok) {
     throw new Error(`TMDB API error: ${response.status} ${response.statusText}`);
