@@ -8,6 +8,7 @@ export type SurveyStepType = {
 };
 
 export type MovieRecommendation = {
+  id: number;
   title: string;
   year: string;
   platform: string;
