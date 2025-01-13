@@ -1,9 +1,14 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
-import { Heart, Star, ThumbsUp, ThumbsDown } from "lucide-react";
-import { useState } from "react";
+import { Heart, Star, ThumbsUp, ThumbsDown, ChevronDown } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { useToast } from "./ui/use-toast";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "./ui/collapsible";
 
 interface MovieCardProps {
   title: string;
@@ -31,6 +36,7 @@ export const MovieCard = ({
   const [isFavorite, setIsFavorite] = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
   const [userRating, setUserRating] = useState<"like" | "dislike" | null>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
   const { toast } = useToast();
 
   const handleRating = (rating: "like" | "dislike") => {
@@ -58,18 +64,27 @@ export const MovieCard = ({
             className="object-cover w-full h-full transition-transform duration-300 hover:scale-105"
           />
         )}
-        <Button
-          variant="secondary"
-          size="sm"
-          className="absolute bottom-2 right-2"
-          onClick={() => setShowTrailer(!showTrailer)}
-        >
-          {showTrailer ? "Pokaż zdjęcie" : "Obejrzyj trailer"}
-        </Button>
       </div>
       <CardHeader className="space-y-1">
         <div className="flex justify-between items-start">
-          <CardTitle className="text-xl">{title}</CardTitle>
+          <div className="flex-1">
+            <CardTitle className="text-xl line-clamp-1">{title}</CardTitle>
+            <div className="flex items-center space-x-1 mt-1">
+              {[...Array(5)].map((_, index) => (
+                <Star
+                  key={index}
+                  className={`h-4 w-4 ${
+                    index < Math.round(rating / 2)
+                      ? "fill-yellow-400 text-yellow-400"
+                      : "text-gray-300"
+                  }`}
+                />
+              ))}
+              <span className="text-sm text-muted-foreground ml-2">
+                {rating.toFixed(1)}/10
+              </span>
+            </div>
+          </div>
           <Button
             variant="ghost"
             size="icon"
@@ -83,25 +98,9 @@ export const MovieCard = ({
             />
           </Button>
         </div>
-        <div className="flex items-center space-x-1">
-          {[...Array(5)].map((_, index) => (
-            <Star
-              key={index}
-              className={`h-4 w-4 ${
-                index < Math.round(rating / 2)
-                  ? "fill-yellow-400 text-yellow-400"
-                  : "text-gray-300"
-              }`}
-            />
-          ))}
-          <span className="text-sm text-muted-foreground ml-2">
-            {rating.toFixed(1)}/10
-          </span>
-        </div>
       </CardHeader>
-      <CardContent>
-        <p className="text-sm text-muted-foreground mb-4">{description}</p>
-        <div className="flex flex-wrap gap-2 mb-4">
+      <CardContent className="space-y-4">
+        <div className="flex flex-wrap gap-2">
           <span className="text-sm px-2 py-1 bg-secondary rounded-md">{year}</span>
           <span className="text-sm px-2 py-1 bg-secondary rounded-md">
             {platform}
@@ -110,33 +109,60 @@ export const MovieCard = ({
             {genre}
           </span>
         </div>
-        {tags && tags.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-4">
-            {tags.map((tag) => (
-              <Badge key={tag} variant="outline">
-                {tag}
-              </Badge>
-            ))}
-          </div>
-        )}
-        <div className="flex justify-center gap-2">
-          <Button
-            variant={userRating === "like" ? "default" : "outline"}
-            size="sm"
-            onClick={() => handleRating("like")}
-          >
-            <ThumbsUp className="h-4 w-4 mr-2" />
-            Podoba mi się
-          </Button>
-          <Button
-            variant={userRating === "dislike" ? "default" : "outline"}
-            size="sm"
-            onClick={() => handleRating("dislike")}
-          >
-            <ThumbsDown className="h-4 w-4 mr-2" />
-            Nie podoba mi się
-          </Button>
-        </div>
+
+        <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
+          <CollapsibleTrigger asChild>
+            <Button
+              variant="ghost"
+              className="w-full flex items-center justify-between p-2"
+            >
+              <span>Szczegóły</span>
+              <ChevronDown
+                className={`h-4 w-4 transition-transform ${
+                  isExpanded ? "transform rotate-180" : ""
+                }`}
+              />
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">{description}</p>
+            {tags && tags.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {tags.map((tag) => (
+                  <Badge key={tag} variant="outline">
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            )}
+            <Button
+              variant="secondary"
+              size="sm"
+              className="w-full"
+              onClick={() => setShowTrailer(!showTrailer)}
+            >
+              {showTrailer ? "Pokaż zdjęcie" : "Obejrzyj trailer"}
+            </Button>
+            <div className="flex justify-center gap-2">
+              <Button
+                variant={userRating === "like" ? "default" : "outline"}
+                size="sm"
+                onClick={() => handleRating("like")}
+              >
+                <ThumbsUp className="h-4 w-4 mr-2" />
+                Podoba mi się
+              </Button>
+              <Button
+                variant={userRating === "dislike" ? "default" : "outline"}
+                size="sm"
+                onClick={() => handleRating("dislike")}
+              >
+                <ThumbsDown className="h-4 w-4 mr-2" />
+                Nie podoba mi się
+              </Button>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
       </CardContent>
     </Card>
   );

@@ -3,111 +3,82 @@ import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Search } from "lucide-react";
 import { useToast } from "./ui/use-toast";
-import { SAMPLE_RECOMMENDATIONS } from "./quiz/QuizConstants";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "./ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { MovieCard } from "./MovieCard";
+import { searchMovies } from "@/services/tmdb";
+import type { TMDBMovie } from "@/services/tmdb";
 
 export const SearchBar = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [open, setOpen] = useState(false);
-  const [suggestions, setSuggestions] = useState<typeof SAMPLE_RECOMMENDATIONS>([]);
+  const [searchResults, setSearchResults] = useState<TMDBMovie[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (searchQuery.length > 1) {
-      const results = SAMPLE_RECOMMENDATIONS.filter(
-        (item) =>
-          item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          item.genre.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          item.tags?.some(tag => 
-            tag.toLowerCase().includes(searchQuery.toLowerCase())
-          )
-      );
-      setSuggestions(results);
-      setOpen(true);
-    } else {
-      setSuggestions([]);
-      setOpen(false);
-    }
-  }, [searchQuery]);
-
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const results = SAMPLE_RECOMMENDATIONS.filter(
-      (item) =>
-        item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.genre.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.tags?.some(tag => 
-          tag.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-    );
+    if (!searchQuery.trim()) return;
 
-    if (results.length > 0) {
+    setIsSearching(true);
+    try {
+      const results = await searchMovies(searchQuery);
+      setSearchResults(results);
+      
+      if (results.length > 0) {
+        toast({
+          title: "Znalezione tytuły",
+          description: `Znaleziono ${results.length} tytułów pasujących do zapytania "${searchQuery}"`,
+        });
+      } else {
+        toast({
+          title: "Brak wyników",
+          description: `Nie znaleziono tytułów pasujących do zapytania "${searchQuery}"`,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Search error:", error);
       toast({
-        title: "Znalezione tytuły",
-        description: `Znaleziono ${results.length} tytułów pasujących do zapytania "${searchQuery}"`,
-      });
-    } else {
-      toast({
-        title: "Brak wyników",
-        description: `Nie znaleziono tytułów pasujących do zapytania "${searchQuery}"`,
+        title: "Błąd wyszukiwania",
+        description: "Wystąpił problem podczas wyszukiwania. Spróbuj ponownie później.",
         variant: "destructive",
       });
+    } finally {
+      setIsSearching(false);
     }
   };
 
   return (
-    <form onSubmit={handleSearch} className="flex gap-2 max-w-2xl mx-auto mb-8">
-      <div className="relative flex-1">
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <Input
-              type="text"
-              placeholder="Szukaj po tytule, gatunku, tagach lub opisie..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full"
+    <div className="space-y-6">
+      <form onSubmit={handleSearch} className="flex gap-2 max-w-2xl mx-auto">
+        <Input
+          type="text"
+          placeholder="Szukaj filmów..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="flex-1"
+        />
+        <Button type="submit" disabled={isSearching}>
+          <Search className="mr-2 h-4 w-4" />
+          {isSearching ? "Szukam..." : "Szukaj"}
+        </Button>
+      </form>
+
+      {searchResults.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {searchResults.map((movie) => (
+            <MovieCard
+              key={movie.id}
+              title={movie.title}
+              year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "N/A"}
+              platform="TMDB"
+              genre={movie.genre_ids?.length ? movie.genre_ids[0].toString() : "Film"}
+              imageUrl={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+              description={movie.overview}
+              trailerUrl=""
+              rating={movie.vote_average * 10}
             />
-          </PopoverTrigger>
-          <PopoverContent className="w-[400px] p-0" align="start">
-            <Command>
-              <CommandList>
-                <CommandEmpty>Brak wyników</CommandEmpty>
-                <CommandGroup heading="Sugestie">
-                  {suggestions.map((item) => (
-                    <CommandItem
-                      key={item.title}
-                      onSelect={() => {
-                        setSearchQuery(item.title);
-                        setOpen(false);
-                      }}
-                    >
-                      <div className="flex flex-col">
-                        <span>{item.title}</span>
-                        <span className="text-sm text-muted-foreground">
-                          {item.genre} • {item.year} • {item.platform}
-                        </span>
-                        {item.tags && (
-                          <span className="text-sm text-muted-foreground">
-                            {item.tags.join(" • ")}
-                          </span>
-                        )}
-                      </div>
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
-      </div>
-      <Button type="submit">
-        <Search className="mr-2 h-4 w-4" />
-        Szukaj
-      </Button>
-    </form>
+          ))}
+        </div>
+      )}
+    </div>
   );
 };

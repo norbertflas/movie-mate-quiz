@@ -22,13 +22,13 @@ async function getTMDBApiKey() {
 export async function searchMovies(query: string): Promise<TMDBMovie[]> {
   const apiKey = await getTMDBApiKey();
   const response = await fetch(
-    `${TMDB_BASE_URL}/search/movie?api_key=${apiKey}&query=${encodeURIComponent(query)}&language=pl-PL`
+    `${TMDB_BASE_URL}/search/multi?api_key=${apiKey}&query=${encodeURIComponent(query)}&language=pl-PL`
   );
   if (!response.ok) {
     throw new Error(`TMDB API error: ${response.status} ${response.statusText}`);
   }
   const data = await response.json();
-  return data.results;
+  return data.results.filter((result: any) => result.media_type === "movie");
 }
 
 export async function getPopularMovies(): Promise<TMDBMovie[]> {

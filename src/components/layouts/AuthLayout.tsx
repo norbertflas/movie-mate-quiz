@@ -1,50 +1,22 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import type { User } from "@supabase/supabase-js";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "@/hooks/use-auth";
 import { Navigation } from "../Navigation";
 
-interface AuthLayoutProps {
-  children: React.ReactNode;
-}
-
-export const AuthLayout = ({ children }: AuthLayoutProps) => {
+export const AuthLayout = ({ children }: { children: React.ReactNode }) => {
+  const { session } = useAuth();
   const navigate = useNavigate();
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const location = useLocation();
 
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        setUser(session.user);
-      } else {
-        setUser(null);
-        navigate("/auth");
-      }
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
-      </div>
-    );
-  }
-
-  if (!user) {
+  // Allow access to the home page (quiz) for non-logged users
+  if (!session && location.pathname !== "/" && location.pathname !== "/auth") {
+    navigate("/auth");
     return null;
   }
 
   return (
     <div className="min-h-screen">
       <Navigation />
-      <main className="container mx-auto py-6">
-        {children}
-      </main>
+      <main>{children}</main>
     </div>
   );
 };
