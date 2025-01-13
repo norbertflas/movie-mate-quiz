@@ -54,7 +54,12 @@
     @apply border-border;
   }
   body {
-    @apply bg-gradient-to-br from-[#F1F1F1] via-[#F6F6F7] to-[#E5DEFF] dark:from-[#1A1F2C] dark:via-[#221F26] dark:to-[#7E69AB] min-h-screen text-foreground antialiased;
+    @apply text-foreground antialiased min-h-screen;
+    background-image: linear-gradient(109.6deg, rgba(223,234,247,1) 11.2%, rgba(244,248,252,1) 91.1%);
+  }
+
+  .dark body {
+    background-image: linear-gradient(to right, #243949 0%, #517fa4 100%);
   }
 }
 
@@ -80,4 +85,8 @@
 
 .gradient-text {
   @apply bg-gradient-to-r from-blue-600 via-violet-600 to-purple-600 bg-clip-text text-transparent;
+}
+
+.dark .glass-card {
+  @apply bg-black/10;
 }
