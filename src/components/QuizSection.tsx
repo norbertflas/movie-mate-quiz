@@ -1,14 +1,13 @@
 import { useState } from "react";
 import { SurveyStep } from "./SurveyStep";
-import { MovieCard } from "./MovieCard";
 import { motion, AnimatePresence } from "framer-motion";
-import { VOD_SERVICES, SURVEY_STEPS } from "./quiz/QuizConstants";
+import { SURVEY_STEPS } from "./quiz/QuizConstants";
 import { getRecommendations } from "./quiz/QuizLogic";
 import { Button } from "./ui/button";
-import { Progress } from "./ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "./ui/use-toast";
-import type { SurveyStepType } from "./quiz/QuizTypes";
+import { QuizProgress } from "./quiz/QuizProgress";
+import { QuizResults } from "./quiz/QuizResults";
 
 interface QuizSectionProps {
   onSubmit?: (answers: Record<string, any>) => void;
@@ -73,14 +72,10 @@ export const QuizSection = ({ onSubmit }: QuizSectionProps) => {
     try {
       const user = await supabase.auth.getUser();
       if (user.data.user) {
-        // Save quiz history
         await supabase.from('quiz_history').insert({
           user_id: user.data.user.id,
           answers
         });
-
-        // Get recommendations with explanations
-        const recommendations = getRecommendations(answers);
         
         toast({
           title: "Quiz zakończony",
@@ -97,20 +92,16 @@ export const QuizSection = ({ onSubmit }: QuizSectionProps) => {
     ? currentQuestion.getDynamicOptions(answers)
     : currentQuestion.options;
 
-  const progress = ((currentStep + 1) / SURVEY_STEPS.length) * 100;
-
   return (
     <div className="min-h-screen py-8 px-4">
       <div className="max-w-4xl mx-auto">
         <AnimatePresence mode="wait">
           {!showResults ? (
             <div className="space-y-6">
-              <div className="space-y-2">
-                <Progress value={progress} className="w-full" />
-                <p className="text-sm text-muted-foreground text-right">
-                  Krok {currentStep + 1} z {SURVEY_STEPS.length}
-                </p>
-              </div>
+              <QuizProgress 
+                currentStep={currentStep} 
+                totalSteps={SURVEY_STEPS.length} 
+              />
               <SurveyStep
                 key={currentStep}
                 question={currentQuestion.question}
@@ -132,35 +123,7 @@ export const QuizSection = ({ onSubmit }: QuizSectionProps) => {
               )}
             </div>
           ) : (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="space-y-6"
-            >
-              <h2 className="text-2xl font-semibold tracking-tight mb-6">
-                Twoje rekomendacje:
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {getRecommendations(answers).map((movie) => (
-                  <div key={movie.title} className="space-y-2">
-                    <MovieCard {...movie} />
-                    {movie.explanations && (
-                      <div className="p-4 bg-muted rounded-lg">
-                        <h3 className="font-medium mb-2">Dlaczego to polecamy:</h3>
-                        <ul className="list-disc list-inside space-y-1">
-                          {movie.explanations.map((explanation, index) => (
-                            <li key={index} className="text-sm text-muted-foreground">
-                              {explanation}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </motion.div>
+            <QuizResults recommendations={getRecommendations(answers)} />
           )}
         </AnimatePresence>
       </div>
