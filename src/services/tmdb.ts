@@ -16,26 +16,42 @@ export interface TMDBMovie {
 }
 
 async function getTMDBApiKey() {
-  const { data, error } = await supabase.functions.invoke('get-tmdb-key');
-  if (error) throw error;
-  return data.TMDB_API_KEY;
+  try {
+    const { data, error } = await supabase.functions.invoke('get-tmdb-key');
+    if (error) {
+      console.error('Error fetching TMDB API key:', error);
+      throw error;
+    }
+    if (!data?.TMDB_API_KEY) {
+      throw new Error('TMDB API key not found');
+    }
+    return data.TMDB_API_KEY;
+  } catch (error) {
+    console.error('Failed to get TMDB API key:', error);
+    throw error;
+  }
 }
 
 export async function searchMovies(query: string): Promise<TMDBMovie[]> {
-  if (!query || query.length < 3) return [];
-  
-  const apiKey = await getTMDBApiKey();
-  const currentLang = i18n.language;
-  const response = await fetch(
-    `${TMDB_BASE_URL}/search/movie?api_key=${apiKey}&query=${encodeURIComponent(query)}&language=${currentLang}&include_adult=false`
-  );
-  
-  if (!response.ok) {
-    throw new Error(`TMDB API error: ${response.status} ${response.statusText}`);
+  try {
+    if (!query || query.length < 3) return [];
+    
+    const apiKey = await getTMDBApiKey();
+    const currentLang = i18n.language;
+    const response = await fetch(
+      `${TMDB_BASE_URL}/search/movie?api_key=${apiKey}&query=${encodeURIComponent(query)}&language=${currentLang}&include_adult=false`
+    );
+    
+    if (!response.ok) {
+      throw new Error(`TMDB API error: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    return data.results;
+  } catch (error) {
+    console.error('Error searching movies:', error);
+    throw error;
   }
-  
-  const data = await response.json();
-  return data.results;
 }
 
 export async function getPopularMovies(): Promise<TMDBMovie[]> {
@@ -45,9 +61,11 @@ export async function getPopularMovies(): Promise<TMDBMovie[]> {
     const response = await fetch(
       `${TMDB_BASE_URL}/movie/popular?api_key=${apiKey}&language=${currentLang}`
     );
+    
     if (!response.ok) {
       throw new Error(`TMDB API error: ${response.status} ${response.statusText}`);
     }
+    
     const data = await response.json();
     return data.results;
   } catch (error) {
@@ -57,16 +75,23 @@ export async function getPopularMovies(): Promise<TMDBMovie[]> {
 }
 
 export async function getMovieRecommendations(movieId: number): Promise<TMDBMovie[]> {
-  const apiKey = await getTMDBApiKey();
-  const currentLang = i18n.language;
-  const response = await fetch(
-    `${TMDB_BASE_URL}/movie/${movieId}/recommendations?api_key=${apiKey}&language=${currentLang}`
-  );
-  if (!response.ok) {
-    throw new Error(`TMDB API error: ${response.status} ${response.statusText}`);
+  try {
+    const apiKey = await getTMDBApiKey();
+    const currentLang = i18n.language;
+    const response = await fetch(
+      `${TMDB_BASE_URL}/movie/${movieId}/recommendations?api_key=${apiKey}&language=${currentLang}`
+    );
+    
+    if (!response.ok) {
+      throw new Error(`TMDB API error: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    return data.results;
+  } catch (error) {
+    console.error('Error fetching movie recommendations:', error);
+    throw error;
   }
-  const data = await response.json();
-  return data.results;
 }
 
 export function getImageUrl(path: string | null): string {
