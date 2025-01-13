@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getPopularMovies } from "@/services/tmdb";
 import { FilterSheet } from "./actions/FilterSheet";
@@ -15,15 +15,27 @@ export const QuickActions = () => {
     queryFn: getPopularMovies,
   });
 
+  const handleMinRatingChange = useCallback((value: number) => {
+    setMinRating(value);
+  }, []);
+
+  const handleGenreChange = useCallback((genre: string) => {
+    setSelectedGenre(genre);
+  }, []);
+
+  const handleOpenChange = useCallback((open: boolean) => {
+    setIsOpen(open);
+  }, []);
+
   return (
     <div className="flex flex-col sm:flex-row justify-center gap-4 mb-8 px-4 sm:px-0">
       <FilterSheet
         selectedGenre={selectedGenre}
-        setSelectedGenre={setSelectedGenre}
+        setSelectedGenre={handleGenreChange}
         minRating={minRating}
-        setMinRating={setMinRating}
+        setMinRating={handleMinRatingChange}
         isOpen={isOpen}
-        setIsOpen={setIsOpen}
+        setIsOpen={handleOpenChange}
       />
       
       <RandomMovieButton 
