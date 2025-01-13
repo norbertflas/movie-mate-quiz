@@ -71,6 +71,8 @@ export const SURVEY_STEPS: SurveyStepType[] = [
   },
 ];
 
+export const QUIZ_QUESTIONS = SURVEY_STEPS;
+
 export const MOVIE_CATEGORIES = [
   "Akcja",
   "Komedia",

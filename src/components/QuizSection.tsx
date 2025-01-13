@@ -27,7 +27,8 @@ export const QuizSection = () => {
   }
 
   if (showResults) {
-    return <QuizResults answers={answers} onProcessAnswers={processAnswers} />;
+    const recommendations = processAnswers(answers);
+    return <QuizResults recommendations={recommendations} />;
   }
 
   return (
