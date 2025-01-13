@@ -24,9 +24,13 @@ export const CreateGroupQuiz = () => {
 
     setIsCreating(true);
     try {
+      const user = await supabase.auth.getUser();
       const { data: group, error } = await supabase
         .from("quiz_groups")
-        .insert([{ name: groupName }])
+        .insert({
+          name: groupName,
+          created_by: user.data.user!.id,
+        })
         .select()
         .single();
 

@@ -47,14 +47,19 @@ export const GroupQuizView = () => {
 
       if (responsesError) throw responsesError;
 
+      const user = await supabase.auth.getUser();
+      const userResponse = responses?.find(
+        (r) => r.user_id === user.data.user?.id
+      );
+
       setGroupData({
         ...group,
-        responses: responses || [],
+        responses: responses?.map(r => ({
+          user_id: r.user_id,
+          answers: r.answers as Record<string, any>
+        })) || [],
       });
-
-      const userResponse = responses?.find(
-        (r) => r.user_id === (await supabase.auth.getUser()).data.user?.id
-      );
+      
       setHasResponded(!!userResponse);
     } catch (error) {
       console.error("Error fetching group data:", error);
@@ -70,12 +75,12 @@ export const GroupQuizView = () => {
 
   const handleQuizSubmit = async (answers: Record<string, any>) => {
     try {
-      const { error } = await supabase.from("quiz_responses").insert([
-        {
-          group_id: groupId,
-          answers,
-        },
-      ]);
+      const user = await supabase.auth.getUser();
+      const { error } = await supabase.from("quiz_responses").insert({
+        group_id: groupId,
+        user_id: user.data.user!.id,
+        answers,
+      });
 
       if (error) throw error;
 
