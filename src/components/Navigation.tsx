@@ -2,8 +2,12 @@ import { NavLinks } from "./navigation/NavLinks";
 import { UserActions } from "./navigation/UserActions";
 import { MobileNav } from "./navigation/MobileNav";
 import { motion } from "framer-motion";
+import { useLocation } from "react-router-dom";
+import { Breadcrumbs } from "./navigation/Breadcrumbs";
 
 export const Navigation = () => {
+  const location = useLocation();
+
   return (
     <motion.nav 
       className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
@@ -21,6 +25,10 @@ export const Navigation = () => {
         </div>
 
         <UserActions />
+      </div>
+      
+      <div className="container py-2">
+        <Breadcrumbs path={location.pathname} />
       </div>
     </motion.nav>
   );
