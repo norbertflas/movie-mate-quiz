@@ -119,6 +119,7 @@ export const MovieCard = ({
                   showTrailer={showTrailer}
                   onToggleTrailer={handleTrailerToggle}
                   onRate={handleRateClick}
+                  title={title}
                 />
               </motion.div>
             )}
