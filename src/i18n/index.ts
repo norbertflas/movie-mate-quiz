@@ -1,11 +1,11 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import en from "./locales/en";
-import pl from "./locales/pl";
-import es from "./locales/es";
-import de from "./locales/de";
-import fr from "./locales/fr";
-import it from "./locales/it";
+import { pl } from "./locales/pl";
+import { es } from "./locales/es";
+import { de } from "./locales/de";
+import { fr } from "./locales/fr";
+import { it } from "./locales/it";
 
 i18n.use(initReactI18next).init({
   resources: {
