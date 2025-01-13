@@ -133,20 +133,19 @@ export const UserStreamingPreferences = () => {
   }
 
   return (
-    <Card className="shadow-lg bg-gradient-to-br from-background/80 to-background border-blue-600/20">
-      <CardHeader>
-        <CardTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-violet-600 to-purple-600 bg-clip-text text-transparent">
+    <Card className="shadow-xl bg-gradient-to-br from-background/80 via-background/50 to-purple-500/5 dark:from-background/80 dark:via-background/50 dark:to-purple-500/10 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-accent/20">
+      <CardHeader>="text-2xl font-bold bg-gradient-to-r from-blue-600 via-violet-600 to-purple-600 bg-clip-text text-transparent">
           {t("services.preferences")}
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-6">
         {services.map((service) => (
           <motion.div
             key={service.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="flex items-center space-x-2 p-3 rounded-lg hover:bg-accent/50 transition-colors"
+            className="group flex items-center space-x-3 p-4 rounded-xl hover:bg-accent/10 transition-all duration-300 border border-transparent hover:border-accent/20"
           >
             <Checkbox
               id={service.id}
@@ -154,17 +153,19 @@ export const UserStreamingPreferences = () => {
               onCheckedChange={() => handleServiceToggle(service.id)}
               className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
             />
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-3 flex-1">
               {service.logo_url && (
-                <img
-                  src={service.logo_url}
-                  alt={service.name}
-                  className="w-6 h-6 object-contain"
-                />
+                <div className="w-10 h-10 rounded-lg overflow-hidden bg-white/10 p-1.5 transition-transform group-hover:scale-110">
+                  <img
+                    src={service.logo_url}
+                    alt={service.name}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
               )}
               <label
                 htmlFor={service.id}
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                className="text-base font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
               >
                 {service.name}
               </label>
