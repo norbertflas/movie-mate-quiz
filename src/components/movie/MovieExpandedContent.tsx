@@ -36,6 +36,11 @@ export const MovieExpandedContent = ({
 }: MovieExpandedContentProps) => {
   const { t } = useTranslation();
 
+  const handleTrailerToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onWatchTrailer();
+  };
+
   return (
     <AnimatePresence mode="wait">
       {isExpanded && (
@@ -50,7 +55,12 @@ export const MovieExpandedContent = ({
             onWatchTrailer={onWatchTrailer}
             showTrailer={showTrailer}
           />
-          <MovieActions userRating={userRating} onRate={onRate} />
+          <MovieActions 
+            userRating={userRating} 
+            onRate={onRate}
+            showTrailer={showTrailer}
+            onToggleTrailer={handleTrailerToggle}
+          />
           {tmdbId && <SimilarMovies currentMovie={{ title, year, genre, tags, tmdbId }} />}
         </>
       )}
