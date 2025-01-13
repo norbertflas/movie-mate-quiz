@@ -12,6 +12,7 @@ import Favorites from "./pages/Favorites";
 import Ratings from "./pages/Ratings";
 import { CreateGroupQuiz } from "./components/quiz/CreateGroupQuiz";
 import { GroupQuizView } from "./components/quiz/GroupQuizView";
+import { RecommendationsPage } from "./components/recommendations/RecommendationsPage";
 import "./i18n";
 
 const queryClient = new QueryClient();
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="/search" element={<AuthLayout><Search /></AuthLayout>} />
             <Route path="/favorites" element={<AuthLayout><Favorites /></AuthLayout>} />
             <Route path="/ratings" element={<AuthLayout><Ratings /></AuthLayout>} />
+            <Route path="/recommendations" element={<AuthLayout><RecommendationsPage /></AuthLayout>} />
             <Route path="/quiz/create-group" element={<AuthLayout><CreateGroupQuiz /></AuthLayout>} />
             <Route path="/quiz/group/:groupId" element={<AuthLayout><GroupQuizView /></AuthLayout>} />
           </Routes>

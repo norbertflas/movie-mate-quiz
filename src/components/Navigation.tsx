@@ -1,6 +1,6 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "./ui/button";
-import { Home, Search, Heart, Star, LogOut, Menu, X } from "lucide-react";
+import { Home, Search, Heart, Star, LogOut, Menu, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "./ui/use-toast";
 import { ThemeSwitcher } from "./ThemeSwitcher";
@@ -54,6 +54,17 @@ export const Navigation = () => {
       >
         <Search className="h-4 w-4" />
         <span>{t("navigation.search")}</span>
+      </Button>
+      <Button
+        variant={isActive("/recommendations") ? "default" : "ghost"}
+        onClick={() => {
+          navigate("/recommendations");
+          setIsOpen(false);
+        }}
+        className="flex items-center gap-2 whitespace-nowrap"
+      >
+        <Sparkles className="h-4 w-4" />
+        <span>{t("navigation.recommendations")}</span>
       </Button>
       <Button
         variant={isActive("/favorites") ? "default" : "ghost"}
