@@ -37,6 +37,7 @@ export const useSurveySteps = (): SurveyStepType[] => {
           t("quiz.options.episodes.long")
         ];
       },
+      shouldShow: (answers: Record<string, any>) => !!answers.type,
     },
     {
       id: "seasons",
