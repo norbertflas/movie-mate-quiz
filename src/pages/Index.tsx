@@ -10,6 +10,7 @@ import { getPopularMovies, type TMDBMovie } from "@/services/tmdb";
 import { useToast } from "@/components/ui/use-toast";
 import { useTranslation } from "react-i18next";
 import type { MovieFilters as MovieFiltersType } from "@/components/MovieFilters";
+import { Card } from "@/components/ui/card";
 
 const Index = () => {
   const [showQuiz, setShowQuiz] = useState(false);
@@ -59,29 +60,50 @@ const Index = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <UserStreamingPreferences />
+    <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
+      <div className="container mx-auto px-4 py-8 space-y-8">
+        <Card className="p-6 shadow-lg bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="mb-8">
+            <UserStreamingPreferences />
+          </div>
+          
+          <div className="mb-8">
+            <SearchBar />
+          </div>
+        </Card>
+
+        {!showQuiz ? (
+          <div className="space-y-8">
+            <Card className="p-6 shadow-lg bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+              <HomeHeader onStartQuiz={handleStartQuiz} />
+            </Card>
+
+            <Card className="p-6 shadow-lg bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+              <div className="mb-8">
+                <FavoriteCreators />
+              </div>
+            </Card>
+
+            <Card className="p-6 shadow-lg bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+              <div className="mb-8">
+                <MovieLists />
+              </div>
+            </Card>
+
+            <Card className="p-6 shadow-lg bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+              <MovieSection 
+                movies={filteredMovies}
+                isLoading={isLoading}
+                onFilterChange={handleFilterChange}
+              />
+            </Card>
+          </div>
+        ) : (
+          <Card className="p-6 shadow-lg bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <QuizSection />
+          </Card>
+        )}
       </div>
-      <SearchBar />
-      {!showQuiz ? (
-        <>
-          <HomeHeader onStartQuiz={handleStartQuiz} />
-          <div className="mb-8">
-            <FavoriteCreators />
-          </div>
-          <div className="mb-8">
-            <MovieLists />
-          </div>
-          <MovieSection 
-            movies={filteredMovies}
-            isLoading={isLoading}
-            onFilterChange={handleFilterChange}
-          />
-        </>
-      ) : (
-        <QuizSection />
-      )}
     </div>
   );
 };

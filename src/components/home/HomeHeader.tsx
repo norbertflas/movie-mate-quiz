@@ -7,9 +7,9 @@ interface HomeHeaderProps {
 
 export const HomeHeader = ({ onStartQuiz }: HomeHeaderProps) => {
   return (
-    <>
+    <div className="space-y-8">
       <WelcomeSection onStartQuiz={onStartQuiz} />
       <QuickActions />
-    </>
+    </div>
   );
 };
