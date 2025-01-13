@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader } from "./ui/card";
-import { Button } from "./ui/button";
-import { Heart } from "lucide-react";
 import { useToast } from "./ui/use-toast";
 import { MovieDetails } from "./movie/MovieDetails";
 import { MovieTrailer } from "./movie/MovieTrailer";
 import { MovieActions } from "./movie/MovieActions";
 import { StreamingServices } from "./movie/StreamingServices";
+import { MovieCardHeader } from "./movie/MovieCardHeader";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface MovieCardProps {
@@ -40,6 +39,15 @@ export const MovieCard = ({
   const [userRating, setUserRating] = useState<"like" | "dislike" | null>(null);
   const { toast } = useToast();
 
+  const handleToggleFavorite = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsFavorite(!isFavorite);
+    toast({
+      title: !isFavorite ? "Added to favorites" : "Removed from favorites",
+      description: `"${title}" has been ${!isFavorite ? "added to" : "removed from"} your favorites.`,
+    });
+  };
+
   const handleRating = (rating: "like" | "dislike") => {
     setUserRating(rating);
     toast({
@@ -54,8 +62,12 @@ export const MovieCard = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
+      className="h-full"
     >
-      <Card className="overflow-hidden group cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
+      <Card 
+        className="overflow-hidden group cursor-pointer h-full flex flex-col" 
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
         <div className="aspect-video relative overflow-hidden">
           {showTrailer && trailerUrl ? (
             <MovieTrailer trailerUrl={trailerUrl} title={title} />
@@ -71,32 +83,14 @@ export const MovieCard = ({
         </div>
 
         <CardHeader className="space-y-1">
-          <div className="flex justify-between items-start">
-            <motion.h3
-              className="text-xl font-semibold line-clamp-1"
-              whileHover={{ scale: 1.02 }}
-            >
-              {title}
-            </motion.h3>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsFavorite(!isFavorite);
-              }}
-              className="h-8 w-8"
-            >
-              <Heart
-                className={`h-5 w-5 ${
-                  isFavorite ? "fill-red-500 text-red-500" : "text-gray-500"
-                }`}
-              />
-            </Button>
-          </div>
+          <MovieCardHeader
+            title={title}
+            isFavorite={isFavorite}
+            onToggleFavorite={handleToggleFavorite}
+          />
         </CardHeader>
 
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 flex-grow">
           <StreamingServices services={streamingServices} />
 
           <AnimatePresence>

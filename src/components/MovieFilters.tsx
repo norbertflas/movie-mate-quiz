@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Slider } from "./ui/slider";
 import { MOVIE_CATEGORIES } from "./quiz/QuizConstants";
 import { getStreamingServicesByRegion, languageToRegion } from "@/utils/streamingServices";
 import { useTranslation } from "react-i18next";
+import { MovieFilterSection } from "./movie/MovieFilterSection";
 
 interface MovieFiltersProps {
   onFilterChange: (filters: MovieFilters) => void;
@@ -24,7 +24,7 @@ export const MovieFilters = ({ onFilterChange }: MovieFiltersProps) => {
   const [platform, setPlatform] = useState<string>();
   const [genre, setGenre] = useState<string>();
   const [streamingServices, setStreamingServices] = useState<any[]>([]);
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation();
 
   useEffect(() => {
     const fetchStreamingServices = async () => {
@@ -47,43 +47,33 @@ export const MovieFilters = ({ onFilterChange }: MovieFiltersProps) => {
 
   return (
     <div className="space-y-4 p-4 bg-card rounded-lg border">
-      <h3 className="font-semibold mb-4">Filtry</h3>
+      <h3 className="font-semibold mb-4">{t("filters.title")}</h3>
       
       <div className="space-y-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Platforma</label>
-          <Select value={platform} onValueChange={setPlatform}>
-            <SelectTrigger>
-              <SelectValue placeholder="Wybierz platformę" />
-            </SelectTrigger>
-            <SelectContent>
-              {streamingServices.map((service) => (
-                <SelectItem key={service.id} value={service.name}>
-                  {service.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <MovieFilterSection
+          label={t("filters.platform")}
+          value={platform}
+          onValueChange={setPlatform}
+          placeholder={t("filters.selectPlatform")}
+          options={streamingServices.map(service => ({
+            id: service.name,
+            name: service.name,
+          }))}
+        />
+
+        <MovieFilterSection
+          label={t("filters.genre")}
+          value={genre}
+          onValueChange={setGenre}
+          placeholder={t("filters.selectGenre")}
+          options={MOVIE_CATEGORIES.map(category => ({
+            id: category,
+            name: category,
+          }))}
+        />
 
         <div className="space-y-2">
-          <label className="text-sm font-medium">Gatunek</label>
-          <Select value={genre} onValueChange={setGenre}>
-            <SelectTrigger>
-              <SelectValue placeholder="Wybierz gatunek" />
-            </SelectTrigger>
-            <SelectContent>
-              {MOVIE_CATEGORIES.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Rok produkcji</label>
+          <label className="text-sm font-medium">{t("filters.yearRange")}</label>
           <Slider
             min={1900}
             max={currentYear}
@@ -99,7 +89,7 @@ export const MovieFilters = ({ onFilterChange }: MovieFiltersProps) => {
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium">Minimalna ocena</label>
+          <label className="text-sm font-medium">{t("filters.minRating")}</label>
           <Slider
             min={0}
             max={100}
@@ -114,7 +104,7 @@ export const MovieFilters = ({ onFilterChange }: MovieFiltersProps) => {
         </div>
 
         <Button onClick={handleApplyFilters} className="w-full">
-          Zastosuj filtry
+          {t("filters.apply")}
         </Button>
       </div>
     </div>
