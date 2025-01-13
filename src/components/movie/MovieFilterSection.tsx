@@ -1,4 +1,5 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { Label } from "../ui/label";
 
 interface MovieFilterSectionProps {
   label: string;
@@ -17,7 +18,7 @@ export const MovieFilterSection = ({
 }: MovieFilterSectionProps) => {
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium">{label}</label>
+      <Label>{label}</Label>
       <Select value={value} onValueChange={onValueChange}>
         <SelectTrigger>
           <SelectValue placeholder={placeholder} />

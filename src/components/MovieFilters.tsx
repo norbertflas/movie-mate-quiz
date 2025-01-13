@@ -8,7 +8,8 @@ import { MovieFilterSection } from "./movie/MovieFilterSection";
 import { motion } from "framer-motion";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "./ui/sheet";
-import { Filter } from "lucide-react";
+import { Filter, X } from "lucide-react";
+import { Badge } from "./ui/badge";
 
 interface MovieFiltersProps {
   onFilterChange: (filters: MovieFilters) => void;
@@ -19,6 +20,7 @@ export interface MovieFilters {
   genre?: string;
   yearRange: [number, number];
   minRating: number;
+  tags?: string[];
 }
 
 export const MovieFilters = ({ onFilterChange }: MovieFiltersProps) => {
@@ -27,7 +29,9 @@ export const MovieFilters = ({ onFilterChange }: MovieFiltersProps) => {
   const [minRating, setMinRating] = useState(0);
   const [platform, setPlatform] = useState<string>();
   const [genre, setGenre] = useState<string>();
+  const [tags, setTags] = useState<string[]>([]);
   const [streamingServices, setStreamingServices] = useState<any[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
   const { i18n, t } = useTranslation();
   const isMobile = useIsMobile();
 
@@ -47,7 +51,41 @@ export const MovieFilters = ({ onFilterChange }: MovieFiltersProps) => {
       genre,
       yearRange,
       minRating,
+      tags,
     });
+    if (isMobile) {
+      setIsOpen(false);
+    }
+  };
+
+  const handleClearFilters = () => {
+    setPlatform(undefined);
+    setGenre(undefined);
+    setYearRange([2000, currentYear]);
+    setMinRating(0);
+    setTags([]);
+    onFilterChange({
+      yearRange: [2000, currentYear],
+      minRating: 0,
+    });
+  };
+
+  const handleTagSelect = (tag: string) => {
+    setTags(prev => 
+      prev.includes(tag) 
+        ? prev.filter(t => t !== tag)
+        : [...prev, tag]
+    );
+  };
+
+  const getActiveFiltersCount = () => {
+    let count = 0;
+    if (platform) count++;
+    if (genre) count++;
+    if (yearRange[0] !== 2000 || yearRange[1] !== currentYear) count++;
+    if (minRating > 0) count++;
+    if (tags.length > 0) count++;
+    return count;
   };
 
   const FilterContent = () => (
@@ -74,9 +112,25 @@ export const MovieFilters = ({ onFilterChange }: MovieFiltersProps) => {
         placeholder={t("filters.selectGenre")}
         options={MOVIE_CATEGORIES.map(category => ({
           id: category,
-          name: category,
+          name: t(`movie.${category.toLowerCase()}`),
         }))}
       />
+
+      <div className="space-y-4">
+        <label className="text-sm font-medium">{t("filters.tags")}</label>
+        <div className="flex flex-wrap gap-2">
+          {MOVIE_CATEGORIES.map((tag) => (
+            <Badge
+              key={tag}
+              variant={tags.includes(tag) ? "default" : "outline"}
+              className="cursor-pointer"
+              onClick={() => handleTagSelect(tag)}
+            >
+              {t(`movie.${tag.toLowerCase()}`)}
+            </Badge>
+          ))}
+        </div>
+      </div>
 
       <div className="space-y-4">
         <label className="text-sm font-medium">{t("filters.yearRange")}</label>
@@ -109,24 +163,43 @@ export const MovieFilters = ({ onFilterChange }: MovieFiltersProps) => {
         </div>
       </div>
 
-      <Button onClick={handleApplyFilters} className="w-full">
-        {t("filters.apply")}
-      </Button>
+      <div className="flex gap-2">
+        <Button onClick={handleApplyFilters} className="flex-1">
+          {t("filters.apply")}
+        </Button>
+        <Button onClick={handleClearFilters} variant="outline" className="flex-1">
+          {t("filters.clear")}
+        </Button>
+      </div>
     </motion.div>
   );
 
   if (isMobile) {
     return (
-      <Sheet>
+      <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetTrigger asChild>
           <Button variant="outline" size="sm" className="mb-4">
             <Filter className="h-4 w-4 mr-2" />
             {t("filters.title")}
+            {getActiveFiltersCount() > 0 && (
+              <Badge variant="secondary" className="ml-2">
+                {getActiveFiltersCount()}
+              </Badge>
+            )}
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="w-[300px] sm:w-[400px]">
           <SheetHeader>
-            <SheetTitle>{t("filters.title")}</SheetTitle>
+            <div className="flex items-center justify-between">
+              <SheetTitle>{t("filters.title")}</SheetTitle>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsOpen(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </SheetHeader>
           <div className="mt-4">
             <FilterContent />
@@ -138,7 +211,14 @@ export const MovieFilters = ({ onFilterChange }: MovieFiltersProps) => {
 
   return (
     <div className="space-y-6 p-4 bg-card rounded-lg border">
-      <h3 className="font-semibold">{t("filters.title")}</h3>
+      <div className="flex items-center justify-between">
+        <h3 className="font-semibold">{t("filters.title")}</h3>
+        {getActiveFiltersCount() > 0 && (
+          <Badge variant="secondary">
+            {getActiveFiltersCount()} {t("filters.active")}
+          </Badge>
+        )}
+      </div>
       <FilterContent />
     </div>
   );
