@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader } from "./ui/card";
-import { MovieStreamingServices } from "./MovieStreamingServices";
-import { MovieCardHeader } from "./MovieCardHeader";
+import { MovieStreamingServices } from "./movie/MovieStreamingServices";
+import { MovieCardHeader } from "./movie/MovieCardHeader";
 import { motion, AnimatePresence } from "framer-motion";
 import { MovieFavoriteHandler } from "./movie/MovieFavoriteHandler";
 import { MovieRatingHandler } from "./movie/MovieRatingHandler";

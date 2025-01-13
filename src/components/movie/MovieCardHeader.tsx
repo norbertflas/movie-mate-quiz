@@ -8,7 +8,11 @@ interface MovieCardHeaderProps {
   onToggleFavorite: (e: React.MouseEvent) => void;
 }
 
-export const MovieCardHeader = ({ title, isFavorite, onToggleFavorite }: MovieCardHeaderProps) => {
+export const MovieCardHeader = ({ 
+  title, 
+  isFavorite, 
+  onToggleFavorite 
+}: MovieCardHeaderProps) => {
   return (
     <div className="flex justify-between items-start">
       <motion.h3
@@ -20,11 +24,14 @@ export const MovieCardHeader = ({ title, isFavorite, onToggleFavorite }: MovieCa
       <Button
         variant="ghost"
         size="icon"
-        onClick={onToggleFavorite}
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggleFavorite(e);
+        }}
         className="h-8 w-8"
       >
         <Heart
-          className={`h-5 w-5 ${
+          className={`h-5 w-5 transition-colors duration-300 ${
             isFavorite ? "fill-red-500 text-red-500" : "text-gray-500"
           }`}
         />
