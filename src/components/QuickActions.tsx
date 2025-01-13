@@ -6,14 +6,12 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "./ui
 import { Label } from "./ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Slider } from "./ui/slider";
-import { useTranslation } from "react-i18next";
 import { MOVIE_CATEGORIES } from "./quiz/QuizConstants";
 import { getPopularMovies } from "@/services/tmdb";
 import { useQuery } from "@tanstack/react-query";
 
 export const QuickActions = () => {
   const { toast } = useToast();
-  const { t } = useTranslation();
   const [minRating, setMinRating] = useState(0);
   const [selectedGenre, setSelectedGenre] = useState<string>();
   const [isOpen, setIsOpen] = useState(false);
@@ -33,8 +31,8 @@ export const QuickActions = () => {
 
     if (filteredMovies.length === 0) {
       toast({
-        title: "No movies found",
-        description: "Try adjusting your filters",
+        title: "Nie znaleziono filmów",
+        description: "Spróbuj dostosować filtry",
         variant: "destructive",
       });
       return;
@@ -44,7 +42,7 @@ export const QuickActions = () => {
     const randomMovie = filteredMovies[randomIndex];
     
     toast({
-      title: "Random Movie Pick",
+      title: "Losowy wybór filmu",
       description: `${randomMovie.title} (${randomMovie.release_date ? new Date(randomMovie.release_date).getFullYear() : 'N/A'}) - ${Math.round(randomMovie.vote_average * 10)}/100`,
     });
   };
@@ -58,31 +56,50 @@ export const QuickActions = () => {
             className="w-full sm:w-auto bg-gradient-to-r from-blue-600/10 via-violet-600/10 to-purple-600/10 hover:from-blue-600/20 hover:via-violet-600/20 hover:to-purple-600/20 border-blue-600/20"
           >
             <Filter className="mr-2 h-4 w-4" />
-            <span className="text-sm">Filter Options</span>
+            <span className="text-sm">Opcje filtrowania</span>
           </Button>
         </SheetTrigger>
         <SheetContent side="right" className="w-[300px] sm:w-[400px]">
           <SheetHeader>
-            <SheetTitle>Filter Settings</SheetTitle>
+            <SheetTitle>Ustawienia filtrów</SheetTitle>
           </SheetHeader>
           <div className="space-y-6 mt-4">
             <div className="space-y-2">
-              <Label>Genre</Label>
+              <Label>Gatunek</Label>
               <Select value={selectedGenre} onValueChange={setSelectedGenre}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a genre" />
+                  <SelectValue placeholder="Wybierz gatunek" />
                 </SelectTrigger>
                 <SelectContent>
                   {MOVIE_CATEGORIES.map(category => (
                     <SelectItem key={category} value={category}>
-                      {t(`movie.${category.toLowerCase()}`)}
+                      {category === "28" ? "Akcja" :
+                       category === "12" ? "Przygodowy" :
+                       category === "16" ? "Animacja" :
+                       category === "35" ? "Komedia" :
+                       category === "80" ? "Kryminał" :
+                       category === "99" ? "Dokumentalny" :
+                       category === "18" ? "Dramat" :
+                       category === "10751" ? "Familijny" :
+                       category === "14" ? "Fantasy" :
+                       category === "36" ? "Historyczny" :
+                       category === "27" ? "Horror" :
+                       category === "10402" ? "Muzyczny" :
+                       category === "9648" ? "Tajemnica" :
+                       category === "10749" ? "Romans" :
+                       category === "878" ? "Science Fiction" :
+                       category === "10770" ? "Film TV" :
+                       category === "53" ? "Thriller" :
+                       category === "10752" ? "Wojenny" :
+                       category === "37" ? "Western" :
+                       category}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-4">
-              <Label>Minimum Rating</Label>
+              <Label>Minimalna ocena</Label>
               <Slider
                 min={0}
                 max={100}
@@ -105,7 +122,7 @@ export const QuickActions = () => {
         className="w-full sm:w-auto gap-2 bg-gradient-to-r from-blue-600/10 via-violet-600/10 to-purple-600/10 hover:from-blue-600/20 hover:via-violet-600/20 hover:to-purple-600/20 border-blue-600/20"
       >
         <Dice6 className="h-4 w-4" />
-        <span className="text-sm">Random Movie</span>
+        <span className="text-sm">Losowy film</span>
       </Button>
 
       <Button 
@@ -117,7 +134,7 @@ export const QuickActions = () => {
             .slice(0, 5);
 
           toast({
-            title: "Top Rated Movies",
+            title: "Najwyżej oceniane filmy",
             description: topRatedMovies
               .map(movie => `${movie.title} (${Math.round(movie.vote_average * 10)}/100)`)
               .join('\n'),
@@ -125,7 +142,7 @@ export const QuickActions = () => {
         }}
       >
         <Star className="h-4 w-4" />
-        <span className="text-sm">Top Rated</span>
+        <span className="text-sm">Najwyżej oceniane</span>
       </Button>
     </div>
   );

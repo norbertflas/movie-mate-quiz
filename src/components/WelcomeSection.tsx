@@ -1,6 +1,5 @@
 import { Button } from "./ui/button";
 import { PlayCircle, Sparkles } from "lucide-react";
-import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 
 interface WelcomeSectionProps {
@@ -8,8 +7,6 @@ interface WelcomeSectionProps {
 }
 
 export const WelcomeSection = ({ onStartQuiz }: WelcomeSectionProps) => {
-  const { t } = useTranslation();
-
   return (
     <div className="relative overflow-hidden">
       <motion.div
@@ -26,7 +23,7 @@ export const WelcomeSection = ({ onStartQuiz }: WelcomeSectionProps) => {
             transition={{ delay: 0.2 }}
           >
             <span className="bg-gradient-to-r from-blue-600 via-violet-600 to-purple-600 bg-clip-text text-transparent">
-              Find Your Perfect Movie
+              Znajdź swój idealny film
             </span>
           </motion.h1>
           
@@ -36,7 +33,7 @@ export const WelcomeSection = ({ onStartQuiz }: WelcomeSectionProps) => {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
           >
-            Answer a few questions and we'll help you discover your next favorite movie or TV show
+            Odpowiedz na kilka pytań, a my pomożemy Ci odkryć Twój następny ulubiony film lub serial
           </motion.p>
           
           <motion.div
@@ -52,7 +49,7 @@ export const WelcomeSection = ({ onStartQuiz }: WelcomeSectionProps) => {
             >
               <span className="flex items-center gap-3">
                 <PlayCircle className="h-6 w-6 transition-transform group-hover:scale-110" />
-                <span className="font-semibold">Start Quiz</span>
+                <span className="font-semibold">Rozpocznij quiz</span>
                 <Sparkles className="h-5 w-5 animate-pulse" />
               </span>
             </Button>
