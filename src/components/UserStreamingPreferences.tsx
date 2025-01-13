@@ -41,9 +41,13 @@ export const UserStreamingPreferences = () => {
   };
 
   const fetchUserPreferences = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
     const { data: preferences, error } = await supabase
       .from('user_streaming_preferences')
-      .select('service_id');
+      .select('service_id')
+      .eq('user_id', user.id);
     
     if (error) {
       toast({
@@ -57,13 +61,24 @@ export const UserStreamingPreferences = () => {
   };
 
   const handleServiceToggle = async (serviceId: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: t("errors.auth"),
+        description: t("errors.notAuthenticated"),
+      });
+      return;
+    }
+
     const isSelected = selectedServices.includes(serviceId);
     
     if (isSelected) {
       const { error } = await supabase
         .from('user_streaming_preferences')
         .delete()
-        .eq('service_id', serviceId);
+        .eq('service_id', serviceId)
+        .eq('user_id', user.id);
       
       if (error) {
         toast({
@@ -76,7 +91,10 @@ export const UserStreamingPreferences = () => {
     } else {
       const { error } = await supabase
         .from('user_streaming_preferences')
-        .insert({ service_id: serviceId });
+        .insert({ 
+          service_id: serviceId,
+          user_id: user.id
+        });
       
       if (error) {
         toast({
