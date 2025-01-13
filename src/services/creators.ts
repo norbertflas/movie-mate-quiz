@@ -5,9 +5,17 @@ export interface Creator {
   name: string;
   role: string;
   tmdb_person_id: number;
+  user_id: string;
 }
 
-export const addFavoriteCreator = async (creator: Omit<Creator, 'id'>) => {
+export interface CreateCreatorInput {
+  name: string;
+  role: string;
+  tmdb_person_id: number;
+  user_id: string;
+}
+
+export const addFavoriteCreator = async (creator: CreateCreatorInput) => {
   const { data, error } = await supabase
     .from('favorite_creators')
     .insert([creator])
