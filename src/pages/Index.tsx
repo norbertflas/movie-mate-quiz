@@ -6,6 +6,7 @@ import { WelcomeSection } from "@/components/WelcomeSection";
 import { MovieFilters, type MovieFilters as MovieFiltersType } from "@/components/MovieFilters";
 import { MovieCard } from "@/components/MovieCard";
 import { UserStreamingPreferences } from "@/components/UserStreamingPreferences";
+import { FavoriteCreators } from "@/components/creators/FavoriteCreators";
 import { getPopularMovies, type TMDBMovie, getImageUrl } from "@/services/tmdb";
 import { useToast } from "@/components/ui/use-toast";
 import { useTranslation } from "react-i18next";
@@ -67,6 +68,9 @@ const Index = () => {
         <>
           <WelcomeSection onStartQuiz={handleStartQuiz} />
           <QuickActions />
+          <div className="mb-8">
+            <FavoriteCreators />
+          </div>
           <div className="flex flex-col lg:flex-row gap-6">
             <aside className="w-full lg:w-64">
               <MovieFilters onFilterChange={handleFilterChange} />
