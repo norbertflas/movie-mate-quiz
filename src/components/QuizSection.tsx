@@ -6,7 +6,11 @@ import { VOD_SERVICES, SURVEY_STEPS } from "./quiz/QuizConstants";
 import { getRecommendations } from "./quiz/QuizLogic";
 import type { SurveyStepType } from "./quiz/QuizTypes";
 
-export const QuizSection = () => {
+interface QuizSectionProps {
+  onSubmit?: (answers: Record<string, any>) => void;
+}
+
+export const QuizSection = ({ onSubmit }: QuizSectionProps) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [showResults, setShowResults] = useState(false);
@@ -26,6 +30,7 @@ export const QuizSection = () => {
           }
         } else {
           setShowResults(true);
+          onSubmit?.(answers);
         }
       } else {
         const currentAnswers = answers[currentQuestion.id] || [];
@@ -55,6 +60,7 @@ export const QuizSection = () => {
         }
       } else {
         setShowResults(true);
+        onSubmit?.(answers);
       }
     }
   };

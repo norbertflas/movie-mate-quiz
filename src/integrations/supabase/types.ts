@@ -9,6 +9,65 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      quiz_groups: {
+        Row: {
+          created_at: string
+          created_by: string
+          expires_at: string
+          id: string
+          name: string
+          status: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          expires_at?: string
+          id?: string
+          name: string
+          status?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          expires_at?: string
+          id?: string
+          name?: string
+          status?: string | null
+        }
+        Relationships: []
+      }
+      quiz_responses: {
+        Row: {
+          answers: Json
+          created_at: string
+          group_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          answers: Json
+          created_at?: string
+          group_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          created_at?: string
+          group_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_responses_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "quiz_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       saved_movies: {
         Row: {
           created_at: string
