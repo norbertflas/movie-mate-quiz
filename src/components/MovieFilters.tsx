@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
-import { Slider } from "./ui/slider";
 import { MOVIE_CATEGORIES } from "./quiz/QuizConstants";
 import { getStreamingServicesByRegion, languageToRegion } from "@/utils/streamingServices";
 import { useTranslation } from "react-i18next";
@@ -10,6 +9,10 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "./ui/sheet";
 import { Filter, X } from "lucide-react";
 import { Badge } from "./ui/badge";
+import { FilterHeader } from "./filters/FilterHeader";
+import { FilterButtons } from "./filters/FilterButtons";
+import { TagsFilter } from "./filters/TagsFilter";
+import { RangeFilter } from "./filters/RangeFilter";
 
 interface MovieFiltersProps {
   onFilterChange: (filters: MovieFilters) => void;
@@ -116,61 +119,32 @@ export const MovieFilters = ({ onFilterChange }: MovieFiltersProps) => {
         }))}
       />
 
-      <div className="space-y-4">
-        <label className="text-sm font-medium">{t("filters.tags")}</label>
-        <div className="flex flex-wrap gap-2">
-          {MOVIE_CATEGORIES.map((tag) => (
-            <Badge
-              key={tag}
-              variant={tags.includes(tag) ? "default" : "outline"}
-              className="cursor-pointer"
-              onClick={() => handleTagSelect(tag)}
-            >
-              {t(`movie.${tag.toLowerCase()}`)}
-            </Badge>
-          ))}
-        </div>
-      </div>
+      <TagsFilter
+        tags={MOVIE_CATEGORIES}
+        selectedTags={tags}
+        onTagSelect={handleTagSelect}
+      />
 
-      <div className="space-y-4">
-        <label className="text-sm font-medium">{t("filters.yearRange")}</label>
-        <Slider
-          min={1900}
-          max={currentYear}
-          step={1}
-          value={yearRange}
-          onValueChange={(value) => setYearRange(value as [number, number])}
-          className="mt-2"
-        />
-        <div className="flex justify-between text-sm text-muted-foreground">
-          <span>{yearRange[0]}</span>
-          <span>{yearRange[1]}</span>
-        </div>
-      </div>
+      <RangeFilter
+        label={t("filters.yearRange")}
+        min={1900}
+        max={currentYear}
+        step={1}
+        value={yearRange}
+        onValueChange={(value) => setYearRange(value as [number, number])}
+      />
 
-      <div className="space-y-4">
-        <label className="text-sm font-medium">{t("filters.minRating")}</label>
-        <Slider
-          min={0}
-          max={100}
-          step={1}
-          value={[minRating]}
-          onValueChange={(value) => setMinRating(value[0])}
-          className="mt-2"
-        />
-        <div className="text-sm text-muted-foreground">
-          {minRating}/100
-        </div>
-      </div>
+      <RangeFilter
+        label={t("filters.minRating")}
+        min={0}
+        max={100}
+        step={1}
+        value={[minRating]}
+        onValueChange={(value) => setMinRating(value[0])}
+        displayValue={(value) => `${value}/100`}
+      />
 
-      <div className="flex gap-2">
-        <Button onClick={handleApplyFilters} className="flex-1">
-          {t("filters.apply")}
-        </Button>
-        <Button onClick={handleClearFilters} variant="outline" className="flex-1">
-          {t("filters.clear")}
-        </Button>
-      </div>
+      <FilterButtons onApply={handleApplyFilters} onClear={handleClearFilters} />
     </motion.div>
   );
 
@@ -211,14 +185,7 @@ export const MovieFilters = ({ onFilterChange }: MovieFiltersProps) => {
 
   return (
     <div className="space-y-6 p-4 bg-card rounded-lg border">
-      <div className="flex items-center justify-between">
-        <h3 className="font-semibold">{t("filters.title")}</h3>
-        {getActiveFiltersCount() > 0 && (
-          <Badge variant="secondary">
-            {getActiveFiltersCount()} {t("filters.active")}
-          </Badge>
-        )}
-      </div>
+      <FilterHeader activeFiltersCount={getActiveFiltersCount()} />
       <FilterContent />
     </div>
   );
