@@ -49,10 +49,10 @@ export const RecentlyViewedSection = () => {
                   year=""
                   platform="TMDB"
                   genre="Film"
-                  imageUrl={movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : ''}
+                  imageUrl=""
                   description=""
                   trailerUrl=""
-                  rating={0}
+                  rating={movie.rating || 0}
                   tmdbId={movie.tmdb_id}
                 />
               </motion.div>

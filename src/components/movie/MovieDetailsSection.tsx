@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 interface MovieDetailsSectionProps {
   title: string;
@@ -8,6 +9,8 @@ interface MovieDetailsSectionProps {
   rating: number;
   genre: string;
   tags?: string[];
+  onWatchTrailer: () => void;
+  showTrailer: boolean;
 }
 
 export const MovieDetailsSection = ({
@@ -17,6 +20,8 @@ export const MovieDetailsSection = ({
   rating,
   genre,
   tags,
+  onWatchTrailer,
+  showTrailer,
 }: MovieDetailsSectionProps) => {
   return (
     <motion.div
@@ -44,6 +49,14 @@ export const MovieDetailsSection = ({
           ))}
         </div>
       )}
+      <Button
+        variant="secondary"
+        size="sm"
+        onClick={onWatchTrailer}
+        className="w-full"
+      >
+        {showTrailer ? "Hide Trailer" : "Watch Trailer"}
+      </Button>
     </motion.div>
   );
 };
