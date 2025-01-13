@@ -5,7 +5,7 @@ import { NavigationButtons } from "./quiz/NavigationButtons";
 import { QuizProgress } from "./quiz/QuizProgress";
 import { useQuizState } from "./quiz/hooks/useQuizState";
 import { useSurveySteps } from "./quiz/constants/surveySteps";
-import { MovieRecommendation } from "./quiz/QuizTypes";
+import type { MovieRecommendation } from "./quiz/QuizTypes";
 
 export const QuizSection = () => {
   const steps = useSurveySteps();
@@ -19,7 +19,7 @@ export const QuizSection = () => {
     isComplete
   } = useQuizState(steps);
 
-  if (isComplete) {
+  if (isComplete && recommendations) {
     return <QuizResults recommendations={recommendations} isGroupQuiz={false} />;
   }
 
@@ -27,10 +27,8 @@ export const QuizSection = () => {
     <div className="space-y-6">
       <QuizQuestions
         questions={steps}
-        onComplete={(answers) => {
-          // Handle quiz completion
-          console.log("Quiz completed with answers:", answers);
-        }}
+        currentStep={currentStep}
+        onAnswer={handleAnswer}
       />
 
       <NavigationButtons
@@ -38,6 +36,7 @@ export const QuizSection = () => {
         canGoNext={answers[currentStep]?.answer !== undefined}
         onNext={handleNext}
         onPrevious={handlePrevious}
+        totalSteps={steps.length}
       />
 
       <QuizProgress

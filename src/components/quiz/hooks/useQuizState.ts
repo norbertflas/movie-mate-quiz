@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { QuizAnswer, SurveyStepType, MovieRecommendation } from "../QuizTypes";
+import type { QuizAnswer, SurveyStepType, MovieRecommendation } from "../QuizTypes";
 import { useQuizLogic } from "../QuizLogic";
 
 export const useQuizState = (steps: SurveyStepType[]) => {

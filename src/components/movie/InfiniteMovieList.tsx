@@ -20,7 +20,7 @@ export const InfiniteMovieList = () => {
   } = useInfiniteQuery({
     queryKey: ['infiniteMovies'],
     queryFn: async ({ pageParam = 1 }) => {
-      const movies = await getPopularMovies();
+      const movies = await getPopularMovies(pageParam);
       return movies as TMDBMovie[];
     },
     initialPageParam: 1,
