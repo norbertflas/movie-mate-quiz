@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
-import { Heart, Star, ThumbsUp, ThumbsDown, ChevronDown } from "lucide-react";
+import { Heart, ChevronDown } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { useToast } from "./ui/use-toast";
 import {
@@ -9,6 +9,9 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "./ui/collapsible";
+import { MovieRating } from "./movie/MovieRating";
+import { MovieTrailer } from "./movie/MovieTrailer";
+import { MovieActions } from "./movie/MovieActions";
 
 interface MovieCardProps {
   title: string;
@@ -47,24 +50,11 @@ export const MovieCard = ({
     });
   };
 
-  // Convert YouTube URL to embed URL
-  const getEmbedUrl = (url: string) => {
-    if (!url) return '';
-    const videoId = url.match(/(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=|\/watch\?.+&v=))([^"&?\/\s]{11})/)?.[1];
-    return videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=0` : '';
-  };
-
   return (
     <Card className="overflow-hidden card-hover">
       <div className="aspect-video relative overflow-hidden">
         {showTrailer && trailerUrl ? (
-          <iframe
-            src={getEmbedUrl(trailerUrl)}
-            className="w-full h-full"
-            allowFullScreen
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            title={`${title} trailer`}
-          />
+          <MovieTrailer trailerUrl={trailerUrl} title={title} />
         ) : (
           <img
             src={imageUrl}
@@ -77,21 +67,7 @@ export const MovieCard = ({
         <div className="flex justify-between items-start">
           <div className="flex-1">
             <CardTitle className="text-xl line-clamp-1">{title}</CardTitle>
-            <div className="flex items-center space-x-1 mt-1">
-              {[...Array(5)].map((_, index) => (
-                <Star
-                  key={index}
-                  className={`h-4 w-4 ${
-                    index < rating / 2
-                      ? "fill-yellow-400 text-yellow-400"
-                      : "text-gray-300"
-                  }`}
-                />
-              ))}
-              <span className="text-sm text-muted-foreground ml-2">
-                {rating.toFixed(1)}
-              </span>
-            </div>
+            <MovieRating rating={rating} />
           </div>
           <Button
             variant="ghost"
@@ -153,24 +129,7 @@ export const MovieCard = ({
                 {showTrailer ? "Pokaż zdjęcie" : "Obejrzyj trailer"}
               </Button>
             )}
-            <div className="flex justify-center gap-2">
-              <Button
-                variant={userRating === "like" ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleRating("like")}
-              >
-                <ThumbsUp className="h-4 w-4 mr-2" />
-                Podoba mi się
-              </Button>
-              <Button
-                variant={userRating === "dislike" ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleRating("dislike")}
-              >
-                <ThumbsDown className="h-4 w-4 mr-2" />
-                Nie podoba mi się
-              </Button>
-            </div>
+            <MovieActions userRating={userRating} onRate={handleRating} />
           </CollapsibleContent>
         </Collapsible>
       </CardContent>

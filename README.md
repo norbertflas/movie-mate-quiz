@@ -1,69 +1,71 @@
-# Welcome to your Lovable project
+# MovieMate - Twoja Filmowa Społeczność
 
-## Project info
+## O Projekcie
 
-**URL**: https://lovable.dev/projects/63b2a4f7-7ca2-4d21-90da-13268353c8eb
+MovieMate to interaktywna platforma filmowa, która łączy miłośników kina, umożliwiając im odkrywanie, ocenianie i dzielenie się opiniami o filmach. Nasza aplikacja została stworzona z myślą o stworzeniu społeczności filmowej, gdzie każdy użytkownik może znaleźć filmy dopasowane do swoich preferencji.
 
-## How can I edit this code?
+## Główne Funkcje
 
-There are several ways of editing your application.
+### 1. Wyszukiwanie i Odkrywanie
+- Zaawansowana wyszukiwarka filmów
+- Integracja z bazą TMDB
+- Szczegółowe informacje o filmach
+- Podgląd trailerów z YouTube
 
-**Use Lovable**
+### 2. Personalizacja
+- System oceniania filmów (like/dislike)
+- Możliwość dodawania filmów do ulubionych
+- Personalizowane rekomendacje
+- Historia oglądanych filmów
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/63b2a4f7-7ca2-4d21-90da-13268353c8eb) and start prompting.
+### 3. Społeczność
+- Możliwość dzielenia się opiniami
+- System ocen i recenzji
+- Spersonalizowane powiadomienia email
+- Interakcje między użytkownikami
 
-Changes made via Lovable will be committed automatically to this repo.
+### 4. Dostępność
+- Wsparcie dla wielu języków
+- Tryb jasny/ciemny
+- Responsywny design
+- Dostępność na wszystkich urządzeniach
 
-**Use your preferred IDE**
+## Technologie
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+Projekt został zbudowany przy użyciu nowoczesnego stosu technologicznego:
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- **Frontend**: React, TypeScript, Vite
+- **Stylizacja**: Tailwind CSS, shadcn/ui
+- **Stan Aplikacji**: TanStack Query
+- **Backend**: Supabase (auth, database, storage)
+- **API**: TMDB API dla danych filmowych
+- **Email**: Resend dla powiadomień
 
-Follow these steps:
+## Rozwój Projektu
+
+Planowane usprawnienia:
+1. System rekomendacji oparty o AI
+2. Integracja z dodatkowymi serwisami streamingowymi
+3. Funkcje społecznościowe (grupy, wydarzenia)
+4. System achievementów dla aktywnych użytkowników
+5. Rozbudowany system list i kolekcji filmowych
+6. Integracja z kalendarzem premier kinowych
+7. System powiadomień o nowych filmach ulubionych twórców
+8. Rozbudowane statystyki oglądania
+
+## Instalacja i Uruchomienie
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# Instalacja zależności
+npm install
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Uruchomienie w trybie deweloperskim
 npm run dev
+
+# Budowanie produkcyjne
+npm run build
 ```
 
-**Edit a file directly in GitHub**
+## Licencja
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with .
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/63b2a4f7-7ca2-4d21-90da-13268353c8eb) and click on Share -> Publish.
-
-## I want to use a custom domain - is that possible?
-
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+Ten projekt jest dostępny na licencji MIT. Szczegóły w pliku LICENSE.
