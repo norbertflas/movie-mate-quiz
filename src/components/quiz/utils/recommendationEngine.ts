@@ -29,7 +29,8 @@ export async function getEnhancedRecommendations(params: RecommendationParams) {
       releaseDateGte: params.releaseYear ? `${params.releaseYear}-01-01` : '1900-01-01',
       releaseDateLte: `${currentYear}-12-31`,
       sortBy: 'popularity.desc',
-      includeAdult: params.includeAdult
+      includeAdult: params.includeAdult || false,
+      withKeywords: getMoodKeywords(params.mood)
     });
 
     // Enhanced scoring with multiple factors
@@ -119,5 +120,20 @@ export async function getEnhancedRecommendations(params: RecommendationParams) {
   } catch (error) {
     console.error('Error getting enhanced recommendations:', error);
     throw error;
+  }
+}
+
+function getMoodKeywords(mood?: string): string {
+  switch (mood?.toLowerCase()) {
+    case 'light/funny':
+      return 'comedy,family,animation';
+    case 'serious/dramatic':
+      return 'drama,biography,war,history';
+    case 'suspenseful':
+      return 'thriller,horror,crime,mystery,action';
+    case 'inspiring':
+      return 'biography,documentary,sport,music,adventure';
+    default:
+      return '';
   }
 }

@@ -75,6 +75,8 @@ export async function discoverMovies(params: {
   page?: number;
   language?: string;
   region?: string;
+  includeAdult?: boolean;
+  withKeywords?: string;
 } = {}): Promise<TMDBMovie[]> {
   try {
     const apiKey = await getTMDBApiKey();
@@ -90,7 +92,9 @@ export async function discoverMovies(params: {
       ...(params.releaseDateGte ? { 'primary_release_date.gte': params.releaseDateGte } : {}),
       ...(params.releaseDateLte ? { 'primary_release_date.lte': params.releaseDateLte } : {}),
       ...(params.sortBy ? { sort_by: params.sortBy } : { sort_by: 'popularity.desc' }),
-      ...(params.region ? { region: params.region } : {})
+      ...(params.region ? { region: params.region } : {}),
+      ...(params.includeAdult !== undefined ? { include_adult: params.includeAdult.toString() } : {}),
+      ...(params.withKeywords ? { with_keywords: params.withKeywords } : {})
     });
 
     const response = await fetch(
