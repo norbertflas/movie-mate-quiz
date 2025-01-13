@@ -8,6 +8,7 @@ import { MovieCardHeader } from "./movie/MovieCardHeader";
 import { MovieDetailsSection } from "./movie/MovieDetailsSection";
 import { MovieImage } from "./movie/MovieImage";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 
 interface MovieCardProps {
   title: string;
@@ -39,21 +40,22 @@ export const MovieCard = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const [userRating, setUserRating] = useState<"like" | "dislike" | null>(null);
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const handleToggleFavorite = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsFavorite(!isFavorite);
     toast({
-      title: !isFavorite ? "Added to favorites" : "Removed from favorites",
-      description: `"${title}" has been ${!isFavorite ? "added to" : "removed from"} your favorites.`,
+      title: !isFavorite ? t("favorites.added") : t("favorites.removed"),
+      description: t(!isFavorite ? "favorites.addedDescription" : "favorites.removedDescription", { title }),
     });
   };
 
   const handleRating = (rating: "like" | "dislike") => {
     setUserRating(rating);
     toast({
-      title: "Rating saved",
-      description: `Thank you for rating "${title}"!`,
+      title: t("ratings.saved"),
+      description: t("ratings.savedDescription", { title }),
     });
   };
 

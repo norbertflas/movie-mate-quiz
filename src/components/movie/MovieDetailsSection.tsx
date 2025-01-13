@@ -43,14 +43,21 @@ export const MovieDetailsSection = ({
       <div className="flex flex-col space-y-2">
         <h3 className="text-xl font-semibold">{title}</h3>
         <div className="flex items-center space-x-2">
-          <span className="text-sm text-muted-foreground">{t("movie.year")}: {year}</span>
+          <span className="text-sm text-muted-foreground">
+            {t("movie.releaseYear")}: {year}
+          </span>
           <span className="text-sm text-muted-foreground">•</span>
-          <span className="text-sm text-muted-foreground">{t("movie.genre")}: {getTranslatedGenre(genre)}</span>
+          <span className="text-sm text-muted-foreground">
+            {t("movie.genre")}: {getTranslatedGenre(genre)}
+          </span>
         </div>
         <MovieRating rating={rating} />
       </div>
 
-      <p className="text-sm text-muted-foreground">{description}</p>
+      <div>
+        <h4 className="text-sm font-medium mb-1">{t("movie.description")}</h4>
+        <p className="text-sm text-muted-foreground">{description}</p>
+      </div>
 
       {tags && tags.length > 0 && (
         <div className="flex flex-wrap gap-2">
