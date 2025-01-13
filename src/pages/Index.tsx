@@ -7,6 +7,7 @@ import { MovieFilters, type MovieFilters as MovieFiltersType } from "@/component
 import { MovieCard } from "@/components/MovieCard";
 import { UserStreamingPreferences } from "@/components/UserStreamingPreferences";
 import { FavoriteCreators } from "@/components/creators/FavoriteCreators";
+import { MovieLists } from "@/components/movie/MovieLists";
 import { getPopularMovies, type TMDBMovie, getImageUrl } from "@/services/tmdb";
 import { useToast } from "@/components/ui/use-toast";
 import { useTranslation } from "react-i18next";
@@ -70,6 +71,9 @@ const Index = () => {
           <QuickActions />
           <div className="mb-8">
             <FavoriteCreators />
+          </div>
+          <div className="mb-8">
+            <MovieLists />
           </div>
           <div className="flex flex-col lg:flex-row gap-6">
             <aside className="w-full lg:w-64">
