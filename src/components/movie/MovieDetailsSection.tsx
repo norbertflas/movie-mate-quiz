@@ -27,6 +27,11 @@ export const MovieDetailsSection = ({
 }: MovieDetailsSectionProps) => {
   const { t } = useTranslation();
 
+  const getTranslatedGenre = (genre: string) => {
+    const genreKey = genre.toLowerCase().replace(/[\s-]/g, '');
+    return t(`movie.${genreKey}`, genre);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, height: 0 }}
@@ -38,9 +43,9 @@ export const MovieDetailsSection = ({
       <div className="flex flex-col space-y-2">
         <h3 className="text-xl font-semibold">{title}</h3>
         <div className="flex items-center space-x-2">
-          <span className="text-sm text-muted-foreground">{year}</span>
+          <span className="text-sm text-muted-foreground">{t("movie.year")}: {year}</span>
           <span className="text-sm text-muted-foreground">•</span>
-          <span className="text-sm text-muted-foreground">{genre}</span>
+          <span className="text-sm text-muted-foreground">{t("movie.genre")}: {getTranslatedGenre(genre)}</span>
         </div>
         <MovieRating rating={rating} />
       </div>
@@ -51,7 +56,7 @@ export const MovieDetailsSection = ({
         <div className="flex flex-wrap gap-2">
           {tags.map((tag) => (
             <Badge key={tag} variant="outline">
-              {tag}
+              {getTranslatedGenre(tag)}
             </Badge>
           ))}
         </div>
