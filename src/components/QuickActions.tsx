@@ -50,12 +50,15 @@ export const QuickActions = () => {
   };
 
   return (
-    <div className="flex justify-center gap-4 mb-8">
+    <div className="flex flex-col sm:flex-row justify-center gap-4 mb-8 px-4 sm:px-0">
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetTrigger asChild>
-          <Button variant="outline" className="bg-gradient-to-r from-blue-600/10 via-violet-600/10 to-purple-600/10 hover:from-blue-600/20 hover:via-violet-600/20 hover:to-purple-600/20 border-blue-600/20">
+          <Button 
+            variant="outline" 
+            className="w-full sm:w-auto bg-gradient-to-r from-blue-600/10 via-violet-600/10 to-purple-600/10 hover:from-blue-600/20 hover:via-violet-600/20 hover:to-purple-600/20 border-blue-600/20"
+          >
             <Filter className="mr-2 h-4 w-4" />
-            {t("recommendations.filters")}
+            <span className="text-sm">{t("recommendations.filters")}</span>
           </Button>
         </SheetTrigger>
         <SheetContent side="right" className="w-[300px] sm:w-[400px]">
@@ -99,15 +102,15 @@ export const QuickActions = () => {
       <Button 
         onClick={handleRandomPick} 
         variant="outline"
-        className="gap-2 bg-gradient-to-r from-blue-600/10 via-violet-600/10 to-purple-600/10 hover:from-blue-600/20 hover:via-violet-600/20 hover:to-purple-600/20 border-blue-600/20"
+        className="w-full sm:w-auto gap-2 bg-gradient-to-r from-blue-600/10 via-violet-600/10 to-purple-600/10 hover:from-blue-600/20 hover:via-violet-600/20 hover:to-purple-600/20 border-blue-600/20"
       >
         <Dice6 className="h-4 w-4" />
-        {t("recommendations.randomMovie")}
+        <span className="text-sm">{t("recommendations.randomMovie")}</span>
       </Button>
 
       <Button 
         variant="outline" 
-        className="gap-2 bg-gradient-to-r from-blue-600/10 via-violet-600/10 to-purple-600/10 hover:from-blue-600/20 hover:via-violet-600/20 hover:to-purple-600/20 border-blue-600/20"
+        className="w-full sm:w-auto gap-2 bg-gradient-to-r from-blue-600/10 via-violet-600/10 to-purple-600/10 hover:from-blue-600/20 hover:via-violet-600/20 hover:to-purple-600/20 border-blue-600/20"
         onClick={() => {
           const topRatedMovies = [...movies]
             .sort((a, b) => b.vote_average - a.vote_average)
@@ -122,7 +125,7 @@ export const QuickActions = () => {
         }}
       >
         <Star className="h-4 w-4" />
-        {t("recommendations.topRated")}
+        <span className="text-sm">{t("recommendations.topRated")}</span>
       </Button>
     </div>
   );

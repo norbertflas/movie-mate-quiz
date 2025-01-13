@@ -66,17 +66,17 @@ export const MovieLists = () => {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
+    <div className="space-y-4 px-4 sm:px-0">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h2 className="text-2xl font-bold">{t("movieLists.myLists")}</h2>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button className="w-full sm:w-auto">
               <ListPlus className="mr-2 h-4 w-4" />
-              {t("movieLists.createList")}
+              <span className="text-sm">{t("movieLists.createList")}</span>
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>{t("movieLists.createList")}</DialogTitle>
             </DialogHeader>
@@ -88,6 +88,7 @@ export const MovieLists = () => {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder={t("movieLists.namePlaceholder")}
+                  className="w-full"
                 />
               </div>
               <div className="space-y-2">
@@ -97,6 +98,7 @@ export const MovieLists = () => {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder={t("movieLists.descriptionPlaceholder")}
+                  className="w-full"
                 />
               </div>
               <div className="flex items-center space-x-2">
@@ -130,13 +132,13 @@ export const MovieLists = () => {
             <Card key={list.id} className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <div className="flex justify-between items-start">
-                  <CardTitle className="text-xl">{list.name}</CardTitle>
+                  <CardTitle className="text-xl break-words">{list.name}</CardTitle>
                   {list.is_public && (
-                    <Share2 className="h-5 w-5 text-muted-foreground" />
+                    <Share2 className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                   )}
                 </div>
                 {list.description && (
-                  <p className="text-sm text-muted-foreground">{list.description}</p>
+                  <p className="text-sm text-muted-foreground break-words">{list.description}</p>
                 )}
               </CardHeader>
               <CardContent>
