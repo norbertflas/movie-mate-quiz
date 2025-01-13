@@ -12,9 +12,9 @@ export const FavoriteCreators = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.3 }}
     >
-      <Card className="shadow-lg bg-gradient-to-br from-background/80 to-background">
+      <Card className="shadow-lg bg-gradient-to-br from-background/80 to-background border-blue-600/20">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold">
+          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-violet-600 to-purple-600 bg-clip-text text-transparent">
             {t("creators.favoriteCreators")}
           </CardTitle>
         </CardHeader>

@@ -18,7 +18,7 @@ export const WelcomeSection = ({ onStartQuiz }: WelcomeSectionProps) => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <h1 className="text-4xl md:text-5xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+        <h1 className="text-4xl md:text-5xl font-bold tracking-tight bg-gradient-to-r from-blue-600 via-violet-600 to-purple-600 bg-clip-text text-transparent">
           {t("quiz.welcome")}
         </h1>
         
@@ -35,7 +35,7 @@ export const WelcomeSection = ({ onStartQuiz }: WelcomeSectionProps) => {
           <Button 
             size="lg" 
             onClick={onStartQuiz}
-            className="gap-2 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+            className="gap-2 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-blue-600 via-violet-600 to-purple-600 hover:from-blue-700 hover:via-violet-700 hover:to-purple-700"
           >
             <PlayCircle className="h-5 w-5" />
             {t("quiz.start")}

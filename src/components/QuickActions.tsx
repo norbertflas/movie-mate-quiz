@@ -53,7 +53,7 @@ export const QuickActions = () => {
     <div className="flex justify-center gap-4 mb-8">
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetTrigger asChild>
-          <Button variant="outline">
+          <Button variant="outline" className="bg-gradient-to-r from-blue-600/10 via-violet-600/10 to-purple-600/10 hover:from-blue-600/20 hover:via-violet-600/20 hover:to-purple-600/20 border-blue-600/20">
             <Filter className="mr-2 h-4 w-4" />
             {t("recommendations.filters")}
           </Button>
@@ -86,6 +86,7 @@ export const QuickActions = () => {
                 step={1}
                 value={[minRating]}
                 onValueChange={(value) => setMinRating(value[0])}
+                className="bg-gradient-to-r from-blue-600 via-violet-600 to-purple-600"
               />
               <div className="text-sm text-muted-foreground">
                 {minRating}/100
@@ -95,23 +96,31 @@ export const QuickActions = () => {
         </SheetContent>
       </Sheet>
       
-      <Button onClick={handleRandomPick} variant="outline" className="gap-2">
+      <Button 
+        onClick={handleRandomPick} 
+        variant="outline"
+        className="gap-2 bg-gradient-to-r from-blue-600/10 via-violet-600/10 to-purple-600/10 hover:from-blue-600/20 hover:via-violet-600/20 hover:to-purple-600/20 border-blue-600/20"
+      >
         <Dice6 className="h-4 w-4" />
         {t("recommendations.randomMovie")}
       </Button>
 
-      <Button variant="outline" className="gap-2" onClick={() => {
-        const topRatedMovies = [...movies]
-          .sort((a, b) => b.vote_average - a.vote_average)
-          .slice(0, 5);
+      <Button 
+        variant="outline" 
+        className="gap-2 bg-gradient-to-r from-blue-600/10 via-violet-600/10 to-purple-600/10 hover:from-blue-600/20 hover:via-violet-600/20 hover:to-purple-600/20 border-blue-600/20"
+        onClick={() => {
+          const topRatedMovies = [...movies]
+            .sort((a, b) => b.vote_average - a.vote_average)
+            .slice(0, 5);
 
-        toast({
-          title: t("recommendations.topRated"),
-          description: topRatedMovies
-            .map(movie => `${movie.title} (${Math.round(movie.vote_average * 10)}/100)`)
-            .join('\n'),
-        });
-      }}>
+          toast({
+            title: t("recommendations.topRated"),
+            description: topRatedMovies
+              .map(movie => `${movie.title} (${Math.round(movie.vote_average * 10)}/100)`)
+              .join('\n'),
+          });
+        }}
+      >
         <Star className="h-4 w-4" />
         {t("recommendations.topRated")}
       </Button>
