@@ -3,5 +3,6 @@ export const WEIGHT_FACTORS = {
   mood: 25,
   platform: 20,
   watchHistory: 15,
-  rating: 10
+  rating: 10,
+  collaborative: 20
 };
