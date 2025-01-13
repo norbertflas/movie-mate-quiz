@@ -60,6 +60,7 @@ export const MovieExpandedContent = ({
             onRate={onRate}
             showTrailer={showTrailer}
             onToggleTrailer={handleTrailerToggle}
+            title={title}
           />
           {tmdbId && <SimilarMovies currentMovie={{ title, year, genre, tags, tmdbId }} />}
         </>
