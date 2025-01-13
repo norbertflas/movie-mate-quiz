@@ -46,3 +46,13 @@ export interface QuizQuestionsProps {
   currentStep: number;
   onAnswer: (answer: string) => void;
 }
+
+export interface QuizLogicHook {
+  showQuiz: boolean;
+  showResults: boolean;
+  answers: QuizAnswer[];
+  recommendations: MovieRecommendation[];
+  handleStartQuiz: () => void;
+  handleQuizComplete: (answers: QuizAnswer[]) => void;
+  processAnswers: (answers: QuizAnswer[]) => Promise<void>;
+}

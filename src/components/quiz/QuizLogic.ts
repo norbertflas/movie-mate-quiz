@@ -1,11 +1,24 @@
 import { useState } from "react";
 import { getCollaborativeRecommendations } from "@/utils/collaborativeFiltering";
 import { supabase } from "@/integrations/supabase/client";
-import type { QuizAnswer, MovieRecommendation } from "./QuizTypes";
+import type { QuizAnswer, MovieRecommendation, QuizLogicHook } from "./QuizTypes";
 import { getMovieDetails } from "@/services/tmdb";
 
-export const useQuizLogic = () => {
+export const useQuizLogic = (): QuizLogicHook => {
+  const [showQuiz, setShowQuiz] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+  const [answers, setAnswers] = useState<QuizAnswer[]>([]);
   const [recommendations, setRecommendations] = useState<MovieRecommendation[]>([]);
+
+  const handleStartQuiz = () => {
+    setShowQuiz(true);
+  };
+
+  const handleQuizComplete = (quizAnswers: QuizAnswer[]) => {
+    setAnswers(quizAnswers);
+    processAnswers(quizAnswers);
+    setShowResults(true);
+  };
 
   const processAnswers = async (answers: QuizAnswer[]) => {
     try {
@@ -27,7 +40,7 @@ export const useQuizLogic = () => {
           title: movieDetails.title,
           year: movieDetails.release_date ? new Date(movieDetails.release_date).getFullYear().toString() : "N/A",
           platform: "TMDB",
-          genre: movieDetails.genres[0]?.name || "Unknown",
+          genre: movieDetails.genres?.[0]?.name || "Unknown",
           imageUrl: `https://image.tmdb.org/t/p/w500${movieDetails.poster_path}`,
           description: movieDetails.overview,
           trailerUrl: "",
@@ -45,7 +58,12 @@ export const useQuizLogic = () => {
   };
 
   return {
+    showQuiz,
+    showResults,
+    answers,
     recommendations,
+    handleStartQuiz,
+    handleQuizComplete,
     processAnswers
   };
 };
