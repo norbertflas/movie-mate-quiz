@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader } from "./ui/card";
 import { useToast } from "./ui/use-toast";
-import { MovieDetails } from "./movie/MovieDetails";
 import { MovieTrailer } from "./movie/MovieTrailer";
 import { MovieActions } from "./movie/MovieActions";
-import { StreamingServices } from "./movie/StreamingServices";
+import { MovieStreamingServices } from "./movie/MovieStreamingServices";
 import { MovieCardHeader } from "./movie/MovieCardHeader";
+import { MovieDetailsExpanded } from "./movie/MovieDetailsExpanded";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface MovieCardProps {
@@ -65,10 +65,14 @@ export const MovieCard = ({
       className="h-full"
     >
       <Card 
-        className="overflow-hidden group cursor-pointer h-full flex flex-col" 
+        className="overflow-hidden group cursor-pointer h-full flex flex-col hover:shadow-lg transition-all duration-300" 
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <div className="aspect-video relative overflow-hidden">
+        <motion.div 
+          className="aspect-video relative overflow-hidden"
+          whileHover={{ scale: 1.02 }}
+          transition={{ duration: 0.3 }}
+        >
           {showTrailer && trailerUrl ? (
             <MovieTrailer trailerUrl={trailerUrl} title={title} />
           ) : (
@@ -80,9 +84,9 @@ export const MovieCard = ({
               transition={{ duration: 0.3 }}
             />
           )}
-        </div>
+        </motion.div>
 
-        <CardHeader className="space-y-1">
+        <CardHeader className="space-y-1 p-4">
           <MovieCardHeader
             title={title}
             isFavorite={isFavorite}
@@ -90,12 +94,12 @@ export const MovieCard = ({
           />
         </CardHeader>
 
-        <CardContent className="space-y-4 flex-grow">
-          <StreamingServices services={streamingServices} />
+        <CardContent className="space-y-4 flex-grow p-4">
+          <MovieStreamingServices services={streamingServices} />
 
-          <AnimatePresence>
+          <AnimatePresence mode="wait">
             {isExpanded && (
-              <MovieDetails
+              <MovieDetailsExpanded
                 title={title}
                 year={year}
                 description={description}
