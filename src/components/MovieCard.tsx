@@ -65,7 +65,7 @@ export const MovieCard = ({
       className="h-full"
     >
       <Card 
-        className="overflow-hidden group cursor-pointer h-full flex flex-col hover:shadow-lg transition-all duration-300" 
+        className="overflow-hidden group cursor-pointer h-full flex flex-col bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-accent/20 hover:shadow-xl transition-all duration-300" 
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <MovieMediaSection
@@ -92,7 +92,7 @@ export const MovieCard = ({
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3 }}
-              className="space-y-4"
+              className="space-y-6"
             >
               <MovieMetadata
                 year={year}
@@ -107,7 +107,7 @@ export const MovieCard = ({
               <Button
                 variant="secondary"
                 size="sm"
-                className="w-full"
+                className="w-full bg-gray-800/50 hover:bg-gray-700/50 text-white transition-colors"
                 onClick={(e) => {
                   e.stopPropagation();
                   setShowTrailer(!showTrailer);
@@ -116,10 +116,15 @@ export const MovieCard = ({
                 {showTrailer ? t("hideTrailer") : t("watchTrailer")}
               </Button>
 
-              <div className="flex justify-center gap-2">
+              <div className="flex justify-center gap-4">
                 <Button
                   variant={userRating === "like" ? "default" : "outline"}
                   size="sm"
+                  className={`flex-1 ${
+                    userRating === "like"
+                      ? "bg-green-600/20 hover:bg-green-600/30 text-green-400"
+                      : "border-gray-700 hover:bg-gray-800/50"
+                  }`}
                   onClick={(e) => {
                     e.stopPropagation();
                     handleRating("like");
@@ -130,6 +135,11 @@ export const MovieCard = ({
                 <Button
                   variant={userRating === "dislike" ? "default" : "outline"}
                   size="sm"
+                  className={`flex-1 ${
+                    userRating === "dislike"
+                      ? "bg-red-600/20 hover:bg-red-600/30 text-red-400"
+                      : "border-gray-700 hover:bg-gray-800/50"
+                  }`}
                   onClick={(e) => {
                     e.stopPropagation();
                     handleRating("dislike");

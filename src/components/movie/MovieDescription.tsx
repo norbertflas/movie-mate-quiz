@@ -9,8 +9,8 @@ export const MovieDescription = ({ description }: MovieDescriptionProps) => {
 
   return (
     <div className="space-y-2">
-      <h4 className="font-medium text-lg">{t("movie.description")}</h4>
-      <p className="text-sm text-muted-foreground line-clamp-3 hover:line-clamp-none transition-all duration-300">
+      <h4 className="font-medium text-lg text-gray-200">{t("movie.description")}</h4>
+      <p className="text-sm text-gray-400 line-clamp-3 hover:line-clamp-none transition-all duration-300">
         {description}
       </p>
     </div>
