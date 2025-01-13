@@ -59,7 +59,7 @@ export const FilterContent = ({
         max={currentYear}
         step={1}
         value={currentFilters.yearRange}
-        onValueChange={(yearRange) =>
+        onValueChange={(yearRange: [number, number]) =>
           onFilterChange({ ...currentFilters, yearRange })
         }
       />
@@ -68,7 +68,7 @@ export const FilterContent = ({
         min={0}
         max={100}
         step={10}
-        value={[currentFilters.minRating]}
+        value={[currentFilters.minRating, currentFilters.minRating]}
         onValueChange={([minRating]) =>
           onFilterChange({ ...currentFilters, minRating })
         }
