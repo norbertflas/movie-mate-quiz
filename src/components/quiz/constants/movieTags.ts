@@ -8,5 +8,8 @@ export const MOVIE_TAGS = [
   "scifi",
   "fantasy",
   "documentary",
-  "animation"
+  "animation",
+  "cyberpunk",
+  "prison",
+  "friendship"
 ];

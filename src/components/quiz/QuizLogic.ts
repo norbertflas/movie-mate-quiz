@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { MovieRecommendation, QuizAnswer } from "./QuizTypes";
-import { SAMPLE_RECOMMENDATIONS } from "./QuizConstants";
+import { SAMPLE_RECOMMENDATIONS } from "./constants/sampleRecommendations";
 import { WEIGHT_FACTORS } from './utils/weightFactors';
 import { getMoodScore } from './utils/moodMatching';
 import { getWatchHistoryScore } from './utils/watchHistory';
@@ -46,20 +46,22 @@ const calculateRecommendationScore = async (
     }
   }
 
-  // Watch history integration with collaborative filtering
+  // Watch history integration
   const { score: historyScore, explanation: historyExplanation } = 
-    await getWatchHistoryScore(movie.id);
+    await getWatchHistoryScore(movie.tmdbId || movie.id);
   if (historyScore !== 0) {
     score += WEIGHT_FACTORS.watchHistory * historyScore;
     if (historyExplanation) explanations.push(historyExplanation);
   }
 
-  // Collaborative filtering based on similar users
-  const { score: collaborativeScore, explanation: collaborativeExplanation } = 
-    await getCollaborativeScore(movie.id);
-  if (collaborativeScore > 0) {
-    score += WEIGHT_FACTORS.collaborative * collaborativeScore;
-    if (collaborativeExplanation) explanations.push(collaborativeExplanation);
+  // Collaborative filtering
+  if (movie.tmdbId) {
+    const { score: collaborativeScore, explanation: collaborativeExplanation } = 
+      await getCollaborativeScore(movie.tmdbId);
+    if (collaborativeScore > 0) {
+      score += WEIGHT_FACTORS.collaborative * collaborativeScore;
+      if (collaborativeExplanation) explanations.push(collaborativeExplanation);
+    }
   }
 
   // Rating factor with weighted recent ratings
@@ -83,9 +85,9 @@ export const useQuizLogic = () => {
       [curr.questionId]: curr.answer
     }), {});
 
-    const initialRecommendations: MovieRecommendation[] = SAMPLE_RECOMMENDATIONS.map(movie => ({
+    const initialRecommendations = SAMPLE_RECOMMENDATIONS.map(movie => ({
       ...movie,
-      id: movie.tmdbId || Math.floor(Math.random() * 10000) // Fallback ID if tmdbId is not available
+      id: movie.tmdbId || movie.id || Math.floor(Math.random() * 10000)
     }));
     
     const scoredRecommendationsPromises = initialRecommendations.map(async movie => {

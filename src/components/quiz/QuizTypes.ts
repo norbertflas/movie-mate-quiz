@@ -9,6 +9,7 @@ export type SurveyStepType = {
 
 export type MovieRecommendation = {
   id: number;
+  tmdbId?: number;
   title: string;
   year: string;
   platform: string;
