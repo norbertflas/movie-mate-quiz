@@ -14,9 +14,9 @@ export const AuthLayout = ({ children }: { children: React.ReactNode }) => {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen flex flex-col">
       <Navigation />
-      <main>{children}</main>
+      <main className="flex-grow">{children}</main>
     </div>
   );
 };

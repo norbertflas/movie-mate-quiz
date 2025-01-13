@@ -11,6 +11,7 @@ import { SearchSection } from "@/components/sections/SearchSection";
 import { PreferencesSection } from "@/components/sections/PreferencesSection";
 import { ContentSection } from "@/components/sections/ContentSection";
 import { MovieFilterSection } from "@/components/sections/MovieFilterSection";
+import { Footer } from "@/components/Footer";
 
 const Index = () => {
   const [showQuiz, setShowQuiz] = useState(false);
@@ -60,43 +61,60 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background/80 to-background/40">
-      <div className="container mx-auto px-4 py-8 space-y-8">
-        <PreferencesSection />
-        <SearchSection />
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-background via-background/80 to-background/40">
+      <div className="container mx-auto px-4 py-8 space-y-8 flex-grow">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="space-y-8"
+        >
+          <Card className="p-6 shadow-xl bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-accent/20">
+            <h1 className="text-4xl font-bold text-center bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-violet-500 mb-4">
+              {t("services.title")}
+            </h1>
+            <p className="text-center text-muted-foreground mb-6">
+              {t("services.description")}
+            </p>
+            <PreferencesSection />
+          </Card>
 
-        {!showQuiz ? (
-          <div className="space-y-8">
+          <SearchSection />
+
+          {!showQuiz ? (
+            <div className="space-y-8">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
+                <Card className="p-6 shadow-xl bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-accent/20">
+                  <HomeHeader onStartQuiz={handleStartQuiz} />
+                </Card>
+              </motion.div>
+
+              <ContentSection />
+              
+              <MovieFilterSection 
+                movies={filteredMovies}
+                isLoading={isLoading}
+                onFilterChange={handleFilterChange}
+              />
+            </div>
+          ) : (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
+              transition={{ duration: 0.5 }}
             >
               <Card className="p-6 shadow-xl bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-accent/20">
-                <HomeHeader onStartQuiz={handleStartQuiz} />
+                <QuizSection />
               </Card>
             </motion.div>
-
-            <ContentSection />
-            
-            <MovieFilterSection 
-              movies={filteredMovies}
-              isLoading={isLoading}
-              onFilterChange={handleFilterChange}
-            />
-          </div>
-        ) : (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <Card className="p-6 shadow-xl bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-accent/20">
-              <QuizSection />
-            </Card>
-          </motion.div>
-        )}
+          )}
+        </motion.div>
       </div>
+      <Footer />
     </div>
   );
 };
