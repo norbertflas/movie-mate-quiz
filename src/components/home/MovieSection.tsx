@@ -1,7 +1,8 @@
-import { useState } from "react";
 import { MovieCard } from "@/components/MovieCard";
 import { MovieFilters, type MovieFilters as MovieFiltersType } from "@/components/MovieFilters";
-import { TMDBMovie, getImageUrl } from "@/services/tmdb";
+import { TMDBMovie } from "@/services/tmdb";
+import { LoadingState } from "@/components/LoadingState";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface MovieSectionProps {
   movies: TMDBMovie[];
@@ -16,29 +17,39 @@ export const MovieSection = ({ movies, isLoading, onFilterChange }: MovieSection
         <MovieFilters onFilterChange={onFilterChange} />
       </aside>
       <main className="flex-1">
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="h-[400px] bg-gray-200 animate-pulse rounded-lg" />
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {movies.map((movie) => (
-              <MovieCard
-                key={movie.id}
-                title={movie.title}
-                year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "N/A"}
-                platform="TMDB"
-                genre="Film"
-                imageUrl={getImageUrl(movie.poster_path)}
-                description={movie.overview}
-                trailerUrl=""
-                rating={movie.vote_average * 10}
-              />
-            ))}
-          </div>
-        )}
+        <AnimatePresence mode="wait">
+          {isLoading ? (
+            <LoadingState />
+          ) : (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            >
+              {movies.map((movie) => (
+                <motion.div
+                  key={movie.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <MovieCard
+                    key={movie.id}
+                    title={movie.title}
+                    year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "N/A"}
+                    platform="TMDB"
+                    genre="Film"
+                    imageUrl={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+                    description={movie.overview}
+                    trailerUrl=""
+                    rating={movie.vote_average * 10}
+                  />
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
     </div>
   );

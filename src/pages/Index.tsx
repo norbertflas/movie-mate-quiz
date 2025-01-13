@@ -9,6 +9,7 @@ import { ServicesSection } from "@/components/home/ServicesSection";
 import { MainContent } from "@/components/home/MainContent";
 import { QuizContent } from "@/components/home/QuizContent";
 import { TrendingMoviesSection } from "@/components/sections/TrendingMoviesSection";
+import { RecentlyViewedSection } from "@/components/sections/RecentlyViewedSection";
 
 const Index = () => {
   const [showQuiz, setShowQuiz] = useState(false);
@@ -61,19 +62,20 @@ const Index = () => {
     <PageContainer>
       <ServicesSection />
       <SearchSection />
-      <div className="mb-8">
+      <div className="space-y-8">
         <TrendingMoviesSection />
+        <RecentlyViewedSection />
+        {!showQuiz ? (
+          <MainContent
+            onStartQuiz={handleStartQuiz}
+            filteredMovies={filteredMovies}
+            isLoading={isLoading}
+            onFilterChange={handleFilterChange}
+          />
+        ) : (
+          <QuizContent />
+        )}
       </div>
-      {!showQuiz ? (
-        <MainContent
-          onStartQuiz={handleStartQuiz}
-          filteredMovies={filteredMovies}
-          isLoading={isLoading}
-          onFilterChange={handleFilterChange}
-        />
-      ) : (
-        <QuizContent />
-      )}
     </PageContainer>
   );
 };
