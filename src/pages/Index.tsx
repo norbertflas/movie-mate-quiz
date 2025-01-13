@@ -61,7 +61,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-violet-50 to-purple-50 dark:from-blue-950 dark:via-violet-950 dark:to-purple-950">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50/80 via-violet-50/80 to-purple-50/80 dark:from-blue-950/50 dark:via-violet-950/50 dark:to-purple-950/50">
       <div className="container mx-auto px-4 py-8 space-y-8 flex-grow">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -69,11 +69,11 @@ const Index = () => {
           transition={{ duration: 0.5 }}
           className="space-y-8"
         >
-          <Card className="p-6 shadow-xl bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-blue-200/20 dark:border-blue-800/20">
-            <h1 className="text-4xl font-bold text-center bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-violet-600 to-purple-600 mb-4">
+          <Card className="p-6 shadow-xl bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-blue-200/20 dark:border-blue-800/20 hover:shadow-2xl transition-all duration-300">
+            <h1 className="text-4xl md:text-5xl font-bold text-center bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-violet-600 to-purple-600 mb-6">
               {t("services.title")}
             </h1>
-            <p className="text-center text-muted-foreground mb-6">
+            <p className="text-center text-muted-foreground mb-8 text-lg">
               {t("services.description")}
             </p>
             <PreferencesSection />
@@ -88,7 +88,7 @@ const Index = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
               >
-                <Card className="p-6 shadow-xl bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-blue-200/20 dark:border-blue-800/20 hover:shadow-2xl transition-shadow duration-300">
+                <Card className="p-6 shadow-xl bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-blue-200/20 dark:border-blue-800/20 hover:shadow-2xl transition-all duration-300">
                   <HomeHeader onStartQuiz={handleStartQuiz} />
                 </Card>
               </motion.div>
@@ -107,7 +107,7 @@ const Index = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
-              <Card className="p-6 shadow-xl bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-blue-200/20 dark:border-blue-800/20">
+              <Card className="p-6 shadow-xl bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-blue-200/20 dark:border-blue-800/20 hover:shadow-2xl transition-all duration-300">
                 <QuizSection />
               </Card>
             </motion.div>
