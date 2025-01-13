@@ -11,6 +11,21 @@ export const GroupQuizView = () => {
   const [showResults, setShowResults] = useState(false);
   const { processAnswers } = useQuizLogic();
   const questions = useSurveySteps();
+  const [currentStep, setCurrentStep] = useState(0);
+
+  const handleAnswer = (answer: string) => {
+    const newAnswers = [...answers];
+    newAnswers[currentStep] = {
+      questionId: questions[currentStep].id,
+      answer
+    };
+    setAnswers(newAnswers);
+    if (currentStep < questions.length - 1) {
+      setCurrentStep(prev => prev + 1);
+    } else {
+      handleQuizComplete(newAnswers);
+    }
+  };
 
   const handleQuizComplete = async (quizAnswers: QuizAnswer[]) => {
     setAnswers(quizAnswers);
@@ -19,7 +34,7 @@ export const GroupQuizView = () => {
   };
 
   if (showResults) {
-    return <QuizResults isGroupQuiz />;
+    return <QuizResults recommendations={[]} isGroupQuiz={true} />;
   }
 
   return (
@@ -30,7 +45,8 @@ export const GroupQuizView = () => {
       />
       <QuizQuestions
         questions={questions}
-        onComplete={handleQuizComplete}
+        currentStep={currentStep}
+        onAnswer={handleAnswer}
       />
     </div>
   );

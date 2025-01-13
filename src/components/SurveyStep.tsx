@@ -63,6 +63,7 @@ export const SurveyStep = ({
           canGoNext={type === "multiple" && selectedOptions.length > 0}
           onPrevious={() => onSelect("PREV_STEP")}
           onNext={handleNextStep}
+          totalSteps={totalSteps}
         />
       </Card>
     </motion.div>
