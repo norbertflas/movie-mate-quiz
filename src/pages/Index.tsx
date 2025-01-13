@@ -1,17 +1,16 @@
 import { useState, useEffect } from "react";
 import { QuizSection } from "@/components/QuizSection";
-import { SearchBar } from "@/components/SearchBar";
-import { UserStreamingPreferences } from "@/components/UserStreamingPreferences";
-import { FavoriteCreators } from "@/components/creators/FavoriteCreators";
-import { MovieLists } from "@/components/movie/MovieLists";
 import { HomeHeader } from "@/components/home/HomeHeader";
-import { MovieSection } from "@/components/home/MovieSection";
 import { getPopularMovies, type TMDBMovie } from "@/services/tmdb";
 import { useToast } from "@/components/ui/use-toast";
 import { useTranslation } from "react-i18next";
 import type { MovieFilters as MovieFiltersType } from "@/components/MovieFilters";
 import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
+import { SearchSection } from "@/components/sections/SearchSection";
+import { PreferencesSection } from "@/components/sections/PreferencesSection";
+import { ContentSection } from "@/components/sections/ContentSection";
+import { MovieFilterSection } from "@/components/sections/MovieFilterSection";
 
 const Index = () => {
   const [showQuiz, setShowQuiz] = useState(false);
@@ -63,21 +62,8 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background/80 to-background/40">
       <div className="container mx-auto px-4 py-8 space-y-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <Card className="p-6 shadow-xl bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-accent/20">
-            <div className="mb-8">
-              <UserStreamingPreferences />
-            </div>
-            
-            <div className="mb-8">
-              <SearchBar />
-            </div>
-          </Card>
-        </motion.div>
+        <PreferencesSection />
+        <SearchSection />
 
         {!showQuiz ? (
           <div className="space-y-8">
@@ -91,43 +77,13 @@ const Index = () => {
               </Card>
             </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-            >
-              <Card className="p-6 shadow-xl bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-accent/20">
-                <div className="mb-8">
-                  <FavoriteCreators />
-                </div>
-              </Card>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-            >
-              <Card className="p-6 shadow-xl bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-accent/20">
-                <div className="mb-8">
-                  <MovieLists />
-                </div>
-              </Card>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.5 }}
-            >
-              <Card className="p-6 shadow-xl bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-accent/20">
-                <MovieSection 
-                  movies={filteredMovies}
-                  isLoading={isLoading}
-                  onFilterChange={handleFilterChange}
-                />
-              </Card>
-            </motion.div>
+            <ContentSection />
+            
+            <MovieFilterSection 
+              movies={filteredMovies}
+              isLoading={isLoading}
+              onFilterChange={handleFilterChange}
+            />
           </div>
         ) : (
           <motion.div
