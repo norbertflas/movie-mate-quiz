@@ -1,30 +1,65 @@
 export const en = {
-  quiz: {
-    step: "Step {{current}} of {{total}}",
-    previous: "Previous",
-    next: "Next",
-    questions: {
-      platforms: "Which streaming platforms do you use?",
-      contentType: "Do you prefer movies or series?",
-      length: "What length do you prefer?",
-    },
-    options: {
-      movie: "Movie",
-      series: "TV Series",
-      length: {
-        short: "Short (under 1.5 hours)",
-        medium: "Medium (1.5-2 hours)",
-        long: "Long (over 2 hours)"
-      },
-      episodes: {
-        short: "Short (1 season)",
-        medium: "Medium (2-3 seasons)",
-        long: "Long (4+ seasons)"
-      }
-    }
+  theme: {
+    light: "Light",
+    dark: "Dark",
+    system: "System",
   },
-  errors: {
-    loadingServices: "Error loading services",
-    errorDescription: "Please try again later."
+  navigation: {
+    home: "Home",
+    search: "Search",
+    recommendations: "Recommendations",
+    favorites: "Favorites",
+    ratings: "Ratings",
+    logout: "Logout",
+  },
+  search: {
+    placeholder: "Search movies...",
+    button: "Search",
+    searching: "Searching...",
+    resultsFound: "Titles found",
+    resultsDescription: "Found {{count}} titles matching \"{{query}}\"",
+    noResults: "No results",
+    noResultsDescription: "No titles found matching \"{{query}}\"",
+    error: "Search error",
+    errorDescription: "An error occurred while searching. Please try again later.",
+  },
+  movie: {
+    releaseYear: "Release Year",
+    genre: "Genre",
+    rating: "Rating",
+    description: "Description",
+    like: "Like",
+    dislike: "Dislike",
+    film: "Film",
+    action: "Action",
+    comedy: "Comedy",
+    drama: "Drama",
+    horror: "Horror",
+    thriller: "Thriller",
+    sciFi: "Sci-Fi",
+    fantasy: "Fantasy",
+    romance: "Romance",
+    animation: "Animation",
+    documentary: "Documentary",
+  },
+  filters: {
+    title: "Filter Movies",
+  },
+  services: {
+    title: "Streaming Services",
+    description: "Choose your favorite streaming platforms",
+  },
+  movieLists: {
+    myLists: "My Lists",
+    createList: "Create List",
+  },
+  creators: {
+    favoriteCreators: "Favorite Creators",
+  },
+  watchTrailer: "Watch Trailer",
+  hideTrailer: "Hide Trailer",
+  common: {
+    error: "Error",
+    success: "Success",
   }
 };
