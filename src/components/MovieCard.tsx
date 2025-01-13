@@ -9,8 +9,7 @@ import { MovieMediaSection } from "./movie/MovieMediaSection";
 import { MovieMetadata } from "./movie/MovieMetadata";
 import { MovieDescription } from "./movie/MovieDescription";
 import { MovieTags } from "./movie/MovieTags";
-import { Button } from "./ui/button";
-import { useTranslation } from "react-i18next";
+import { MovieActions } from "./movie/MovieActions";
 
 interface MovieCardProps {
   title: string;
@@ -43,7 +42,6 @@ export const MovieCard = ({
   const [showTrailer, setShowTrailer] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [userRating, setUserRating] = useState<"like" | "dislike" | null>(null);
-  const { t } = useTranslation();
 
   const { handleToggleFavorite } = MovieFavoriteHandler({ 
     isFavorite, 
@@ -55,6 +53,16 @@ export const MovieCard = ({
     setUserRating, 
     title 
   });
+
+  const handleTrailerToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowTrailer(!showTrailer);
+  };
+
+  const handleRateClick = (rating: "like" | "dislike", e: React.MouseEvent) => {
+    e.stopPropagation();
+    handleRating(rating);
+  };
 
   return (
     <motion.div
@@ -104,50 +112,12 @@ export const MovieCard = ({
               
               <MovieTags tags={tags || []} />
 
-              <Button
-                variant="secondary"
-                size="sm"
-                className="w-full bg-gray-800/50 hover:bg-gray-700/50 text-white transition-colors"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowTrailer(!showTrailer);
-                }}
-              >
-                {showTrailer ? t("hideTrailer") : t("watchTrailer")}
-              </Button>
-
-              <div className="flex justify-center gap-4">
-                <Button
-                  variant={userRating === "like" ? "default" : "outline"}
-                  size="sm"
-                  className={`flex-1 ${
-                    userRating === "like"
-                      ? "bg-green-600/20 hover:bg-green-600/30 text-green-400"
-                      : "border-gray-700 hover:bg-gray-800/50"
-                  }`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleRating("like");
-                  }}
-                >
-                  {t("movie.like")}
-                </Button>
-                <Button
-                  variant={userRating === "dislike" ? "default" : "outline"}
-                  size="sm"
-                  className={`flex-1 ${
-                    userRating === "dislike"
-                      ? "bg-red-600/20 hover:bg-red-600/30 text-red-400"
-                      : "border-gray-700 hover:bg-gray-800/50"
-                  }`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleRating("dislike");
-                  }}
-                >
-                  {t("movie.dislike")}
-                </Button>
-              </div>
+              <MovieActions
+                userRating={userRating}
+                showTrailer={showTrailer}
+                onToggleTrailer={handleTrailerToggle}
+                onRate={handleRateClick}
+              />
             </motion.div>
           )}
         </CardContent>
