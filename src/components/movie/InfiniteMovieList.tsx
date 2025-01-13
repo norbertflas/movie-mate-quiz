@@ -20,7 +20,7 @@ export const InfiniteMovieList = () => {
   } = useInfiniteQuery({
     queryKey: ['infiniteMovies'],
     queryFn: async ({ pageParam = 1 }) => {
-      const movies = await getPopularMovies(pageParam);
+      const movies = await getPopularMovies();
       return movies as TMDBMovie[];
     },
     initialPageParam: 1,
@@ -39,7 +39,7 @@ export const InfiniteMovieList = () => {
     }
   }, [error, toast, t]);
 
-  if (status === "loading") {
+  if (status === "pending") {
     return <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {[...Array(6)].map((_, i) => (
         <div key={i} className="h-[400px] bg-gray-200 dark:bg-gray-800 animate-pulse rounded-lg" />

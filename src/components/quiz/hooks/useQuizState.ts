@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { QuizAnswer, SurveyStepType } from "../QuizTypes";
+import { QuizAnswer, SurveyStepType, MovieRecommendation } from "../QuizTypes";
 import { useQuizLogic } from "../QuizLogic";
 
 export const useQuizState = (steps: SurveyStepType[]) => {
@@ -42,3 +42,5 @@ export const useQuizState = (steps: SurveyStepType[]) => {
     isComplete,
   };
 };
+
+export type { MovieRecommendation };
