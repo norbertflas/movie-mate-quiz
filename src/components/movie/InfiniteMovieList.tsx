@@ -6,6 +6,7 @@ import { LoadingState } from "../LoadingState";
 import { getPopularMovies } from "@/services/tmdb";
 import { useToast } from "../ui/use-toast";
 import { useTranslation } from "react-i18next";
+import type { TMDBMovie } from "@/services/tmdb";
 
 export const InfiniteMovieList = () => {
   const { t } = useTranslation();
@@ -22,13 +23,12 @@ export const InfiniteMovieList = () => {
   } = useInfiniteQuery({
     queryKey: ['infiniteMovies'],
     queryFn: async ({ pageParam = 1 }) => {
-      const movies = await getPopularMovies(pageParam);
-      return movies;
+      const movies = await getPopularMovies();
+      return movies as TMDBMovie[];
     },
     getNextPageParam: (lastPage, allPages) => {
-      return lastPage.length === 20 ? allPages.length + 1 : undefined;
+      return lastPage && lastPage.length === 20 ? allPages.length + 1 : undefined;
     },
-    initialPageSize: 20,
   });
 
   useEffect(() => {
@@ -50,7 +50,7 @@ export const InfiniteMovieList = () => {
     <div className="space-y-8">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {data?.pages.map((group, i) => (
-          group.map((movie) => (
+          group.map((movie: TMDBMovie) => (
             <MovieCard
               key={movie.id}
               title={movie.title}

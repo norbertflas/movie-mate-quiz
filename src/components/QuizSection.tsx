@@ -1,49 +1,49 @@
-import { useQuizLogic } from "@/components/quiz/QuizLogic";
-import { QuizResults } from "@/components/quiz/QuizResults";
-import { QuizProgress } from "@/components/quiz/QuizProgress";
-import { NavigationButtons } from "@/components/quiz/NavigationButtons";
-import { QuizQuestions } from "@/components/quiz/QuizQuestions";
-import { useTranslation } from "react-i18next";
 import { useState } from "react";
+import { QuizQuestions } from "./quiz/QuizQuestions";
+import { QuizResults } from "./quiz/QuizResults";
+import { NavigationButtons } from "./quiz/NavigationButtons";
+import { QuizProgress } from "./quiz/QuizProgress";
+import { useQuizState } from "./quiz/hooks/useQuizState";
+import type { SurveyStepType } from "./quiz/QuizTypes";
+import { useSurveySteps } from "./quiz/constants/surveySteps";
 
-const QuizSection = () => {
-  const { t } = useTranslation();
-  const { recommendations, processAnswers } = useQuizLogic();
+export const QuizSection = () => {
+  const steps = useSurveySteps();
+  const {
+    currentStep,
+    answers,
+    recommendations,
+    handleAnswer,
+    handleNext,
+    handlePrevious,
+    isComplete
+  } = useQuizState(steps);
+
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState([]);
 
-  const handleAnswer = (answer) => {
-    setAnswers((prev) => [...prev, { questionId: currentQuestionIndex, answer }]);
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex((prev) => prev + 1);
-    } else {
-      processAnswers(answers);
-    }
-  };
-
-  const questions = [
-    // Define your quiz questions here
-  ];
+  if (isComplete) {
+    return <QuizResults movieRecommendations={recommendations} />;
+  }
 
   return (
-    <div className="quiz-section">
-      {currentQuestionIndex < questions.length ? (
-        <QuizQuestions
-          question={questions[currentQuestionIndex]}
-          onAnswer={handleAnswer}
-        />
-      ) : (
-        <QuizResults recommendations={recommendations} />
-      )}
-      <NavigationButtons
-        currentQuestionIndex={currentQuestionIndex}
-        totalQuestions={questions.length}
-        onNext={() => setCurrentQuestionIndex((prev) => prev + 1)}
-        onPrevious={() => setCurrentQuestionIndex((prev) => prev - 1)}
+    <div className="space-y-6">
+      <QuizQuestions
+        questions={steps}
+        currentQuestion={currentStep}
+        onAnswer={handleAnswer}
       />
-      <QuizProgress currentQuestionIndex={currentQuestionIndex} totalQuestions={questions.length} />
+
+      <NavigationButtons
+        onNext={handleNext}
+        onPrevious={handlePrevious}
+        currentStep={currentQuestionIndex}
+        totalSteps={steps.length}
+      />
+
+      <QuizProgress
+        currentStep={currentQuestionIndex}
+        totalSteps={steps.length}
+      />
     </div>
   );
 };
-
-export default QuizSection;
