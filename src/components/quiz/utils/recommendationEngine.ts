@@ -11,19 +11,25 @@ interface RecommendationParams {
   platform?: string;
   releaseYear?: string;
   watchTime?: string;
+  minVoteCount?: number;
+  minVoteAverage?: number;
+  includeAdult?: boolean;
 }
 
 export async function getEnhancedRecommendations(params: RecommendationParams) {
   try {
-    // Get base recommendations using TMDB's discover endpoint
     const currentYear = new Date().getFullYear();
+    const currentMonth = new Date().getMonth();
+    
+    // Advanced TMDB API parameters
     const baseMovies = await discoverMovies({
       genres: params.genres,
-      minVoteCount: 100,
-      minVoteAverage: 6,
+      minVoteCount: params.minVoteCount || 100,
+      minVoteAverage: params.minVoteAverage || 6,
       releaseDateGte: params.releaseYear ? `${params.releaseYear}-01-01` : '1900-01-01',
       releaseDateLte: `${currentYear}-12-31`,
-      sortBy: 'popularity.desc'
+      sortBy: 'popularity.desc',
+      includeAdult: params.includeAdult
     });
 
     // Enhanced scoring with multiple factors
@@ -66,7 +72,6 @@ export async function getEnhancedRecommendations(params: RecommendationParams) {
       }
 
       // Seasonal relevance
-      const currentMonth = new Date().getMonth();
       const isWinter = currentMonth >= 11 || currentMonth <= 1;
       const isSummer = currentMonth >= 5 && currentMonth <= 7;
       
@@ -80,6 +85,18 @@ export async function getEnhancedRecommendations(params: RecommendationParams) {
       if (hasSeasonalKeywords) {
         totalScore += WEIGHT_FACTORS.seasonal;
         explanations.push(`Matches current season: ${isWinter ? 'Winter' : 'Summer'}`);
+      }
+
+      // Time-based relevance
+      const releaseYear = movie.release_date ? new Date(movie.release_date).getFullYear() : null;
+      if (releaseYear) {
+        if (releaseYear === currentYear) {
+          totalScore += WEIGHT_FACTORS.newRelease;
+          explanations.push('New release');
+        } else if (releaseYear <= currentYear - 25) {
+          totalScore += WEIGHT_FACTORS.classic;
+          explanations.push('Classic movie');
+        }
       }
 
       // Popularity and vote count bonus

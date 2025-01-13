@@ -6,5 +6,7 @@ export const WEIGHT_FACTORS = {
   rating: 10,
   collaborative: 20,
   seasonal: 15,
-  popularity: 10
+  popularity: 10,
+  newRelease: 15,
+  classic: 10
 };
