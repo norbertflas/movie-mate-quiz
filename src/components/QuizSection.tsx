@@ -1,47 +1,49 @@
+import { useQuizLogic } from "@/components/quiz/QuizLogic";
+import { QuizResults } from "@/components/quiz/QuizResults";
+import { QuizProgress } from "@/components/quiz/QuizProgress";
+import { NavigationButtons } from "@/components/quiz/NavigationButtons";
+import { QuizQuestions } from "@/components/quiz/QuizQuestions";
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
-import { WelcomeSection } from "./WelcomeSection";
-import { QuizQuestions } from "./quiz/QuizQuestions";
-import { QuizResults } from "./quiz/QuizResults";
-import { QuizProgressBar } from "./quiz/QuizProgressBar";
-import { useQuizLogic } from "./quiz/QuizLogic";
-import { QuizAnswer } from "./quiz/QuizTypes";
-import { useSurveySteps } from "./quiz/constants/surveySteps";
 
-export const QuizSection = () => {
-  const [showQuiz, setShowQuiz] = useState(false);
-  const [showResults, setShowResults] = useState(false);
-  const { processAnswers } = useQuizLogic();
-  const [answers, setAnswers] = useState<QuizAnswer[]>([]);
-  const questions = useSurveySteps();
+const QuizSection = () => {
+  const { t } = useTranslation();
+  const { recommendations, processAnswers } = useQuizLogic();
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [answers, setAnswers] = useState([]);
 
-  const handleStartQuiz = () => {
-    setShowQuiz(true);
+  const handleAnswer = (answer) => {
+    setAnswers((prev) => [...prev, { questionId: currentQuestionIndex, answer }]);
+    if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex((prev) => prev + 1);
+    } else {
+      processAnswers(answers);
+    }
   };
 
-  const handleQuizComplete = async (quizAnswers: QuizAnswer[]) => {
-    setAnswers(quizAnswers);
-    await processAnswers(quizAnswers);
-    setShowResults(true);
-  };
-
-  if (!showQuiz) {
-    return <WelcomeSection onStartQuiz={handleStartQuiz} />;
-  }
-
-  if (showResults) {
-    return <QuizResults />;
-  }
+  const questions = [
+    // Define your quiz questions here
+  ];
 
   return (
-    <div className="space-y-8">
-      <QuizProgressBar 
-        currentStep={answers.length} 
-        totalSteps={questions.length} 
+    <div className="quiz-section">
+      {currentQuestionIndex < questions.length ? (
+        <QuizQuestions
+          question={questions[currentQuestionIndex]}
+          onAnswer={handleAnswer}
+        />
+      ) : (
+        <QuizResults recommendations={recommendations} />
+      )}
+      <NavigationButtons
+        currentQuestionIndex={currentQuestionIndex}
+        totalQuestions={questions.length}
+        onNext={() => setCurrentQuestionIndex((prev) => prev + 1)}
+        onPrevious={() => setCurrentQuestionIndex((prev) => prev - 1)}
       />
-      <QuizQuestions
-        questions={questions}
-        onComplete={handleQuizComplete}
-      />
+      <QuizProgress currentQuestionIndex={currentQuestionIndex} totalQuestions={questions.length} />
     </div>
   );
 };
+
+export default QuizSection;
