@@ -1,7 +1,6 @@
 import { ThumbsUp, ThumbsDown, Play } from "lucide-react";
 import { Button } from "../ui/button";
 import { useTranslation } from "react-i18next";
-import { MovieGoogleSearch } from "./MovieGoogleSearch";
 
 interface MovieActionsProps {
   userRating: "like" | "dislike" | null;
@@ -16,7 +15,6 @@ export const MovieActions = ({
   showTrailer,
   onToggleTrailer,
   onRate,
-  title
 }: MovieActionsProps) => {
   const { t } = useTranslation();
 
@@ -49,7 +47,6 @@ export const MovieActions = ({
         <Play className="h-4 w-4" />
         {showTrailer ? t("hideTrailer") : t("watchTrailer")}
       </Button>
-      <MovieGoogleSearch title={title} />
     </div>
   );
 };
