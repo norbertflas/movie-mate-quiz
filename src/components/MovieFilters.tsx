@@ -1,18 +1,17 @@
-import { useState, useEffect } from "react";
-import { Button } from "./ui/button";
-import { MOVIE_CATEGORIES } from "./quiz/QuizConstants";
-import { getStreamingServicesByRegion, languageToRegion } from "@/utils/streamingServices";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { MovieFilterSection } from "./movie/MovieFilterSection";
 import { motion } from "framer-motion";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "./ui/sheet";
 import { Filter, X } from "lucide-react";
-import { Badge } from "./ui/badge";
+import { Button } from "./ui/button";
 import { FilterHeader } from "./filters/FilterHeader";
 import { FilterButtons } from "./filters/FilterButtons";
 import { TagsFilter } from "./filters/TagsFilter";
 import { RangeFilter } from "./filters/RangeFilter";
+import { PlatformFilter } from "./filters/PlatformFilter";
+import { GenreFilter } from "./filters/GenreFilter";
+import { MOVIE_CATEGORIES } from "./quiz/QuizConstants";
 
 interface MovieFiltersProps {
   onFilterChange: (filters: MovieFilters) => void;
@@ -33,20 +32,9 @@ export const MovieFilters = ({ onFilterChange }: MovieFiltersProps) => {
   const [platform, setPlatform] = useState<string>();
   const [genre, setGenre] = useState<string>();
   const [tags, setTags] = useState<string[]>([]);
-  const [streamingServices, setStreamingServices] = useState<any[]>([]);
   const [isOpen, setIsOpen] = useState(false);
-  const { i18n, t } = useTranslation();
+  const { t } = useTranslation();
   const isMobile = useIsMobile();
-
-  useEffect(() => {
-    const fetchStreamingServices = async () => {
-      const region = languageToRegion[i18n.language] || 'en';
-      const services = await getStreamingServicesByRegion(region);
-      setStreamingServices(services);
-    };
-
-    fetchStreamingServices();
-  }, [i18n.language]);
 
   const handleApplyFilters = () => {
     onFilterChange({
@@ -97,27 +85,8 @@ export const MovieFilters = ({ onFilterChange }: MovieFiltersProps) => {
       animate={{ opacity: 1 }}
       className="space-y-6"
     >
-      <MovieFilterSection
-        label={t("filters.platform")}
-        value={platform}
-        onValueChange={setPlatform}
-        placeholder={t("filters.selectPlatform")}
-        options={streamingServices.map(service => ({
-          id: service.name,
-          name: service.name,
-        }))}
-      />
-
-      <MovieFilterSection
-        label={t("filters.genre")}
-        value={genre}
-        onValueChange={setGenre}
-        placeholder={t("filters.selectGenre")}
-        options={MOVIE_CATEGORIES.map(category => ({
-          id: category,
-          name: t(`movie.${category.toLowerCase()}`),
-        }))}
-      />
+      <PlatformFilter value={platform} onChange={setPlatform} />
+      <GenreFilter value={genre} onChange={setGenre} />
 
       <TagsFilter
         tags={MOVIE_CATEGORIES}
@@ -128,7 +97,7 @@ export const MovieFilters = ({ onFilterChange }: MovieFiltersProps) => {
       <RangeFilter
         label={t("filters.yearRange")}
         min={1900}
-        max={new Date().getFullYear()}
+        max={currentYear}
         step={1}
         value={yearRange}
         onValueChange={(value) => setYearRange(value as [number, number])}
