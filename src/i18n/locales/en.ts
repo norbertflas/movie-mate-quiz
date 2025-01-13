@@ -7,6 +7,11 @@ export const en = {
     addDescription: "Add a new creator to your favorites",
     role: "Role",
     name: "Name",
+    namePlaceholder: "Enter creator name...",
+    selectRole: "Select a role...",
+    requiredFields: "Please fill in all required fields",
+    added: "Creator Added",
+    addedDescription: "The creator has been added to your favorites",
   },
   movieLists: {
     myLists: "My Movie Lists",

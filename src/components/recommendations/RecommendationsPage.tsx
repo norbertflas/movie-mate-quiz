@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { MovieSection } from "@/components/home/MovieSection";
 import { QuickActions } from "@/components/QuickActions";
+import { FavoriteCreatorsList } from "@/components/creators/FavoriteCreatorsList";
 import { getPopularMovies } from "@/services/tmdb";
 import type { MovieFilters as MovieFiltersType } from "@/components/MovieFilters";
 
@@ -30,14 +31,21 @@ export const RecommendationsPage = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 space-y-8">
       <h1 className="text-3xl font-bold mb-6">{t("recommendations.title")}</h1>
-      <QuickActions />
-      <MovieSection 
-        movies={filteredMovies.length > 0 ? filteredMovies : movies}
-        isLoading={isLoading}
-        onFilterChange={handleFilterChange}
-      />
+      
+      <section>
+        <FavoriteCreatorsList />
+      </section>
+
+      <section>
+        <QuickActions />
+        <MovieSection 
+          movies={filteredMovies.length > 0 ? filteredMovies : movies}
+          isLoading={isLoading}
+          onFilterChange={handleFilterChange}
+        />
+      </section>
     </div>
   );
 };
