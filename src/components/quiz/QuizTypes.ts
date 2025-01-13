@@ -32,3 +32,17 @@ export interface QuizResultsProps {
   recommendations: MovieRecommendation[];
   isGroupQuiz?: boolean;
 }
+
+export interface NavigationButtonsProps {
+  currentStep: number;
+  canGoNext: boolean;
+  onNext: () => Promise<void>;
+  onPrevious: () => void;
+  totalSteps: number;
+}
+
+export interface QuizQuestionsProps {
+  questions: SurveyStepType[];
+  currentStep: number;
+  onAnswer: (answer: string) => void;
+}

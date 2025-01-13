@@ -6,7 +6,7 @@ interface UserPreference {
   rating: number;
 }
 
-export async function getCollaborativeRecommendations(userId: string): Promise<TMDBMovie[]> {
+export async function getCollaborativeRecommendations(userId: string): Promise<number[]> {
   try {
     // Get user's watched movies and ratings
     const { data: userWatched, error: watchError } = await supabase
