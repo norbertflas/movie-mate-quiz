@@ -1,9 +1,9 @@
-import { TMDBMovie, discoverMovies, getMovieKeywords } from "@/services/tmdb";
-import { getWatchHistoryScore } from "./watchHistory";
-import { getPlatformScore } from "./platformMatching";
-import { getCollaborativeScore } from "./collaborativeFiltering";
-import { getGenreCompatibilityScore } from "./genreMatching";
-import { WEIGHT_FACTORS } from "./weightFactors";
+import { TMDBMovie, discoverMovies } from "@/services/tmdb";
+import { calculateGenreScore } from "./scoring/genreScoring";
+import { calculateWatchHistoryScore } from "./scoring/watchHistoryScoring";
+import { calculatePlatformScore } from "./scoring/platformScoring";
+import { calculateSeasonalScore } from "./scoring/seasonalScoring";
+import { calculateTimeBasedScore } from "./scoring/timeBasedScoring";
 
 interface RecommendationParams {
   genres?: string[];
@@ -19,9 +19,8 @@ interface RecommendationParams {
 export async function getEnhancedRecommendations(params: RecommendationParams) {
   try {
     const currentYear = new Date().getFullYear();
-    const currentMonth = new Date().getMonth();
     
-    // Advanced TMDB API parameters
+    // Get base movies from TMDB
     const baseMovies = await discoverMovies({
       genres: params.genres,
       minVoteCount: params.minVoteCount || 100,
@@ -33,78 +32,22 @@ export async function getEnhancedRecommendations(params: RecommendationParams) {
       withKeywords: getMoodKeywords(params.mood)
     });
 
-    // Enhanced scoring with multiple factors
+    // Calculate scores for each movie
     const scoredMoviesPromises = baseMovies.map(async (movie) => {
-      let totalScore = 0;
-      const explanations: string[] = [];
+      const scores = await Promise.all([
+        calculateGenreScore(movie.genre_ids.join(','), params.genres?.join(',') || ''),
+        calculateWatchHistoryScore(movie.id),
+        params.platform ? calculatePlatformScore(params.platform) : Promise.resolve({ score: 0, explanation: '', weight: 0 }),
+        calculateSeasonalScore(movie.id),
+        Promise.resolve(calculateTimeBasedScore(movie.release_date ? new Date(movie.release_date).getFullYear() : null))
+      ]);
 
-      // Genre compatibility
-      const { score: genreScore, explanation: genreExplanation } = 
-        await getGenreCompatibilityScore(movie.genre_ids.join(','), params.genres?.join(',') || '');
-      if (genreScore > 0) {
-        totalScore += WEIGHT_FACTORS.genre * genreScore;
-        explanations.push(genreExplanation);
-      }
+      const explanations = scores
+        .map(s => s.explanation)
+        .filter(Boolean);
 
-      // Watch history integration
-      const { score: historyScore, explanation: historyExplanation } = 
-        await getWatchHistoryScore(movie.id);
-      if (historyScore !== 0) {
-        totalScore += WEIGHT_FACTORS.watchHistory * historyScore;
-        if (historyExplanation) explanations.push(historyExplanation);
-      }
-
-      // Platform availability
-      if (params.platform) {
-        const { score: platformScore, explanation: platformExplanation } = 
-          await getPlatformScore(params.platform);
-        if (platformScore > 0) {
-          totalScore += WEIGHT_FACTORS.platform * platformScore;
-          if (platformExplanation) explanations.push(platformExplanation);
-        }
-      }
-
-      // Collaborative filtering
-      const { score: collaborativeScore, explanation: collaborativeExplanation } = 
-        await getCollaborativeScore(movie.id);
-      if (collaborativeScore > 0) {
-        totalScore += WEIGHT_FACTORS.collaborative * collaborativeScore;
-        if (collaborativeExplanation) explanations.push(collaborativeExplanation);
-      }
-
-      // Seasonal relevance
-      const isWinter = currentMonth >= 11 || currentMonth <= 1;
-      const isSummer = currentMonth >= 5 && currentMonth <= 7;
-      
-      const keywords = await getMovieKeywords(movie.id);
-      const hasSeasonalKeywords = isWinter ? 
-        keywords.some(k => ['christmas', 'winter', 'snow', 'holiday'].includes(k.toLowerCase())) :
-        isSummer ? 
-        keywords.some(k => ['summer', 'beach', 'vacation'].includes(k.toLowerCase())) :
-        false;
-
-      if (hasSeasonalKeywords) {
-        totalScore += WEIGHT_FACTORS.seasonal;
-        explanations.push(`Matches current season: ${isWinter ? 'Winter' : 'Summer'}`);
-      }
-
-      // Time-based relevance
-      const releaseYear = movie.release_date ? new Date(movie.release_date).getFullYear() : null;
-      if (releaseYear) {
-        if (releaseYear === currentYear) {
-          totalScore += WEIGHT_FACTORS.newRelease;
-          explanations.push('New release');
-        } else if (releaseYear <= currentYear - 25) {
-          totalScore += WEIGHT_FACTORS.classic;
-          explanations.push('Classic movie');
-        }
-      }
-
-      // Popularity and vote count bonus
-      if (movie.vote_count > 1000 && movie.vote_average >= 7.5) {
-        totalScore += WEIGHT_FACTORS.rating;
-        explanations.push('Highly rated by many users');
-      }
+      const totalScore = scores.reduce((acc, { score, weight }) => 
+        acc + (score * weight), 0);
 
       return {
         ...movie,

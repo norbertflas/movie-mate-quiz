@@ -4,3 +4,5 @@ export * from "./recommendations";
 export * from "./search";
 export * from "./trending";
 export * from "./utils";
+export * from "./keywords";
+export * from "./config";
