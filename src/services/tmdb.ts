@@ -94,6 +94,26 @@ export async function getMovieRecommendations(movieId: number): Promise<TMDBMovi
   }
 }
 
+export async function getTrendingMovies(): Promise<TMDBMovie[]> {
+  try {
+    const apiKey = await getTMDBApiKey();
+    const currentLang = i18n.language;
+    const response = await fetch(
+      `${TMDB_BASE_URL}/trending/movie/week?api_key=${apiKey}&language=${currentLang}`
+    );
+    
+    if (!response.ok) {
+      throw new Error(`TMDB API error: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    return data.results;
+  } catch (error) {
+    console.error('Error fetching trending movies:', error);
+    throw error;
+  }
+}
+
 export function getImageUrl(path: string | null): string {
   if (!path) return '/placeholder.svg';
   return `${TMDB_IMAGE_BASE_URL}${path}`;

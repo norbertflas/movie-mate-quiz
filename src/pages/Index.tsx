@@ -8,6 +8,7 @@ import { PageContainer } from "@/components/home/PageContainer";
 import { ServicesSection } from "@/components/home/ServicesSection";
 import { MainContent } from "@/components/home/MainContent";
 import { QuizContent } from "@/components/home/QuizContent";
+import { TrendingMoviesSection } from "@/components/sections/TrendingMoviesSection";
 
 const Index = () => {
   const [showQuiz, setShowQuiz] = useState(false);
@@ -60,6 +61,9 @@ const Index = () => {
     <PageContainer>
       <ServicesSection />
       <SearchSection />
+      <div className="mb-8">
+        <TrendingMoviesSection />
+      </div>
       {!showQuiz ? (
         <MainContent
           onStartQuiz={handleStartQuiz}
