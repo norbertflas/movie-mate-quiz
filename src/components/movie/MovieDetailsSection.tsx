@@ -4,6 +4,7 @@ import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { useTranslation } from "react-i18next";
 import { Separator } from "../ui/separator";
+import { Card } from "../ui/card";
 
 interface MovieDetailsSectionProps {
   title: string;
@@ -38,24 +39,35 @@ export const MovieDetailsSection = ({
     >
       <div className="flex flex-col space-y-2">
         <motion.h3 
-          className="text-xl font-semibold"
+          className="text-2xl font-bold tracking-tight"
           whileHover={{ scale: 1.02 }}
           transition={{ duration: 0.2 }}
         >
           {title}
         </motion.h3>
-        <div className="flex items-center space-x-2">
-          <span className="text-sm text-muted-foreground">{t("movie.releaseYear")}: {year}</span>
-          <span className="text-sm text-muted-foreground">•</span>
-          <span className="text-sm text-muted-foreground">{t("movie.genre")}: {genre}</span>
-        </div>
-        <MovieRating rating={rating} />
+        
+        <Card className="p-4 bg-background/50 backdrop-blur-sm">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm text-muted-foreground">{t("movie.releaseYear")}</p>
+              <p className="font-medium">{year}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">{t("movie.genre")}</p>
+              <p className="font-medium">{genre}</p>
+            </div>
+            <div className="col-span-2">
+              <p className="text-sm text-muted-foreground mb-1">{t("movie.rating")}</p>
+              <MovieRating rating={rating} />
+            </div>
+          </div>
+        </Card>
       </div>
 
       <Separator />
 
       <div className="space-y-2">
-        <h4 className="font-medium">{t("movie.description")}</h4>
+        <h4 className="font-medium text-lg">{t("movie.description")}</h4>
         <p className="text-sm text-muted-foreground line-clamp-3 hover:line-clamp-none transition-all duration-300">
           {description}
         </p>
@@ -63,7 +75,7 @@ export const MovieDetailsSection = ({
 
       {tags && tags.length > 0 && (
         <div className="space-y-2">
-          <h4 className="font-medium">{t("movie.tags")}</h4>
+          <h4 className="font-medium text-lg">{t("movie.tags")}</h4>
           <div className="flex flex-wrap gap-2">
             {tags.map((tag) => (
               <Badge key={tag} variant="outline" className="animate-fade-in">
@@ -76,7 +88,7 @@ export const MovieDetailsSection = ({
 
       <Button
         variant="secondary"
-        size="sm"
+        size="lg"
         className="w-full animate-fade-in"
         onClick={onWatchTrailer}
       >
