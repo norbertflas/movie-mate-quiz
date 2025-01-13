@@ -1,35 +1,54 @@
+import { useQuery } from "@tanstack/react-query";
 import { MovieCard } from "./MovieCard";
-import { SAMPLE_RECOMMENDATIONS } from "./quiz/QuizConstants";
-import type { MovieRecommendation } from "./quiz/QuizTypes";
+import { getMovieRecommendations, type TMDBMovie } from "@/services/tmdb";
 import { useTranslation } from "react-i18next";
+import { motion } from "framer-motion";
 
 interface SimilarMoviesProps {
-  currentMovie: MovieRecommendation;
+  currentMovie: {
+    title: string;
+    year: string;
+    genre: string;
+    tags?: string[];
+    tmdbId: number;
+  };
 }
 
 export const SimilarMovies = ({ currentMovie }: SimilarMoviesProps) => {
   const { t } = useTranslation();
+  
+  const { data: similarMovies = [], isLoading } = useQuery({
+    queryKey: ['similarMovies', currentMovie.tmdbId],
+    queryFn: () => getMovieRecommendations(currentMovie.tmdbId),
+    enabled: !!currentMovie.tmdbId,
+  });
 
-  const getSimilarMovies = () => {
-    return SAMPLE_RECOMMENDATIONS
-      .filter(movie => 
-        movie.title !== currentMovie.title && 
-        (movie.genre === currentMovie.genre || 
-         movie.tags?.some(tag => currentMovie.tags?.includes(tag)))
-      )
-      .slice(0, 3);
-  };
+  if (isLoading || similarMovies.length === 0) return null;
 
-  const similarMovies = getSimilarMovies();
-
-  return similarMovies.length > 0 ? (
-    <div className="mt-8">
-      <h3 className="text-xl font-semibold mb-4">{t("similarTitles")}</h3>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {similarMovies.map((movie) => (
-          <MovieCard key={movie.title} {...movie} />
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="mt-8"
+    >
+      <h3 className="text-xl font-semibold mb-4">{t("similarMovies")}</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {similarMovies.slice(0, 3).map((movie: TMDBMovie) => (
+          <MovieCard
+            key={movie.id}
+            title={movie.title}
+            year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "N/A"}
+            platform="TMDB"
+            genre={t("movie.genre")}
+            imageUrl={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+            description={movie.overview}
+            trailerUrl=""
+            rating={movie.vote_average * 10}
+            tmdbId={movie.id}
+          />
         ))}
       </div>
-    </div>
-  ) : null;
+    </motion.div>
+  );
 };

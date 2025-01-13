@@ -6,6 +6,7 @@ import { MovieStreamingServices } from "./movie/MovieStreamingServices";
 import { MovieCardHeader } from "./movie/MovieCardHeader";
 import { MovieDetailsSection } from "./movie/MovieDetailsSection";
 import { MovieImage } from "./movie/MovieImage";
+import { SimilarMovies } from "./SimilarMovies";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { MovieFavoriteHandler } from "./movie/MovieFavoriteHandler";
@@ -23,6 +24,7 @@ interface MovieCardProps {
   rating: number;
   tags?: string[];
   streamingServices?: string[];
+  tmdbId?: number;
 }
 
 export const MovieCard = ({
@@ -36,6 +38,7 @@ export const MovieCard = ({
   rating,
   tags,
   streamingServices = [],
+  tmdbId,
 }: MovieCardProps) => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
@@ -105,7 +108,10 @@ export const MovieCard = ({
           </AnimatePresence>
 
           {isExpanded && (
-            <MovieActions userRating={userRating} onRate={handleRating} />
+            <>
+              <MovieActions userRating={userRating} onRate={handleRating} />
+              {tmdbId && <SimilarMovies currentMovie={{ title, year, genre, tags, tmdbId }} />}
+            </>
           )}
         </CardContent>
       </Card>
