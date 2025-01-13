@@ -3,6 +3,7 @@ import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import { Checkbox } from "./ui/checkbox";
 import { ArrowLeft, ArrowRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface SurveyStepProps {
   question: string;
@@ -23,6 +24,8 @@ export const SurveyStep = ({
   type,
   selectedOptions,
 }: SurveyStepProps) => {
+  const { t } = useTranslation();
+  
   const handleNextStep = () => {
     if (type === "multiple" && selectedOptions.length > 0) {
       onSelect("NEXT_STEP");
