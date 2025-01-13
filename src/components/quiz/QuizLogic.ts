@@ -1,42 +1,73 @@
 import { MovieRecommendation } from "./QuizTypes";
 import { SAMPLE_RECOMMENDATIONS } from "./QuizConstants";
 
+const calculateRecommendationScore = (movie: MovieRecommendation, answers: Record<string, any>): number => {
+  let score = 0;
+  const weights = {
+    platform: 30,
+    genre: 25,
+    mood: 25,
+    length: 20
+  };
+
+  // Platform match
+  if (answers.vod && answers.vod.includes(movie.platform)) {
+    score += weights.platform;
+  }
+
+  // Genre match
+  if (answers.genre && (
+    movie.genre.toLowerCase() === answers.genre.toLowerCase() ||
+    movie.tags?.some(tag => tag.toLowerCase() === answers.genre.toLowerCase())
+  )) {
+    score += weights.genre;
+  }
+
+  // Mood match (based on tags and genre)
+  if (answers.mood) {
+    const moodMatches = {
+      "Lekki/Zabawny": ["Komedia", "Familijny", "Feel Good"],
+      "Poważny/Dramatyczny": ["Dramat", "Biograficzny", "Wojenny"],
+      "Trzymający w napięciu": ["Thriller", "Horror", "Kryminał", "Mystery"],
+      "Inspirujący": ["Biograficzny", "Dokumentalny", "Sport", "Muzyczny"]
+    };
+
+    const relevantMoods = moodMatches[answers.mood] || [];
+    if (
+      relevantMoods.includes(movie.genre) ||
+      movie.tags?.some(tag => relevantMoods.includes(tag))
+    ) {
+      score += weights.mood;
+    }
+  }
+
+  // Length preference (if specified)
+  if (answers.length) {
+    // Add logic for length matching when that data becomes available
+    score += weights.length / 2; // Partial score for now
+  }
+
+  return score;
+};
+
 export const getRecommendations = (answers: Record<string, any>): MovieRecommendation[] => {
+  // Start with all recommendations
   let recommendations = [...SAMPLE_RECOMMENDATIONS];
   
-  // Filter by selected VOD services
-  if (answers.vod && answers.vod.length > 0) {
-    const filteredByVod = recommendations.filter(movie => 
-      answers.vod.includes(movie.platform)
-    );
-    // If we have enough movies after VOD filtering, use those. Otherwise, keep all movies
-    if (filteredByVod.length >= 5) {
-      recommendations = filteredByVod;
-    }
-  }
+  // Score each movie based on user preferences
+  const scoredRecommendations = recommendations.map(movie => ({
+    ...movie,
+    score: calculateRecommendationScore(movie, answers)
+  }));
 
-  // Filter by genre if specified
-  if (answers.genre) {
-    const filteredByGenre = recommendations.filter(movie => 
-      movie.genre.toLowerCase() === answers.genre.toLowerCase()
-    );
-    // If we have enough movies after genre filtering, use those. Otherwise, keep previous selection
-    if (filteredByGenre.length >= 5) {
-      recommendations = filteredByGenre;
-    }
-  }
+  // Sort by score (highest first) and normalize ratings to 0-100 scale
+  const sortedRecommendations = scoredRecommendations
+    .sort((a, b) => b.score - a.score)
+    .map(movie => ({
+      ...movie,
+      rating: Math.round(movie.rating * 10) // Convert 0-10 scale to 0-100
+    }));
 
-  // Ensure we always return exactly 5 recommendations
-  recommendations = recommendations.sort(() => Math.random() - 0.5);
-  
-  // If we have less than 5 recommendations, add random ones from the original list
-  while (recommendations.length < 5) {
-    const randomMovie = SAMPLE_RECOMMENDATIONS[Math.floor(Math.random() * SAMPLE_RECOMMENDATIONS.length)];
-    if (!recommendations.find(m => m.title === randomMovie.title)) {
-      recommendations.push(randomMovie);
-    }
-  }
-
-  // If we have more than 5, take only the first 5
-  return recommendations.slice(0, 5);
+  // Return top 5 recommendations
+  return sortedRecommendations.slice(0, 5);
 };
