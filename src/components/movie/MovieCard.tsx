@@ -51,8 +51,7 @@ export const MovieCard = ({
     title 
   });
 
-  const handleTrailerToggle = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleTrailerToggle = () => {
     setShowTrailer(!showTrailer);
   };
 
