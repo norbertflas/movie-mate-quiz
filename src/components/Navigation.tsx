@@ -3,11 +3,15 @@ import { Button } from "./ui/button";
 import { Home, Search, Heart, Star, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "./ui/use-toast";
+import { ThemeSwitcher } from "./ThemeSwitcher";
+import { LanguageSwitcher } from "./LanguageSwitcher";
+import { useTranslation } from "react-i18next";
 
 export const Navigation = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -34,7 +38,7 @@ export const Navigation = () => {
             className="flex items-center gap-2"
           >
             <Home className="h-4 w-4" />
-            <span>Strona główna</span>
+            <span>{t("navigation.home")}</span>
           </Button>
         </div>
         <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
@@ -45,7 +49,7 @@ export const Navigation = () => {
               className="flex items-center gap-2"
             >
               <Search className="h-4 w-4" />
-              <span>Wyszukaj</span>
+              <span>{t("navigation.search")}</span>
             </Button>
             <Button
               variant={isActive("/favorites") ? "default" : "ghost"}
@@ -53,7 +57,7 @@ export const Navigation = () => {
               className="flex items-center gap-2"
             >
               <Heart className="h-4 w-4" />
-              <span>Ulubione</span>
+              <span>{t("navigation.favorites")}</span>
             </Button>
             <Button
               variant={isActive("/ratings") ? "default" : "ghost"}
@@ -61,17 +65,21 @@ export const Navigation = () => {
               className="flex items-center gap-2"
             >
               <Star className="h-4 w-4" />
-              <span>Oceny</span>
+              <span>{t("navigation.ratings")}</span>
             </Button>
           </div>
-          <Button
-            variant="ghost"
-            onClick={handleLogout}
-            className="flex items-center gap-2"
-          >
-            <LogOut className="h-4 w-4" />
-            <span>Wyloguj</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <ThemeSwitcher />
+            <LanguageSwitcher />
+            <Button
+              variant="ghost"
+              onClick={handleLogout}
+              className="flex items-center gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              <span>{t("navigation.logout")}</span>
+            </Button>
+          </div>
         </div>
       </div>
     </nav>
