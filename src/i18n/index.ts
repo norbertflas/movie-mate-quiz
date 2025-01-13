@@ -57,6 +57,8 @@ const resources = {
         notAuthenticated: "You must be logged in to manage streaming preferences",
       },
       availableOn: "Available on",
+      watchTrailer: "Watch Trailer",
+      hideTrailer: "Hide Trailer",
     },
   },
   pl: {
@@ -114,17 +116,24 @@ const resources = {
         notAuthenticated: "Musisz być zalogowany, aby zarządzać preferencjami streamingowymi",
       },
       availableOn: "Dostępne na",
+      watchTrailer: "Oglądaj Zwiastun",
+      hideTrailer: "Ukryj Zwiastun",
     },
   },
 };
 
-i18n.use(initReactI18next).init({
-  resources,
-  lng: navigator.language.split('-')[0] || "en",
-  fallbackLng: "en",
-  interpolation: {
-    escapeValue: false,
-  },
-});
+i18n
+  .use(initReactI18next)
+  .init({
+    resources,
+    lng: navigator.language.split('-')[0] || "en",
+    fallbackLng: "en",
+    interpolation: {
+      escapeValue: false,
+    },
+    react: {
+      useSuspense: false
+    }
+  });
 
 export default i18n;

@@ -59,6 +59,9 @@ const Index = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <div className="mb-8">
+        <UserStreamingPreferences />
+      </div>
       <SearchBar />
       {!showQuiz ? (
         <>
@@ -66,10 +69,7 @@ const Index = () => {
           <QuickActions />
           <div className="flex flex-col lg:flex-row gap-6">
             <aside className="w-full lg:w-64">
-              <div className="space-y-6">
-                <MovieFilters onFilterChange={handleFilterChange} />
-                <UserStreamingPreferences />
-              </div>
+              <MovieFilters onFilterChange={handleFilterChange} />
             </aside>
             <main className="flex-1">
               {isLoading ? (
