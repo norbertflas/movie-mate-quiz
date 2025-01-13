@@ -128,7 +128,7 @@ export const MovieFilters = ({ onFilterChange }: MovieFiltersProps) => {
       <RangeFilter
         label={t("filters.yearRange")}
         min={1900}
-        max={currentYear}
+        max={new Date().getFullYear()}
         step={1}
         value={yearRange}
         onValueChange={(value) => setYearRange(value as [number, number])}
