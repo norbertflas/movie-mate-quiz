@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { WelcomeSection } from "../WelcomeSection";
 import { QuizQuestions } from "./QuizQuestions";
 import { QuizResults } from "./QuizResults";
 import { QuizProgressBar } from "./QuizProgressBar";
+import { useQuizLogic } from "./hooks/useQuizState";
+import { QuizAnswer } from "./QuizTypes";
 import { useSurveySteps } from "./constants/surveySteps";
-import { useQuizState } from "./hooks/useQuizState";
 
 export const QuizSection = () => {
   const { 
@@ -12,7 +14,7 @@ export const QuizSection = () => {
     answers, 
     handleStartQuiz, 
     handleQuizComplete 
-  } = useQuizState();
+  } = useQuizLogic();
   
   const questions = useSurveySteps();
 

@@ -1,7 +1,4 @@
-import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useToast } from "../ui/use-toast";
-import { useTranslation } from "react-i18next";
+import { motion } from "framer-motion";
 
 interface MovieTrailerProps {
   trailerUrl: string;
@@ -9,55 +6,15 @@ interface MovieTrailerProps {
 }
 
 export const MovieTrailer = ({ trailerUrl, title }: MovieTrailerProps) => {
-  const { t } = useTranslation();
-  const { toast } = useToast();
-  const [embedUrl, setEmbedUrl] = useState<string>("");
-
-  useEffect(() => {
-    const getEmbedUrl = (url: string) => {
-      if (!url) return '';
-      
-      // Handle YouTube URLs
-      const youtubeMatch = url.match(/(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=|\/watch\?.+&v=))([^"&?\/\s]{11})/);
-      if (youtubeMatch) {
-        return `https://www.youtube.com/embed/${youtubeMatch[1]}?autoplay=1`;
-      }
-      
-      // Handle Vimeo URLs
-      const vimeoMatch = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
-      if (vimeoMatch) {
-        return `https://player.vimeo.com/video/${vimeoMatch[1]}?autoplay=1`;
-      }
-      
-      return url;
-    };
-
-    const processedUrl = getEmbedUrl(trailerUrl);
-    if (!processedUrl) {
-      toast({
-        title: t("errors.trailerNotAvailable"),
-        description: t("errors.tryAgainLater"),
-        variant: "destructive",
-      });
-    }
-    setEmbedUrl(processedUrl);
-  }, [trailerUrl, toast, t]);
-
-  if (!embedUrl) {
-    return (
-      <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
-        <p className="text-gray-500 dark:text-gray-400">{t("noTrailerAvailable")}</p>
-      </div>
-    );
-  }
-
   return (
-    <iframe
-      src={embedUrl}
-      className="w-full h-full"
-      allowFullScreen
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+    <motion.iframe
+      src={trailerUrl}
       title={`${title} trailer`}
+      className="absolute inset-0 w-full h-full rounded-t-lg"
+      allowFullScreen
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
     />
   );
 };
