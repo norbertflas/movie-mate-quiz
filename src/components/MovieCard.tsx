@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader } from "./ui/card";
-import { useToast } from "./ui/use-toast";
 import { MovieTrailer } from "./movie/MovieTrailer";
 import { MovieActions } from "./movie/MovieActions";
 import { MovieStreamingServices } from "./movie/MovieStreamingServices";
@@ -9,6 +8,9 @@ import { MovieDetailsSection } from "./movie/MovieDetailsSection";
 import { MovieImage } from "./movie/MovieImage";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
+import { MovieFavoriteHandler } from "./movie/MovieFavoriteHandler";
+import { MovieRatingHandler } from "./movie/MovieRatingHandler";
+import { getTranslatedGenre } from "@/utils/genreTranslation";
 
 interface MovieCardProps {
   title: string;
@@ -39,30 +41,18 @@ export const MovieCard = ({
   const [showTrailer, setShowTrailer] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [userRating, setUserRating] = useState<"like" | "dislike" | null>(null);
-  const { toast } = useToast();
   const { t } = useTranslation();
 
-  const handleToggleFavorite = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsFavorite(!isFavorite);
-    toast({
-      title: !isFavorite ? t("favorites.added") : t("favorites.removed"),
-      description: t(!isFavorite ? "favorites.addedDescription" : "favorites.removedDescription", { title }),
-    });
-  };
+  const { handleToggleFavorite } = MovieFavoriteHandler({ 
+    isFavorite, 
+    setIsFavorite, 
+    title 
+  });
 
-  const handleRating = (rating: "like" | "dislike") => {
-    setUserRating(rating);
-    toast({
-      title: t("ratings.saved"),
-      description: t("ratings.savedDescription", { title }),
-    });
-  };
-
-  const getTranslatedGenre = (genre: string) => {
-    const genreKey = genre.toLowerCase().replace(/[\s-]/g, '');
-    return t(`movie.${genreKey}`, { defaultValue: genre });
-  };
+  const { handleRating } = MovieRatingHandler({ 
+    setUserRating, 
+    title 
+  });
 
   return (
     <motion.div
@@ -106,8 +96,8 @@ export const MovieCard = ({
                 year={year}
                 description={description}
                 rating={rating}
-                genre={getTranslatedGenre(genre)}
-                tags={tags?.map(getTranslatedGenre)}
+                genre={getTranslatedGenre(genre, t)}
+                tags={tags?.map(tag => getTranslatedGenre(tag, t))}
                 onWatchTrailer={() => setShowTrailer(!showTrailer)}
                 showTrailer={showTrailer}
               />
