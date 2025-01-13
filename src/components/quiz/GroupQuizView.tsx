@@ -1,79 +1,35 @@
-import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
-import { useToast } from "@/components/ui/use-toast";
+import { useState } from "react";
 import { QuizQuestions } from "./QuizQuestions";
-import { QuizProgressBar } from "./QuizProgressBar";
 import { QuizResults } from "./QuizResults";
+import { QuizProgressBar } from "./QuizProgressBar";
 import { useQuizLogic } from "./QuizLogic";
 import { QuizAnswer } from "./QuizTypes";
-import { QUIZ_QUESTIONS } from "./QuizConstants";
-import { supabase } from "@/integrations/supabase/client";
-import { useTranslation } from "react-i18next";
+import { useSurveySteps } from "./constants/surveySteps";
 
 export const GroupQuizView = () => {
-  const { groupId } = useParams();
-  const [showResults, setShowResults] = useState(false);
   const [answers, setAnswers] = useState<QuizAnswer[]>([]);
+  const [showResults, setShowResults] = useState(false);
   const { processAnswers } = useQuizLogic();
-  const { toast } = useToast();
-  const { t } = useTranslation();
+  const questions = useSurveySteps();
 
-  useEffect(() => {
-    const checkGroupExists = async () => {
-      const { data, error } = await supabase
-        .from("quiz_groups")
-        .select()
-        .eq("id", groupId)
-        .single();
-
-      if (error || !data) {
-        toast({
-          title: t("errors.notFound"),
-          description: t("errors.groupNotFound"),
-          variant: "destructive",
-        });
-      }
-    };
-
-    checkGroupExists();
-  }, [groupId]);
-
-  const handleQuizComplete = async (quizAnswers: QuizAnswer[]) => {
-    try {
-      const { error } = await supabase
-        .from("quiz_responses")
-        .insert({
-          group_id: groupId,
-          answers: quizAnswers,
-          user_id: (await supabase.auth.getUser()).data.user?.id
-        });
-
-      if (error) throw error;
-
-      setAnswers(quizAnswers);
-      setShowResults(true);
-    } catch (error) {
-      toast({
-        title: t("errors.savingResponse"),
-        description: t("errors.tryAgain"),
-        variant: "destructive",
-      });
-    }
+  const handleQuizComplete = (quizAnswers: QuizAnswer[]) => {
+    setAnswers(quizAnswers);
+    setShowResults(true);
   };
 
   if (showResults) {
     const recommendations = processAnswers(answers);
-    return <QuizResults recommendations={recommendations} isGroupQuiz />;
+    return <QuizResults recommendations={recommendations} />;
   }
 
   return (
     <div className="space-y-8">
       <QuizProgressBar 
         currentStep={answers.length} 
-        totalSteps={QUIZ_QUESTIONS.length} 
+        totalSteps={questions.length} 
       />
       <QuizQuestions
-        questions={QUIZ_QUESTIONS}
+        questions={questions}
         onComplete={handleQuizComplete}
       />
     </div>
