@@ -10,7 +10,7 @@ export const QuizQuestions = ({ questions, currentStep, onAnswer }: QuizQuestion
         onSelect={onAnswer}
         currentStep={currentStep + 1}
         totalSteps={questions.length}
-        type="single"
+        type={questions[currentStep].type}
         selectedOptions={[]}
       />
     </div>
