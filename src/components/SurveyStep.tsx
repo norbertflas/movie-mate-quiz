@@ -1,9 +1,8 @@
 import { motion } from "framer-motion";
-import { Button } from "./ui/button";
 import { Card } from "./ui/card";
-import { Checkbox } from "./ui/checkbox";
-import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { QuestionOption } from "./quiz/QuestionOption";
+import { NavigationButtons } from "./quiz/NavigationButtons";
 
 interface SurveyStepProps {
   question: string;
@@ -49,58 +48,22 @@ export const SurveyStep = ({
 
         <div className="grid grid-cols-1 gap-4">
           {options.map((option) => (
-            type === "multiple" ? (
-              <div
-                key={option}
-                className="flex items-center space-x-3 p-4 rounded-lg border border-gray-800 hover:bg-gray-800/50 cursor-pointer transition-colors"
-                onClick={() => onSelect(option)}
-              >
-                <Checkbox
-                  checked={selectedOptions.includes(option)}
-                  onCheckedChange={() => onSelect(option)}
-                  className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
-                />
-                <label className="text-base text-gray-200 cursor-pointer select-none">
-                  {option}
-                </label>
-              </div>
-            ) : (
-              <Button
-                key={option}
-                variant="outline"
-                className={`h-auto py-4 px-6 text-left justify-start transition-all duration-200 hover:bg-gray-800/50 hover:border-gray-700 ${
-                  selectedOptions.includes(option) ? 'bg-gray-800 border-gray-700' : 'bg-black/20 border-gray-800'
-                }`}
-                onClick={() => onSelect(option)}
-              >
-                {option}
-              </Button>
-            )
+            <QuestionOption
+              key={option}
+              option={option}
+              isSelected={selectedOptions.includes(option)}
+              onSelect={onSelect}
+              type={type}
+            />
           ))}
         </div>
 
-        <div className="flex justify-between pt-4">
-          {currentStep > 1 && (
-            <Button
-              variant="outline"
-              onClick={() => onSelect("PREV_STEP")}
-              className="gap-2 bg-black/20 border-gray-800 hover:bg-gray-800/50"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              {t("quiz.previous")}
-            </Button>
-          )}
-          
-          {type === "multiple" && selectedOptions.length > 0 && (
-            <Button
-              onClick={handleNextStep}
-              className="gap-2 ml-auto bg-blue-600 hover:bg-blue-700"
-            >
-              {t("quiz.next")}
-              <ArrowRight className="w-4 h-4" />
-            </Button>
-          )}
-        </div>
+        <NavigationButtons
+          currentStep={currentStep}
+          canGoNext={type === "multiple" && selectedOptions.length > 0}
+          onPrevious={() => onSelect("PREV_STEP")}
+          onNext={handleNextStep}
+        />
       </Card>
     </motion.div>
   );
