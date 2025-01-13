@@ -1,0 +1,37 @@
+import { motion } from "framer-motion";
+import { Card } from "../ui/card";
+import { ReactNode } from "react";
+
+interface MovieCardContainerProps {
+  children: ReactNode;
+  isExpanded: boolean;
+  onClick: () => void;
+}
+
+export const MovieCardContainer = ({ children, isExpanded, onClick }: MovieCardContainerProps) => {
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ duration: 0.3 }}
+      whileHover={{ scale: 1.02 }}
+      className="h-full"
+    >
+      <Card 
+        className="group relative overflow-hidden h-full flex flex-col glass-card
+                   hover:shadow-xl dark:hover:shadow-primary/10 transition-all duration-300" 
+        onClick={onClick}
+      >
+        {children}
+        <motion.div 
+          className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent"
+          initial={{ opacity: 0 }}
+          whileHover={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+        />
+      </Card>
+    </motion.div>
+  );
+};
