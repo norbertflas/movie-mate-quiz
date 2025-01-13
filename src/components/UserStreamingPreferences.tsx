@@ -27,7 +27,7 @@ export const UserStreamingPreferences = () => {
     if (error) {
       toast({
         variant: "destructive",
-        title: t("errors.loadingServices"),
+        title: "Error Loading Services",
         description: error.message,
       });
     } else if (data) {
@@ -48,7 +48,7 @@ export const UserStreamingPreferences = () => {
     if (error) {
       toast({
         variant: "destructive",
-        title: t("errors.loadingPreferences"),
+        title: "Error Loading Preferences",
         description: error.message,
       });
     } else if (preferences) {
@@ -61,8 +61,8 @@ export const UserStreamingPreferences = () => {
     if (!user) {
       toast({
         variant: "destructive",
-        title: t("errors.auth"),
-        description: t("errors.notAuthenticated"),
+        title: "Authentication Error",
+        description: "You must be logged in to manage streaming preferences",
       });
       return;
     }
@@ -79,7 +79,7 @@ export const UserStreamingPreferences = () => {
       if (error) {
         toast({
           variant: "destructive",
-          title: t("errors.removingService"),
+          title: "Error Removing Service",
           description: error.message,
         });
         return;
@@ -95,7 +95,7 @@ export const UserStreamingPreferences = () => {
       if (error) {
         toast({
           variant: "destructive",
-          title: t("errors.addingService"),
+          title: "Error Adding Service",
           description: error.message,
         });
         return;
@@ -109,8 +109,8 @@ export const UserStreamingPreferences = () => {
     );
 
     toast({
-      title: t(isSelected ? "services.removed" : "services.added"),
-      description: t("services.preferencesUpdated"),
+      title: isSelected ? "Service Removed" : "Service Added",
+      description: "Your streaming preferences have been updated",
     });
   };
 
@@ -131,7 +131,7 @@ export const UserStreamingPreferences = () => {
     <Card className="shadow-xl bg-gradient-to-br from-background/80 via-background/50 to-purple-500/5 dark:from-background/80 dark:via-background/50 dark:to-purple-500/10 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-accent/20">
       <CardHeader>
         <CardTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-violet-600 to-purple-600 bg-clip-text text-transparent">
-          {t("services.preferences")}
+          Streaming Services
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">

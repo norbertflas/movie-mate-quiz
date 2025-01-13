@@ -33,8 +33,8 @@ export const QuickActions = () => {
 
     if (filteredMovies.length === 0) {
       toast({
-        title: t("recommendations.noMoviesFound"),
-        description: t("recommendations.tryDifferentFilters"),
+        title: "No movies found",
+        description: "Try adjusting your filters",
         variant: "destructive",
       });
       return;
@@ -44,7 +44,7 @@ export const QuickActions = () => {
     const randomMovie = filteredMovies[randomIndex];
     
     toast({
-      title: t("recommendations.randomPick"),
+      title: "Random Movie Pick",
       description: `${randomMovie.title} (${randomMovie.release_date ? new Date(randomMovie.release_date).getFullYear() : 'N/A'}) - ${Math.round(randomMovie.vote_average * 10)}/100`,
     });
   };
@@ -58,19 +58,19 @@ export const QuickActions = () => {
             className="w-full sm:w-auto bg-gradient-to-r from-blue-600/10 via-violet-600/10 to-purple-600/10 hover:from-blue-600/20 hover:via-violet-600/20 hover:to-purple-600/20 border-blue-600/20"
           >
             <Filter className="mr-2 h-4 w-4" />
-            <span className="text-sm">{t("recommendations.filters")}</span>
+            <span className="text-sm">Filter Options</span>
           </Button>
         </SheetTrigger>
         <SheetContent side="right" className="w-[300px] sm:w-[400px]">
           <SheetHeader>
-            <SheetTitle>{t("recommendations.filterSettings")}</SheetTitle>
+            <SheetTitle>Filter Settings</SheetTitle>
           </SheetHeader>
           <div className="space-y-6 mt-4">
             <div className="space-y-2">
-              <Label>{t("filters.genre")}</Label>
+              <Label>Genre</Label>
               <Select value={selectedGenre} onValueChange={setSelectedGenre}>
                 <SelectTrigger>
-                  <SelectValue placeholder={t("filters.selectGenre")} />
+                  <SelectValue placeholder="Select a genre" />
                 </SelectTrigger>
                 <SelectContent>
                   {MOVIE_CATEGORIES.map(category => (
@@ -82,7 +82,7 @@ export const QuickActions = () => {
               </Select>
             </div>
             <div className="space-y-4">
-              <Label>{t("filters.minRating")}</Label>
+              <Label>Minimum Rating</Label>
               <Slider
                 min={0}
                 max={100}
@@ -105,7 +105,7 @@ export const QuickActions = () => {
         className="w-full sm:w-auto gap-2 bg-gradient-to-r from-blue-600/10 via-violet-600/10 to-purple-600/10 hover:from-blue-600/20 hover:via-violet-600/20 hover:to-purple-600/20 border-blue-600/20"
       >
         <Dice6 className="h-4 w-4" />
-        <span className="text-sm">{t("recommendations.randomMovie")}</span>
+        <span className="text-sm">Random Movie</span>
       </Button>
 
       <Button 
@@ -117,7 +117,7 @@ export const QuickActions = () => {
             .slice(0, 5);
 
           toast({
-            title: t("recommendations.topRated"),
+            title: "Top Rated Movies",
             description: topRatedMovies
               .map(movie => `${movie.title} (${Math.round(movie.vote_average * 10)}/100)`)
               .join('\n'),
@@ -125,7 +125,7 @@ export const QuickActions = () => {
         }}
       >
         <Star className="h-4 w-4" />
-        <span className="text-sm">{t("recommendations.topRated")}</span>
+        <span className="text-sm">Top Rated</span>
       </Button>
     </div>
   );
