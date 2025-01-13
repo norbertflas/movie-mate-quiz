@@ -9,6 +9,7 @@ export interface TMDBMovie {
   popularity: number;
   genre_ids: number[];
   video_id?: string;
+  genres: Array<{ id: number; name: string; }>;
 }
 
 export interface TMDBDiscoverParams {

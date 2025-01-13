@@ -43,4 +43,5 @@ export const useQuizState = (steps: SurveyStepType[]) => {
   };
 };
 
+export { useQuizLogic };
 export type { MovieRecommendation };
