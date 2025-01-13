@@ -2,12 +2,22 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const getPlatformScore = async (platform: string): Promise<{ score: number; explanation: string }> => {
   try {
-    const userPreferences = await supabase
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { score: 0, explanation: "" };
+    }
+
+    const { data: preferences, error } = await supabase
       .from('user_streaming_preferences')
       .select('service_id')
-      .eq('user_id', (await supabase.auth.getUser()).data.user?.id);
+      .eq('user_id', user.id);
 
-    if (userPreferences.data?.some(pref => pref.service_id === platform)) {
+    if (error) {
+      console.error('Error fetching platform preferences:', error);
+      return { score: 0, explanation: "" };
+    }
+
+    if (preferences?.some(pref => pref.service_id === platform)) {
       return { 
         score: 1, 
         explanation: `Available on your preferred platform: ${platform}` 
@@ -16,7 +26,7 @@ export const getPlatformScore = async (platform: string): Promise<{ score: numbe
     
     return { score: 0, explanation: "" };
   } catch (error) {
-    console.error('Error fetching platform preferences:', error);
+    console.error('Error in platform scoring:', error);
     return { score: 0, explanation: "" };
   }
 };

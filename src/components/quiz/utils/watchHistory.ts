@@ -2,10 +2,20 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const getWatchHistoryScore = async (movieId: number): Promise<{ score: number; explanation: string }> => {
   try {
-    const { data: watchHistory } = await supabase
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { score: 0, explanation: "" };
+    }
+
+    const { data: watchHistory, error } = await supabase
       .from('watched_movies')
       .select('tmdb_id, rating')
-      .eq('user_id', (await supabase.auth.getUser()).data.user?.id);
+      .eq('user_id', user.id);
+
+    if (error) {
+      console.error('Error fetching watch history:', error);
+      return { score: 0, explanation: "" };
+    }
 
     if (!watchHistory) {
       return { score: 0, explanation: "" };
@@ -35,7 +45,7 @@ export const getWatchHistoryScore = async (movieId: number): Promise<{ score: nu
 
     return { score: 0, explanation: "" };
   } catch (error) {
-    console.error('Error fetching watch history:', error);
+    console.error('Error in watch history scoring:', error);
     return { score: 0, explanation: "" };
   }
 };

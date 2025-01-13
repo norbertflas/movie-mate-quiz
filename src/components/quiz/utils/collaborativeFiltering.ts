@@ -2,13 +2,23 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const getCollaborativeScore = async (movieId: number): Promise<{ score: number; explanation: string }> => {
   try {
-    const { data: similarUsers } = await supabase
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { score: 0, explanation: "" };
+    }
+
+    const { data: similarUsers, error } = await supabase
       .from('watched_movies')
       .select('user_id, rating')
       .eq('tmdb_id', movieId)
       .gte('rating', 7);
 
-    if (!similarUsers || similarUsers.length === 0) {
+    if (error || !similarUsers) {
+      console.error('Error in collaborative filtering:', error);
+      return { score: 0, explanation: "" };
+    }
+
+    if (similarUsers.length === 0) {
       return { score: 0, explanation: "" };
     }
 
