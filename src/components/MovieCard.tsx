@@ -6,6 +6,7 @@ import { MovieCardHeader } from "./movie/MovieCardHeader";
 import { MovieFavoriteHandler } from "./movie/MovieFavoriteHandler";
 import { MovieRatingHandler } from "./movie/MovieRatingHandler";
 import { MovieMediaSection } from "./movie/MovieMediaSection";
+import { Badge } from "./ui/badge";
 
 interface MovieCardProps {
   title: string;
@@ -19,6 +20,7 @@ interface MovieCardProps {
   tags?: string[];
   streamingServices?: string[];
   tmdbId?: number;
+  explanations?: string[];
 }
 
 export const MovieCard = ({
@@ -33,6 +35,7 @@ export const MovieCard = ({
   tags,
   streamingServices = [],
   tmdbId,
+  explanations = [],
 }: MovieCardProps) => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
@@ -68,6 +71,15 @@ export const MovieCard = ({
           isFavorite={isFavorite}
           onToggleFavorite={handleToggleFavorite}
         />
+        {explanations.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-2">
+            {explanations.map((explanation, index) => (
+              <Badge key={index} variant="secondary" className="text-xs">
+                {explanation}
+              </Badge>
+            ))}
+          </div>
+        )}
       </CardHeader>
 
       <MovieCardContent

@@ -95,6 +95,84 @@ export type Database = {
         }
         Relationships: []
       }
+      movie_metadata: {
+        Row: {
+          created_at: string
+          id: string
+          overview: string | null
+          popularity: number | null
+          poster_path: string | null
+          release_date: string | null
+          title: string
+          tmdb_id: number
+          vote_average: number | null
+          vote_count: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          overview?: string | null
+          popularity?: number | null
+          poster_path?: string | null
+          release_date?: string | null
+          title: string
+          tmdb_id: number
+          vote_average?: number | null
+          vote_count?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          overview?: string | null
+          popularity?: number | null
+          poster_path?: string | null
+          release_date?: string | null
+          title?: string
+          tmdb_id?: number
+          vote_average?: number | null
+          vote_count?: number | null
+        }
+        Relationships: []
+      }
+      movie_streaming_availability: {
+        Row: {
+          available_since: string
+          id: string
+          movie_id: string | null
+          region: string
+          service_id: string | null
+        }
+        Insert: {
+          available_since?: string
+          id?: string
+          movie_id?: string | null
+          region: string
+          service_id?: string | null
+        }
+        Update: {
+          available_since?: string
+          id?: string
+          movie_id?: string | null
+          region?: string
+          service_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "movie_streaming_availability_movie_id_fkey"
+            columns: ["movie_id"]
+            isOneToOne: false
+            referencedRelation: "movie_metadata"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movie_streaming_availability_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "streaming_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quiz_groups: {
         Row: {
           created_at: string
