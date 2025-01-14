@@ -1,6 +1,12 @@
-import { TMDB_IMAGE_BASE_URL } from "./config";
+import { TMDB_BASE_URL, getTMDBApiKey } from "./config";
 
-export function getImageUrl(path: string | null): string {
-  if (!path) return '/placeholder.svg';
-  return `${TMDB_IMAGE_BASE_URL}${path}`;
+export async function tmdbFetch(endpoint: string) {
+  const apiKey = await getTMDBApiKey();
+  const response = await fetch(`${TMDB_BASE_URL}${endpoint}&api_key=${apiKey}`);
+  
+  if (!response.ok) {
+    throw new Error(`TMDB API error: ${response.status} ${response.statusText}`);
+  }
+  
+  return response.json();
 }

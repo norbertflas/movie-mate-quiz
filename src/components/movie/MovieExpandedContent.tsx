@@ -1,9 +1,7 @@
-import { SimilarMovies } from "../SimilarMovies";
+import { motion } from "framer-motion";
 import { MovieActions } from "./MovieActions";
 import { MovieDetailsSection } from "./MovieDetailsSection";
-import { AnimatePresence, motion } from "framer-motion";
-import { useTranslation } from "react-i18next";
-import { getTranslatedGenre } from "@/utils/genreTranslation";
+import { SimilarMovies } from "../SimilarMovies";
 
 interface MovieExpandedContentProps {
   isExpanded: boolean;
@@ -14,7 +12,7 @@ interface MovieExpandedContentProps {
   genre: string;
   tags?: string[];
   showTrailer: boolean;
-  onWatchTrailer: (e: React.MouseEvent) => void;
+  onWatchTrailer: () => void;
   userRating: "like" | "dislike" | null;
   onRate: (rating: "like" | "dislike") => void;
   tmdbId?: number;
@@ -34,37 +32,39 @@ export const MovieExpandedContent = ({
   onRate,
   tmdbId,
 }: MovieExpandedContentProps) => {
-  const { t } = useTranslation();
-
-  const handleTrailerToggle = (e: React.MouseEvent) => {
+  const handleTrailerClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onWatchTrailer();
   };
 
   return (
-    <AnimatePresence mode="wait">
-      {isExpanded && (
-        <>
-          <MovieDetailsSection
-            title={title}
-            year={year}
-            description={description}
-            rating={rating}
-            genre={getTranslatedGenre(genre, t)}
-            tags={tags?.map(tag => getTranslatedGenre(tag, t))}
-            onWatchTrailer={onWatchTrailer}
-            showTrailer={showTrailer}
-          />
-          <MovieActions 
-            userRating={userRating} 
-            onRate={onRate}
-            showTrailer={showTrailer}
-            onToggleTrailer={handleTrailerToggle}
-            title={title}
-          />
-          {tmdbId && <SimilarMovies currentMovie={{ title, year, genre, tags, tmdbId }} />}
-        </>
-      )}
-    </AnimatePresence>
+    <motion.div
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: isExpanded ? 1 : 0, height: isExpanded ? "auto" : 0 }}
+      exit={{ opacity: 0, height: 0 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-4"
+    >
+      <MovieDetailsSection
+        title={title}
+        year={year}
+        description={description}
+        rating={rating}
+        genre={genre}
+        tags={tags}
+        showTrailer={showTrailer}
+        onWatchTrailer={handleTrailerClick}
+      />
+      
+      <MovieActions 
+        userRating={userRating}
+        showTrailer={showTrailer}
+        onToggleTrailer={handleTrailerClick}
+        onRate={onRate}
+        title={title}
+      />
+      
+      {tmdbId && <SimilarMovies currentMovie={{ title, year, genre, tags, tmdbId }} />}
+    </motion.div>
   );
 };

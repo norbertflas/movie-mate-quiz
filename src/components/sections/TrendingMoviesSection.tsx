@@ -4,7 +4,6 @@ import { getTrendingMovies } from "@/services/tmdb";
 import { MovieCard } from "@/components/MovieCard";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
-import { getStreamingServicesByRegion, languageToRegion } from "@/utils/streamingServices";
 import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
 
@@ -14,18 +13,7 @@ export const TrendingMoviesSection = () => {
 
   const { data: trendingMovies = [], isLoading: isLoadingMovies } = useQuery({
     queryKey: ['trendingMovies', i18n.language],
-    queryFn: async () => {
-      const region = languageToRegion[i18n.language] || 'US';
-      return getTrendingMovies(region);
-    },
-  });
-
-  const { data: streamingServices = [] } = useQuery({
-    queryKey: ['streamingServices', i18n.language],
-    queryFn: async () => {
-      const region = languageToRegion[i18n.language] || 'US';
-      return getStreamingServicesByRegion(region);
-    },
+    queryFn: getTrendingMovies,
   });
 
   if (isLoadingMovies) {
@@ -70,7 +58,6 @@ export const TrendingMoviesSection = () => {
                 description={movie.overview}
                 trailerUrl=""
                 rating={movie.vote_average * 10}
-                streamingServices={streamingServices.map(service => service.name)}
                 tmdbId={movie.id}
               />
             </motion.div>
