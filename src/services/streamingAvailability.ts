@@ -1,35 +1,25 @@
-const RAPIDAPI_BASE_URL = 'https://streaming-availability.p.rapidapi.com/v2';
+import { supabase } from "@/integrations/supabase/client";
 
-interface StreamingInfo {
-  service: string;
-  streamingType: string;
-  link: string;
-  availableSince: string;
-}
-
-interface StreamingResponse {
-  result: {
-    streamingInfo: {
-      [country: string]: StreamingInfo[];
-    };
-  }[];
-}
-
-export async function getStreamingAvailability(tmdbId: number, country: string = 'us'): Promise<StreamingInfo[]> {
+export async function getStreamingAvailability(tmdbId: number, country: string = 'us'): Promise<any[]> {
   try {
-    const response = await fetch(`${RAPIDAPI_BASE_URL}/get/basic/tmdb/movie/${tmdbId}`, {
-      headers: {
-        'X-RapidAPI-Key': process.env.RAPIDAPI_KEY || '',
-        'X-RapidAPI-Host': 'streaming-availability.p.rapidapi.com'
-      }
-    });
+    const { data, error } = await supabase
+      .functions.invoke('streaming-availability', {
+        body: { tmdbId, country }
+      });
 
-    if (!response.ok) {
-      throw new Error('Failed to fetch streaming availability');
+    if (error) {
+      console.error('Error fetching streaming availability:', error);
+      return [];
     }
 
-    const data: StreamingResponse = await response.json();
-    return data.result[0]?.streamingInfo[country] || [];
+    const streamingInfo = data?.result?.[0]?.streamingInfo?.[country] || [];
+    return streamingInfo.map((info: any) => ({
+      service: info.service,
+      link: info.link,
+      availableSince: info.availableSince,
+      country,
+      needsVpn: false
+    }));
   } catch (error) {
     console.error('Error fetching streaming availability:', error);
     return [];
@@ -41,28 +31,17 @@ export async function searchByStreaming(
   country: string = 'us'
 ): Promise<number[]> {
   try {
-    const response = await fetch(`${RAPIDAPI_BASE_URL}/search/basic`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-RapidAPI-Key': process.env.RAPIDAPI_KEY || '',
-        'X-RapidAPI-Host': 'streaming-availability.p.rapidapi.com'
-      },
-      body: JSON.stringify({
-        services: services,
-        country: country,
-        output_language: 'en',
-        show_type: 'movie',
-        order_by: 'popularity'
-      })
-    });
+    const { data, error } = await supabase
+      .functions.invoke('streaming-availability', {
+        body: { services, country }
+      });
 
-    if (!response.ok) {
-      throw new Error('Failed to search streaming movies');
+    if (error) {
+      console.error('Error searching streaming movies:', error);
+      return [];
     }
 
-    const data = await response.json();
-    return data.result.map((movie: any) => movie.tmdbId);
+    return data?.result?.map((movie: any) => movie.tmdbId) || [];
   } catch (error) {
     console.error('Error searching streaming movies:', error);
     return [];

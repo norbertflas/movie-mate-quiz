@@ -1,14 +1,18 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { MovieCard } from "./MovieCard";
+import { MovieCard } from "../MovieCard";
 import { getPopularMovies } from "@/services/tmdb";
 import { useToast } from "../ui/use-toast";
 import { useTranslation } from "react-i18next";
 import type { TMDBMovie } from "@/services/tmdb";
+import { Button } from "../ui/button";
+import { Loader2 } from "lucide-react";
 
 export const InfiniteMovieList = () => {
   const { t } = useTranslation();
   const { toast } = useToast();
+  const observerRef = useRef<IntersectionObserver>();
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
   const {
     data,
@@ -20,14 +24,19 @@ export const InfiniteMovieList = () => {
   } = useInfiniteQuery({
     queryKey: ['infiniteMovies'],
     queryFn: async ({ pageParam = 1 }) => {
-      const movies = await getPopularMovies();
-      return movies as TMDBMovie[];
+      const movies = await getPopularMovies(pageParam);
+      return { movies, nextPage: pageParam + 1 };
     },
     initialPageParam: 1,
-    getNextPageParam: (lastPage, allPages) => {
-      return lastPage && lastPage.length === 20 ? allPages.length + 1 : undefined;
-    },
+    getNextPageParam: (lastPage) => lastPage.nextPage,
   });
+
+  const handleObserver = useCallback((entries: IntersectionObserverEntry[]) => {
+    const [target] = entries;
+    if (target.isIntersecting && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   useEffect(() => {
     if (error) {
@@ -38,6 +47,23 @@ export const InfiniteMovieList = () => {
       });
     }
   }, [error, toast, t]);
+
+  useEffect(() => {
+    const element = loadMoreRef.current;
+    if (!element) return;
+
+    observerRef.current = new IntersectionObserver(handleObserver, {
+      threshold: 0.5,
+    });
+
+    observerRef.current.observe(element);
+
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+    };
+  }, [handleObserver]);
 
   if (status === "pending") {
     return <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -50,9 +76,9 @@ export const InfiniteMovieList = () => {
   return (
     <div className="space-y-8">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {data?.pages.map((group, i) => (
-          <div key={i}>
-            {group.map((movie: TMDBMovie) => (
+        {data?.pages.map((page, i) => (
+          <div key={i} className="contents">
+            {page.movies.map((movie: TMDBMovie) => (
               <MovieCard
                 key={movie.id}
                 title={movie.title}
@@ -69,17 +95,15 @@ export const InfiniteMovieList = () => {
           </div>
         ))}
       </div>
-      {hasNextPage && (
-        <div className="flex justify-center">
-          <button
-            onClick={() => fetchNextPage()}
-            disabled={isFetchingNextPage}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50"
-          >
-            {isFetchingNextPage ? t("loading") : t("loadMore")}
-          </button>
-        </div>
-      )}
+      
+      <div ref={loadMoreRef} className="flex justify-center py-4">
+        {isFetchingNextPage && (
+          <Button disabled className="gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            {t("loading")}
+          </Button>
+        )}
+      </div>
     </div>
   );
 };
