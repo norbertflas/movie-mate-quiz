@@ -11,6 +11,7 @@ import { RecentlyViewedSection } from "@/components/sections/RecentlyViewedSecti
 import { InfiniteMovieList } from "@/components/movie/InfiniteMovieList";
 import { getPersonalizedRecommendations } from "@/utils/recommendationEngine";
 import { getMovieDetails } from "@/services/tmdb";
+import { MovieCard } from "@/components/MovieCard";
 
 const Index = () => {
   const [showQuiz, setShowQuiz] = useState(false);
@@ -37,13 +38,15 @@ const Index = () => {
       const movies = await Promise.all(movieDetailsPromises);
       return movies.filter(Boolean);
     },
-    onError: (error) => {
-      toast({
-        title: t("errors.recommendationError"),
-        description: t("errors.tryAgain"),
-        variant: "destructive",
-      });
-    },
+    meta: {
+      onError: () => {
+        toast({
+          title: t("errors.recommendationError"),
+          description: t("errors.tryAgain"),
+          variant: "destructive",
+        });
+      }
+    }
   });
 
   const handleStartQuiz = () => {
