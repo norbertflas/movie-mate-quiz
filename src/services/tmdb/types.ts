@@ -24,3 +24,23 @@ export interface TMDBPerson {
     media_type: string;
   }>;
 }
+
+export interface TMDBDiscoverParams {
+  genres?: string[];
+  minVoteCount?: number;
+  minVoteAverage?: number;
+  releaseDateGte?: string;
+  releaseDateLte?: string;
+  sortBy?: string;
+  page?: number;
+  language?: string;
+  region?: string;
+  includeAdult?: boolean;
+  withKeywords?: string;
+}
+
+export interface TMDBRecommendationParams {
+  page?: number;
+  language?: string;
+  region?: string;
+}
