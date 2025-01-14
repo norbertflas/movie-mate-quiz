@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CardHeader } from "./ui/card";
 import { MovieCardContainer } from "./movie/MovieCardContainer";
 import { MovieCardContent } from "./movie/MovieCardContent";
@@ -7,6 +7,15 @@ import { MovieFavoriteHandler } from "./movie/MovieFavoriteHandler";
 import { MovieRatingHandler } from "./movie/MovieRatingHandler";
 import { MovieMediaSection } from "./movie/MovieMediaSection";
 import { Badge } from "./ui/badge";
+import { getStreamingAvailability } from "@/services/streamingAvailability";
+import { useTranslation } from "react-i18next";
+import { Info } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "./ui/tooltip";
 
 interface MovieCardProps {
   title: string;
@@ -41,6 +50,9 @@ export const MovieCard = ({
   const [showTrailer, setShowTrailer] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [userRating, setUserRating] = useState<"like" | "dislike" | null>(null);
+  const [availableStreaming, setAvailableStreaming] = useState<any[]>([]);
+  const [isLoadingStreaming, setIsLoadingStreaming] = useState(false);
+  const { t, i18n } = useTranslation();
 
   const { handleToggleFavorite } = MovieFavoriteHandler({ 
     isFavorite, 
@@ -52,6 +64,24 @@ export const MovieCard = ({
     setUserRating, 
     title 
   });
+
+  useEffect(() => {
+    const fetchStreamingAvailability = async () => {
+      if (tmdbId) {
+        setIsLoadingStreaming(true);
+        try {
+          const data = await getStreamingAvailability(tmdbId, i18n.language.split('-')[0]);
+          setAvailableStreaming(data);
+        } catch (error) {
+          console.error('Error fetching streaming availability:', error);
+        } finally {
+          setIsLoadingStreaming(false);
+        }
+      }
+    };
+
+    fetchStreamingAvailability();
+  }, [tmdbId, i18n.language]);
 
   return (
     <MovieCardContainer
@@ -78,6 +108,46 @@ export const MovieCard = ({
                 {explanation}
               </Badge>
             ))}
+          </div>
+        )}
+        {availableStreaming.length > 0 && (
+          <div className="mt-4 space-y-2">
+            <h4 className="text-sm font-medium flex items-center gap-2">
+              {t("streaming.availableOn")}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Info className="h-4 w-4 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{t("streaming.availability")}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </h4>
+            <div className="flex flex-wrap gap-2">
+              {availableStreaming.map((service: any, index: number) => (
+                <Badge
+                  key={index}
+                  variant={service.needsVpn ? "outline" : "default"}
+                  className="text-xs flex items-center gap-1"
+                >
+                  {service.service}
+                  {service.needsVpn && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-3 w-3" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{t("streaming.vpnRequired", { country: service.country })}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </Badge>
+              ))}
+            </div>
           </div>
         )}
       </CardHeader>
