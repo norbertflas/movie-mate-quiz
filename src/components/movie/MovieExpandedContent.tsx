@@ -14,7 +14,7 @@ interface MovieExpandedContentProps {
   genre: string;
   tags?: string[];
   showTrailer: boolean;
-  onWatchTrailer: () => void;
+  onWatchTrailer: (e: React.MouseEvent) => void;
   userRating: "like" | "dislike" | null;
   onRate: (rating: "like" | "dislike") => void;
   tmdbId?: number;

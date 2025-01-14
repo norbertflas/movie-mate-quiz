@@ -9,7 +9,7 @@ import { Button } from "../ui/button";
 import { Loader2 } from "lucide-react";
 
 export const InfiniteMovieList = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { toast } = useToast();
   const observerRef = useRef<IntersectionObserver>();
   const loadMoreRef = useRef<HTMLDivElement>(null);
@@ -22,7 +22,7 @@ export const InfiniteMovieList = () => {
     status,
     error
   } = useInfiniteQuery({
-    queryKey: ['infiniteMovies'],
+    queryKey: ['infiniteMovies', i18n.language],
     queryFn: async ({ pageParam = 1 }) => {
       const movies = await getPopularMovies(pageParam);
       return { movies, nextPage: pageParam + 1 };
