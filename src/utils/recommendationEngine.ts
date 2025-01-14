@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { TMDBMovie } from "@/services/tmdb";
+import { getStreamingAvailability } from "@/services/streamingAvailability";
 
 interface RecommendationScore {
   movieId: number;
@@ -40,7 +40,7 @@ export async function getPersonalizedRecommendations(): Promise<RecommendationSc
     const scores: RecommendationScore[] = [];
     const processedMovies = new Set<number>();
 
-    // Use Promise.all with map instead of forEach
+    // Use Promise.all with map instead of forEach for async operations
     await Promise.all((availableMovies || []).map(async (movie) => {
       if (!movie.movie_metadata?.tmdb_id || processedMovies.has(movie.movie_metadata.tmdb_id)) return;
 
@@ -52,14 +52,17 @@ export async function getPersonalizedRecommendations(): Promise<RecommendationSc
       const explanations: string[] = [];
       let score = 0;
 
-      // Boost score if available on multiple preferred platforms
-      const platformCount = availableMovies.filter(
-        am => am.movie_metadata?.tmdb_id === movie.movie_metadata?.tmdb_id
-      ).length;
+      // Check real-time streaming availability
+      const streamingInfo = await getStreamingAvailability(movie.movie_metadata.tmdb_id);
+      const availableServices = streamingInfo.map(info => info.service);
       
-      if (platformCount > 1) {
-        score += 0.2;
-        explanations.push(`Available on ${platformCount} of your streaming services`);
+      const matchingServices = preferredServices.filter(service => 
+        availableServices.includes(service)
+      );
+
+      if (matchingServices.length > 0) {
+        score += 0.4;
+        explanations.push(`Available on ${matchingServices.length} of your streaming services`);
       }
 
       // Add collaborative filtering score
