@@ -12,9 +12,10 @@ interface SimilarMoviesProps {
     tags?: string[];
     tmdbId: number;
   };
+  onMovieSelect?: (movie: TMDBMovie) => void;
 }
 
-export const SimilarMovies = ({ currentMovie }: SimilarMoviesProps) => {
+export const SimilarMovies = ({ currentMovie, onMovieSelect }: SimilarMoviesProps) => {
   const { t } = useTranslation();
   
   const { data: similarMovies = [], isLoading } = useQuery({
@@ -24,6 +25,12 @@ export const SimilarMovies = ({ currentMovie }: SimilarMoviesProps) => {
   });
 
   if (isLoading || similarMovies.length === 0) return null;
+
+  const handleMovieClick = (movie: TMDBMovie) => {
+    if (onMovieSelect) {
+      onMovieSelect(movie);
+    }
+  };
 
   return (
     <motion.div
@@ -35,18 +42,19 @@ export const SimilarMovies = ({ currentMovie }: SimilarMoviesProps) => {
       <h3 className="text-xl font-semibold mb-4">{t("similarMovies")}</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {similarMovies.slice(0, 3).map((movie: TMDBMovie) => (
-          <MovieCard
-            key={movie.id}
-            title={movie.title}
-            year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "N/A"}
-            platform="TMDB"
-            genre={t("movie.genre")}
-            imageUrl={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
-            description={movie.overview}
-            trailerUrl=""
-            rating={movie.vote_average * 10}
-            tmdbId={movie.id}
-          />
+          <div key={movie.id} onClick={() => handleMovieClick(movie)}>
+            <MovieCard
+              title={movie.title}
+              year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "N/A"}
+              platform="TMDB"
+              genre={t("movie.genre")}
+              imageUrl={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+              description={movie.overview}
+              trailerUrl=""
+              rating={movie.vote_average * 10}
+              tmdbId={movie.id}
+            />
+          </div>
         ))}
       </div>
     </motion.div>

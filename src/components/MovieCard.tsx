@@ -83,6 +83,11 @@ export const MovieCard = ({
     fetchStreamingAvailability();
   }, [tmdbId, i18n.language]);
 
+  const handleTrailerClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowTrailer(!showTrailer);
+  };
+
   return (
     <MovieCardContainer
       isExpanded={isExpanded}
@@ -162,7 +167,7 @@ export const MovieCard = ({
         genre={genre}
         tags={tags}
         showTrailer={showTrailer}
-        onWatchTrailer={() => setShowTrailer(!showTrailer)}
+        onWatchTrailer={handleTrailerClick}
         userRating={userRating}
         onRate={handleRating}
         tmdbId={tmdbId}
