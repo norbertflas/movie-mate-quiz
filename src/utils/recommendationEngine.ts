@@ -40,7 +40,8 @@ export async function getPersonalizedRecommendations(): Promise<RecommendationSc
     const scores: RecommendationScore[] = [];
     const processedMovies = new Set<number>();
 
-    availableMovies?.forEach(movie => {
+    // Use Promise.all with map instead of forEach
+    await Promise.all((availableMovies || []).map(async (movie) => {
       if (!movie.movie_metadata?.tmdb_id || processedMovies.has(movie.movie_metadata.tmdb_id)) return;
 
       const watchedMovie = watchedMovies?.find(wm => wm.tmdb_id === movie.movie_metadata.tmdb_id);
@@ -73,12 +74,14 @@ export async function getPersonalizedRecommendations(): Promise<RecommendationSc
         explanations.push('Highly rated by users with similar taste');
       }
 
-      scores.push({
-        movieId: movie.movie_metadata.tmdb_id,
-        score,
-        explanations: explanations.filter(Boolean)
-      });
-    });
+      if (score > 0) {
+        scores.push({
+          movieId: movie.movie_metadata.tmdb_id,
+          score,
+          explanations: explanations.filter(Boolean)
+        });
+      }
+    }));
 
     return scores.sort((a, b) => b.score - a.score);
   } catch (error) {
