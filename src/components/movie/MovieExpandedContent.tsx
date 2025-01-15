@@ -14,7 +14,7 @@ interface MovieExpandedContentProps {
   showTrailer: boolean;
   onWatchTrailer: () => void;
   userRating: "like" | "dislike" | null;
-  onRate: (rating: "like" | "dislike") => void;
+  onRate: (rating: "like" | "dislike", e: React.MouseEvent) => void;
   tmdbId?: number;
 }
 
@@ -32,11 +32,6 @@ export const MovieExpandedContent = ({
   onRate,
   tmdbId,
 }: MovieExpandedContentProps) => {
-  const handleTrailerClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onWatchTrailer();
-  };
-
   return (
     <motion.div
       initial={{ opacity: 0, height: 0 }}
@@ -53,13 +48,13 @@ export const MovieExpandedContent = ({
         genre={genre}
         tags={tags}
         showTrailer={showTrailer}
-        onWatchTrailer={handleTrailerClick}
+        onWatchTrailer={onWatchTrailer}
       />
       
       <MovieActions 
         userRating={userRating}
         showTrailer={showTrailer}
-        onToggleTrailer={handleTrailerClick}
+        onToggleTrailer={onWatchTrailer}
         onRate={onRate}
         title={title}
       />

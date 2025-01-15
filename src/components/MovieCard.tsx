@@ -83,8 +83,7 @@ export const MovieCard = ({
     fetchStreamingAvailability();
   }, [tmdbId, i18n.language]);
 
-  const handleTrailerClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleTrailerClick = () => {
     setShowTrailer(!showTrailer);
   };
 
