@@ -1,103 +1,110 @@
+import { useRef, useCallback } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { getTrendingMovies } from "@/services/tmdb";
-import { MovieCard } from "@/components/MovieCard";
-import { Button } from "@/components/ui/button";
-import { useTranslation } from "react-i18next";
-import { motion, AnimatePresence } from "framer-motion";
-import { Loader2 } from "lucide-react";
-import { useCallback, useRef, useEffect, memo } from "react";
-
-const MemoizedMovieCard = memo(MovieCard);
+import { useInView } from "framer-motion";
+import { MovieCardBase } from "./MovieCardBase";
+import { Skeleton } from "@/components/ui/skeleton";
+import { discoverMovies } from "@/services/tmdb";
+import type { TMDBMovie } from "@/services/tmdb/types";
 
 export const InfiniteMovieList = () => {
-  const { t } = useTranslation();
-  const observerRef = useRef<IntersectionObserver>();
-  const loadMoreRef = useRef<HTMLDivElement>(null);
-  
+  const loadMoreRef = useRef(null);
+  const isLoadMoreInView = useInView(loadMoreRef);
+
   const {
     data,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
     isLoading,
+    isError,
   } = useInfiniteQuery({
-    queryKey: ['infiniteMovies'],
-    queryFn: getTrendingMovies,
+    queryKey: ["movies", "infinite"],
+    queryFn: async ({ pageParam = 1 }) => {
+      const movies = await discoverMovies({ page: pageParam });
+      return movies;
+    },
     initialPageParam: 1,
-    getNextPageParam: (lastPage, pages) => pages.length + 1,
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-    gcTime: 10 * 60 * 1000, // Keep unused data for 10 minutes
+    getNextPageParam: (lastPage, pages) => {
+      if (lastPage.length === 0) return undefined;
+      return pages.length + 1;
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 60, // 1 hour
   });
 
-  const handleObserver = useCallback((entries: IntersectionObserverEntry[]) => {
-    const [target] = entries;
-    if (target.isIntersecting && hasNextPage && !isFetchingNextPage) {
+  const loadMore = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
       fetchNextPage();
     }
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
-  useEffect(() => {
-    if (loadMoreRef.current) {
-      observerRef.current = new IntersectionObserver(handleObserver, {
-        threshold: 0.1,
-      });
-      observerRef.current.observe(loadMoreRef.current);
-    }
-
-    return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-      }
-    };
-  }, [handleObserver]);
-
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="space-y-4">
+            <Skeleton className="aspect-[2/3] w-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-4 w-1/2" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-destructive">Error loading movies. Please try again later.</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        <AnimatePresence mode="popLayout">
-          {data?.pages.map((page, pageIndex) =>
-            page.map((movie, movieIndex) => (
-              <motion.div
-                key={movie.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ 
-                  duration: 0.3,
-                  delay: Math.min(movieIndex * 0.1, 0.3) // Cap delay at 0.3s
-                }}
-                layout
-              >
-                <MemoizedMovieCard
-                  title={movie.title}
-                  year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "N/A"}
-                  platform="TMDB"
-                  genre={t("movie.genre")}
-                  imageUrl={movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : '/placeholder.svg'}
-                  description={movie.overview}
-                  trailerUrl=""
-                  rating={movie.vote_average * 10}
-                  tmdbId={movie.id}
-                />
-              </motion.div>
-            ))
-          )}
-        </AnimatePresence>
-      </div>
-
-      <div ref={loadMoreRef} className="h-10 flex justify-center">
-        {isFetchingNextPage && (
-          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+    <>
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {data?.pages.map((page) =>
+          page.map((movie: TMDBMovie) => (
+            <MovieCardBase
+              key={movie.id}
+              title={movie.title}
+              year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "N/A"}
+              platform="TMDB"
+              genre={movie.genre_ids?.[0]?.toString() || "Unknown"}
+              imageUrl={movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : "/placeholder.svg"}
+              description={movie.overview}
+              trailerUrl=""
+              rating={movie.vote_average * 10}
+              tmdbId={movie.id}
+            />
+          ))
         )}
       </div>
-    </div>
+      {hasNextPage && (
+        <div
+          ref={loadMoreRef}
+          className="py-8 text-center"
+          onViewportEnter={loadMore}
+        >
+          {isFetchingNextPage ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="space-y-4">
+                    <Skeleton className="aspect-[2/3] w-full" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-4 w-1/2" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
+      )}
+    </>
   );
 };

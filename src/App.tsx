@@ -1,52 +1,44 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthLayout } from "./components/layouts/AuthLayout";
-import { ThemeProvider } from "./hooks/use-theme";
-import Index from "./pages/Index";
-import Auth from "./pages/Auth";
-import Search from "./pages/Search";
-import Favorites from "./pages/Favorites";
-import Ratings from "./pages/Ratings";
-import { CreateGroupQuiz } from "./components/quiz/CreateGroupQuiz";
-import { GroupQuizView } from "./components/quiz/GroupQuizView";
-import { RecommendationsPage } from "./components/recommendations/RecommendationsPage";
-import "./i18n";
+import { ThemeProvider } from "@/hooks/use-theme";
+import { Toaster } from "@/components/ui/toaster";
+import { Navigation } from "@/components/Navigation";
+import { Routes, Route } from "react-router-dom";
+import Index from "@/pages/Index";
+import Auth from "@/pages/Auth";
+import Search from "@/pages/Search";
+import Favorites from "@/pages/Favorites";
+import Ratings from "@/pages/Ratings";
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // Data stays fresh for 5 minutes
-      gcTime: 10 * 60 * 1000,   // Keep unused data in cache for 10 minutes
-      retry: 2,                  // Retry failed requests twice
-      refetchOnWindowFocus: false, // Don't refetch when window regains focus
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      gcTime: 1000 * 60 * 60, // 1 hour
+      retry: 1,
+      networkMode: 'offlineFirst',
+      refetchOnWindowFocus: false,
     },
   },
 });
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider defaultTheme="system" storageKey="movie-mate-theme">
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider defaultTheme="dark" storageKey="moviemate-theme">
+        <Navigation />
+        <main className="min-h-screen bg-background">
           <Routes>
+            <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/" element={<AuthLayout><Index /></AuthLayout>} />
-            <Route path="/search" element={<AuthLayout><Search /></AuthLayout>} />
-            <Route path="/favorites" element={<AuthLayout><Favorites /></AuthLayout>} />
-            <Route path="/ratings" element={<AuthLayout><Ratings /></AuthLayout>} />
-            <Route path="/recommendations" element={<AuthLayout><RecommendationsPage /></AuthLayout>} />
-            <Route path="/quiz/create-group" element={<AuthLayout><CreateGroupQuiz /></AuthLayout>} />
-            <Route path="/quiz/group/:groupId" element={<AuthLayout><GroupQuizView /></AuthLayout>} />
+            <Route path="/search" element={<Search />} />
+            <Route path="/favorites" element={<Favorites />} />
+            <Route path="/ratings" element={<Ratings />} />
           </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </ThemeProvider>
-  </QueryClientProvider>
-);
+        </main>
+        <Toaster />
+      </ThemeProvider>
+    </QueryClientProvider>
+  );
+}
 
 export default App;
