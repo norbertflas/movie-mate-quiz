@@ -4,6 +4,7 @@ import { MovieImage } from "./MovieImage";
 import { MovieCardContent } from "./MovieCardContent";
 import type { MovieCardProps } from "@/types/movie";
 import { useToast } from "../ui/use-toast";
+import { motion } from "framer-motion";
 
 const MovieCardBase = ({ 
   title,
@@ -38,7 +39,8 @@ const MovieCardBase = ({
     setShowTrailer(!showTrailer);
   }, [showTrailer, trailerUrl, toast]);
 
-  const handleRate = useCallback((rating: "like" | "dislike") => {
+  const handleRate = useCallback((rating: "like" | "dislike") => (e: React.MouseEvent) => {
+    e.stopPropagation();
     setUserRating(rating);
     toast({
       title: "Rating saved",
@@ -47,35 +49,40 @@ const MovieCardBase = ({
   }, [title, toast]);
 
   return (
-    <Card 
-      className="group relative overflow-hidden transition-all duration-300 hover:shadow-xl cursor-pointer" 
-      onClick={handleCardClick}
+    <motion.div
+      whileHover={{ scale: 1.02 }}
+      transition={{ duration: 0.2 }}
     >
-      <div className="aspect-[2/3] overflow-hidden">
-        <MovieImage
-          imageUrl={imageUrl}
+      <Card 
+        className="group relative overflow-hidden transition-all duration-300 hover:shadow-xl cursor-pointer" 
+        onClick={handleCardClick}
+      >
+        <div className="aspect-[2/3] overflow-hidden">
+          <MovieImage
+            imageUrl={imageUrl}
+            title={title}
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            loading="lazy"
+            width={300}
+            height={450}
+          />
+        </div>
+        <MovieCardContent
           title={title}
-          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-          loading="lazy"
-          width={300}
-          height={450}
+          year={year}
+          description={description}
+          rating={rating}
+          genre={genre}
+          tmdbId={tmdbId}
+          explanations={explanations}
+          isExpanded={isExpanded}
+          showTrailer={showTrailer}
+          onWatchTrailer={handleWatchTrailer}
+          userRating={userRating}
+          onRate={handleRate}
         />
-      </div>
-      <MovieCardContent
-        title={title}
-        year={year}
-        description={description}
-        rating={rating}
-        genre={genre}
-        tmdbId={tmdbId}
-        explanations={explanations}
-        isExpanded={isExpanded}
-        showTrailer={showTrailer}
-        onWatchTrailer={handleWatchTrailer}
-        userRating={userRating}
-        onRate={handleRate}
-      />
-    </Card>
+      </Card>
+    </motion.div>
   );
 };
 

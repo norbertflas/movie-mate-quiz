@@ -32,7 +32,7 @@ export interface MovieCardContentProps {
   streamingServices?: string[];
   isExpanded?: boolean;
   showTrailer?: boolean;
-  onWatchTrailer?: () => void;  // Updated to match the expected signature
+  onWatchTrailer?: () => void;
   userRating?: "like" | "dislike" | null;
   onRate?: (rating: "like" | "dislike") => (e: React.MouseEvent) => void;
 }

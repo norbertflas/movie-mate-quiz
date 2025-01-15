@@ -8,7 +8,7 @@ import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
 
 export const TrendingMoviesSection = () => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { toast } = useToast();
 
   const { data: trendingMovies = [], isLoading: isLoadingMovies } = useQuery({
@@ -43,34 +43,46 @@ export const TrendingMoviesSection = () => {
   }
 
   return (
-    <Card className="glass-panel">
+    <Card className="glass-panel overflow-hidden">
       <CardHeader>
         <CardTitle className="gradient-text text-2xl">
           {t("trending.weeklyTrending")}
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {trendingMovies.slice(0, 10).map((movie, index) => (
-            <motion.div
-              key={movie.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <MovieCard
-                title={movie.title}
-                year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "N/A"}
-                platform="TMDB"
-                genre={t("movie.genre")}
-                imageUrl={movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : '/placeholder.svg'}
-                description={movie.overview}
-                trailerUrl=""
-                rating={movie.vote_average * 10}
-                tmdbId={movie.id}
-              />
-            </motion.div>
-          ))}
+        <div className="relative">
+          <motion.div 
+            className="flex space-x-6 py-4 overflow-x-auto scrollbar-hide group"
+            initial={{ x: 0 }}
+            animate={{ x: [0, -1000, 0] }}
+            transition={{ 
+              duration: 30,
+              repeat: Infinity,
+              ease: "linear"
+            }}
+            whileHover={{ animationPlayState: "paused" }}
+          >
+            {trendingMovies.slice(0, 10).map((movie) => (
+              <motion.div
+                key={movie.id}
+                className="flex-none w-[300px]"
+                whileHover={{ scale: 1.05 }}
+                transition={{ duration: 0.2 }}
+              >
+                <MovieCard
+                  title={movie.title}
+                  year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "N/A"}
+                  platform="TMDB"
+                  genre={t("movie.genre")}
+                  imageUrl={movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : '/placeholder.svg'}
+                  description={movie.overview}
+                  trailerUrl=""
+                  rating={movie.vote_average * 10}
+                  tmdbId={movie.id}
+                />
+              </motion.div>
+            ))}
+          </motion.div>
         </div>
       </CardContent>
     </Card>
