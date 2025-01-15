@@ -10,9 +10,11 @@ export const QuickActions = () => {
   const [selectedGenre, setSelectedGenre] = useState<string>();
   const [isOpen, setIsOpen] = useState(false);
 
-  const { data: movies = [] } = useQuery({
-    queryKey: ['popularMovies', ''],
+  const { data: movies = [], isLoading } = useQuery({
+    queryKey: ['popularMovies', '', '1'],
     queryFn: getPopularMovies,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    cacheTime: 1000 * 60 * 30, // 30 minutes
   });
 
   const handleMinRatingChange = useCallback((value: number) => {
@@ -26,6 +28,10 @@ export const QuickActions = () => {
   const handleOpenChange = useCallback((open: boolean) => {
     setIsOpen(open);
   }, []);
+
+  if (isLoading) {
+    return <div className="flex justify-center py-4">Loading...</div>;
+  }
 
   return (
     <div className="flex flex-col sm:flex-row justify-center gap-4 mb-8 px-4 sm:px-0">

@@ -5,11 +5,12 @@ import i18n from "@/i18n";
 export const getTrendingMovies = async (context: { queryKey: string[] }): Promise<TMDBMovie[]> => {
   const apiKey = await getTMDBApiKey();
   const currentLang = i18n.language;
-  const [_, region] = context.queryKey;
+  const [_, region, page = "1"] = context.queryKey;
   
   const queryParams = new URLSearchParams({
     api_key: apiKey,
     language: currentLang,
+    page: page.toString(),
     ...(region ? { region } : {})
   });
   
@@ -26,11 +27,12 @@ export const getTrendingMovies = async (context: { queryKey: string[] }): Promis
 export const getPopularMovies = async (context: { queryKey: string[] }): Promise<TMDBMovie[]> => {
   const apiKey = await getTMDBApiKey();
   const currentLang = i18n.language;
-  const [_, region] = context.queryKey;
+  const [_, region, page = "1"] = context.queryKey;
   
   const queryParams = new URLSearchParams({
     api_key: apiKey,
     language: currentLang,
+    page: page.toString(),
     ...(region ? { region } : {})
   });
   

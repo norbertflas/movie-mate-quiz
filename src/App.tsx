@@ -10,14 +10,14 @@ import Search from "@/pages/Search";
 import Favorites from "@/pages/Favorites";
 import Ratings from "@/pages/Ratings";
 
+// Configure the query client with caching
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      gcTime: 1000 * 60 * 60, // 1 hour
-      retry: 1,
-      networkMode: 'offlineFirst',
-      refetchOnWindowFocus: false,
+      staleTime: 1000 * 60 * 5, // Data stays fresh for 5 minutes
+      cacheTime: 1000 * 60 * 30, // Cache persists for 30 minutes
+      refetchOnWindowFocus: false, // Prevent unnecessary refetches
+      retry: 1, // Only retry failed requests once
     },
   },
 });
