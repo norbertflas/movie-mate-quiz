@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { CardHeader } from "./ui/card";
 import { MovieCardContainer } from "./movie/MovieCardContainer";
 import { MovieCardContent } from "./movie/MovieCardContent";
@@ -32,7 +32,7 @@ interface MovieCardProps {
   explanations?: string[];
 }
 
-export const MovieCard = ({
+const MovieCardComponent = ({
   title,
   year,
   platform,
@@ -66,21 +66,33 @@ export const MovieCard = ({
   });
 
   useEffect(() => {
+    let isMounted = true;
+    const controller = new AbortController();
+
     const fetchStreamingAvailability = async () => {
       if (tmdbId) {
         setIsLoadingStreaming(true);
         try {
           const data = await getStreamingAvailability(tmdbId, i18n.language.split('-')[0]);
-          setAvailableStreaming(data);
+          if (isMounted) {
+            setAvailableStreaming(data);
+          }
         } catch (error) {
           console.error('Error fetching streaming availability:', error);
         } finally {
-          setIsLoadingStreaming(false);
+          if (isMounted) {
+            setIsLoadingStreaming(false);
+          }
         }
       }
     };
 
     fetchStreamingAvailability();
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
   }, [tmdbId, i18n.language]);
 
   const handleTrailerClick = () => {
@@ -105,7 +117,7 @@ export const MovieCard = ({
           isFavorite={isFavorite}
           onToggleFavorite={handleToggleFavorite}
         />
-        {explanations.length > 0 && (
+        {explanations?.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-2">
             {explanations.map((explanation, index) => (
               <Badge key={index} variant="secondary" className="text-xs">
@@ -174,3 +186,5 @@ export const MovieCard = ({
     </MovieCardContainer>
   );
 };
+
+export const MovieCard = memo(MovieCardComponent);

@@ -15,7 +15,16 @@ import { GroupQuizView } from "./components/quiz/GroupQuizView";
 import { RecommendationsPage } from "./components/recommendations/RecommendationsPage";
 import "./i18n";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // Data stays fresh for 5 minutes
+      gcTime: 10 * 60 * 1000,   // Keep unused data in cache for 10 minutes
+      retry: 2,                  // Retry failed requests twice
+      refetchOnWindowFocus: false, // Don't refetch when window regains focus
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
