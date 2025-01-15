@@ -9,6 +9,7 @@ import Auth from "@/pages/Auth";
 import Search from "@/pages/Search";
 import Favorites from "@/pages/Favorites";
 import Ratings from "@/pages/Ratings";
+import Services from "@/pages/Services";
 
 // Configure the query client with caching and performance optimizations
 const queryClient = new QueryClient({
@@ -37,6 +38,7 @@ function App() {
                 <Route path="/search" element={<Search />} />
                 <Route path="/favorites" element={<Favorites />} />
                 <Route path="/ratings" element={<Ratings />} />
+                <Route path="/services" element={<Services />} />
               </Routes>
             </main>
             <Toaster />

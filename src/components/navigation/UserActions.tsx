@@ -1,11 +1,17 @@
 import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useTranslation } from "react-i18next";
 import { ThemeSwitcher } from "../ThemeSwitcher";
 import { LanguageSwitcher } from "../LanguageSwitcher";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export const UserActions = () => {
   const navigate = useNavigate();
@@ -29,14 +35,23 @@ export const UserActions = () => {
     <div className="flex flex-1 items-center justify-end space-x-2">
       <ThemeSwitcher />
       <LanguageSwitcher />
-      <Button
-        variant="ghost"
-        onClick={handleLogout}
-        className="flex items-center gap-2 whitespace-nowrap"
-      >
-        <LogOut className="h-4 w-4" />
-        <span className="hidden sm:inline">{t("navigation.logout")}</span>
-      </Button>
+      
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon">
+            <Settings className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onSelect={() => navigate("/services")}>
+            {t("navigation.streamingServices")}
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={handleLogout} className="text-red-500">
+            <LogOut className="h-4 w-4 mr-2" />
+            {t("navigation.logout")}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 };

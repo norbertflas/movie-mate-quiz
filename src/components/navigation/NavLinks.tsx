@@ -1,62 +1,54 @@
-import { useNavigate, useLocation } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Home, Search, Heart, Star, Sparkles } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { Home, Search, PlayCircle, Star, Heart } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-export const NavLinks = ({ onNavigate }: { onNavigate?: () => void }) => {
-  const navigate = useNavigate();
-  const location = useLocation();
+export const NavLinks = () => {
   const { t } = useTranslation();
 
-  const isActive = (path: string) => location.pathname === path;
-
-  const handleNavigation = (path: string) => {
-    navigate(path);
-    if (onNavigate) onNavigate();
-  };
+  const links = [
+    {
+      href: "/",
+      label: t("navigation.home"),
+      icon: Home
+    },
+    {
+      href: "/quiz",
+      label: t("navigation.quiz"),
+      icon: PlayCircle
+    },
+    {
+      href: "/search",
+      label: t("navigation.search"),
+      icon: Search
+    },
+    {
+      href: "/favorites",
+      label: t("navigation.favorites"),
+      icon: Heart
+    },
+    {
+      href: "/ratings",
+      label: t("navigation.ratings"),
+      icon: Star
+    }
+  ];
 
   return (
-    <>
-      <Button
-        variant={isActive("/") ? "default" : "ghost"}
-        onClick={() => handleNavigation("/")}
-        className="flex items-center gap-2 whitespace-nowrap"
-      >
-        <Home className="h-4 w-4" />
-        <span>{t("navigation.home")}</span>
-      </Button>
-      <Button
-        variant={isActive("/search") ? "default" : "ghost"}
-        onClick={() => handleNavigation("/search")}
-        className="flex items-center gap-2 whitespace-nowrap"
-      >
-        <Search className="h-4 w-4" />
-        <span>{t("navigation.search")}</span>
-      </Button>
-      <Button
-        variant={isActive("/recommendations") ? "default" : "ghost"}
-        onClick={() => handleNavigation("/recommendations")}
-        className="flex items-center gap-2 whitespace-nowrap"
-      >
-        <Sparkles className="h-4 w-4" />
-        <span>{t("navigation.recommendations")}</span>
-      </Button>
-      <Button
-        variant={isActive("/favorites") ? "default" : "ghost"}
-        onClick={() => handleNavigation("/favorites")}
-        className="flex items-center gap-2 whitespace-nowrap"
-      >
-        <Heart className="h-4 w-4" />
-        <span>{t("navigation.favorites")}</span>
-      </Button>
-      <Button
-        variant={isActive("/ratings") ? "default" : "ghost"}
-        onClick={() => handleNavigation("/ratings")}
-        className="flex items-center gap-2 whitespace-nowrap"
-      >
-        <Star className="h-4 w-4" />
-        <span>{t("navigation.ratings")}</span>
-      </Button>
-    </>
+    <nav className="flex items-center space-x-4">
+      {links.map(({ href, label, icon: Icon }) => (
+        <Link
+          key={href}
+          to={href}
+          className={cn(
+            "flex items-center space-x-2 text-sm font-medium transition-colors hover:text-primary",
+            "text-muted-foreground"
+          )}
+        >
+          <Icon className="h-4 w-4" />
+          <span>{label}</span>
+        </Link>
+      ))}
+    </nav>
   );
 };
