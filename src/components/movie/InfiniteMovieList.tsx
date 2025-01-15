@@ -18,6 +18,7 @@ export const InfiniteMovieList = () => {
   } = useInfiniteQuery({
     queryKey: ['infiniteMovies', ''],
     queryFn: getTrendingMovies,
+    initialPageParam: 1,
     getNextPageParam: (lastPage, pages) => pages.length + 1,
   });
 
