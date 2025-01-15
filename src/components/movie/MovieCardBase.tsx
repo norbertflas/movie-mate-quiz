@@ -20,8 +20,8 @@ const MovieCardBase = memo(({
     <Card className="group relative overflow-hidden transition-all duration-300 hover:shadow-xl">
       <div className="aspect-[2/3] overflow-hidden">
         <MovieImage
-          src={imageUrl}
-          alt={title}
+          imageUrl={imageUrl}
+          title={title}
           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           loading="lazy"
           width={300}
@@ -31,10 +31,9 @@ const MovieCardBase = memo(({
       <MovieCardContent
         title={title}
         year={year}
-        platform={platform}
-        genre={genre}
         description={description}
         rating={rating}
+        genre={genre}
         tmdbId={tmdbId}
         explanations={explanations}
       />

@@ -33,10 +33,10 @@ export const InfiniteMovieList = () => {
   });
 
   const loadMore = useCallback(() => {
-    if (hasNextPage && !isFetchingNextPage) {
+    if (hasNextPage && !isFetchingNextPage && isLoadMoreInView) {
       fetchNextPage();
     }
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, isLoadMoreInView]);
 
   if (isLoading) {
     return (
@@ -86,9 +86,8 @@ export const InfiniteMovieList = () => {
         <div
           ref={loadMoreRef}
           className="py-8 text-center"
-          onViewportEnter={loadMore}
         >
-          {isFetchingNextPage ? (
+          {isFetchingNextPage && (
             <div className="space-y-4">
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {Array.from({ length: 4 }).map((_, i) => (
@@ -102,7 +101,7 @@ export const InfiniteMovieList = () => {
                 ))}
               </div>
             </div>
-          ) : null}
+          )}
         </div>
       )}
     </>
