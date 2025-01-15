@@ -1,16 +1,17 @@
 export interface MovieCardProps {
   title: string;
   year: string;
-  platform: string;
-  genre: string;
-  imageUrl: string;
   description: string;
-  trailerUrl: string;
   rating: number;
-  tags?: string[];
-  streamingServices?: string[];
-  tmdbId?: number;
+  genre: string;
+  tmdbId: number;
   explanations?: string[];
+  streamingServices?: string[];
+  isExpanded?: boolean;
+  showTrailer?: boolean;
+  onWatchTrailer?: () => void;
+  userRating?: "like" | "dislike" | null;
+  onRate?: (rating: "like" | "dislike") => void;
 }
 
 export interface MovieImageProps {
@@ -30,10 +31,8 @@ export interface MovieCardContentProps {
   genre: string;
   tmdbId: number;
   explanations?: string[];
-  streamingServices?: string[];
-  isExpanded?: boolean;
-  showTrailer?: boolean;
-  onWatchTrailer?: () => void;
-  userRating?: "like" | "dislike" | null;
-  onRate?: (rating: "like" | "dislike") => void;
+}
+
+export interface NavLinksProps {
+  onNavigate?: () => void;
 }

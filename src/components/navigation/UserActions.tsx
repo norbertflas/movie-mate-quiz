@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { LogOut, Settings } from "lucide-react";
+import { LogOut, Settings, PlayCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -44,11 +44,11 @@ export const UserActions = () => {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onSelect={() => navigate("/services")}>
-            {t("streaming.preferences")}
+            Streaming Services
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={handleLogout} className="text-red-500">
             <LogOut className="h-4 w-4 mr-2" />
-            {t("navigation.logout")}
+            Logout
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
