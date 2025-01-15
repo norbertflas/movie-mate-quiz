@@ -50,6 +50,7 @@ export default {
     addPlatform: "Add Platform",
     removePlatform: "Remove Platform",
     manageSubscriptions: "Manage Subscriptions",
+    preferences: "Streaming Services",
   },
   errors: {
     loadingServices: "Error Loading Services",
@@ -74,4 +75,13 @@ export default {
     similar: "Similar to what you like",
   },
   noTrailerAvailable: "No trailer available",
+  navigation: {
+    home: "Home",
+    search: "Search",
+    quiz: "Quiz",
+    favorites: "Favorites",
+    ratings: "Ratings",
+    logout: "Logout",
+    streamingServices: "Streaming Services",
+  },
 };

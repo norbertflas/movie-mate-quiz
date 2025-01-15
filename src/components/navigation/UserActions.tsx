@@ -23,7 +23,7 @@ export const UserActions = () => {
     if (error) {
       toast({
         variant: "destructive",
-        title: "Błąd wylogowania",
+        title: "Logout Error",
         description: error.message,
       });
     } else {
@@ -44,7 +44,7 @@ export const UserActions = () => {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onSelect={() => navigate("/services")}>
-            {t("navigation.streamingServices")}
+            {t("streaming.preferences")}
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={handleLogout} className="text-red-500">
             <LogOut className="h-4 w-4 mr-2" />
