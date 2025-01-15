@@ -9,6 +9,7 @@ export const pl = {
     search: "Wyszukaj",
     favorites: "Ulubione",
     ratings: "Oceny",
+    recommendations: "Rekomendacje",
     logout: "Wyloguj",
   },
   search: {
@@ -21,57 +22,14 @@ export const pl = {
     noResultsDescription: "Nie znaleziono tytułów pasujących do \"{{query}}\"",
     error: "Błąd wyszukiwania",
     errorDescription: "Wystąpił problem podczas wyszukiwania. Spróbuj ponownie później.",
-  },
-  common: {
-    movie: "Film",
-    loading: "Ładowanie...",
-    error: "Błąd",
-    success: "Sukces",
-    startQuiz: "Rozpocznij Quiz",
-    recommendations: "Twoje Rekomendacje",
-    filterMovies: "Filtruj Filmy",
-    yearRange: "Zakres Lat",
-    rating: "Ocena",
-    minRating: "Minimalna Ocena",
-    apply: "Zastosuj Filtry",
-    reset: "Resetuj Filtry",
-  },
-  quiz: {
-    questions: {
-      platforms: "Z jakich platform streamingowych korzystasz?",
-      contentType: "Co Cię interesuje?",
-      length: "Preferowana długość:",
-      seasons: "Preferowana ilość sezonów:",
-      genre: "Jaki gatunek Cię interesuje?",
-      mood: "Jaki nastrój Cię interesuje?",
-    },
-    options: {
-      movie: "Film",
-      series: "Serial",
-      length: {
-        short: "Do 1.5h",
-        medium: "1.5h - 2h",
-        long: "Powyżej 2h"
-      },
-      episodes: {
-        short: "20-30 min",
-        medium: "40-50 min",
-        long: "Powyżej 1h"
-      },
-      seasons: {
-        one: "1 sezon",
-        twoThree: "2-3 sezony",
-        fourPlus: "4+ sezonów"
-      },
-      mood: {
-        light: "Lekki/Zabawny",
-        serious: "Poważny/Dramatyczny",
-        suspense: "Trzymający w napięciu",
-        inspiring: "Inspirujący"
-      }
-    },
-    loading: "Ładowanie quizu...",
-    error: "Błąd podczas ładowania quizu",
+    movies: "Filmy",
+    creators: "Twórcy",
+    creatorPlaceholder: "Szukaj twórców...",
+    creatorsFound: "Znalezieni twórcy",
+    creatorsDescription: "Znaleziono {{count}} twórców pasujących do \"{{query}}\"",
+    noCreators: "Brak twórców",
+    noCreatorsDescription: "Nie znaleziono twórców pasujących do \"{{query}}\"",
+    knownFor: "Znany/a z",
   },
   services: {
     title: "Platformy Streamingowe",
@@ -80,14 +38,6 @@ export const pl = {
     added: "Dodano platformę",
     removed: "Usunięto platformę",
     preferencesUpdated: "Twoje preferencje zostały zaktualizowane",
-  },
-  errors: {
-    loadingServices: "Błąd ładowania platform",
-    loadingPreferences: "Błąd ładowania preferencji",
-    addingService: "Błąd dodawania platformy",
-    removingService: "Błąd usuwania platformy",
-    auth: "Błąd uwierzytelniania",
-    notAuthenticated: "Musisz być zalogowany, aby zarządzać preferencjami streamingowymi",
   },
   movie: {
     year: "Rok",
@@ -106,8 +56,51 @@ export const pl = {
     description: "Opis",
     availableOn: "Dostępne na",
     releaseYear: "Rok wydania",
+    adventure: "Przygodowy",
+    crime: "Kryminał",
+    family: "Familijny",
+    history: "Historyczny",
+    music: "Muzyczny",
+    mystery: "Tajemnica",
+    tvMovie: "Film TV",
+    war: "Wojenny",
+    western: "Western",
   },
-  availableOn: "Dostępne na",
-  watchTrailer: "Oglądaj Zwiastun",
-  hideTrailer: "Ukryj Zwiastun",
+  site: {
+    description: "Znajdź swój następny ulubiony film",
+    author: "Stworzono przez MovieFinder",
+    copyright: "Wszelkie prawa zastrzeżone",
+  },
+  streaming: {
+    availableOn: "Dostępne na",
+    availability: "Sprawdź dostępność w różnych serwisach",
+    vpnRequired: "Wymagany VPN dla {{country}}",
+  },
+  filters: {
+    title: "Filtry",
+    apply: "Zastosuj",
+    clear: "Wyczyść",
+    genre: "Gatunek",
+    year: "Rok",
+    rating: "Ocena",
+  },
+  recommendations: {
+    title: "Rekomendacje",
+    personalized: "Spersonalizowane dla Ciebie",
+  },
+  discover: {
+    popular: "Popularne filmy",
+  },
+  recently: {
+    viewed: "Ostatnio oglądane",
+  },
+  trending: {
+    weeklyTrending: "Popularne w tym tygodniu",
+  },
+  errors: {
+    recommendationError: "Błąd podczas ładowania rekomendacji",
+    tryAgain: "Spróbuj ponownie później",
+  },
+  watchTrailer: "Zobacz zwiastun",
+  hideTrailer: "Ukryj zwiastun",
 };
