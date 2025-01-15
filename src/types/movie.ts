@@ -5,6 +5,9 @@ export interface MovieCardProps {
   rating: number;
   genre: string;
   tmdbId: number;
+  platform: string;
+  imageUrl: string;
+  trailerUrl: string;
   explanations?: string[];
   streamingServices?: string[];
   isExpanded?: boolean;
@@ -31,6 +34,12 @@ export interface MovieCardContentProps {
   genre: string;
   tmdbId: number;
   explanations?: string[];
+  streamingServices?: string[];
+  isExpanded?: boolean;
+  showTrailer?: boolean;
+  onWatchTrailer?: () => void;
+  userRating?: "like" | "dislike" | null;
+  onRate?: (rating: "like" | "dislike") => void;
 }
 
 export interface NavLinksProps {

@@ -14,7 +14,13 @@ const MovieCardBase = memo(({
   trailerUrl,
   rating,
   tmdbId,
-  explanations
+  explanations,
+  streamingServices,
+  isExpanded,
+  showTrailer,
+  onWatchTrailer,
+  userRating,
+  onRate
 }: MovieCardProps) => {
   return (
     <Card className="group relative overflow-hidden transition-all duration-300 hover:shadow-xl">
@@ -34,8 +40,14 @@ const MovieCardBase = memo(({
         description={description}
         rating={rating}
         genre={genre}
-        tmdbId={tmdbId || 0}
+        tmdbId={tmdbId}
         explanations={explanations}
+        streamingServices={streamingServices}
+        isExpanded={isExpanded}
+        showTrailer={showTrailer}
+        onWatchTrailer={onWatchTrailer}
+        userRating={userRating}
+        onRate={onRate}
       />
     </Card>
   );
