@@ -30,8 +30,10 @@ export interface MovieCardContentProps {
   genre: string;
   tmdbId: number;
   explanations?: string[];
-}
-
-export interface NavLinksProps {
-  onNavigate?: () => void;
+  streamingServices?: string[];
+  isExpanded?: boolean;
+  showTrailer?: boolean;
+  onWatchTrailer?: () => void;
+  userRating?: "like" | "dislike" | null;
+  onRate?: (rating: "like" | "dislike") => void;
 }
