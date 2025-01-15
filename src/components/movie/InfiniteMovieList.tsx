@@ -28,8 +28,6 @@ export const InfiniteMovieList = () => {
       if (lastPage.length === 0) return undefined;
       return pages.length + 1;
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    gcTime: 1000 * 60 * 60, // 1 hour
   });
 
   const loadMore = useCallback(() => {
@@ -74,7 +72,7 @@ export const InfiniteMovieList = () => {
               platform="TMDB"
               genre={movie.genre_ids?.[0]?.toString() || "Unknown"}
               imageUrl={movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : "/placeholder.svg"}
-              description={movie.overview}
+              description={movie.overview || "No description available"}
               trailerUrl=""
               rating={movie.vote_average * 10}
               tmdbId={movie.id}

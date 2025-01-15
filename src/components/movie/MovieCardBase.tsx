@@ -1,10 +1,11 @@
-import { memo } from "react";
+import { memo, useState, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { MovieImage } from "./MovieImage";
 import { MovieCardContent } from "./MovieCardContent";
 import type { MovieCardProps } from "@/types/movie";
+import { useToast } from "../ui/use-toast";
 
-const MovieCardBase = memo(({ 
+const MovieCardBase = ({ 
   title,
   year,
   platform,
@@ -15,15 +16,41 @@ const MovieCardBase = memo(({
   rating,
   tmdbId,
   explanations,
-  streamingServices,
-  isExpanded,
-  showTrailer,
-  onWatchTrailer,
-  userRating,
-  onRate
 }: MovieCardProps) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [showTrailer, setShowTrailer] = useState(false);
+  const [userRating, setUserRating] = useState<"like" | "dislike" | null>(null);
+  const { toast } = useToast();
+
+  const handleCardClick = useCallback(() => {
+    setIsExpanded(!isExpanded);
+  }, [isExpanded]);
+
+  const handleWatchTrailer = useCallback(() => {
+    if (!trailerUrl) {
+      toast({
+        title: "No trailer available",
+        description: "Sorry, there's no trailer available for this movie.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setShowTrailer(!showTrailer);
+  }, [showTrailer, trailerUrl, toast]);
+
+  const handleRate = useCallback((rating: "like" | "dislike") => {
+    setUserRating(rating);
+    toast({
+      title: "Rating saved",
+      description: `You ${rating}d ${title}`,
+    });
+  }, [title, toast]);
+
   return (
-    <Card className="group relative overflow-hidden transition-all duration-300 hover:shadow-xl">
+    <Card 
+      className="group relative overflow-hidden transition-all duration-300 hover:shadow-xl cursor-pointer" 
+      onClick={handleCardClick}
+    >
       <div className="aspect-[2/3] overflow-hidden">
         <MovieImage
           imageUrl={imageUrl}
@@ -42,16 +69,15 @@ const MovieCardBase = memo(({
         genre={genre}
         tmdbId={tmdbId}
         explanations={explanations}
-        streamingServices={streamingServices}
         isExpanded={isExpanded}
         showTrailer={showTrailer}
-        onWatchTrailer={onWatchTrailer}
+        onWatchTrailer={handleWatchTrailer}
         userRating={userRating}
-        onRate={onRate}
+        onRate={handleRate}
       />
     </Card>
   );
-});
+};
 
 MovieCardBase.displayName = "MovieCardBase";
 

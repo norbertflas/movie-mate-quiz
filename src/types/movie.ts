@@ -10,11 +10,6 @@ export interface MovieCardProps {
   trailerUrl: string;
   explanations?: string[];
   streamingServices?: string[];
-  isExpanded?: boolean;
-  showTrailer?: boolean;
-  onWatchTrailer?: () => void;
-  userRating?: "like" | "dislike" | null;
-  onRate?: (rating: "like" | "dislike") => void;
 }
 
 export interface MovieImageProps {
@@ -37,9 +32,9 @@ export interface MovieCardContentProps {
   streamingServices?: string[];
   isExpanded?: boolean;
   showTrailer?: boolean;
-  onWatchTrailer?: () => void;
+  onWatchTrailer?: (e: React.MouseEvent) => void;
   userRating?: "like" | "dislike" | null;
-  onRate?: (rating: "like" | "dislike") => void;
+  onRate?: (rating: "like" | "dislike") => (e: React.MouseEvent) => void;
 }
 
 export interface NavLinksProps {
