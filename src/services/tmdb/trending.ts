@@ -2,9 +2,11 @@ import { TMDBMovie } from "./types";
 import { TMDB_BASE_URL, getTMDBApiKey } from "./config";
 import i18n from "@/i18n";
 
-export const getTrendingMovies = async (region?: string): Promise<TMDBMovie[]> => {
+export const getTrendingMovies = async (context: { queryKey: string[] }): Promise<TMDBMovie[]> => {
   const apiKey = await getTMDBApiKey();
   const currentLang = i18n.language;
+  const [_, region] = context.queryKey;
+  
   const queryParams = new URLSearchParams({
     api_key: apiKey,
     language: currentLang,
@@ -21,9 +23,11 @@ export const getTrendingMovies = async (region?: string): Promise<TMDBMovie[]> =
   return data.results;
 };
 
-export const getPopularMovies = async (region?: string): Promise<TMDBMovie[]> => {
+export const getPopularMovies = async (context: { queryKey: string[] }): Promise<TMDBMovie[]> => {
   const apiKey = await getTMDBApiKey();
   const currentLang = i18n.language;
+  const [_, region] = context.queryKey;
+  
   const queryParams = new URLSearchParams({
     api_key: apiKey,
     language: currentLang,

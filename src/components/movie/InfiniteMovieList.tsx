@@ -1,109 +1,76 @@
-import { useEffect, useRef, useCallback } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { MovieCard } from "../MovieCard";
-import { getPopularMovies } from "@/services/tmdb";
-import { useToast } from "../ui/use-toast";
+import { getTrendingMovies } from "@/services/tmdb";
+import { MovieCard } from "@/components/MovieCard";
+import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
-import type { TMDBMovie } from "@/services/tmdb";
-import { Button } from "../ui/button";
+import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
 
 export const InfiniteMovieList = () => {
-  const { t, i18n } = useTranslation();
-  const { toast } = useToast();
-  const observerRef = useRef<IntersectionObserver>();
-  const loadMoreRef = useRef<HTMLDivElement>(null);
-
+  const { t } = useTranslation();
+  
   const {
     data,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-    status,
-    error
+    isLoading,
   } = useInfiniteQuery({
-    queryKey: ['infiniteMovies', i18n.language],
-    queryFn: async ({ pageParam = 1 }) => {
-      const movies = await getPopularMovies(pageParam);
-      return { movies, nextPage: pageParam + 1 };
-    },
-    initialPageParam: 1,
-    getNextPageParam: (lastPage) => lastPage.nextPage,
+    queryKey: ['infiniteMovies', ''],
+    queryFn: getTrendingMovies,
+    getNextPageParam: (lastPage, pages) => pages.length + 1,
   });
 
-  const handleObserver = useCallback((entries: IntersectionObserverEntry[]) => {
-    const [target] = entries;
-    if (target.isIntersecting && hasNextPage && !isFetchingNextPage) {
-      fetchNextPage();
-    }
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
-
-  useEffect(() => {
-    if (error) {
-      toast({
-        title: t("errors.fetchError"),
-        description: t("errors.tryAgain"),
-        variant: "destructive",
-      });
-    }
-  }, [error, toast, t]);
-
-  useEffect(() => {
-    const element = loadMoreRef.current;
-    if (!element) return;
-
-    observerRef.current = new IntersectionObserver(handleObserver, {
-      threshold: 0.5,
-    });
-
-    observerRef.current.observe(element);
-
-    return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-      }
-    };
-  }, [handleObserver]);
-
-  if (status === "pending") {
-    return <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {[...Array(6)].map((_, i) => (
-        <div key={i} className="h-[400px] bg-gray-200 dark:bg-gray-800 animate-pulse rounded-lg" />
-      ))}
-    </div>;
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
   return (
     <div className="space-y-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {data?.pages.map((page, i) => (
-          <div key={i} className="contents">
-            {page.movies.map((movie: TMDBMovie) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {data?.pages.map((page, pageIndex) =>
+          page.map((movie, movieIndex) => (
+            <motion.div
+              key={movie.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: movieIndex * 0.1 }}
+            >
               <MovieCard
-                key={movie.id}
                 title={movie.title}
                 year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "N/A"}
                 platform="TMDB"
                 genre={t("movie.genre")}
-                imageUrl={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+                imageUrl={movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : '/placeholder.svg'}
                 description={movie.overview}
                 trailerUrl=""
                 rating={movie.vote_average * 10}
                 tmdbId={movie.id}
               />
-            ))}
-          </div>
-        ))}
-      </div>
-      
-      <div ref={loadMoreRef} className="flex justify-center py-4">
-        {isFetchingNextPage && (
-          <Button disabled className="gap-2">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            {t("loading")}
-          </Button>
+            </motion.div>
+          ))
         )}
       </div>
+
+      {hasNextPage && (
+        <div className="flex justify-center">
+          <Button
+            onClick={() => fetchNextPage()}
+            disabled={isFetchingNextPage}
+            className="min-w-[200px]"
+          >
+            {isFetchingNextPage ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              t("actions.loadMore")
+            )}
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

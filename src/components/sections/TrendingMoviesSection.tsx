@@ -12,8 +12,17 @@ export const TrendingMoviesSection = () => {
   const { toast } = useToast();
 
   const { data: trendingMovies = [], isLoading: isLoadingMovies } = useQuery({
-    queryKey: ['trendingMovies', i18n.language],
+    queryKey: ['trendingMovies', ''],
     queryFn: getTrendingMovies,
+    meta: {
+      onError: () => {
+        toast({
+          title: t("errors.recommendationError"),
+          description: t("errors.tryAgain"),
+          variant: "destructive",
+        });
+      }
+    }
   });
 
   if (isLoadingMovies) {

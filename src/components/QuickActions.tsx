@@ -11,7 +11,7 @@ export const QuickActions = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   const { data: movies = [] } = useQuery({
-    queryKey: ['popularMovies'],
+    queryKey: ['popularMovies', ''],
     queryFn: getPopularMovies,
   });
 
