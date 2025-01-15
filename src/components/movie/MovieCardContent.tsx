@@ -14,7 +14,7 @@ interface MovieCardContentProps {
   genre: string;
   tags?: string[];
   showTrailer?: boolean;
-  onWatchTrailer?: () => void;
+  onWatchTrailer?: (e: React.MouseEvent) => void;  // Updated type to include event parameter
   userRating?: "like" | "dislike" | null;
   onRate?: (rating: "like" | "dislike") => void;
   tmdbId?: number;
@@ -39,7 +39,7 @@ export const MovieCardContent = ({
 }: MovieCardContentProps) => {
   const handleWatchTrailer = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    onWatchTrailer?.();
+    onWatchTrailer?.(e);
   }, [onWatchTrailer]);
 
   const handleRate = useCallback((rating: "like" | "dislike") => (e: React.MouseEvent) => {
@@ -65,7 +65,6 @@ export const MovieCardContent = ({
           userRating={userRating}
           onRate={handleRate}
           tmdbId={tmdbId}
-          explanations={explanations}
         />
       </AnimatePresence>
     </CardContent>
