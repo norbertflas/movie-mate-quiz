@@ -3,23 +3,7 @@ import { MovieStreamingServices } from "./MovieStreamingServices";
 import { MovieExpandedContent } from "./MovieExpandedContent";
 import { AnimatePresence } from "framer-motion";
 import { useCallback } from "react";
-
-interface MovieCardContentProps {
-  streamingServices?: string[];
-  isExpanded?: boolean;
-  title: string;
-  year: string;
-  description: string;
-  rating: number;
-  genre: string;
-  tags?: string[];
-  showTrailer?: boolean;
-  onWatchTrailer?: (e: React.MouseEvent) => void;  // Updated type to include event parameter
-  userRating?: "like" | "dislike" | null;
-  onRate?: (rating: "like" | "dislike") => void;
-  tmdbId?: number;
-  explanations?: string[];
-}
+import type { MovieCardContentProps } from "@/types/movie";
 
 export const MovieCardContent = ({
   streamingServices = [],
@@ -39,7 +23,7 @@ export const MovieCardContent = ({
 }: MovieCardContentProps) => {
   const handleWatchTrailer = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    onWatchTrailer?.(e);
+    onWatchTrailer?.();
   }, [onWatchTrailer]);
 
   const handleRate = useCallback((rating: "like" | "dislike") => (e: React.MouseEvent) => {
@@ -65,6 +49,7 @@ export const MovieCardContent = ({
           userRating={userRating}
           onRate={handleRate}
           tmdbId={tmdbId}
+          explanations={explanations}
         />
       </AnimatePresence>
     </CardContent>
