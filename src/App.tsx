@@ -3,6 +3,7 @@ import { ThemeProvider } from "@/hooks/use-theme";
 import { Toaster } from "@/components/ui/toaster";
 import { Navigation } from "@/components/Navigation";
 import { Routes, Route, BrowserRouter } from "react-router-dom";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Index from "@/pages/Index";
 import Auth from "@/pages/Auth";
 import Search from "@/pages/Search";
@@ -23,23 +24,25 @@ const queryClient = new QueryClient({
 
 function App() {
   return (
-    <BrowserRouter>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider defaultTheme="dark" storageKey="moviemate-theme">
-          <Navigation />
-          <main className="min-h-screen bg-background">
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/search" element={<Search />} />
-              <Route path="/favorites" element={<Favorites />} />
-              <Route path="/ratings" element={<Ratings />} />
-            </Routes>
-          </main>
-          <Toaster />
-        </ThemeProvider>
-      </QueryClientProvider>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider defaultTheme="dark" storageKey="moviemate-theme">
+            <Navigation />
+            <main className="min-h-screen bg-background">
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/search" element={<Search />} />
+                <Route path="/favorites" element={<Favorites />} />
+                <Route path="/ratings" element={<Ratings />} />
+              </Routes>
+            </main>
+            <Toaster />
+          </ThemeProvider>
+        </QueryClientProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 
