@@ -32,3 +32,7 @@ export interface MovieCardContentProps {
   tmdbId?: number;
   explanations?: string[];
 }
+
+export interface NavLinksProps {
+  onNavigate?: () => void;
+}

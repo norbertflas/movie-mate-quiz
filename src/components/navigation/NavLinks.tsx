@@ -1,54 +1,39 @@
-import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Home, Search, PlayCircle, Star, Heart } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { NavLink } from "react-router-dom";
+import type { NavLinksProps } from "@/types/movie";
 
-export const NavLinks = () => {
+export const NavLinks = ({ onNavigate }: NavLinksProps) => {
   const { t } = useTranslation();
-
-  const links = [
-    {
-      href: "/",
-      label: t("navigation.home"),
-      icon: Home
-    },
-    {
-      href: "/quiz",
-      label: t("navigation.quiz"),
-      icon: PlayCircle
-    },
-    {
-      href: "/search",
-      label: t("navigation.search"),
-      icon: Search
-    },
-    {
-      href: "/favorites",
-      label: t("navigation.favorites"),
-      icon: Heart
-    },
-    {
-      href: "/ratings",
-      label: t("navigation.ratings"),
-      icon: Star
+  
+  const handleClick = () => {
+    if (onNavigate) {
+      onNavigate();
     }
-  ];
+  };
 
   return (
-    <nav className="flex items-center space-x-4">
-      {links.map(({ href, label, icon: Icon }) => (
-        <Link
-          key={href}
-          to={href}
-          className={cn(
-            "flex items-center space-x-2 text-sm font-medium transition-colors hover:text-primary",
-            "text-muted-foreground"
-          )}
-        >
-          <Icon className="h-4 w-4" />
-          <span>{label}</span>
-        </Link>
-      ))}
+    <nav className="flex flex-col gap-4">
+      <NavLink 
+        to="/" 
+        onClick={handleClick}
+        className="text-sm font-medium transition-colors hover:text-primary"
+      >
+        {t("navigation.home")}
+      </NavLink>
+      <NavLink 
+        to="/search" 
+        onClick={handleClick}
+        className="text-sm font-medium transition-colors hover:text-primary"
+      >
+        {t("navigation.search")}
+      </NavLink>
+      <NavLink 
+        to="/quiz" 
+        onClick={handleClick}
+        className="text-sm font-medium transition-colors hover:text-primary"
+      >
+        {t("navigation.quiz")}
+      </NavLink>
     </nav>
   );
 };
