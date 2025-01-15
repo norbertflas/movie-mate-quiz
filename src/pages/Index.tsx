@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { SearchSection } from "@/components/sections/SearchSection";
 import { PageContainer } from "@/components/home/PageContainer";
-import { ServicesSection } from "@/components/home/ServicesSection";
 import { QuizContent } from "@/components/home/QuizContent";
 import { TrendingMoviesSection } from "@/components/sections/TrendingMoviesSection";
 import { RecentlyViewedSection } from "@/components/sections/RecentlyViewedSection";
@@ -14,6 +13,7 @@ import { getMovieDetails } from "@/services/tmdb";
 import { MovieCard } from "@/components/MovieCard";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2 } from "lucide-react";
+import { WelcomeSection } from "@/components/WelcomeSection";
 
 const Index = () => {
   const [showQuiz, setShowQuiz] = useState(false);
@@ -63,11 +63,30 @@ const Index = () => {
         transition={{ duration: 0.5 }}
         className="space-y-8"
       >
-        <ServicesSection />
+        {!showQuiz ? (
+          <motion.div
+            key="welcome"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+          >
+            <WelcomeSection onStartQuiz={handleStartQuiz} />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="quiz"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+          >
+            <QuizContent />
+          </motion.div>
+        )}
+
         <SearchSection />
         
         <AnimatePresence mode="wait">
-          {!showQuiz ? (
+          {!showQuiz && (
             <motion.div
               key="content"
               initial={{ opacity: 0, y: 20 }}
@@ -119,15 +138,6 @@ const Index = () => {
                 </h2>
                 <InfiniteMovieList />
               </section>
-            </motion.div>
-          ) : (
-            <motion.div
-              key="quiz"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-            >
-              <QuizContent />
             </motion.div>
           )}
         </AnimatePresence>

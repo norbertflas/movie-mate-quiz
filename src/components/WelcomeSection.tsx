@@ -35,11 +35,28 @@ export const WelcomeSection = ({ onStartQuiz }: WelcomeSectionProps) => {
           >
             Odpowiedz na kilka pytań, a my pomożemy Ci odkryć Twój następny ulubiony film lub serial
           </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6 }}
+            className="max-w-2xl mx-auto text-muted-foreground space-y-4"
+          >
+            <p>
+              MovieFinder to innowacyjna platforma, która wykorzystuje zaawansowane algorytmy, 
+              aby dopasować filmy do Twoich preferencji. Nasz inteligentny quiz analizuje Twoje 
+              upodobania i sugeruje idealne filmy dla Ciebie.
+            </p>
+            <p>
+              Nie trać czasu na przeszukiwanie niekończących się list filmów. 
+              Pozwól nam znaleźć dokładnie to, czego szukasz.
+            </p>
+          </motion.div>
           
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.6 }}
+            transition={{ delay: 0.8 }}
             className="pt-8"
           >
             <Button 
