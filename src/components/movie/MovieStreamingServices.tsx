@@ -3,11 +3,11 @@ import { motion } from "framer-motion";
 import { Card } from "../ui/card";
 
 interface MovieStreamingServicesProps {
-  services: string[];
+  services?: string[];
 }
 
-export const MovieStreamingServices = ({ services }: MovieStreamingServicesProps) => {
-  if (!services.length) return null;
+export const MovieStreamingServices = ({ services = [] }: MovieStreamingServicesProps) => {
+  if (!services?.length) return null;
 
   return (
     <Card className="p-4 bg-background/50 backdrop-blur-sm">
