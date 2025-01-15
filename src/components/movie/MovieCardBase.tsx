@@ -34,7 +34,7 @@ const MovieCardBase = memo(({
         description={description}
         rating={rating}
         genre={genre}
-        tmdbId={tmdbId}
+        tmdbId={tmdbId || 0}
         explanations={explanations}
       />
     </Card>
