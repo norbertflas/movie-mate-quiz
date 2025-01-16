@@ -14,12 +14,12 @@ interface YouTubeSearchResponse {
 
 export const getMovieTrailer = async (movieTitle: string, year?: string): Promise<string> => {
   try {
-    const { data: { YOUTUBE_API_KEY }, error } = await supabase
-      .from('secrets')
-      .select('YOUTUBE_API_KEY')
-      .single();
+    const { data, error } = await supabase
+      .functions.invoke('get-youtube-key', {
+        body: { movieTitle, year }
+      });
 
-    if (error || !YOUTUBE_API_KEY) {
+    if (error || !data?.key) {
       console.error('Error fetching YouTube API key:', error);
       return '';
     }
@@ -28,17 +28,17 @@ export const getMovieTrailer = async (movieTitle: string, year?: string): Promis
     const response = await fetch(
       `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(
         searchQuery
-      )}&type=video&key=${YOUTUBE_API_KEY}&maxResults=1`
+      )}&type=video&key=${data.key}&maxResults=1`
     );
 
     if (!response.ok) {
       throw new Error('YouTube API request failed');
     }
 
-    const data: YouTubeSearchResponse = await response.json();
+    const responseData: YouTubeSearchResponse = await response.json();
     
-    if (data.items && data.items.length > 0) {
-      return `https://www.youtube.com/embed/${data.items[0].id.videoId}`;
+    if (responseData.items && responseData.items.length > 0) {
+      return `https://www.youtube.com/embed/${responseData.items[0].id.videoId}`;
     }
 
     return '';

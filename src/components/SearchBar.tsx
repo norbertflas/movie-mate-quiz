@@ -71,6 +71,8 @@ export const SearchBar = () => {
     }
   };
 
+  const getGenreTranslationKey = (genre: string) => `movie.${genre.toLowerCase()}`;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -89,6 +91,7 @@ export const SearchBar = () => {
       <SearchResults
         searchResults={searchResults}
         creatorResults={creatorResults}
+        getGenreTranslationKey={getGenreTranslationKey}
       />
     </motion.div>
   );
