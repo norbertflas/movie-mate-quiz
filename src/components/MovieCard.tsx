@@ -9,6 +9,7 @@ import { MovieExpandedContent } from "./movie/MovieExpandedContent";
 import { useMovieRating } from "./movie/MovieRatingLogic";
 import { motion } from "framer-motion";
 import { getStreamingAvailability } from "@/services/streamingAvailability";
+import { getMovieTrailer } from "@/services/youtube";
 import { useTranslation } from "react-i18next";
 import { useToast } from "./ui/use-toast";
 
@@ -34,7 +35,7 @@ export const MovieCard = ({
   genre,
   imageUrl,
   description,
-  trailerUrl,
+  trailerUrl: initialTrailerUrl,
   rating,
   tags,
   streamingServices = [],
@@ -45,6 +46,7 @@ export const MovieCard = ({
   const [showTrailer, setShowTrailer] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [availableServices, setAvailableServices] = useState<string[]>([]);
+  const [trailerUrl, setTrailerUrl] = useState(initialTrailerUrl);
   const { t } = useTranslation();
   const { toast } = useToast();
   
@@ -74,6 +76,33 @@ export const MovieCard = ({
 
     fetchStreamingServices();
   }, [tmdbId, toast, t]);
+
+  useEffect(() => {
+    const fetchTrailer = async () => {
+      if (showTrailer && !trailerUrl) {
+        try {
+          const url = await getMovieTrailer(title, year);
+          setTrailerUrl(url);
+          if (!url) {
+            toast({
+              title: t("errors.trailerNotFound"),
+              description: t("errors.tryAgain"),
+              variant: "destructive",
+            });
+          }
+        } catch (error) {
+          console.error('Error fetching trailer:', error);
+          toast({
+            title: t("errors.trailerError"),
+            description: t("errors.tryAgain"),
+            variant: "destructive",
+          });
+        }
+      }
+    };
+
+    fetchTrailer();
+  }, [showTrailer, title, year, trailerUrl, toast, t]);
 
   const handleTrailerToggle = () => {
     setShowTrailer(!showTrailer);
