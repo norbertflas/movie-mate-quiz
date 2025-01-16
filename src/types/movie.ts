@@ -35,4 +35,9 @@ export interface MovieCardContentProps {
   onWatchTrailer?: () => void;
   userRating?: "like" | "dislike" | null;
   onRate?: (rating: "like" | "dislike") => (e: React.MouseEvent) => void;
+  tags?: string[];
+}
+
+export interface NavLinksProps {
+  onNavigate?: () => void;
 }

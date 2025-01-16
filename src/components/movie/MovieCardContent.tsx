@@ -21,14 +21,12 @@ export const MovieCardContent = ({
   tmdbId,
   explanations,
 }: MovieCardContentProps) => {
-  const handleWatchTrailer = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleWatchTrailer = useCallback(() => {
     onWatchTrailer?.();
   }, [onWatchTrailer]);
 
   const handleRate = useCallback((rating: "like" | "dislike") => (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onRate?.(rating);
+    onRate?.(rating)(e);
   }, [onRate]);
 
   return (

@@ -99,6 +99,10 @@ const MovieCardComponent = ({
     setShowTrailer(!showTrailer);
   };
 
+  const handleRatingWrapper = (rating: "like" | "dislike") => (e: React.MouseEvent) => {
+    handleRating(rating);
+  };
+
   return (
     <MovieCardContainer
       isExpanded={isExpanded}
@@ -180,7 +184,7 @@ const MovieCardComponent = ({
         showTrailer={showTrailer}
         onWatchTrailer={handleTrailerClick}
         userRating={userRating}
-        onRate={handleRating}
+        onRate={handleRatingWrapper}
         tmdbId={tmdbId}
       />
     </MovieCardContainer>
