@@ -16,6 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "./ui/tooltip";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface MovieCardProps {
   title: string;
@@ -104,90 +105,123 @@ const MovieCardComponent = ({
   };
 
   return (
-    <MovieCardContainer
-      isExpanded={isExpanded}
-      onClick={() => setIsExpanded(!isExpanded)}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.3 }}
+      whileHover={{ scale: 1.02 }}
+      className="h-full"
     >
-      <MovieMediaSection
-        showTrailer={showTrailer}
-        trailerUrl={trailerUrl}
-        imageUrl={imageUrl}
-        title={title}
-      />
-
-      <CardHeader className="space-y-1 p-4">
-        <MovieCardHeader
-          title={title}
-          isFavorite={isFavorite}
-          onToggleFavorite={handleToggleFavorite}
-        />
-        {explanations?.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-2">
-            {explanations.map((explanation, index) => (
-              <Badge key={index} variant="secondary" className="text-xs">
-                {explanation}
-              </Badge>
-            ))}
-          </div>
-        )}
-        {availableStreaming.length > 0 && (
-          <div className="mt-4 space-y-2">
-            <h4 className="text-sm font-medium flex items-center gap-2">
-              {t("streaming.availableOn")}
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <Info className="h-4 w-4 text-muted-foreground" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{t("streaming.availability")}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </h4>
-            <div className="flex flex-wrap gap-2">
-              {availableStreaming.map((service: any, index: number) => (
-                <Badge
-                  key={index}
-                  variant={service.needsVpn ? "outline" : "default"}
-                  className="text-xs flex items-center gap-1"
-                >
-                  {service.service}
-                  {service.needsVpn && (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Info className="h-3 w-3" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{t("streaming.vpnRequired", { country: service.country })}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        )}
-      </CardHeader>
-
-      <MovieCardContent
-        streamingServices={streamingServices}
+      <MovieCardContainer
         isExpanded={isExpanded}
-        title={title}
-        year={year}
-        description={description}
-        rating={rating}
-        genre={genre}
-        tags={tags}
-        showTrailer={showTrailer}
-        onWatchTrailer={handleTrailerClick}
-        userRating={userRating}
-        onRate={handleRatingWrapper}
-        tmdbId={tmdbId}
-      />
-    </MovieCardContainer>
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <MovieMediaSection
+          showTrailer={showTrailer}
+          trailerUrl={trailerUrl}
+          imageUrl={imageUrl}
+          title={title}
+        />
+
+        <CardHeader className="space-y-1 p-4">
+          <MovieCardHeader
+            title={title}
+            isFavorite={isFavorite}
+            onToggleFavorite={handleToggleFavorite}
+          />
+          <AnimatePresence>
+            {explanations?.length > 0 && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="flex flex-wrap gap-2 mt-2"
+              >
+                {explanations.map((explanation, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: index * 0.1 }}
+                  >
+                    <Badge variant="secondary" className="text-xs">
+                      {explanation}
+                    </Badge>
+                  </motion.div>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+          {availableStreaming.length > 0 && (
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-4 space-y-2"
+            >
+              <h4 className="text-sm font-medium flex items-center gap-2">
+                {t("streaming.availableOn")}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Info className="h-4 w-4 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{t("streaming.availability")}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {availableStreaming.map((service: any, index: number) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: index * 0.1 }}
+                  >
+                    <Badge
+                      variant={service.needsVpn ? "outline" : "default"}
+                      className="text-xs flex items-center gap-1"
+                    >
+                      {service.service}
+                      {service.needsVpn && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Info className="h-3 w-3" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{t("streaming.vpnRequired", { country: service.country })}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+                    </Badge>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </CardHeader>
+
+        <MovieCardContent
+          streamingServices={streamingServices}
+          isExpanded={isExpanded}
+          title={title}
+          year={year}
+          description={description}
+          rating={rating}
+          genre={genre}
+          tags={tags}
+          showTrailer={showTrailer}
+          onWatchTrailer={handleTrailerClick}
+          userRating={userRating}
+          onRate={handleRatingWrapper}
+          tmdbId={tmdbId}
+        />
+      </MovieCardContainer>
+    </motion.div>
   );
 };
 
