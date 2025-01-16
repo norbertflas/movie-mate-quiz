@@ -64,6 +64,7 @@ html, body {
   position: relative;
   height: 100%;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: none;
 }
 
 body {
@@ -78,6 +79,7 @@ main {
   flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
 }
 
 button {
@@ -85,6 +87,7 @@ button {
   position: relative;
   z-index: 2;
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .no-select {
@@ -107,4 +110,41 @@ button {
 
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+/* Improve touch interactions */
+* {
+  touch-action: manipulation;
+}
+
+/* Fix modal scrolling */
+.dialog-content {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent body scroll when modal is open */
+body.dialog-open {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+}
+
+/* Enhanced animations */
+.animate-slide {
+  animation: slide 30s linear infinite;
+}
+
+@keyframes slide {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+.hover-pause {
+  animation-play-state: paused;
 }

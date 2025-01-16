@@ -5,17 +5,21 @@ import { MovieCard } from "@/components/MovieCard";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, X } from "lucide-react";
-import { useState, useCallback } from "react";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Loader2 } from "lucide-react";
+import { useState, useCallback, useEffect } from "react";
+import { MovieDetailsDialog } from "../movie/MovieDetailsDialog";
 
 export const TrendingMoviesSection = () => {
   const { t } = useTranslation();
   const { toast } = useToast();
   const [isHovered, setIsHovered] = useState(false);
-  const [selectedMovie, setSelectedMovie] = useState<number | null>(null);
+  const [selectedMovie, setSelectedMovie] = useState<any | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
+
+  useEffect(() => {
+    setIsTouchDevice('ontouchstart' in window);
+  }, []);
 
   const { data: trendingMovies = [], isLoading: isLoadingMovies } = useQuery({
     queryKey: ['trendingMovies', ''],
@@ -34,14 +38,16 @@ export const TrendingMoviesSection = () => {
     }
   });
 
-  const handleMovieClick = useCallback((movieId: number) => {
-    setSelectedMovie(movieId);
+  const handleMovieClick = useCallback((movie: any) => {
+    setSelectedMovie(movie);
     setIsDialogOpen(true);
+    document.body.classList.add('dialog-open');
   }, []);
 
   const handleCloseDialog = useCallback(() => {
     setIsDialogOpen(false);
     setSelectedMovie(null);
+    document.body.classList.remove('dialog-open');
   }, []);
 
   if (isLoadingMovies) {
@@ -61,8 +67,6 @@ export const TrendingMoviesSection = () => {
     );
   }
 
-  const selectedMovieData = trendingMovies.find(movie => movie.id === selectedMovie);
-
   return (
     <Card className="glass-panel overflow-hidden relative">
       <CardHeader>
@@ -73,8 +77,8 @@ export const TrendingMoviesSection = () => {
       <CardContent>
         <div 
           className="relative"
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
+          onMouseEnter={() => !isTouchDevice && setIsHovered(true)}
+          onMouseLeave={() => !isTouchDevice && setIsHovered(false)}
           onTouchStart={() => setIsHovered(true)}
           onTouchEnd={() => setIsHovered(false)}
         >
@@ -91,72 +95,39 @@ export const TrendingMoviesSection = () => {
               repeatType: "loop"
             }}
           >
-            {trendingMovies.slice(0, 10).map((movie) => (
-              <motion.div
-                key={movie.id}
-                className="flex-none w-[300px]"
-                whileHover={{ scale: 1.05 }}
-                onClick={() => handleMovieClick(movie.id)}
-                transition={{ duration: 0.2 }}
-              >
-                <MovieCard
-                  title={movie.title}
-                  year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "N/A"}
-                  platform="TMDB"
-                  genre={t("movie.genre")}
-                  imageUrl={movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : '/placeholder.svg'}
-                  description={movie.overview}
-                  trailerUrl=""
-                  rating={movie.vote_average * 10}
-                  tmdbId={movie.id}
-                />
-              </motion.div>
-            ))}
+            <AnimatePresence>
+              {trendingMovies.slice(0, 10).map((movie) => (
+                <motion.div
+                  key={movie.id}
+                  className="flex-none w-[300px]"
+                  whileHover={{ scale: 1.05 }}
+                  onClick={() => handleMovieClick(movie)}
+                  transition={{ duration: 0.2 }}
+                  layout
+                >
+                  <MovieCard
+                    title={movie.title}
+                    year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "N/A"}
+                    platform="TMDB"
+                    genre={t("movie.genre")}
+                    imageUrl={movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : '/placeholder.svg'}
+                    description={movie.overview}
+                    trailerUrl=""
+                    rating={movie.vote_average * 10}
+                    tmdbId={movie.id}
+                  />
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </motion.div>
         </div>
       </CardContent>
 
-      <Dialog open={isDialogOpen} onOpenChange={handleCloseDialog}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <div className="flex justify-between items-start mb-4">
-            <h2 className="text-2xl font-bold">{selectedMovieData?.title}</h2>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleCloseDialog}
-              className="rounded-full"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-          {selectedMovieData && (
-            <div className="grid gap-6 md:grid-cols-2">
-              <div className="relative aspect-[2/3] overflow-hidden rounded-lg">
-                <img
-                  src={selectedMovieData.poster_path ? `https://image.tmdb.org/t/p/w500${selectedMovieData.poster_path}` : '/placeholder.svg'}
-                  alt={selectedMovieData.title}
-                  className="object-cover w-full h-full"
-                />
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <h3 className="font-semibold text-lg mb-2">{t("movie.overview")}</h3>
-                  <p className="text-muted-foreground">{selectedMovieData.overview}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">
-                    {new Date(selectedMovieData.release_date).getFullYear()}
-                  </span>
-                  <span className="text-sm text-muted-foreground">•</span>
-                  <span className="text-sm text-muted-foreground">
-                    {(selectedMovieData.vote_average * 10).toFixed(0)}%
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <MovieDetailsDialog 
+        isOpen={isDialogOpen}
+        onClose={handleCloseDialog}
+        movie={selectedMovie}
+      />
     </Card>
   );
 };
