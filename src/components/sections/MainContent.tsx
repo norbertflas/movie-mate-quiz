@@ -14,17 +14,19 @@ export const MainContent = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="space-y-12"
+      className="space-y-12 w-full"
     >
       <SearchSection />
       <TrendingMoviesSection />
       <RecentlyViewedSection />
 
-      <section className="glass-panel p-6 rounded-xl">
+      <section className="glass-panel p-6 rounded-xl w-full">
         <h2 className="text-2xl font-bold mb-6 gradient-text">
           {t("discover.popular")}
         </h2>
-        <InfiniteMovieList />
+        <div className="w-full max-h-[800px] overflow-y-auto">
+          <InfiniteMovieList />
+        </div>
       </section>
     </motion.div>
   );

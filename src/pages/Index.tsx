@@ -19,15 +19,16 @@ const Index = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="space-y-8"
+        className="space-y-8 min-h-screen pb-8"
       >
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="sync">
           {!showQuiz ? (
             <motion.div
               key="welcome"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
+              className="w-full"
             >
               <WelcomeSection onStartQuiz={handleStartQuiz} />
             </motion.div>
@@ -37,6 +38,7 @@ const Index = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
+              className="w-full"
             >
               <QuizContent />
             </motion.div>
@@ -44,10 +46,10 @@ const Index = () => {
         </AnimatePresence>
 
         {!showQuiz && (
-          <AnimatePresence mode="wait">
+          <>
             <MainContent />
             <PersonalizedRecommendations />
-          </AnimatePresence>
+          </>
         )}
       </motion.div>
     </PageContainer>
