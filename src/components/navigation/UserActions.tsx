@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { LogOut, Settings, PlayCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { ThemeSwitcher } from "../ThemeSwitcher";
 import { LanguageSwitcher } from "../LanguageSwitcher";
@@ -19,15 +19,23 @@ export const UserActions = () => {
   const { t } = useTranslation();
 
   const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: t("errors.logout"),
+          description: error.message,
+        });
+      } else {
+        navigate("/auth");
+      }
+    } catch (error) {
       toast({
         variant: "destructive",
-        title: "Logout Error",
-        description: error.message,
+        title: t("errors.logout"),
+        description: t("errors.generic"),
       });
-    } else {
-      navigate("/auth");
     }
   };
 
@@ -44,11 +52,11 @@ export const UserActions = () => {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onSelect={() => navigate("/services")}>
-            Streaming Services
+            {t("navigation.streamingServices")}
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={handleLogout} className="text-red-500">
             <LogOut className="h-4 w-4 mr-2" />
-            Logout
+            {t("auth.logout")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
