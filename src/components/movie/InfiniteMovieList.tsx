@@ -5,6 +5,8 @@ import { MovieCardBase } from "./MovieCardBase";
 import { Skeleton } from "@/components/ui/skeleton";
 import { discoverMovies } from "@/services/tmdb";
 import type { TMDBMovie } from "@/services/tmdb/types";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 export const InfiniteMovieList = () => {
   const loadMoreRef = useRef(null);
@@ -17,6 +19,7 @@ export const InfiniteMovieList = () => {
     isFetchingNextPage,
     isLoading,
     isError,
+    error,
   } = useInfiniteQuery({
     queryKey: ["movies", "infinite"],
     queryFn: async ({ pageParam = 1 }) => {
@@ -28,6 +31,14 @@ export const InfiniteMovieList = () => {
       if (lastPage.length === 0) return undefined;
       return pages.length + 1;
     },
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    gcTime: 10 * 60 * 1000, // Keep unused data for 10 minutes
+    retry: 2,
+    meta: {
+      onError: (error: Error) => {
+        console.error("Error fetching movies:", error);
+      }
+    }
   });
 
   const loadMore = useCallback(() => {
@@ -54,9 +65,12 @@ export const InfiniteMovieList = () => {
 
   if (isError) {
     return (
-      <div className="text-center py-12">
-        <p className="text-destructive">Error loading movies. Please try again later.</p>
-      </div>
+      <Alert variant="destructive" className="mb-6">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          {error?.message || "Error loading movies. Please try again later."}
+        </AlertDescription>
+      </Alert>
     );
   }
 
@@ -84,6 +98,7 @@ export const InfiniteMovieList = () => {
         <div
           ref={loadMoreRef}
           className="py-8 text-center"
+          onMouseEnter={loadMore}
         >
           {isFetchingNextPage && (
             <div className="space-y-4">

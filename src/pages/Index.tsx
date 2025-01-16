@@ -14,13 +14,15 @@ import { MovieCard } from "@/components/MovieCard";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2 } from "lucide-react";
 import { WelcomeSection } from "@/components/WelcomeSection";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 const Index = () => {
   const [showQuiz, setShowQuiz] = useState(false);
   const { t } = useTranslation();
   const { toast } = useToast();
 
-  const { data: recommendations = [], isLoading: isLoadingRecommendations } = useQuery({
+  const { data: recommendations = [], isLoading: isLoadingRecommendations, error: recommendationsError } = useQuery({
     queryKey: ['personalizedRecommendations'],
     queryFn: async () => {
       const scores = await getPersonalizedRecommendations();
@@ -40,8 +42,11 @@ const Index = () => {
       const movies = await Promise.all(movieDetailsPromises);
       return movies.filter(Boolean);
     },
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    gcTime: 10 * 60 * 1000, // Keep unused data for 10 minutes
+    retry: 2,
     meta: {
-      onError: () => {
+      onError: (error: Error) => {
         toast({
           title: t("errors.recommendationError"),
           description: t("errors.tryAgain"),
@@ -101,6 +106,13 @@ const Index = () => {
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
+              ) : recommendationsError ? (
+                <Alert variant="destructive" className="mb-6">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    {t("errors.recommendationError")}
+                  </AlertDescription>
+                </Alert>
               ) : recommendations.length > 0 ? (
                 <section className="glass-panel p-6 rounded-xl">
                   <h2 className="text-2xl font-bold mb-6 gradient-text">
