@@ -19,16 +19,25 @@ const languages = [
 ];
 
 export const LanguageSwitcher = () => {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { toast } = useToast();
 
-  const handleLanguageChange = (langCode: string) => {
-    i18n.changeLanguage(langCode);
-    toast({
-      title: i18n.t("languageChanged"),
-      description: i18n.t("languageChangedDescription"),
-      className: "bg-gradient-to-r from-blue-500 to-purple-500 text-white",
-    });
+  const handleLanguageChange = async (langCode: string) => {
+    try {
+      await i18n.changeLanguage(langCode);
+      toast({
+        title: t("languageChanged"),
+        description: t("languageChangedDescription"),
+        className: "bg-gradient-to-r from-blue-500 to-purple-500 text-white",
+      });
+    } catch (error) {
+      console.error("Failed to change language:", error);
+      toast({
+        title: t("error"),
+        description: t("languageChangeError"),
+        variant: "destructive",
+      });
+    }
   };
 
   return (

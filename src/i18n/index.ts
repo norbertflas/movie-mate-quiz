@@ -7,7 +7,7 @@ import { de } from "./locales/de";
 import { fr } from "./locales/fr";
 import { it } from "./locales/it";
 
-i18n.use(initReactI18next).init({
+const i18nInstance = i18n.use(initReactI18next).init({
   resources: {
     en: { translation: en },
     pl: { translation: pl },
@@ -16,14 +16,13 @@ i18n.use(initReactI18next).init({
     fr: { translation: fr },
     it: { translation: it },
   },
-  lng: localStorage.getItem("language") || "en", // Get saved language or default to English
+  lng: localStorage.getItem("language") || "en",
   fallbackLng: "en",
   interpolation: {
     escapeValue: false,
   },
 });
 
-// Save language preference when it changes
 i18n.on("languageChanged", (lng) => {
   localStorage.setItem("language", lng);
 });
