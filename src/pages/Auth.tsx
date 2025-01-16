@@ -90,9 +90,6 @@ const Auth = () => {
           }}
           providers={['google']}
           redirectTo={window.location.origin}
-          onError={(error) => {
-            setError(getErrorMessage(error));
-          }}
         />
       </Card>
     </motion.div>

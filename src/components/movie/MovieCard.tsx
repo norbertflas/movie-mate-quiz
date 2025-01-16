@@ -55,6 +55,10 @@ export const MovieCard = ({
     setShowTrailer(!showTrailer);
   };
 
+  const handleRatingWrapper = (rating: "like" | "dislike") => (e: React.MouseEvent) => {
+    handleRating(rating);
+  };
+
   return (
     <motion.div
       layout
@@ -97,7 +101,7 @@ export const MovieCard = ({
             showTrailer={showTrailer}
             onWatchTrailer={handleTrailerToggle}
             userRating={userRating}
-            onRate={handleRating}
+            onRate={handleRatingWrapper}
             tmdbId={tmdbId}
           />
         </CardContent>
