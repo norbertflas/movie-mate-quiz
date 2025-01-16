@@ -74,6 +74,7 @@ html, body {
   position: relative;
   height: 100%;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: none;
 }
 
 /* Ensure content is always scrollable */
@@ -82,6 +83,7 @@ main {
   z-index: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
 }
 
 /* Fix button interactions */
@@ -90,10 +92,29 @@ button {
   position: relative;
   z-index: 2;
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 /* Prevent text selection during animations */
 .no-select {
   user-select: none;
   -webkit-user-select: none;
+}
+
+/* Improve touch interactions */
+* {
+  touch-action: manipulation;
+}
+
+/* Fix modal scrolling */
+.dialog-content {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent body scroll when modal is open */
+body.dialog-open {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
 }

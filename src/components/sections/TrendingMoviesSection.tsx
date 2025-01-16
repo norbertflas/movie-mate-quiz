@@ -75,6 +75,8 @@ export const TrendingMoviesSection = () => {
           className="relative"
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
+          onTouchStart={() => setIsHovered(true)}
+          onTouchEnd={() => setIsHovered(false)}
         >
           <motion.div 
             className="flex space-x-6 py-4 overflow-x-auto scrollbar-hide group no-select"
