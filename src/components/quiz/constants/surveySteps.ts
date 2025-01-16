@@ -10,7 +10,7 @@ export const useSurveySteps = (): SurveyStepType[] => {
       id: "vod",
       question: t("quiz.questions.platforms"),
       type: "multiple",
-      options: VOD_SERVICES,
+      options: VOD_SERVICES.map(service => t(`streaming.${service.toLowerCase()}`)),
     },
     {
       id: "type",
@@ -38,17 +38,6 @@ export const useSurveySteps = (): SurveyStepType[] => {
         ];
       },
       shouldShow: (answers: Record<string, any>) => !!answers.type,
-    },
-    {
-      id: "seasons",
-      question: t("quiz.questions.seasons"),
-      type: "single",
-      options: [
-        t("quiz.options.seasons.one"),
-        t("quiz.options.seasons.twoThree"),
-        t("quiz.options.seasons.fourPlus")
-      ],
-      shouldShow: (answers: Record<string, any>) => answers.type === t("quiz.options.series"),
     },
     {
       id: "genre",

@@ -8,6 +8,9 @@ import { MovieStreamingServices } from "./movie/MovieStreamingServices";
 import { MovieExpandedContent } from "./movie/MovieExpandedContent";
 import { useMovieRating } from "./movie/MovieRatingLogic";
 import { motion } from "framer-motion";
+import { useEffect, useState as useStateForServices } from "react";
+import { getStreamingAvailability } from "@/services/streamingAvailability";
+import { useTranslation } from "react-i18next";
 
 interface MovieCardProps {
   title: string;
@@ -41,6 +44,8 @@ export const MovieCard = ({
   const [isFavorite, setIsFavorite] = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [availableServices, setAvailableServices] = useStateForServices<string[]>([]);
+  const { t } = useTranslation();
   
   const { userRating, handleRating } = useMovieRating(title);
   const { handleToggleFavorite } = MovieFavoriteHandler({ 
@@ -49,9 +54,26 @@ export const MovieCard = ({
     title 
   });
 
+  useEffect(() => {
+    const fetchStreamingServices = async () => {
+      if (tmdbId) {
+        try {
+          const services = await getStreamingAvailability(tmdbId);
+          setAvailableServices(services.map(s => s.service));
+        } catch (error) {
+          console.error('Error fetching streaming services:', error);
+        }
+      }
+    };
+
+    fetchStreamingServices();
+  }, [tmdbId]);
+
   const handleTrailerToggle = () => {
     setShowTrailer(!showTrailer);
   };
+
+  const normalizedRating = rating > 1 ? rating : rating * 100;
 
   return (
     <motion.div
@@ -60,7 +82,7 @@ export const MovieCard = ({
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.3 }}
       whileHover={{ scale: 1.02 }}
-      className="h-full"
+      className="h-full relative"
     >
       <MovieCardContainer
         isExpanded={isExpanded}
@@ -82,16 +104,16 @@ export const MovieCard = ({
         </CardHeader>
 
         <CardContent className="space-y-4 flex-grow p-4">
-          <MovieStreamingServices services={streamingServices} />
+          <MovieStreamingServices services={availableServices} />
           
           <MovieExpandedContent
             isExpanded={isExpanded}
             title={title}
             year={year}
             description={description}
-            rating={rating}
-            genre={genre}
-            tags={tags}
+            rating={normalizedRating}
+            genre={t(`movie.${genre.toLowerCase()}`)}
+            tags={tags?.map(tag => t(`movie.${tag.toLowerCase()}`))}
             showTrailer={showTrailer}
             onWatchTrailer={handleTrailerToggle}
             userRating={userRating}

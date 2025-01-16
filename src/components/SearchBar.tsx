@@ -93,7 +93,7 @@ export const SearchBar = () => {
       10752: "war",
       37: "western"
     };
-    return genreMap[genreId] || "other";
+    return `movie.${genreMap[genreId] || 'other'}`;
   };
 
   return (
