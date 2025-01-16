@@ -1,7 +1,10 @@
-import { motion } from "framer-motion";
-import { MovieActions } from "./MovieActions";
-import { MovieDetailsSection } from "./MovieDetailsSection";
-import { SimilarMovies } from "../SimilarMovies";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { MovieSocialShare } from "./MovieSocialShare";
+import { useTranslation } from "react-i18next";
+import { motion, AnimatePresence } from "framer-motion";
+import { ThumbsUp, ThumbsDown, Play } from "lucide-react";
 
 interface MovieExpandedContentProps {
   isExpanded: boolean;
@@ -13,8 +16,8 @@ interface MovieExpandedContentProps {
   tags?: string[];
   showTrailer: boolean;
   onWatchTrailer: () => void;
-  userRating: "like" | "dislike" | null;
-  onRate: (rating: "like" | "dislike", e: React.MouseEvent) => void;
+  userRating?: "like" | "dislike" | null;
+  onRate?: (rating: "like" | "dislike") => (e: React.MouseEvent) => void;
   tmdbId?: number;
   explanations?: string[];
 }
@@ -34,35 +37,93 @@ export const MovieExpandedContent = ({
   tmdbId,
   explanations,
 }: MovieExpandedContentProps) => {
+  const { t } = useTranslation();
+
   return (
-    <motion.div
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: isExpanded ? 1 : 0, height: isExpanded ? "auto" : 0 }}
-      exit={{ opacity: 0, height: 0 }}
-      transition={{ duration: 0.3 }}
-      className="space-y-4"
-    >
-      <MovieDetailsSection
-        title={title}
-        year={year}
-        description={description}
-        rating={rating}
-        genre={genre}
-        tags={tags}
-        showTrailer={showTrailer}
-        onWatchTrailer={onWatchTrailer}
-        explanations={explanations}
-      />
-      
-      <MovieActions 
-        userRating={userRating}
-        showTrailer={showTrailer}
-        onToggleTrailer={onWatchTrailer}
-        onRate={onRate}
-        title={title}
-      />
-      
-      {tmdbId && <SimilarMovies currentMovie={{ title, year, genre, tags, tmdbId }} />}
-    </motion.div>
+    <AnimatePresence>
+      {isExpanded && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          exit={{ opacity: 0, height: 0 }}
+          className="space-y-4"
+        >
+          <div className="space-y-2">
+            <h3 className="font-semibold">{title}</h3>
+            <p className="text-sm text-muted-foreground">{description}</p>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary">{year}</Badge>
+              <Badge variant="secondary">{genre}</Badge>
+              {tags?.map((tag) => (
+                <Badge key={tag} variant="outline">
+                  {t(`movie.${tag.toLowerCase()}`)}
+                </Badge>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Progress value={rating} className="flex-1" />
+              <span className="text-sm font-medium">{rating}%</span>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant={showTrailer ? "secondary" : "outline"}
+              size="sm"
+              onClick={onWatchTrailer}
+              className="flex items-center gap-2"
+            >
+              <Play className="w-4 h-4" />
+              {t(showTrailer ? "movie.hideTrailer" : "movie.watchTrailer")}
+            </Button>
+
+            {onRate && (
+              <>
+                <Button
+                  variant={userRating === "like" ? "secondary" : "outline"}
+                  size="sm"
+                  onClick={onRate("like")}
+                  className="flex items-center gap-2"
+                >
+                  <ThumbsUp className="w-4 h-4" />
+                  {t("movie.like")}
+                </Button>
+
+                <Button
+                  variant={userRating === "dislike" ? "secondary" : "outline"}
+                  size="sm"
+                  onClick={onRate("dislike")}
+                  className="flex items-center gap-2"
+                >
+                  <ThumbsDown className="w-4 h-4" />
+                  {t("movie.dislike")}
+                </Button>
+              </>
+            )}
+          </div>
+
+          {explanations && explanations.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium">{t("movie.whyRecommended")}</h4>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                {explanations.map((explanation, index) => (
+                  <li key={index}>{explanation}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <MovieSocialShare
+            title={title}
+            description={description}
+            url={`${window.location.origin}/movie/${tmdbId}`}
+          />
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
