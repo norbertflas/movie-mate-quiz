@@ -36,19 +36,21 @@ function App() {
       <BrowserRouter>
         <QueryClientProvider client={queryClient}>
           <ThemeProvider defaultTheme="dark" storageKey="moviemate-theme">
-            <Navigation />
-            <main className="min-h-screen bg-background">
-              <Suspense fallback={<LoadingState />}>
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/auth" element={<Auth />} />
-                  <Route path="/search" element={<Search />} />
-                  <Route path="/favorites" element={<Favorites />} />
-                  <Route path="/ratings" element={<Ratings />} />
-                  <Route path="/services" element={<Services />} />
-                </Routes>
-              </Suspense>
-            </main>
+            <div className="flex min-h-screen flex-col bg-background">
+              <Navigation />
+              <main className="flex-1 container mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <Suspense fallback={<LoadingState />}>
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/auth" element={<Auth />} />
+                    <Route path="/search" element={<Search />} />
+                    <Route path="/favorites" element={<Favorites />} />
+                    <Route path="/ratings" element={<Ratings />} />
+                    <Route path="/services" element={<Services />} />
+                  </Routes>
+                </Suspense>
+              </main>
+            </div>
             <Toaster />
           </ThemeProvider>
         </QueryClientProvider>
