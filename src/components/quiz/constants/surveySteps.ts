@@ -10,48 +10,34 @@ export const useSurveySteps = (): SurveyStepType[] => {
       id: "vod",
       question: t("quiz.questions.platforms"),
       type: "multiple",
-      options: VOD_SERVICES.map(service => t(`streaming.${service.toLowerCase()}`)),
+      options: VOD_SERVICES.map(service => ({
+        id: service.toLowerCase(),
+        label: t(`streaming.${service.toLowerCase()}`),
+        value: service
+      })),
     },
     {
       id: "type",
       question: t("quiz.questions.contentType"),
       type: "single",
-      options: [t("quiz.options.movie"), t("quiz.options.series")],
-    },
-    {
-      id: "length",
-      question: t("quiz.questions.length"),
-      type: "single",
-      options: [],
-      getDynamicOptions: (answers: Record<string, any>) => {
-        if (answers.type === t("quiz.options.movie")) {
-          return [
-            t("quiz.options.length.short"),
-            t("quiz.options.length.medium"),
-            t("quiz.options.length.long")
-          ];
-        }
-        return [
-          t("quiz.options.episodes.short"),
-          t("quiz.options.episodes.medium"),
-          t("quiz.options.episodes.long")
-        ];
-      },
-      shouldShow: (answers: Record<string, any>) => !!answers.type,
+      options: [
+        { id: "movie", label: t("quiz.options.movie"), value: "movie" },
+        { id: "series", label: t("quiz.options.series"), value: "series" }
+      ],
     },
     {
       id: "genre",
       question: t("quiz.questions.genre"),
       type: "single",
       options: [
-        t("movie.action"),
-        t("movie.comedy"),
-        t("movie.drama"),
-        t("movie.sciFi"),
-        t("movie.horror"),
-        t("movie.romance"),
-        t("movie.thriller"),
-        t("movie.documentary"),
+        { id: "action", label: t("movie.action"), value: "action" },
+        { id: "comedy", label: t("movie.comedy"), value: "comedy" },
+        { id: "drama", label: t("movie.drama"), value: "drama" },
+        { id: "sciFi", label: t("movie.sciFi"), value: "sciFi" },
+        { id: "horror", label: t("movie.horror"), value: "horror" },
+        { id: "romance", label: t("movie.romance"), value: "romance" },
+        { id: "thriller", label: t("movie.thriller"), value: "thriller" },
+        { id: "documentary", label: t("movie.documentary"), value: "documentary" },
       ],
     },
     {
@@ -59,10 +45,10 @@ export const useSurveySteps = (): SurveyStepType[] => {
       question: t("quiz.questions.mood"),
       type: "single",
       options: [
-        t("quiz.options.mood.light"),
-        t("quiz.options.mood.serious"),
-        t("quiz.options.mood.suspense"),
-        t("quiz.options.mood.inspiring"),
+        { id: "light", label: t("quiz.options.mood.light"), value: "light" },
+        { id: "serious", label: t("quiz.options.mood.serious"), value: "serious" },
+        { id: "suspense", label: t("quiz.options.mood.suspense"), value: "suspense" },
+        { id: "inspiring", label: t("quiz.options.mood.inspiring"), value: "inspiring" },
       ],
     },
   ];

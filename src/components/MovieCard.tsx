@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CardHeader, CardContent } from "./ui/card";
 import { MovieCardContainer } from "./movie/MovieCardContainer";
 import { MovieCardHeader } from "./movie/MovieCardHeader";
@@ -8,9 +8,9 @@ import { MovieStreamingServices } from "./movie/MovieStreamingServices";
 import { MovieExpandedContent } from "./movie/MovieExpandedContent";
 import { useMovieRating } from "./movie/MovieRatingLogic";
 import { motion } from "framer-motion";
-import { useEffect, useState as useStateForServices } from "react";
 import { getStreamingAvailability } from "@/services/streamingAvailability";
 import { useTranslation } from "react-i18next";
+import { useToast } from "./ui/use-toast";
 
 interface MovieCardProps {
   title: string;
@@ -44,8 +44,9 @@ export const MovieCard = ({
   const [isFavorite, setIsFavorite] = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [availableServices, setAvailableServices] = useStateForServices<string[]>([]);
+  const [availableServices, setAvailableServices] = useState<string[]>([]);
   const { t } = useTranslation();
+  const { toast } = useToast();
   
   const { userRating, handleRating } = useMovieRating(title);
   const { handleToggleFavorite } = MovieFavoriteHandler({ 
@@ -62,17 +63,27 @@ export const MovieCard = ({
           setAvailableServices(services.map(s => s.service));
         } catch (error) {
           console.error('Error fetching streaming services:', error);
+          toast({
+            title: t("errors.streamingServices"),
+            description: t("errors.tryAgain"),
+            variant: "destructive",
+          });
         }
       }
     };
 
     fetchStreamingServices();
-  }, [tmdbId]);
+  }, [tmdbId, toast, t]);
 
   const handleTrailerToggle = () => {
     setShowTrailer(!showTrailer);
   };
 
+  const handleExpand = () => {
+    setIsExpanded(!isExpanded);
+  };
+
+  // Normalize rating to be between 0-100
   const normalizedRating = rating > 1 ? rating : rating * 100;
 
   return (
@@ -86,7 +97,7 @@ export const MovieCard = ({
     >
       <MovieCardContainer
         isExpanded={isExpanded}
-        onClick={() => setIsExpanded(!isExpanded)}
+        onClick={handleExpand}
       >
         <MovieCardMedia
           showTrailer={showTrailer}

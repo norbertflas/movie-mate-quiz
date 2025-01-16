@@ -71,31 +71,6 @@ export const SearchBar = () => {
     }
   };
 
-  const getGenreTranslationKey = (genreId: number): string => {
-    const genreMap: Record<number, string> = {
-      28: "action",
-      12: "adventure",
-      16: "animation",
-      35: "comedy",
-      80: "crime",
-      99: "documentary",
-      18: "drama",
-      10751: "family",
-      14: "fantasy",
-      36: "history",
-      27: "horror",
-      10402: "music",
-      9648: "mystery",
-      10749: "romance",
-      878: "sciFi",
-      10770: "tvMovie",
-      53: "thriller",
-      10752: "war",
-      37: "western"
-    };
-    return `movie.${genreMap[genreId] || 'other'}`;
-  };
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -114,7 +89,6 @@ export const SearchBar = () => {
       <SearchResults
         searchResults={searchResults}
         creatorResults={creatorResults}
-        getGenreTranslationKey={getGenreTranslationKey}
       />
     </motion.div>
   );
