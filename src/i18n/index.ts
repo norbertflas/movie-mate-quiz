@@ -16,11 +16,16 @@ i18n.use(initReactI18next).init({
     fr: { translation: fr },
     it: { translation: it },
   },
-  lng: "en",
+  lng: localStorage.getItem("language") || "en", // Get saved language or default to English
   fallbackLng: "en",
   interpolation: {
     escapeValue: false,
   },
+});
+
+// Save language preference when it changes
+i18n.on("languageChanged", (lng) => {
+  localStorage.setItem("language", lng);
 });
 
 export default i18n;

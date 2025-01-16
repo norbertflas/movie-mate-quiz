@@ -11,7 +11,7 @@ import { motion } from "framer-motion";
 import { getStreamingAvailability } from "@/services/streamingAvailability";
 import { getMovieTrailer } from "@/services/youtube";
 import { useTranslation } from "react-i18next";
-import { useToast } from "./ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 interface MovieCardProps {
   title: string;
