@@ -14,6 +14,9 @@ export const TrendingMoviesSection = () => {
   const { data: trendingMovies = [], isLoading: isLoadingMovies } = useQuery({
     queryKey: ['trendingMovies', ''],
     queryFn: getTrendingMovies,
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    gcTime: 10 * 60 * 1000, // Keep unused data for 10 minutes
+    retry: 2,
     meta: {
       onError: () => {
         toast({
