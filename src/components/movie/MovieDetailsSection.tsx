@@ -11,6 +11,7 @@ interface MovieDetailsSectionProps {
   tags?: string[];
   onWatchTrailer: () => void;
   showTrailer: boolean;
+  explanations?: string[];
 }
 
 export const MovieDetailsSection = ({
@@ -22,6 +23,7 @@ export const MovieDetailsSection = ({
   tags,
   onWatchTrailer,
   showTrailer,
+  explanations,
 }: MovieDetailsSectionProps) => {
   return (
     <motion.div
@@ -40,6 +42,20 @@ export const MovieDetailsSection = ({
         </div>
         <p className="text-sm text-muted-foreground line-clamp-3">{description}</p>
       </div>
+      
+      {explanations && explanations.length > 0 && (
+        <div className="space-y-2">
+          <h4 className="text-sm font-medium">Why we recommend this:</h4>
+          <div className="flex flex-wrap gap-2">
+            {explanations.map((explanation, index) => (
+              <Badge key={index} variant="secondary">
+                {explanation}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
+      
       {tags && tags.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {tags.map((tag) => (
@@ -49,6 +65,7 @@ export const MovieDetailsSection = ({
           ))}
         </div>
       )}
+      
       <Button
         variant="secondary"
         size="sm"

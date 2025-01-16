@@ -16,6 +16,7 @@ interface MovieExpandedContentProps {
   userRating: "like" | "dislike" | null;
   onRate: (rating: "like" | "dislike", e: React.MouseEvent) => void;
   tmdbId?: number;
+  explanations?: string[];
 }
 
 export const MovieExpandedContent = ({
@@ -31,6 +32,7 @@ export const MovieExpandedContent = ({
   userRating,
   onRate,
   tmdbId,
+  explanations,
 }: MovieExpandedContentProps) => {
   return (
     <motion.div
@@ -49,6 +51,7 @@ export const MovieExpandedContent = ({
         tags={tags}
         showTrailer={showTrailer}
         onWatchTrailer={onWatchTrailer}
+        explanations={explanations}
       />
       
       <MovieActions 
