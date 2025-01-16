@@ -4,9 +4,9 @@ import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
-export const Auth = () => {
+const Auth = () => {
   const { toast } = useToast();
 
   return (
@@ -41,15 +41,10 @@ export const Auth = () => {
           theme="default"
           providers={['google']}
           redirectTo={window.location.origin}
-          onError={(error) => {
-            toast({
-              title: "Authentication Error",
-              description: error.message,
-              variant: "destructive",
-            });
-          }}
         />
       </Card>
     </motion.div>
   );
 };
+
+export default Auth;

@@ -2,11 +2,11 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader } from "../ui/card";
 import { MovieStreamingServices } from "./MovieStreamingServices";
 import { MovieCardHeader } from "./MovieCardHeader";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { MovieFavoriteHandler } from "./MovieFavoriteHandler";
-import { MovieRatingHandler } from "./MovieRatingHandler";
 import { MovieMediaSection } from "./MovieMediaSection";
 import { MovieExpandedContent } from "./MovieExpandedContent";
+import { useMovieRating } from "./MovieRatingLogic";
 
 interface MovieCardProps {
   title: string;
@@ -38,7 +38,8 @@ export const MovieCard = ({
   const [isFavorite, setIsFavorite] = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [userRating, setUserRating] = useState<"like" | "dislike" | null>(null);
+  
+  const { userRating, handleRating } = useMovieRating(title);
 
   const { handleToggleFavorite } = MovieFavoriteHandler({ 
     isFavorite, 
@@ -46,17 +47,8 @@ export const MovieCard = ({
     title 
   });
 
-  const { handleRating } = MovieRatingHandler({ 
-    setUserRating, 
-    title 
-  });
-
   const handleTrailerToggle = () => {
     setShowTrailer(!showTrailer);
-  };
-
-  const handleRatingWrapper = (rating: "like" | "dislike") => (e: React.MouseEvent) => {
-    handleRating(rating);
   };
 
   return (
@@ -101,7 +93,7 @@ export const MovieCard = ({
             showTrailer={showTrailer}
             onWatchTrailer={handleTrailerToggle}
             userRating={userRating}
-            onRate={handleRatingWrapper}
+            onRate={handleRating}
             tmdbId={tmdbId}
           />
         </CardContent>
