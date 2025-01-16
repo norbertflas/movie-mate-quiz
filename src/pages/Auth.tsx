@@ -19,10 +19,35 @@ const Auth = () => {
       if (event === 'SIGNED_IN' && session) {
         navigate('/');
       }
+      if (event === 'USER_UPDATED') {
+        const checkSession = async () => {
+          const { error } = await supabase.auth.getSession();
+          if (error) {
+            setError(getErrorMessage(error));
+          }
+        };
+        checkSession();
+      }
+      if (event === 'SIGNED_OUT') {
+        setError('');
+      }
     });
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  const getErrorMessage = (error: AuthError) => {
+    switch (error.message) {
+      case 'Invalid login credentials':
+        return t('auth.errors.invalidCredentials');
+      case 'Email not confirmed':
+        return t('auth.errors.emailNotConfirmed');
+      case 'User not found':
+        return t('auth.errors.userNotFound');
+      default:
+        return error.message;
+    }
+  };
 
   return (
     <motion.div
@@ -54,9 +79,20 @@ const Auth = () => {
                 },
               },
             },
+            className: {
+              container: 'auth-container',
+              button: 'auth-button',
+              divider: 'auth-divider',
+              input: 'auth-input',
+              label: 'auth-label',
+              message: 'auth-message',
+            },
           }}
           providers={['google']}
           redirectTo={window.location.origin}
+          onError={(error) => {
+            setError(getErrorMessage(error));
+          }}
         />
       </Card>
     </motion.div>
