@@ -8,14 +8,52 @@ import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { TMDBMovie } from "@/services/tmdb";
 import { MovieCard } from "../MovieCard";
+import { searchMovies } from "@/services/tmdb";
 
 export const PersonalizedRecommendationsForm = () => {
   const [prompt, setPrompt] = useState("");
   const [selectedMovies, setSelectedMovies] = useState<TMDBMovie[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<TMDBMovie[]>([]);
   const [recommendations, setRecommendations] = useState<TMDBMovie[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { t } = useTranslation();
   const { toast } = useToast();
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+
+    try {
+      const results = await searchMovies(searchQuery);
+      setSearchResults(results);
+    } catch (error) {
+      console.error("Search error:", error);
+      toast({
+        title: t("errors.searchError"),
+        description: t("errors.tryAgain"),
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSelectMovie = (movie: TMDBMovie) => {
+    if (selectedMovies.length >= 5) {
+      toast({
+        title: t("errors.tooManyMovies"),
+        description: t("errors.maxFiveMovies"),
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!selectedMovies.find(m => m.id === movie.id)) {
+      setSelectedMovies([...selectedMovies, movie]);
+    }
+  };
+
+  const handleRemoveMovie = (movieId: number) => {
+    setSelectedMovies(selectedMovies.filter(m => m.id !== movieId));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,7 +96,7 @@ export const PersonalizedRecommendationsForm = () => {
   return (
     <div className="space-y-8">
       <Card className="p-6">
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <label htmlFor="prompt" className="text-sm font-medium">
               {t("recommendations.promptLabel")}
@@ -72,6 +110,61 @@ export const PersonalizedRecommendationsForm = () => {
               disabled={isLoading}
             />
           </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">
+              {t("recommendations.selectMovies")}
+            </label>
+            <div className="flex gap-2">
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={t("recommendations.searchMovies")}
+                className="flex-1"
+                disabled={isLoading}
+              />
+              <Button type="button" onClick={handleSearch} disabled={isLoading}>
+                {t("search.button")}
+              </Button>
+            </div>
+          </div>
+
+          {selectedMovies.length > 0 && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium">{t("recommendations.selectedMovies")}</h3>
+              <div className="flex flex-wrap gap-2">
+                {selectedMovies.map((movie) => (
+                  <Button
+                    key={movie.id}
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => handleRemoveMovie(movie.id)}
+                  >
+                    {movie.title} ×
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {searchResults.length > 0 && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium">{t("recommendations.searchResults")}</h3>
+              <div className="flex flex-wrap gap-2">
+                {searchResults.map((movie) => (
+                  <Button
+                    key={movie.id}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleSelectMovie(movie)}
+                    disabled={selectedMovies.some(m => m.id === movie.id)}
+                  >
+                    {movie.title}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <Button type="submit" disabled={isLoading || !prompt.trim()}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
