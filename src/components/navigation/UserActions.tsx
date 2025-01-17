@@ -14,12 +14,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export const UserActions = () => {
-  // Move all hooks to the top level to ensure consistent ordering
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useTranslation();
 
-  // Define the logout handler using the hooks declared above
   const handleLogout = async () => {
     try {
       const { error } = await supabase.auth.signOut();
@@ -41,6 +39,10 @@ export const UserActions = () => {
     }
   };
 
+  const handleNavigateToServices = () => {
+    navigate("/services");
+  };
+
   return (
     <div className="flex flex-1 items-center justify-end space-x-2">
       <ThemeSwitcher />
@@ -53,7 +55,7 @@ export const UserActions = () => {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onSelect={() => navigate("/services")}>
+          <DropdownMenuItem onSelect={handleNavigateToServices}>
             {t("navigation.streamingServices")}
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={handleLogout} className="text-red-500">
