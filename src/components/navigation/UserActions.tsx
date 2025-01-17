@@ -14,12 +14,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export const UserActions = () => {
-  // Move all hooks to the top level of the component
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useTranslation();
 
-  // Extract handlers to separate functions to avoid conditional hook calls
   const handleLogout = async () => {
     try {
       const { error } = await supabase.auth.signOut();
