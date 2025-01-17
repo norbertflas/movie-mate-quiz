@@ -13,22 +13,22 @@ export const NavigationButtons = ({
   const { t } = useTranslation();
 
   return (
-    <div className="flex justify-between pt-4">
+    <div className="flex justify-between pt-6">
       {currentStep > 1 && (
         <Button
           variant="outline"
           onClick={onPrevious}
-          className="gap-2 bg-black/20 border-gray-800 hover:bg-gray-800/50"
+          className="gap-2 bg-gray-800/50 border-gray-700 hover:bg-gray-700/50 text-white"
         >
           <ArrowLeft className="w-4 h-4" />
           {t("quiz.previous")}
         </Button>
       )}
       
-      {canGoNext && currentStep < totalSteps && (
+      {canGoNext && (
         <Button
           onClick={onNext}
-          className="gap-2 ml-auto bg-blue-600 hover:bg-blue-700"
+          className="gap-2 ml-auto bg-blue-600 hover:bg-blue-700 text-white"
         >
           {t("quiz.next")}
           <ArrowRight className="w-4 h-4" />

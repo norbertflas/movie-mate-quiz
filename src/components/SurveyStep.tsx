@@ -29,7 +29,11 @@ export const SurveyStep = ({
     if (type === "single") {
       onSelect(option);
     } else {
-      onSelect(option);
+      const isSelected = selectedOptions.includes(option);
+      const newSelection = isSelected
+        ? selectedOptions.filter(item => item !== option)
+        : [...selectedOptions, option];
+      onSelect(JSON.stringify(newSelection));
     }
   };
 
