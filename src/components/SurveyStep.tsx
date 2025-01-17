@@ -24,11 +24,23 @@ export const SurveyStep = ({
   selectedOptions,
 }: SurveyStepProps) => {
   const { t } = useTranslation();
-  
+
+  const handleOptionSelect = (option: string) => {
+    if (type === "single") {
+      onSelect(option);
+    } else {
+      onSelect(option);
+    }
+  };
+
   const handleNextStep = () => {
     if (type === "multiple" && selectedOptions.length > 0) {
       onSelect("NEXT_STEP");
     }
+  };
+
+  const handlePreviousStep = () => {
+    onSelect("PREV_STEP");
   };
 
   return (
@@ -43,16 +55,16 @@ export const SurveyStep = ({
           <p className="text-sm text-gray-400">
             {t("quiz.step", { current: currentStep, total: totalSteps })}
           </p>
-          <h2 className="text-2xl font-semibold tracking-tight text-white">{question}</h2>
+          <h2 className="text-2xl font-semibold tracking-tight text-white">{t(question)}</h2>
         </div>
 
         <div className="grid grid-cols-1 gap-4">
           {options.map((option) => (
             <QuestionOption
               key={option}
-              option={option}
+              option={t(option)}
               isSelected={selectedOptions.includes(option)}
-              onSelect={onSelect}
+              onSelect={() => handleOptionSelect(option)}
               type={type}
             />
           ))}
@@ -60,8 +72,8 @@ export const SurveyStep = ({
 
         <NavigationButtons
           currentStep={currentStep}
-          canGoNext={type === "multiple" && selectedOptions.length > 0}
-          onPrevious={() => onSelect("PREV_STEP")}
+          canGoNext={type === "single" || (type === "multiple" && selectedOptions.length > 0)}
+          onPrevious={handlePreviousStep}
           onNext={handleNextStep}
           totalSteps={totalSteps}
         />
