@@ -6,6 +6,8 @@ import { Routes, Route, BrowserRouter } from "react-router-dom";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Suspense, lazy } from "react";
 import { LoadingState } from "@/components/LoadingState";
+import { I18nextProvider } from "react-i18next";
+import i18n from "@/i18n";
 
 // Lazy load pages for better initial load performance
 const Index = lazy(() => import("@/pages/Index"));
@@ -35,24 +37,26 @@ function App() {
     <ErrorBoundary>
       <BrowserRouter>
         <QueryClientProvider client={queryClient}>
-          <ThemeProvider defaultTheme="dark" storageKey="moviemate-theme">
-            <div className="flex min-h-screen flex-col bg-background">
-              <Navigation />
-              <main className="flex-1 container mx-auto px-4 sm:px-6 lg:px-8 py-4">
-                <Suspense fallback={<LoadingState />}>
-                  <Routes>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/auth" element={<Auth />} />
-                    <Route path="/search" element={<Search />} />
-                    <Route path="/favorites" element={<Favorites />} />
-                    <Route path="/ratings" element={<Ratings />} />
-                    <Route path="/services" element={<Services />} />
-                  </Routes>
-                </Suspense>
-              </main>
-            </div>
-            <Toaster />
-          </ThemeProvider>
+          <I18nextProvider i18n={i18n}>
+            <ThemeProvider defaultTheme="dark" storageKey="moviemate-theme">
+              <div className="flex min-h-screen flex-col bg-background">
+                <Navigation />
+                <main className="flex-1 container mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                  <Suspense fallback={<LoadingState />}>
+                    <Routes>
+                      <Route path="/" element={<Index />} />
+                      <Route path="/auth" element={<Auth />} />
+                      <Route path="/search" element={<Search />} />
+                      <Route path="/favorites" element={<Favorites />} />
+                      <Route path="/ratings" element={<Ratings />} />
+                      <Route path="/services" element={<Services />} />
+                    </Routes>
+                  </Suspense>
+                </main>
+              </div>
+              <Toaster />
+            </ThemeProvider>
+          </I18nextProvider>
         </QueryClientProvider>
       </BrowserRouter>
     </ErrorBoundary>
