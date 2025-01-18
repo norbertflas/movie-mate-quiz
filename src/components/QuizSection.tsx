@@ -29,7 +29,7 @@ export const QuizSection = () => {
         questions={steps}
         currentStep={currentStep}
         onAnswer={handleAnswer}
-        selectedAnswers={answers}
+        answers={answers}
       />
       
       <div className="flex justify-between mt-4">

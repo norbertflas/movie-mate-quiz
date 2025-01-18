@@ -1,61 +1,54 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.1.3";
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { GoogleGenerativeAI } from '@google/generative-ai'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
-    if (!GEMINI_API_KEY) {
-      throw new Error('Missing Gemini API key');
-    }
+    const { title, description, genre } = await req.json()
+    const genAI = new GoogleGenerativeAI(Deno.env.get('GEMINI_API_KEY') || '')
+    const model = genAI.getGenerativeModel({ model: 'gemini-pro' })
 
-    const { title, description, genre } = await req.json();
-
-    const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-
-    const prompt = `Analyze this movie and provide insights:
+    const prompt = `Analyze the following movie:
     Title: ${title}
     Description: ${description}
     Genre: ${genre}
     
-    Provide a JSON response with:
-    1. A list of 3 key themes
-    2. Content warnings if any
-    3. Similar movie recommendations (3 titles)
+    Provide a structured analysis with:
+    1. Main themes
+    2. Content warnings
+    3. Similar movies recommendations
     4. Target audience
-    5. Critical analysis (2-3 sentences)
+    5. Brief critical analysis
     
-    Format the response as a JSON object with these exact keys:
-    {
-      "themes": string[],
-      "contentWarnings": string[],
-      "similarMovies": string[],
-      "targetAudience": string,
-      "analysis": string
-    }`;
+    Format the response as a JSON object with these keys: themes, contentWarnings, similarMovies, targetAudience, analysis`
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const insights = JSON.parse(response.text());
+    const result = await model.generateContent(prompt)
+    const response = result.response
+    const text = response.text()
+    
+    // Parse the JSON response
+    const insights = JSON.parse(text)
 
-    return new Response(JSON.stringify(insights), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify(insights),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
   } catch (error) {
-    console.error('Error in movie-insights function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error('Error generating movie insights:', error)
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { 
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    )
   }
-});
+})
