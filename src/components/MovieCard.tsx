@@ -64,6 +64,33 @@ export const MovieCard = ({
   const { userRating, handleRating } = useMovieRating(title);
 
   useEffect(() => {
+    const fetchTrailer = async () => {
+      if (showTrailer && !trailerUrl) {
+        try {
+          const url = await getMovieTrailer(title, year);
+          setTrailerUrl(url);
+          if (!url) {
+            toast({
+              title: t("errors.trailerNotFound"),
+              description: t("errors.tryAgain"),
+              variant: "destructive",
+            });
+          }
+        } catch (error) {
+          console.error('Error fetching trailer:', error);
+          toast({
+            title: t("errors.trailerError"),
+            description: t("errors.tryAgain"),
+            variant: "destructive",
+          });
+        }
+      }
+    };
+
+    fetchTrailer();
+  }, [showTrailer, title, year, trailerUrl, toast, t]);
+
+  useEffect(() => {
     const fetchStreamingServices = async () => {
       if (tmdbId) {
         try {
