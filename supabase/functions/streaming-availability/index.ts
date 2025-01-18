@@ -6,6 +6,7 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -15,6 +16,7 @@ serve(async (req) => {
     const rapidApiKey = Deno.env.get('RAPIDAPI_KEY')
     
     if (!rapidApiKey) {
+      console.error('RAPIDAPI_KEY not configured')
       throw new Error('RAPIDAPI_KEY not configured')
     }
 
@@ -30,6 +32,7 @@ serve(async (req) => {
 
     if (tmdbId) {
       url = `${baseUrl}/get/basic/tmdb/movie/${tmdbId}`
+      console.log('Fetching streaming availability for movie:', tmdbId)
     } else if (services) {
       url = `${baseUrl}/search/basic`
       options = {
@@ -43,6 +46,7 @@ serve(async (req) => {
           order_by: 'popularity'
         })
       }
+      console.log('Searching movies by streaming services:', services)
     } else {
       throw new Error('Invalid request parameters')
     }
@@ -55,6 +59,7 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
+    console.error('Error in streaming-availability function:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { 

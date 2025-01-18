@@ -43,6 +43,7 @@ export const QuizSection = () => {
           };
           handleQuizComplete([...answers, newAnswer]);
         }}
+        answers={answers}
       />
     </div>
   );
