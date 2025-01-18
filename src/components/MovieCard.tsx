@@ -13,6 +13,7 @@ import { getMovieTrailer } from "@/services/youtube";
 import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "./ui/badge";
+import { supabase } from "@/integrations/supabase/client";
 
 interface MovieCardProps {
   title: string;
@@ -27,6 +28,14 @@ interface MovieCardProps {
   streamingServices?: string[];
   tmdbId?: number;
   explanations?: string[];
+}
+
+interface MovieInsights {
+  themes: string[];
+  contentWarnings: string[];
+  similarMovies: string[];
+  targetAudience: string;
+  analysis: string;
 }
 
 export const MovieCard = ({
@@ -48,6 +57,7 @@ export const MovieCard = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const [availableServices, setAvailableServices] = useState<string[]>([]);
   const [trailerUrl, setTrailerUrl] = useState(initialTrailerUrl);
+  const [insights, setInsights] = useState<MovieInsights | null>(null);
   const { t, i18n } = useTranslation();
   const { toast } = useToast();
   
@@ -72,6 +82,30 @@ export const MovieCard = ({
 
     fetchStreamingServices();
   }, [tmdbId, i18n.language, toast, t]);
+
+  useEffect(() => {
+    const fetchInsights = async () => {
+      if (isExpanded && !insights) {
+        try {
+          const { data, error } = await supabase.functions.invoke('movie-insights', {
+            body: { title, description, genre }
+          });
+
+          if (error) throw error;
+          setInsights(data);
+        } catch (error) {
+          console.error('Error fetching movie insights:', error);
+          toast({
+            title: t("errors.aiInsights"),
+            description: t("errors.tryAgain"),
+            variant: "destructive",
+          });
+        }
+      }
+    };
+
+    fetchInsights();
+  }, [isExpanded, title, description, genre, toast, t, insights]);
 
   const handleExpand = () => {
     setIsExpanded(!isExpanded);
@@ -138,6 +172,7 @@ export const MovieCard = ({
             tmdbId={tmdbId}
             explanations={explanations}
             streamingServices={availableServices}
+            insights={insights}
           />
         </CardContent>
       </MovieCardContainer>
