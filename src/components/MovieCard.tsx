@@ -12,6 +12,7 @@ import { getStreamingAvailability } from "@/services/streamingAvailability";
 import { getMovieTrailer } from "@/services/youtube";
 import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
+import { Badge } from "./ui/badge";
 
 interface MovieCardProps {
   title: string;
@@ -47,21 +48,16 @@ export const MovieCard = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const [availableServices, setAvailableServices] = useState<string[]>([]);
   const [trailerUrl, setTrailerUrl] = useState(initialTrailerUrl);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { toast } = useToast();
   
   const { userRating, handleRating } = useMovieRating(title);
-  const { handleToggleFavorite } = MovieFavoriteHandler({ 
-    isFavorite, 
-    setIsFavorite, 
-    title 
-  });
 
   useEffect(() => {
     const fetchStreamingServices = async () => {
       if (tmdbId) {
         try {
-          const services = await getStreamingAvailability(tmdbId);
+          const services = await getStreamingAvailability(tmdbId, i18n.language.split('-')[0]);
           setAvailableServices(services.map(s => s.service));
         } catch (error) {
           console.error('Error fetching streaming services:', error);
@@ -75,45 +71,15 @@ export const MovieCard = ({
     };
 
     fetchStreamingServices();
-  }, [tmdbId, toast, t]);
-
-  useEffect(() => {
-    const fetchTrailer = async () => {
-      if (showTrailer && !trailerUrl) {
-        try {
-          const url = await getMovieTrailer(title, year);
-          setTrailerUrl(url);
-          if (!url) {
-            toast({
-              title: t("errors.trailerNotFound"),
-              description: t("errors.tryAgain"),
-              variant: "destructive",
-            });
-          }
-        } catch (error) {
-          console.error('Error fetching trailer:', error);
-          toast({
-            title: t("errors.trailerError"),
-            description: t("errors.tryAgain"),
-            variant: "destructive",
-          });
-        }
-      }
-    };
-
-    fetchTrailer();
-  }, [showTrailer, title, year, trailerUrl, toast, t]);
-
-  const handleTrailerToggle = () => {
-    setShowTrailer(!showTrailer);
-  };
+  }, [tmdbId, i18n.language, toast, t]);
 
   const handleExpand = () => {
     setIsExpanded(!isExpanded);
   };
 
-  // Normalize rating to be between 0-100
-  const normalizedRating = rating > 1 ? rating : rating * 100;
+  const handleTrailerToggle = () => {
+    setShowTrailer(!showTrailer);
+  };
 
   return (
     <motion.div
@@ -139,19 +105,30 @@ export const MovieCard = ({
           <MovieCardHeader
             title={title}
             isFavorite={isFavorite}
-            onToggleFavorite={handleToggleFavorite}
+            onToggleFavorite={() => setIsFavorite(!isFavorite)}
           />
         </CardHeader>
 
         <CardContent className="space-y-4 flex-grow p-4">
-          <MovieStreamingServices services={availableServices} />
+          {availableServices.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              <span className="text-sm font-medium text-muted-foreground">
+                {t("availableOn")}:
+              </span>
+              {availableServices.map((service) => (
+                <Badge key={service} variant="secondary">
+                  {service}
+                </Badge>
+              ))}
+            </div>
+          )}
           
           <MovieExpandedContent
             isExpanded={isExpanded}
             title={title}
             year={year}
             description={description}
-            rating={normalizedRating}
+            rating={rating > 1 ? rating : rating * 100}
             genre={t(`movie.${genre.toLowerCase()}`)}
             tags={tags?.map(tag => t(`movie.${tag.toLowerCase()}`))}
             showTrailer={showTrailer}
@@ -160,6 +137,7 @@ export const MovieCard = ({
             onRate={handleRating}
             tmdbId={tmdbId}
             explanations={explanations}
+            streamingServices={availableServices}
           />
         </CardContent>
       </MovieCardContainer>

@@ -25,6 +25,7 @@ export const LanguageSwitcher = () => {
   const handleLanguageChange = async (langCode: string) => {
     try {
       await i18n.changeLanguage(langCode);
+      localStorage.setItem("language", langCode);
       toast({
         title: t("languageChanged"),
         description: t("languageChangedDescription"),
@@ -45,6 +46,7 @@ export const LanguageSwitcher = () => {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon">
           <Languages className="h-4 w-4" />
+          <span className="sr-only">{t("changeLanguage")}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
@@ -52,6 +54,7 @@ export const LanguageSwitcher = () => {
           <DropdownMenuItem
             key={lang.code}
             onClick={() => handleLanguageChange(lang.code)}
+            className={i18n.language === lang.code ? "bg-accent" : ""}
           >
             {lang.label}
           </DropdownMenuItem>
