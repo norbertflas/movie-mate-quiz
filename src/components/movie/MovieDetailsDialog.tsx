@@ -1,89 +1,158 @@
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { MovieDetailsSection } from "./MovieDetailsSection";
+import { MovieActions } from "./MovieActions";
+import { MovieSocialShare } from "./MovieSocialShare";
+import { motion, AnimatePresence } from "framer-motion";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
-import { motion } from "framer-motion";
+import { getMovieTrailer } from "@/services/youtube";
+import { Button } from "../ui/button";
+import { Play } from "lucide-react";
+import type { TMDBMovie } from "@/services/tmdb";
 
 interface MovieDetailsDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  movie: {
-    title: string;
-    overview: string;
-    poster_path: string;
-    release_date: string;
-    vote_average: number;
-  } | null;
+  movie: TMDBMovie | null;
 }
 
 export const MovieDetailsDialog = ({ isOpen, onClose, movie }: MovieDetailsDialogProps) => {
+  const [showTrailer, setShowTrailer] = useState(false);
+  const [trailerUrl, setTrailerUrl] = useState("");
+  const [userRating, setUserRating] = useState<"like" | "dislike" | null>(null);
+  const { toast } = useToast();
   const { t } = useTranslation();
+
+  const handleWatchTrailer = async () => {
+    if (!movie) return;
+    
+    if (!trailerUrl) {
+      try {
+        const url = await getMovieTrailer(movie.title, new Date(movie.release_date).getFullYear().toString());
+        setTrailerUrl(url);
+        if (!url) {
+          toast({
+            title: t("errors.trailerNotFound"),
+            description: t("errors.tryAgain"),
+            variant: "destructive",
+          });
+          return;
+        }
+      } catch (error) {
+        console.error('Error fetching trailer:', error);
+        toast({
+          title: t("errors.trailerError"),
+          description: t("errors.tryAgain"),
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+    
+    setShowTrailer(!showTrailer);
+  };
+
+  const handleRate = (rating: "like" | "dislike") => {
+    setUserRating(rating);
+    toast({
+      title: t("ratings.saved"),
+      description: t("ratings.savedDescription", { title: movie?.title }),
+    });
+  };
 
   if (!movie) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto dialog-content">
-        <div className="flex justify-between items-start mb-4">
-          <motion.h2 
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-2xl font-bold"
-          >
-            {movie.title}
-          </motion.h2>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="rounded-full"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-        
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="grid gap-6 md:grid-cols-2"
-        >
-          <div className="relative aspect-[2/3] overflow-hidden rounded-lg">
-            <motion.img
-              src={movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : '/placeholder.svg'}
-              alt={movie.title}
-              className="object-cover w-full h-full"
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.3 }}
-            />
-          </div>
-          <div className="space-y-4">
+    <AnimatePresence>
+      {isOpen && (
+        <Dialog open={isOpen} onOpenChange={onClose}>
+          <DialogContent className="max-w-4xl">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-bold">{movie.title}</DialogTitle>
+            </DialogHeader>
+            
             <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-6"
             >
-              <h3 className="font-semibold text-lg mb-2">{t("movie.overview")}</h3>
-              <p className="text-muted-foreground">{movie.overview}</p>
+              <div className="relative aspect-video rounded-lg overflow-hidden">
+                {showTrailer && trailerUrl ? (
+                  <iframe
+                    src={trailerUrl}
+                    title={`${movie.title} trailer`}
+                    className="absolute inset-0 w-full h-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                ) : (
+                  <img
+                    src={`https://image.tmdb.org/t/p/w1280${movie.backdrop_path || movie.poster_path}`}
+                    alt={movie.title}
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                )}
+              </div>
+              
+              <div className="grid gap-6 md:grid-cols-[2fr,1fr]">
+                <div className="space-y-4">
+                  <MovieDetailsSection
+                    title={movie.title}
+                    year={new Date(movie.release_date).getFullYear().toString()}
+                    description={movie.overview}
+                    rating={movie.vote_average * 10}
+                    genre="movie"
+                    onWatchTrailer={handleWatchTrailer}
+                    showTrailer={showTrailer}
+                  />
+                  
+                  <div className="flex flex-col gap-4">
+                    <MovieActions
+                      userRating={userRating}
+                      showTrailer={showTrailer}
+                      onToggleTrailer={handleWatchTrailer}
+                      onRate={handleRate}
+                      title={movie.title}
+                    />
+                    
+                    <MovieSocialShare
+                      title={movie.title}
+                      description={movie.overview}
+                      url={window.location.href}
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="rounded-lg bg-card p-4 space-y-2">
+                    <h3 className="font-semibold">{t("movie.details")}</h3>
+                    <dl className="space-y-2 text-sm">
+                      <div>
+                        <dt className="text-muted-foreground">{t("movie.releaseDate")}</dt>
+                        <dd>{new Date(movie.release_date).toLocaleDateString()}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-muted-foreground">{t("movie.rating")}</dt>
+                        <dd>{movie.vote_average * 10}%</dd>
+                      </div>
+                      <div>
+                        <dt className="text-muted-foreground">{t("movie.votes")}</dt>
+                        <dd>{movie.vote_count.toLocaleString()}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-muted-foreground">{t("movie.popularity")}</dt>
+                        <dd>{Math.round(movie.popularity).toLocaleString()}</dd>
+                      </div>
+                    </dl>
+                  </div>
+                </div>
+              </div>
             </motion.div>
-            <motion.div 
-              className="flex items-center gap-2"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <span className="text-sm text-muted-foreground">
-                {new Date(movie.release_date).getFullYear()}
-              </span>
-              <span className="text-sm text-muted-foreground">•</span>
-              <span className="text-sm text-muted-foreground">
-                {(movie.vote_average * 10).toFixed(0)}%
-              </span>
-            </motion.div>
-          </div>
-        </motion.div>
-      </DialogContent>
-    </Dialog>
+          </DialogContent>
+        </Dialog>
+      )}
+    </AnimatePresence>
   );
 };
