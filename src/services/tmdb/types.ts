@@ -4,6 +4,7 @@ export interface TMDBMovie {
   release_date: string;
   overview: string;
   poster_path: string;
+  backdrop_path: string | null;
   vote_average: number;
   vote_count: number;
   popularity: number;

@@ -47,6 +47,7 @@ export const GroupQuizView = () => {
         questions={questions}
         currentStep={currentStep}
         onAnswer={handleAnswer}
+        answers={answers}
       />
     </div>
   );
