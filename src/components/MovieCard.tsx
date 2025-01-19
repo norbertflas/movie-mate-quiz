@@ -14,7 +14,7 @@ import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "./ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import type { MovieInsights } from "@/types/movie";
+import type { MovieInsights, MovieCardProps } from "@/types/movie";
 
 export const MovieCard = ({
   title,
@@ -25,12 +25,12 @@ export const MovieCard = ({
   description,
   trailerUrl: initialTrailerUrl,
   rating,
-  tags,
+  tags = [],
   streamingServices = [],
   tmdbId,
   explanations = [],
   onClose,
-}) => {
+}: MovieCardProps) => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);

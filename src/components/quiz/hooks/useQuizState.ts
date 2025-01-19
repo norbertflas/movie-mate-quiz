@@ -8,7 +8,7 @@ export const useQuizState = (steps: SurveyStepType[]) => {
   const { recommendations, processAnswers } = useQuizLogic();
   const [isComplete, setIsComplete] = useState(false);
 
-  const handleAnswer = async (answer: string) => {
+  const handleAnswer = (answer: string) => {
     if (answer === "PREV_STEP") {
       handlePrevious();
       return;
@@ -33,7 +33,7 @@ export const useQuizState = (steps: SurveyStepType[]) => {
     }
   };
 
-  const handleNext = async () => {
+  const handleNext = () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(prev => prev + 1);
     }
@@ -46,8 +46,13 @@ export const useQuizState = (steps: SurveyStepType[]) => {
   };
 
   const handleFinish = async (quizAnswers: QuizAnswer[]) => {
-    await processAnswers(quizAnswers);
-    setIsComplete(true);
+    try {
+      await processAnswers(quizAnswers);
+      setIsComplete(true);
+    } catch (error) {
+      console.error('Error processing quiz answers:', error);
+      throw error;
+    }
   };
 
   return {
