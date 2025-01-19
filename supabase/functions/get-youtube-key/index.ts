@@ -18,7 +18,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ key: YOUTUBE_API_KEY }),
+      JSON.stringify({ YOUTUBE_API_KEY }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,

@@ -5,9 +5,11 @@ import { useQuizState } from "./quiz/hooks/useQuizState";
 import { useSurveySteps } from "./quiz/constants/surveySteps";
 import { Button } from "./ui/button";
 import { useTranslation } from "react-i18next";
+import { useToast } from "@/hooks/use-toast";
 
 export const QuizSection = () => {
   const { t } = useTranslation();
+  const { toast } = useToast();
   const steps = useSurveySteps();
   const {
     currentStep,
@@ -16,8 +18,29 @@ export const QuizSection = () => {
     handleAnswer,
     handleNext,
     handlePrevious,
-    isComplete
+    isComplete,
+    processAnswers
   } = useQuizState(steps);
+
+  const handleFinish = async () => {
+    try {
+      await processAnswers(answers);
+      if (!recommendations || recommendations.length === 0) {
+        toast({
+          title: t("errors.noRecommendations"),
+          description: t("errors.tryAgain"),
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error processing quiz answers:', error);
+      toast({
+        title: t("errors.quizError"),
+        description: t("errors.tryAgain"),
+        variant: "destructive",
+      });
+    }
+  };
 
   if (isComplete && recommendations && recommendations.length > 0) {
     return <QuizResults recommendations={recommendations} isGroupQuiz={false} />;
@@ -49,7 +72,7 @@ export const QuizSection = () => {
         )}
         {currentStep === steps.length - 1 && answers[currentStep] && (
           <Button 
-            onClick={handleNext}
+            onClick={handleFinish}
             className="ml-auto"
           >
             {t("quiz.finish")}

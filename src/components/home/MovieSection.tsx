@@ -3,6 +3,7 @@ import { MovieFilters, type MovieFilters as MovieFiltersType } from "@/component
 import { TMDBMovie } from "@/services/tmdb";
 import { LoadingState } from "@/components/LoadingState";
 import { motion, AnimatePresence } from "framer-motion";
+import { useState } from "react";
 
 interface MovieSectionProps {
   movies: TMDBMovie[];
@@ -11,6 +12,12 @@ interface MovieSectionProps {
 }
 
 export const MovieSection = ({ movies, isLoading, onFilterChange }: MovieSectionProps) => {
+  const [expandedMovieId, setExpandedMovieId] = useState<number | null>(null);
+
+  const handleMovieClose = () => {
+    setExpandedMovieId(null);
+  };
+
   return (
     <div className="flex flex-col lg:flex-row gap-6">
       <aside className="w-full lg:w-64">
@@ -44,6 +51,7 @@ export const MovieSection = ({ movies, isLoading, onFilterChange }: MovieSection
                     description={movie.overview}
                     trailerUrl=""
                     rating={movie.vote_average * 10}
+                    onClose={handleMovieClose}
                   />
                 </motion.div>
               ))}
