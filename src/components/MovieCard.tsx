@@ -2,18 +2,13 @@ import { useState, useEffect } from "react";
 import { CardHeader, CardContent } from "./ui/card";
 import { MovieCardContainer } from "./movie/MovieCardContainer";
 import { MovieCardHeader } from "./movie/MovieCardHeader";
-import { MovieFavoriteHandler } from "./movie/MovieFavoriteHandler";
 import { MovieCardMedia } from "./movie/MovieCardMedia";
-import { MovieStreamingServices } from "./movie/MovieStreamingServices";
 import { MovieExpandedContent } from "./movie/MovieExpandedContent";
 import { useMovieRating } from "./movie/MovieRatingLogic";
 import { motion, AnimatePresence } from "framer-motion";
-import { getStreamingAvailability } from "@/services/streamingAvailability";
-import { getMovieTrailer } from "@/services/youtube";
-import { useTranslation } from "react-i18next";
-import { useToast } from "@/hooks/use-toast";
 import { Badge } from "./ui/badge";
-import { supabase } from "@/integrations/supabase/client";
+import { MovieTrailerSection } from "./movie/MovieTrailerSection";
+import { MovieCardWrapper } from "./movie/MovieCardWrapper";
 import type { MovieInsights, MovieCardProps } from "@/types/movie";
 
 export const MovieCard = ({
@@ -37,37 +32,8 @@ export const MovieCard = ({
   const [availableServices, setAvailableServices] = useState<string[]>([]);
   const [trailerUrl, setTrailerUrl] = useState(initialTrailerUrl);
   const [insights, setInsights] = useState<MovieInsights | null>(null);
-  const { t, i18n } = useTranslation();
-  const { toast } = useToast();
   
   const { userRating, handleRating } = useMovieRating(title);
-
-  useEffect(() => {
-    const fetchTrailer = async () => {
-      if (showTrailer && !trailerUrl) {
-        try {
-          const url = await getMovieTrailer(title, year);
-          setTrailerUrl(url);
-          if (!url) {
-            toast({
-              title: t("errors.trailerNotFound"),
-              description: t("errors.tryAgain"),
-              variant: "destructive",
-            });
-          }
-        } catch (error) {
-          console.error('Error fetching trailer:', error);
-          toast({
-            title: t("errors.trailerError"),
-            description: t("errors.tryAgain"),
-            variant: "destructive",
-          });
-        }
-      }
-    };
-
-    fetchTrailer();
-  }, [showTrailer, title, year, trailerUrl, toast, t]);
 
   const handleExpand = () => {
     setIsExpanded(!isExpanded);
@@ -81,18 +47,16 @@ export const MovieCard = ({
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.3 }}
-      whileHover={{ scale: 1.02 }}
-      className="h-full relative"
-    >
-      <MovieCardContainer
-        isExpanded={isExpanded}
-        onClick={handleExpand}
-      >
+    <MovieCardWrapper onClick={handleExpand}>
+      <MovieCardContainer isExpanded={isExpanded}>
+        <MovieTrailerSection
+          showTrailer={showTrailer}
+          title={title}
+          year={year}
+          trailerUrl={trailerUrl}
+          setTrailerUrl={setTrailerUrl}
+        />
+
         <MovieCardMedia
           showTrailer={showTrailer}
           trailerUrl={trailerUrl}
@@ -112,7 +76,7 @@ export const MovieCard = ({
           {availableServices.length > 0 && (
             <div className="flex flex-wrap gap-2">
               <span className="text-sm font-medium text-muted-foreground">
-                {t("availableOn")}:
+                Available on:
               </span>
               {availableServices.map((service) => (
                 <Badge key={service} variant="secondary">
@@ -130,8 +94,8 @@ export const MovieCard = ({
                 year={year}
                 description={description}
                 rating={rating > 1 ? rating : rating * 100}
-                genre={t(`movie.${genre.toLowerCase()}`)}
-                tags={tags?.map(tag => t(`movie.${tag.toLowerCase()}`))}
+                genre={genre}
+                tags={tags}
                 showTrailer={showTrailer}
                 onWatchTrailer={handleTrailerToggle}
                 userRating={userRating}
@@ -145,6 +109,6 @@ export const MovieCard = ({
           </AnimatePresence>
         </CardContent>
       </MovieCardContainer>
-    </motion.div>
+    </MovieCardWrapper>
   );
 };
