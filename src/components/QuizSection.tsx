@@ -19,12 +19,12 @@ export const QuizSection = () => {
     handleNext,
     handlePrevious,
     isComplete,
-    processAnswers
+    handleFinish
   } = useQuizState(steps);
 
-  const handleFinish = async () => {
+  const onFinish = async () => {
     try {
-      await processAnswers(answers);
+      await handleFinish(answers);
       if (!recommendations || recommendations.length === 0) {
         toast({
           title: t("errors.noRecommendations"),
@@ -72,7 +72,7 @@ export const QuizSection = () => {
         )}
         {currentStep === steps.length - 1 && answers[currentStep] && (
           <Button 
-            onClick={handleFinish}
+            onClick={onFinish}
             className="ml-auto"
           >
             {t("quiz.finish")}

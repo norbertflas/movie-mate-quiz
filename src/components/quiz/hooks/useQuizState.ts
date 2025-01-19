@@ -26,13 +26,9 @@ export const useQuizState = (steps: SurveyStepType[]) => {
     };
     setAnswers(newAnswers);
 
-    // Automatically move to next question for single-choice questions
     if (steps[currentStep].type === "single") {
       if (currentStep < steps.length - 1) {
         setCurrentStep(prev => prev + 1);
-      } else {
-        await processAnswers(newAnswers);
-        setIsComplete(true);
       }
     }
   };
@@ -40,9 +36,6 @@ export const useQuizState = (steps: SurveyStepType[]) => {
   const handleNext = async () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(prev => prev + 1);
-    } else {
-      await processAnswers(answers);
-      setIsComplete(true);
     }
   };
 
@@ -50,6 +43,11 @@ export const useQuizState = (steps: SurveyStepType[]) => {
     if (currentStep > 0) {
       setCurrentStep(prev => prev - 1);
     }
+  };
+
+  const handleFinish = async (quizAnswers: QuizAnswer[]) => {
+    await processAnswers(quizAnswers);
+    setIsComplete(true);
   };
 
   return {
@@ -60,6 +58,7 @@ export const useQuizState = (steps: SurveyStepType[]) => {
     handleNext,
     handlePrevious,
     isComplete,
+    handleFinish,
   };
 };
 
