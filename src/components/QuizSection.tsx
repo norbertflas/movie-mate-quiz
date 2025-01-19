@@ -61,7 +61,7 @@ export const QuizSection = () => {
             {t("quiz.previous")}
           </Button>
         )}
-        {currentStep < steps.length - 1 && (
+        {currentStep < steps.length - 1 ? (
           <Button 
             onClick={handleNext}
             disabled={!answers[currentStep]}
@@ -69,11 +69,11 @@ export const QuizSection = () => {
           >
             {t("quiz.next")}
           </Button>
-        )}
-        {currentStep === steps.length - 1 && answers[currentStep] && (
+        ) : (
           <Button 
             onClick={onFinish}
             className="ml-auto"
+            disabled={!answers[currentStep]}
           >
             {t("quiz.finish")}
           </Button>

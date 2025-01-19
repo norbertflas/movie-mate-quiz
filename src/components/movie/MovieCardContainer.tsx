@@ -16,14 +16,14 @@ export const MovieCardContainer = ({ children, isExpanded, onClick }: MovieCardC
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.3 }}
-      whileHover={{ scale: 1.02 }}
       className="h-full"
     >
       <Card 
         className="group relative overflow-hidden h-full flex flex-col glass-card
                    hover:shadow-xl dark:hover:shadow-primary/10 transition-all duration-300
                    bg-gradient-to-br from-background/80 via-background/50 to-purple-500/5
-                   dark:from-background/80 dark:via-background/50 dark:to-purple-500/10" 
+                   dark:from-background/80 dark:via-background/50 dark:to-purple-500/10
+                   cursor-pointer" 
         onClick={onClick}
       >
         {children}

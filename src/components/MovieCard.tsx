@@ -46,9 +46,13 @@ export const MovieCard = ({
     setShowTrailer(!showTrailer);
   };
 
+  const handleCardClick = () => {
+    handleExpand();
+  };
+
   return (
-    <MovieCardWrapper onClick={handleExpand}>
-      <MovieCardContainer isExpanded={isExpanded}>
+    <MovieCardWrapper onClick={handleCardClick}>
+      <MovieCardContainer isExpanded={isExpanded} onClick={handleCardClick}>
         <MovieTrailerSection
           showTrailer={showTrailer}
           title={title}
