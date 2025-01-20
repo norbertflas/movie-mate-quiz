@@ -6,10 +6,12 @@ import { useSurveySteps } from "./quiz/constants/surveySteps";
 import { Button } from "./ui/button";
 import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
 
 export const QuizSection = () => {
   const { t } = useTranslation();
   const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const steps = useSurveySteps();
   const {
     currentStep,
@@ -23,8 +25,12 @@ export const QuizSection = () => {
   } = useQuizState(steps);
 
   const onFinish = async () => {
+    if (isSubmitting) return;
+    
     try {
+      setIsSubmitting(true);
       await handleFinish(answers);
+      
       if (!recommendations || recommendations.length === 0) {
         toast({
           title: t("errors.noRecommendations"),
@@ -39,6 +45,8 @@ export const QuizSection = () => {
         description: t("errors.tryAgain"),
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -57,10 +65,14 @@ export const QuizSection = () => {
       
       <div className="flex justify-between mt-4">
         {currentStep > 0 && (
-          <Button onClick={handlePrevious}>
+          <Button 
+            onClick={handlePrevious}
+            variant="outline"
+          >
             {t("quiz.previous")}
           </Button>
         )}
+        
         {currentStep < steps.length - 1 ? (
           <Button 
             onClick={handleNext}
@@ -72,10 +84,17 @@ export const QuizSection = () => {
         ) : (
           <Button 
             onClick={onFinish}
+            disabled={!answers[currentStep] || isSubmitting}
             className="ml-auto"
-            disabled={!answers[currentStep]}
           >
-            {t("quiz.finish")}
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {t("quiz.processing")}
+              </>
+            ) : (
+              t("quiz.finish")
+            )}
           </Button>
         )}
       </div>

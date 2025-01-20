@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuizLogic } from "../QuizLogic";
-import type { QuizAnswer } from "../QuizTypes";
+import type { QuizAnswer, MovieRecommendation } from "../QuizTypes";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 
@@ -13,11 +13,6 @@ export const useQuizState = (steps: any[]) => {
   const { t } = useTranslation();
 
   const handleAnswer = (answer: string) => {
-    if (answer === "PREV_STEP") {
-      handlePrevious();
-      return;
-    }
-
     const currentQuestion = steps[currentStep];
     const newAnswer: QuizAnswer = {
       questionId: currentQuestion.id,
@@ -25,24 +20,14 @@ export const useQuizState = (steps: any[]) => {
     };
 
     setAnswers(prev => {
-      const existing = prev.findIndex(a => a.questionId === currentQuestion.id);
-      if (existing !== -1) {
-        const updated = [...prev];
-        updated[existing] = newAnswer;
-        return updated;
-      }
-      return [...prev, newAnswer];
+      const updated = [...prev];
+      updated[currentStep] = newAnswer;
+      return updated;
     });
-
-    if (currentStep === steps.length - 1) {
-      handleFinish([...answers, newAnswer]);
-    } else {
-      handleNext();
-    }
   };
 
   const handleNext = () => {
-    if (currentStep < steps.length - 1) {
+    if (currentStep < steps.length - 1 && answers[currentStep]) {
       setCurrentStep(prev => prev + 1);
     }
   };
@@ -54,20 +39,30 @@ export const useQuizState = (steps: any[]) => {
   };
 
   const handleFinish = async (quizAnswers: QuizAnswer[]) => {
+    if (!quizAnswers || quizAnswers.length < steps.length) {
+      toast({
+        title: t("errors.incompleteQuiz"),
+        description: t("errors.answerAllQuestions"),
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       await processAnswers(quizAnswers);
       setIsComplete(true);
+      
+      if (!recommendations || recommendations.length === 0) {
+        throw new Error("No recommendations generated");
+      }
+      
       toast({
         title: t("quiz.completed"),
-        description: t("quiz.processingResults"),
+        description: t("quiz.recommendationsReady"),
       });
     } catch (error) {
       console.error('Error processing quiz answers:', error);
-      toast({
-        title: t("errors.quizError"),
-        description: t("errors.tryAgain"),
-        variant: "destructive",
-      });
+      throw error;
     }
   };
 
