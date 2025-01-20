@@ -3,12 +3,17 @@ import { getCollaborativeRecommendations } from "@/utils/collaborativeFiltering"
 import { supabase } from "@/integrations/supabase/client";
 import type { QuizAnswer, MovieRecommendation, QuizLogicHook } from "./QuizTypes";
 import { getMovieDetails } from "@/services/tmdb";
+import { getStreamingAvailability } from "@/services/streamingAvailability";
+import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 export const useQuizLogic = (): QuizLogicHook => {
   const [showQuiz, setShowQuiz] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [answers, setAnswers] = useState<QuizAnswer[]>([]);
   const [recommendations, setRecommendations] = useState<MovieRecommendation[]>([]);
+  const { toast } = useToast();
+  const { t } = useTranslation();
 
   const handleStartQuiz = () => {
     setShowQuiz(true);
@@ -17,10 +22,19 @@ export const useQuizLogic = (): QuizLogicHook => {
     setRecommendations([]);
   };
 
-  const handleQuizComplete = (quizAnswers: QuizAnswer[]) => {
+  const handleQuizComplete = async (quizAnswers: QuizAnswer[]) => {
     setAnswers(quizAnswers);
-    processAnswers(quizAnswers);
-    setShowResults(true);
+    try {
+      await processAnswers(quizAnswers);
+      setShowResults(true);
+    } catch (error) {
+      console.error('Error processing quiz answers:', error);
+      toast({
+        title: t("errors.recommendationError"),
+        description: t("errors.tryAgain"),
+        variant: "destructive",
+      });
+    }
   };
 
   const processAnswers = async (answers: QuizAnswer[]) => {
@@ -30,39 +44,39 @@ export const useQuizLogic = (): QuizLogicHook => {
         throw new Error("User not authenticated");
       }
 
-      // Store quiz answers in history
       await supabase.from('quiz_history').insert({
         user_id: user.id,
         answers: answers
       });
 
-      // Get movie recommendations based on user preferences
       const movieIds = await getCollaborativeRecommendations(user.id);
       
       if (!movieIds || movieIds.length === 0) {
         throw new Error("No recommendations generated");
       }
 
-      // Fetch detailed movie information for each recommendation
       const recommendationsPromises = movieIds.map(async (movieId) => {
         try {
           const movieDetails = await getMovieDetails(movieId);
+          const streamingServices = await getStreamingAvailability(movieId);
+          
           const recommendation: MovieRecommendation = {
             id: movieId,
             tmdbId: movieDetails.id,
             title: movieDetails.title,
             year: movieDetails.release_date ? new Date(movieDetails.release_date).getFullYear().toString() : "N/A",
-            platform: "TMDB",
+            platform: streamingServices[0]?.service || "Not available",
             genre: movieDetails.genres?.[0]?.name || "Unknown",
             imageUrl: `https://image.tmdb.org/t/p/w500${movieDetails.poster_path}`,
             description: movieDetails.overview,
             trailerUrl: "",
             rating: movieDetails.vote_average * 10,
-            score: 0.8,
+            score: movieDetails.popularity / 100,
             explanations: [
               "Based on your quiz answers",
               "Matches your preferred genres",
-              "Popular among users with similar taste"
+              "Popular among users with similar taste",
+              ...(streamingServices.length > 0 ? [`Available on ${streamingServices.map(s => s.service).join(', ')}`] : [])
             ]
           };
           return recommendation;

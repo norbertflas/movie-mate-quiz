@@ -12,6 +12,12 @@ export const SAMPLE_RECOMMENDATIONS: MovieRecommendation[] = [
     description: "A computer programmer discovers a mysterious world beneath reality.",
     trailerUrl: "https://www.youtube.com/watch?v=m8e-FF8MsqU",
     rating: 87,
+    score: 0.95,
+    explanations: [
+      "Matches your preferred genres",
+      "High user rating",
+      "Popular in your region"
+    ],
     tags: ["action", "sci-fi", "cyberpunk"]
   },
   {
@@ -25,6 +31,12 @@ export const SAMPLE_RECOMMENDATIONS: MovieRecommendation[] = [
     description: "A thief who steals corporate secrets through dream-sharing technology.",
     trailerUrl: "https://www.youtube.com/watch?v=YoHD9XEInc0",
     rating: 88,
+    score: 0.92,
+    explanations: [
+      "Similar to movies you like",
+      "Matches your preferences",
+      "Highly rated"
+    ],
     tags: ["action", "sci-fi", "thriller"]
   },
   {
@@ -38,6 +50,12 @@ export const SAMPLE_RECOMMENDATIONS: MovieRecommendation[] = [
     description: "Two imprisoned men bond over a number of years.",
     trailerUrl: "https://www.youtube.com/watch?v=6hB3S9bIaco",
     rating: 93,
+    score: 0.98,
+    explanations: [
+      "Top rated movie",
+      "Matches your genre preferences",
+      "Universal appeal"
+    ],
     tags: ["drama", "prison", "friendship"]
   }
 ];
