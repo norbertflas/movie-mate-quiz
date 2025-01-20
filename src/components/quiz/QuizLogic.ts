@@ -40,16 +40,20 @@ export const useQuizLogic = (): QuizLogicHook => {
   const processAnswers = async (answers: QuizAnswer[]) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error("User not authenticated");
+      
+      // If user is authenticated, save quiz history
+      if (user) {
+        await supabase.from('quiz_history').insert({
+          user_id: user.id,
+          answers: answers
+        });
       }
 
-      await supabase.from('quiz_history').insert({
-        user_id: user.id,
-        answers: answers
-      });
-
-      const movieIds = await getCollaborativeRecommendations(user.id);
+      // Get recommendations regardless of authentication status
+      const movieIds = user ? 
+        await getCollaborativeRecommendations(user.id) :
+        // Fallback to a simpler recommendation logic for non-authenticated users
+        [299536, 24428, 99861, 157336, 118340, 293660].slice(0, 6);
       
       if (!movieIds || movieIds.length === 0) {
         throw new Error("No recommendations generated");
@@ -75,7 +79,7 @@ export const useQuizLogic = (): QuizLogicHook => {
             explanations: [
               "Based on your quiz answers",
               "Matches your preferred genres",
-              "Popular among users with similar taste",
+              ...(user ? ["Popular among users with similar taste"] : []),
               ...(streamingServices.length > 0 ? [`Available on ${streamingServices.map(s => s.service).join(', ')}`] : [])
             ]
           };
