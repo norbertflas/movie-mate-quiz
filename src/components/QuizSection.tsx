@@ -68,6 +68,7 @@ export const QuizSection = () => {
           <Button 
             onClick={handlePrevious}
             variant="outline"
+            className="bg-gray-800/50 border-gray-700 hover:bg-gray-700/50 text-white"
           >
             {t("quiz.previous")}
           </Button>
@@ -77,7 +78,7 @@ export const QuizSection = () => {
           <Button 
             onClick={handleNext}
             disabled={!answers[currentStep]}
-            className="ml-auto"
+            className="ml-auto bg-blue-600 hover:bg-blue-700 text-white"
           >
             {t("quiz.next")}
           </Button>
@@ -85,7 +86,7 @@ export const QuizSection = () => {
           <Button 
             onClick={onFinish}
             disabled={!answers[currentStep] || isSubmitting}
-            className="ml-auto"
+            className="ml-auto bg-blue-600 hover:bg-blue-700 text-white"
           >
             {isSubmitting ? (
               <>

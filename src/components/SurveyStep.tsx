@@ -37,16 +37,6 @@ export const SurveyStep = ({
     }
   };
 
-  const handleNextStep = () => {
-    if (type === "multiple" && selectedOptions.length > 0) {
-      onSelect("NEXT_STEP");
-    }
-  };
-
-  const handlePreviousStep = () => {
-    onSelect("PREV_STEP");
-  };
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -59,28 +49,22 @@ export const SurveyStep = ({
           <p className="text-sm text-gray-400">
             {t("quiz.step", { current: currentStep, total: totalSteps })}
           </p>
-          <h2 className="text-2xl font-semibold tracking-tight text-white">{t(question)}</h2>
+          <h2 className="text-2xl font-semibold tracking-tight text-white">
+            {question}
+          </h2>
         </div>
 
         <div className="grid grid-cols-1 gap-4">
           {options.map((option) => (
             <QuestionOption
               key={option}
-              option={t(option)}
+              option={option}
               isSelected={selectedOptions.includes(option)}
               onSelect={() => handleOptionSelect(option)}
               type={type}
             />
           ))}
         </div>
-
-        <NavigationButtons
-          currentStep={currentStep}
-          canGoNext={type === "single" || (type === "multiple" && selectedOptions.length > 0)}
-          onPrevious={handlePreviousStep}
-          onNext={handleNextStep}
-          totalSteps={totalSteps}
-        />
       </Card>
     </motion.div>
   );

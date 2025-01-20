@@ -9,7 +9,7 @@ export type SurveyStepType = {
 
 export type MovieRecommendation = {
   id: number;
-  tmdbId: number; // Changed from optional to required
+  tmdbId: number;
   title: string;
   year: string;
   platform: string;
@@ -18,8 +18,8 @@ export type MovieRecommendation = {
   description: string;
   trailerUrl: string;
   rating: number;
-  score: number; // Changed from optional to required
-  explanations: string[]; // Changed from optional to required
+  score: number;
+  explanations: string[];
   tags?: string[];
 };
 
@@ -54,6 +54,6 @@ export interface QuizLogicHook {
   answers: QuizAnswer[];
   recommendations: MovieRecommendation[];
   handleStartQuiz: () => void;
-  handleQuizComplete: (answers: QuizAnswer[]) => void;
+  handleQuizComplete: (answers: QuizAnswer[]) => Promise<void>;
   processAnswers: (answers: QuizAnswer[]) => Promise<void>;
 }
