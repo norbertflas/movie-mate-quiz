@@ -9,7 +9,7 @@ export type SurveyStepType = {
 
 export type MovieRecommendation = {
   id: number;
-  tmdbId?: number;
+  tmdbId: number; // Changed from optional to required
   title: string;
   year: string;
   platform: string;
@@ -18,9 +18,9 @@ export type MovieRecommendation = {
   description: string;
   trailerUrl: string;
   rating: number;
+  score: number; // Changed from optional to required
+  explanations: string[]; // Changed from optional to required
   tags?: string[];
-  score?: number;
-  explanations?: string[];
 };
 
 export type QuizAnswer = {

@@ -47,7 +47,7 @@ export const useQuizLogic = (): QuizLogicHook => {
       const recommendationsPromises = movieIds.map(async (movieId) => {
         try {
           const movieDetails = await getMovieDetails(movieId);
-          return {
+          const recommendation: MovieRecommendation = {
             id: movieId,
             tmdbId: movieDetails.id,
             title: movieDetails.title,
@@ -65,6 +65,7 @@ export const useQuizLogic = (): QuizLogicHook => {
               "Popular among users with similar taste"
             ]
           };
+          return recommendation;
         } catch (error) {
           console.error(`Error fetching details for movie ${movieId}:`, error);
           return null;
@@ -73,7 +74,7 @@ export const useQuizLogic = (): QuizLogicHook => {
 
       const processedRecs = (await Promise.all(recommendationsPromises))
         .filter((rec): rec is MovieRecommendation => rec !== null)
-        .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+        .sort((a, b) => b.rating - a.rating)
         .slice(0, 6);
 
       if (processedRecs.length === 0) {
