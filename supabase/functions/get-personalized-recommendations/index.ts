@@ -23,21 +23,32 @@ serve(async (req) => {
     }
 
     const { answers } = await req.json();
-    console.log('Processing quiz answers:', answers);
+    console.log('Raw answers received:', answers);
 
-    if (!answers || !Array.isArray(answers)) {
-      console.error('Invalid quiz answers format:', answers);
+    // Validate answers format
+    if (!answers || typeof answers !== 'object') {
+      console.error('Invalid answers format - not an object:', answers);
       throw new Error('Invalid quiz answers format');
     }
+
+    // Convert answers object to array format
+    const answersArray = Object.entries(answers).map(([index, answer]) => ({
+      questionId: index,
+      answer: answer
+    }));
+
+    console.log('Formatted answers array:', answersArray);
 
     // Initialize Gemini
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
     // Create a formatted string of answers for the prompt
-    const formattedAnswers = answers.map(answer => 
+    const formattedAnswers = answersArray.map(answer => 
       `Question ${answer.questionId}: ${answer.answer}`
     ).join('\n');
+
+    console.log('Formatted answers for Gemini:', formattedAnswers);
 
     // Create a prompt for Gemini
     const aiPrompt = `As a movie recommendation expert, suggest 6 movies based on these quiz answers:

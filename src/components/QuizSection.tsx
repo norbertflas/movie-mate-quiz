@@ -31,6 +31,8 @@ export const QuizSection = () => {
     try {
       setIsSubmitting(true);
       
+      console.log('Sending answers to Edge Function:', answers);
+      
       // Call the Edge Function with the quiz answers
       const { data, error } = await supabase.functions.invoke('get-personalized-recommendations', {
         body: { answers }
@@ -45,6 +47,8 @@ export const QuizSection = () => {
         console.error('Invalid response from recommendations function:', data);
         throw new Error('No recommendations generated');
       }
+
+      console.log('Received recommendations:', data);
 
       // Update recommendations through the quiz state
       await handleFinish(data);
