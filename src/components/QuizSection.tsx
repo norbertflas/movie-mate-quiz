@@ -40,9 +40,20 @@ export const QuizSection = () => {
       }
     } catch (error) {
       console.error('Error processing quiz answers:', error);
+      
+      // More specific error message based on the error type
+      let errorMessage = t("errors.tryAgain");
+      if (error instanceof Error) {
+        if (error.message.includes('TMDB API key not found')) {
+          errorMessage = "Configuration error: TMDB API key is missing";
+        } else if (error.message.includes('TMDB API error')) {
+          errorMessage = "Error fetching movie data. Please try again later.";
+        }
+      }
+      
       toast({
         title: t("errors.quizError"),
-        description: t("errors.tryAgain"),
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
