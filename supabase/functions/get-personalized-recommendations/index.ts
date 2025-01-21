@@ -8,6 +8,7 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -27,14 +28,14 @@ serve(async (req) => {
 
     // Validate answers format
     if (!answers || typeof answers !== 'object') {
-      console.error('Invalid answers format - not an object:', answers);
+      console.error('Invalid answers format:', answers);
       throw new Error('Invalid quiz answers format');
     }
 
-    // Convert answers object to array format
-    const answersArray = Object.entries(answers).map(([index, answer]) => ({
-      questionId: index,
-      answer: answer
+    // Convert answers to array format
+    const answersArray = Object.values(answers).map((answer: any) => ({
+      questionId: answer.questionId,
+      answer: answer.answer
     }));
 
     console.log('Formatted answers array:', answersArray);
@@ -132,9 +133,12 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error('Error in get-personalized-recommendations:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({ error: error.message }), 
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
   }
 });
