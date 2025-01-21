@@ -22,16 +22,26 @@ serve(async (req) => {
       throw new Error('Missing required API keys');
     }
 
-    const { prompt, answers } = await req.json();
+    const { answers } = await req.json();
     console.log('Processing quiz answers:', answers);
+
+    if (!answers || !Array.isArray(answers)) {
+      console.error('Invalid quiz answers format:', answers);
+      throw new Error('Invalid quiz answers format');
+    }
 
     // Initialize Gemini
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
+    // Create a formatted string of answers for the prompt
+    const formattedAnswers = answers.map(answer => 
+      `Question ${answer.questionId}: ${answer.answer}`
+    ).join('\n');
+
     // Create a prompt for Gemini
     const aiPrompt = `As a movie recommendation expert, suggest 6 movies based on these quiz answers:
-    ${JSON.stringify(answers, null, 2)}
+    ${formattedAnswers}
     
     Format your response as a JSON array of TMDB movie IDs only, like this: [123, 456, 789]
     Only include the JSON array in your response, no other text.`;
@@ -81,9 +91,14 @@ serve(async (req) => {
 
         // Combine TMDB and streaming data
         return {
-          ...movieData,
-          streaming_info: streamingData?.result?.streamingInfo || {},
+          id: movieData.id,
+          title: movieData.title,
+          overview: movieData.overview,
+          poster_path: movieData.poster_path,
+          release_date: movieData.release_date,
           vote_average: movieData.vote_average * 10, // Convert to percentage
+          genre: movieData.genres?.[0]?.name || 'Unknown',
+          streaming_info: streamingData?.result?.streamingInfo || {},
           trailer_url: movieData.videos?.results?.[0]?.key 
             ? `https://www.youtube.com/watch?v=${movieData.videos.results[0].key}`
             : null

@@ -7,6 +7,7 @@ import { Button } from "./ui/button";
 import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 export const QuizSection = () => {
   const { t } = useTranslation();
@@ -29,23 +30,32 @@ export const QuizSection = () => {
     
     try {
       setIsSubmitting(true);
-      await handleFinish(answers);
       
-      if (!recommendations || recommendations.length === 0) {
-        toast({
-          title: t("errors.noRecommendations"),
-          description: t("errors.tryAgain"),
-          variant: "destructive",
-        });
+      // Call the Edge Function with the quiz answers
+      const { data, error } = await supabase.functions.invoke('get-personalized-recommendations', {
+        body: { answers }
+      });
+
+      if (error) {
+        console.error('Error calling recommendations function:', error);
+        throw error;
       }
+
+      if (!data || !Array.isArray(data) || data.length === 0) {
+        console.error('Invalid response from recommendations function:', data);
+        throw new Error('No recommendations generated');
+      }
+
+      // Update recommendations through the quiz state
+      await handleFinish(data);
+      
     } catch (error) {
       console.error('Error processing quiz answers:', error);
       
-      // More specific error message based on the error type
       let errorMessage = t("errors.tryAgain");
       if (error instanceof Error) {
-        if (error.message.includes('TMDB API key not found')) {
-          errorMessage = "Configuration error: TMDB API key is missing";
+        if (error.message.includes('No recommendations generated')) {
+          errorMessage = t("errors.noRecommendations");
         } else if (error.message.includes('TMDB API error')) {
           errorMessage = "Error fetching movie data. Please try again later.";
         }
