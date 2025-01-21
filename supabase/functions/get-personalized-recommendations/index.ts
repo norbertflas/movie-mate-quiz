@@ -15,8 +15,9 @@ serve(async (req) => {
   try {
     const TMDB_API_KEY = Deno.env.get('TMDB_API_KEY');
     const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
+    const RAPIDAPI_KEY = Deno.env.get('RAPIDAPI_KEY');
 
-    if (!TMDB_API_KEY || !GEMINI_API_KEY) {
+    if (!TMDB_API_KEY || !GEMINI_API_KEY || !RAPIDAPI_KEY) {
       console.error('Missing required API keys');
       throw new Error('Missing required API keys');
     }
@@ -28,7 +29,7 @@ serve(async (req) => {
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
-    // Create a prompt for Gemini based on quiz answers
+    // Create a prompt for Gemini
     const aiPrompt = `As a movie recommendation expert, suggest 6 movies based on these quiz answers:
     ${JSON.stringify(answers, null, 2)}
     
@@ -44,28 +45,63 @@ serve(async (req) => {
 
     console.log('Received movie IDs from Gemini:', movieIds);
 
-    // Get movie details from TMDB
-    const moviePromises = movieIds.map(async (id: number) => {
-      const response = await fetch(
-        `https://api.themoviedb.org/3/movie/${id}?api_key=${TMDB_API_KEY}`
-      );
-      if (!response.ok) {
-        console.error(`Error fetching movie ${id}:`, response.status);
-        throw new Error(`TMDB API error: ${response.status}`);
+    // Get movie details from TMDB and streaming availability in parallel
+    const movieDetailsPromises = movieIds.map(async (id: number) => {
+      try {
+        // Get TMDB details
+        const tmdbResponse = await fetch(
+          `https://api.themoviedb.org/3/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=videos`
+        );
+        
+        if (!tmdbResponse.ok) {
+          console.error(`Error fetching TMDB data for movie ${id}:`, tmdbResponse.status);
+          return null;
+        }
+        
+        const movieData = await tmdbResponse.json();
+
+        // Get streaming availability
+        const streamingResponse = await fetch(
+          `https://streaming-availability.p.rapidapi.com/v2/get/basic/tmdb/movie/${id}`,
+          {
+            headers: {
+              'X-RapidAPI-Key': RAPIDAPI_KEY,
+              'X-RapidAPI-Host': 'streaming-availability.p.rapidapi.com'
+            }
+          }
+        );
+
+        let streamingData = null;
+        if (streamingResponse.ok) {
+          streamingData = await streamingResponse.json();
+          console.log('Streaming data for movie:', id, streamingData);
+        } else {
+          console.warn(`No streaming data available for movie ${id}`);
+        }
+
+        // Combine TMDB and streaming data
+        return {
+          ...movieData,
+          streaming_info: streamingData?.result?.streamingInfo || {},
+          vote_average: movieData.vote_average * 10, // Convert to percentage
+          trailer_url: movieData.videos?.results?.[0]?.key 
+            ? `https://www.youtube.com/watch?v=${movieData.videos.results[0].key}`
+            : null
+        };
+      } catch (error) {
+        console.error(`Error processing movie ${id}:`, error);
+        return null;
       }
-      return response.json();
     });
 
-    const movies = await Promise.all(moviePromises);
-    console.log('Successfully fetched movie details');
-
-    // Filter out any invalid movies and sort by vote average
-    const recommendations = movies
-      .filter(movie => movie.success !== false)
+    const movies = (await Promise.all(movieDetailsPromises))
+      .filter(movie => movie !== null)
       .sort((a, b) => b.vote_average - a.vote_average)
       .slice(0, 6);
 
-    return new Response(JSON.stringify(recommendations), {
+    console.log('Successfully processed movies:', movies.length);
+
+    return new Response(JSON.stringify(movies), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
