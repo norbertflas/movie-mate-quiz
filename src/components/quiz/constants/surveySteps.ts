@@ -8,43 +8,43 @@ export const useSurveySteps = (): SurveyStepType[] => {
   return [
     {
       id: "vod",
-      question: t("quiz.questions.platforms"),
+      question: "quiz.questions.platforms",
       type: "multiple",
       options: VOD_SERVICES,
     },
     {
       id: "type",
-      question: t("quiz.questions.contentType"),
+      question: "quiz.questions.contentType",
       type: "single",
       options: [
-        t("quiz.options.movie"),
-        t("quiz.options.series")
+        "quiz.options.movie",
+        "quiz.options.series"
       ],
     },
     {
       id: "genre",
-      question: t("quiz.questions.genre"),
+      question: "quiz.questions.genre",
       type: "single",
       options: [
-        t("movie.action"),
-        t("movie.comedy"),
-        t("movie.drama"),
-        t("movie.sciFi"),
-        t("movie.horror"),
-        t("movie.romance"),
-        t("movie.thriller"),
-        t("movie.documentary")
+        "movie.action",
+        "movie.comedy",
+        "movie.drama",
+        "movie.sciFi",
+        "movie.horror",
+        "movie.romance",
+        "movie.thriller",
+        "movie.documentary"
       ],
     },
     {
       id: "mood",
-      question: t("quiz.questions.mood"),
+      question: "quiz.questions.mood",
       type: "single",
       options: [
-        t("quiz.options.mood.light"),
-        t("quiz.options.mood.serious"),
-        t("quiz.options.mood.suspense"),
-        t("quiz.options.mood.inspiring")
+        "quiz.options.mood.light",
+        "quiz.options.mood.serious",
+        "quiz.options.mood.suspense",
+        "quiz.options.mood.inspiring"
       ],
     },
   ];

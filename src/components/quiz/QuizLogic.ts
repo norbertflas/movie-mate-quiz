@@ -47,6 +47,11 @@ export const useQuizLogic = (): QuizLogicHook => {
 
       // Get recommendations regardless of authentication status
       const processedRecs = await getQuizRecommendations(user?.id);
+      
+      if (!processedRecs || processedRecs.length === 0) {
+        throw new Error("No recommendations generated");
+      }
+      
       setRecommendations(processedRecs);
     } catch (error) {
       console.error('Error processing quiz answers:', error);
@@ -64,5 +69,3 @@ export const useQuizLogic = (): QuizLogicHook => {
     processAnswers
   };
 };
-
-export type { MovieRecommendation };

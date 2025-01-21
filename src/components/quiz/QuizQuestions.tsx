@@ -2,7 +2,7 @@ import { SurveyStep } from "@/components/SurveyStep";
 import type { QuizQuestionsProps } from "./QuizTypes";
 import { useTranslation } from "react-i18next";
 
-export const QuizQuestions = ({ questions, currentStep, onAnswer }: QuizQuestionsProps) => {
+export const QuizQuestions = ({ questions, currentStep, onAnswer, answers }: QuizQuestionsProps) => {
   const { t } = useTranslation();
   const currentQuestion = questions[currentStep];
 
@@ -10,20 +10,19 @@ export const QuizQuestions = ({ questions, currentStep, onAnswer }: QuizQuestion
     return null;
   }
 
-  const options = currentQuestion.getDynamicOptions
-    ? currentQuestion.getDynamicOptions({})
-    : currentQuestion.options;
+  // Translate options before passing them to SurveyStep
+  const translatedOptions = currentQuestion.options.map(option => t(option));
 
   return (
     <div className="space-y-8">
       <SurveyStep
-        question={currentQuestion.question}
-        options={options}
+        question={t(currentQuestion.question)}
+        options={translatedOptions}
         onSelect={onAnswer}
         currentStep={currentStep + 1}
         totalSteps={questions.length}
         type={currentQuestion.type}
-        selectedOptions={[]}
+        selectedOptions={answers[currentStep] ? [answers[currentStep].answer] : []}
       />
     </div>
   );
