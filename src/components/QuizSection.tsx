@@ -31,11 +31,17 @@ export const QuizSection = () => {
     try {
       setIsSubmitting(true);
       
-      console.log('Sending answers to Edge Function:', answers);
+      // Format answers as an array of objects with questionId and answer
+      const formattedAnswers = answers.map((answer, index) => ({
+        questionId: steps[index].id,
+        answer: answer
+      }));
       
-      // Call the Edge Function with the quiz answers
+      console.log('Sending formatted answers to Edge Function:', formattedAnswers);
+      
+      // Call the Edge Function with the formatted quiz answers
       const { data, error } = await supabase.functions.invoke('get-personalized-recommendations', {
-        body: { answers }
+        body: { answers: formattedAnswers }
       });
 
       if (error) {

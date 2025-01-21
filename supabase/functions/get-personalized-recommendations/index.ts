@@ -27,29 +27,34 @@ serve(async (req) => {
     console.log('Raw answers received:', answers);
 
     // Validate answers format
-    if (!answers || typeof answers !== 'object') {
-      console.error('Invalid answers format:', answers);
+    if (!answers || !Array.isArray(answers)) {
+      console.error('Invalid answers format - not an array:', answers);
       throw new Error('Invalid quiz answers format');
     }
 
-    // Convert answers to array format
-    const answersArray = Object.values(answers).map((answer: any) => ({
-      questionId: answer.questionId,
-      answer: answer.answer
-    }));
+    // Validate each answer object
+    if (!answers.every(answer => 
+      answer && 
+      typeof answer === 'object' && 
+      'questionId' in answer && 
+      'answer' in answer
+    )) {
+      console.error('Invalid answer object format:', answers);
+      throw new Error('Invalid quiz answers format');
+    }
 
-    console.log('Formatted answers array:', answersArray);
-
-    // Initialize Gemini
-    const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    console.log('Validated answers array:', answers);
 
     // Create a formatted string of answers for the prompt
-    const formattedAnswers = answersArray.map(answer => 
+    const formattedAnswers = answers.map(answer => 
       `Question ${answer.questionId}: ${answer.answer}`
     ).join('\n');
 
     console.log('Formatted answers for Gemini:', formattedAnswers);
+
+    // Initialize Gemini
+    const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
     // Create a prompt for Gemini
     const aiPrompt = `As a movie recommendation expert, suggest 6 movies based on these quiz answers:
