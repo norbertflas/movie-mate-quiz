@@ -34,7 +34,7 @@ export const QuizSection = () => {
       // Format answers as an array of objects with questionId and answer
       const formattedAnswers = answers.map((answer, index) => ({
         questionId: steps[index].id,
-        answer: answer
+        answer: answer.toString() // Ensure answer is a string
       }));
       
       console.log('Sending formatted answers to Edge Function:', formattedAnswers);

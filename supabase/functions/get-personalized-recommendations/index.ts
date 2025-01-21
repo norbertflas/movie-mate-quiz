@@ -37,7 +37,8 @@ serve(async (req) => {
       answer && 
       typeof answer === 'object' && 
       'questionId' in answer && 
-      'answer' in answer
+      'answer' in answer &&
+      typeof answer.answer === 'string'
     )) {
       console.error('Invalid answer object format:', answers);
       throw new Error('Invalid quiz answers format');
