@@ -17,37 +17,47 @@ serve(async (req) => {
     const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
 
     if (!TMDB_API_KEY || !GEMINI_API_KEY) {
+      console.error('Missing required API keys');
       throw new Error('Missing required API keys');
     }
 
-    const { prompt, selectedMovies } = await req.json();
+    const { prompt, answers } = await req.json();
+    console.log('Processing quiz answers:', answers);
 
     // Initialize Gemini
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
-    // Create a prompt for Gemini that includes user preferences and selected movies
-    const aiPrompt = `As a movie recommendation expert, suggest 6 movies based on the following criteria:
-    User's request: "${prompt}"
-    ${selectedMovies?.length ? `Similar to these movies: ${selectedMovies.map(m => m.title).join(', ')}` : ''}
+    // Create a prompt for Gemini based on quiz answers
+    const aiPrompt = `As a movie recommendation expert, suggest 6 movies based on these quiz answers:
+    ${JSON.stringify(answers, null, 2)}
     
     Format your response as a JSON array of TMDB movie IDs only, like this: [123, 456, 789]
     Only include the JSON array in your response, no other text.`;
+
+    console.log('Sending prompt to Gemini:', aiPrompt);
 
     // Get movie suggestions from Gemini
     const result = await model.generateContent(aiPrompt);
     const response = await result.response;
     const movieIds = JSON.parse(response.text());
 
+    console.log('Received movie IDs from Gemini:', movieIds);
+
     // Get movie details from TMDB
     const moviePromises = movieIds.map(async (id: number) => {
       const response = await fetch(
         `https://api.themoviedb.org/3/movie/${id}?api_key=${TMDB_API_KEY}`
       );
+      if (!response.ok) {
+        console.error(`Error fetching movie ${id}:`, response.status);
+        throw new Error(`TMDB API error: ${response.status}`);
+      }
       return response.json();
     });
 
     const movies = await Promise.all(moviePromises);
+    console.log('Successfully fetched movie details');
 
     // Filter out any invalid movies and sort by vote average
     const recommendations = movies
