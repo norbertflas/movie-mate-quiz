@@ -98,23 +98,27 @@ serve(async (req) => {
         
         const movieData = await tmdbResponse.json();
 
-        // Get streaming availability
-        const streamingResponse = await fetch(
-          `https://streaming-availability.p.rapidapi.com/v2/get/basic/tmdb/movie/${id}`,
-          {
-            headers: {
-              'X-RapidAPI-Key': RAPIDAPI_KEY,
-              'X-RapidAPI-Host': 'streaming-availability.p.rapidapi.com'
-            }
-          }
-        );
-
+        // Try to get streaming availability, but don't fail if unavailable
         let streamingData = null;
-        if (streamingResponse.ok) {
-          streamingData = await streamingResponse.json();
-          console.log('Streaming data for movie:', id, streamingData);
-        } else {
-          console.warn(`No streaming data available for movie ${id}`);
+        try {
+          const streamingResponse = await fetch(
+            `https://streaming-availability.p.rapidapi.com/v2/get/basic/tmdb/movie/${id}`,
+            {
+              headers: {
+                'X-RapidAPI-Key': RAPIDAPI_KEY,
+                'X-RapidAPI-Host': 'streaming-availability.p.rapidapi.com'
+              }
+            }
+          );
+
+          if (streamingResponse.ok) {
+            streamingData = await streamingResponse.json();
+            console.log('Streaming data for movie:', id, streamingData);
+          } else {
+            console.warn(`No streaming data available for movie ${id}`);
+          }
+        } catch (error) {
+          console.warn(`Error fetching streaming data for movie ${id}:`, error);
         }
 
         return {
