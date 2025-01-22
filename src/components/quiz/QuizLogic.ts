@@ -45,7 +45,7 @@ export const useQuizLogic = (): QuizLogicHook => {
         await saveQuizHistory(user.id, answers);
       }
 
-      // Get recommendations regardless of authentication status
+      // Get recommendations with explanations
       const processedRecs = await getQuizRecommendations(user?.id);
       
       if (!processedRecs || processedRecs.length === 0) {

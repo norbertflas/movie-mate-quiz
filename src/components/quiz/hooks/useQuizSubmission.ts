@@ -15,14 +15,10 @@ export const useQuizSubmission = (
 
   const parseAnswer = (answer: string) => {
     try {
-      // Handle nested JSON strings
-      let parsed = answer;
-      while (typeof parsed === 'string' && (parsed.startsWith('[') || parsed.startsWith('{'))) {
-        parsed = JSON.parse(parsed);
-      }
-      return Array.isArray(parsed) ? parsed : parsed;
-    } catch (error) {
-      console.log('Error parsing answer:', error);
+      return typeof answer === 'string' && (answer.startsWith('[') || answer.startsWith('{'))
+        ? JSON.parse(answer)
+        : answer;
+    } catch {
       return answer;
     }
   };
@@ -33,27 +29,19 @@ export const useQuizSubmission = (
     try {
       setIsSubmitting(true);
       
-      // Validate answers array
-      if (!Array.isArray(answers) || answers.length === 0) {
-        throw new Error('No answers provided');
-      }
-      
-      // Format and validate each answer
-      const formattedAnswers = answers.map((answer, index) => {
-        if (!answer || !answer.answer) {
-          throw new Error(`Invalid answer at question ${index + 1}`);
-        }
+      // Format and validate answers
+      const formattedAnswers = answers.map((answer, index) => ({
+        questionId: answer.questionId || steps[index].id,
+        answer: parseAnswer(answer.answer)
+      }));
 
-        return {
-          questionId: answer.questionId || steps[index].id,
-          answer: parseAnswer(answer.answer)
-        };
-      });
-      
       console.log('Sending formatted answers to Edge Function:', formattedAnswers);
       
       const { data, error } = await supabase.functions.invoke('get-personalized-recommendations', {
-        body: { answers: formattedAnswers }
+        body: { 
+          answers: formattedAnswers,
+          includeExplanations: true
+        }
       });
 
       if (error) {
@@ -61,9 +49,9 @@ export const useQuizSubmission = (
         throw error;
       }
 
-      if (!data || !Array.isArray(data) || data.length === 0) {
+      if (!data || !Array.isArray(data)) {
         console.error('Invalid response from recommendations function:', data);
-        throw new Error('No recommendations generated');
+        throw new Error('Invalid recommendations response');
       }
 
       console.log('Received recommendations:', data);

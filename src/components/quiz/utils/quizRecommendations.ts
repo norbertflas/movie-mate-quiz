@@ -7,7 +7,10 @@ export async function getQuizRecommendations(userId?: string) {
     
     // Call the Edge Function to get personalized recommendations
     const { data, error } = await supabase.functions.invoke('get-personalized-recommendations', {
-      body: { answers: userId }
+      body: { 
+        userId,
+        includeExplanations: true
+      }
     });
 
     if (error) {
