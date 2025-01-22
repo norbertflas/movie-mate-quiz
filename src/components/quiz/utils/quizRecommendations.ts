@@ -7,15 +7,12 @@ export async function getQuizRecommendations(userId?: string) {
     
     // Call the Edge Function to get personalized recommendations
     const { data, error } = await supabase.functions.invoke('get-personalized-recommendations', {
-      body: {
-        answers: userId,
-        prompt: "Recommend movies based on user preferences"
-      }
+      body: { answers: userId }
     });
 
     if (error) {
       console.error('Error calling recommendations function:', error);
-      throw new Error('Failed to process recommendations');
+      throw error;
     }
 
     if (!data || !Array.isArray(data)) {
