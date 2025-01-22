@@ -26,15 +26,14 @@ serve(async (req) => {
     const requestData = await req.json();
     console.log('Raw request data:', requestData);
 
-    if (!requestData || !Array.isArray(requestData.answers) || requestData.answers.length === 0) {
-      console.error('Invalid request format:', requestData);
-      throw new Error('Invalid request format: missing or invalid answers array');
+    // Validate answers array
+    if (!requestData?.answers || !Array.isArray(requestData.answers)) {
+      console.error('Invalid request format - answers array missing or invalid:', requestData);
+      throw new Error('Invalid request format: answers array must be provided');
     }
 
-    const answers = requestData.answers;
-    console.log('Processing answers array:', answers);
-
     // Validate each answer object
+    const answers = requestData.answers;
     const isValidAnswer = (answer: any): boolean => {
       return answer &&
         typeof answer === 'object' &&
@@ -44,11 +43,11 @@ serve(async (req) => {
     };
 
     if (!answers.every(isValidAnswer)) {
-      console.error('Invalid answer object format:', answers);
-      throw new Error('Invalid quiz answers format: each answer must have questionId and answer');
+      console.error('Invalid answer format:', answers);
+      throw new Error('Invalid answer format: each answer must have questionId and answer properties');
     }
 
-    // Create a formatted string of answers for the prompt
+    // Format answers for Gemini
     const formattedAnswers = answers.map(answer => 
       `Question ${answer.questionId}: ${
         Array.isArray(answer.answer) 
@@ -63,7 +62,7 @@ serve(async (req) => {
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
-    // Create a prompt for Gemini
+    // Create prompt for Gemini
     const aiPrompt = `As a movie recommendation expert, suggest 6 movies based on these quiz answers:
     ${formattedAnswers}
     
@@ -78,14 +77,16 @@ serve(async (req) => {
     const movieIds = JSON.parse(response.text());
 
     if (!Array.isArray(movieIds) || movieIds.length === 0) {
+      console.error('Invalid response from Gemini:', response.text());
       throw new Error('Invalid response from Gemini: expected array of movie IDs');
     }
 
     console.log('Received movie IDs from Gemini:', movieIds);
 
-    // Validate movie IDs with TMDB
+    // Validate movie IDs with TMDB and get details
     const movieDetailsPromises = movieIds.map(async (id: number) => {
       try {
+        console.log(`Fetching TMDB data for movie ${id}`);
         // Get TMDB details
         const tmdbResponse = await fetch(
           `https://api.themoviedb.org/3/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=videos`
