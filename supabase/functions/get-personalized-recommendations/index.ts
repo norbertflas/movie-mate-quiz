@@ -26,34 +26,27 @@ serve(async (req) => {
     const requestData = await req.json();
     console.log('Raw request data:', requestData);
 
-    if (!requestData || !requestData.answers) {
+    if (!requestData || !Array.isArray(requestData.answers) || requestData.answers.length === 0) {
       console.error('Invalid request format:', requestData);
-      throw new Error('Invalid request format: missing answers');
+      throw new Error('Invalid request format: missing or invalid answers array');
     }
 
-    const answers = Array.isArray(requestData.answers) ? requestData.answers : [requestData.answers];
-    console.log('Processed answers array:', answers);
+    const answers = requestData.answers;
+    console.log('Processing answers array:', answers);
 
     // Validate each answer object
     const isValidAnswer = (answer: any): boolean => {
-      const valid = answer &&
+      return answer &&
         typeof answer === 'object' &&
         'questionId' in answer &&
         typeof answer.questionId === 'string' &&
         'answer' in answer;
-
-      if (!valid) {
-        console.error('Invalid answer format:', answer);
-      }
-      return valid;
     };
 
     if (!answers.every(isValidAnswer)) {
       console.error('Invalid answer object format:', answers);
       throw new Error('Invalid quiz answers format: each answer must have questionId and answer');
     }
-
-    console.log('Validated answers array:', answers);
 
     // Create a formatted string of answers for the prompt
     const formattedAnswers = answers.map(answer => 
@@ -105,7 +98,7 @@ serve(async (req) => {
         
         const movieData = await tmdbResponse.json();
 
-        // Try to get streaming availability, but don't fail if unavailable
+        // Try to get streaming availability
         let streamingData = null;
         try {
           const streamingResponse = await fetch(
@@ -121,8 +114,6 @@ serve(async (req) => {
           if (streamingResponse.ok) {
             streamingData = await streamingResponse.json();
             console.log('Streaming data for movie:', id, streamingData);
-          } else {
-            console.warn(`No streaming data available for movie ${id}`);
           }
         } catch (error) {
           console.warn(`Error fetching streaming data for movie ${id}:`, error);
@@ -164,7 +155,10 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in get-personalized-recommendations:', error);
     return new Response(
-      JSON.stringify({ error: error.message }), 
+      JSON.stringify({ 
+        error: error.message,
+        details: error.stack 
+      }), 
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
