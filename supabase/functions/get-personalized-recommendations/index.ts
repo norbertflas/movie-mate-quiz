@@ -83,7 +83,7 @@ serve(async (req) => {
 
     console.log('Received movie IDs from Gemini:', movieIds);
 
-    // Get movie details from TMDB and streaming availability in parallel
+    // Validate movie IDs with TMDB
     const movieDetailsPromises = movieIds.map(async (id: number) => {
       try {
         // Get TMDB details
@@ -97,6 +97,7 @@ serve(async (req) => {
         }
         
         const movieData = await tmdbResponse.json();
+        console.log(`Successfully fetched TMDB data for movie ${id}:`, movieData.title);
 
         // Try to get streaming availability
         let streamingData = null;
