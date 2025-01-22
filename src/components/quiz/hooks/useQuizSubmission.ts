@@ -71,6 +71,7 @@ export const useQuizSubmission = (
         description: errorMessage,
         variant: "destructive",
       });
+      throw error;
     } finally {
       setIsSubmitting(false);
     }

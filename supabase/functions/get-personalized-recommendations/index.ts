@@ -23,14 +23,15 @@ serve(async (req) => {
       throw new Error('Missing required API keys');
     }
 
-    const { answers } = await req.json();
-    console.log('Raw answers received:', answers);
+    const requestData = await req.json();
+    console.log('Raw request data:', requestData);
 
-    // Validate answers format
-    if (!answers || !Array.isArray(answers)) {
-      console.error('Invalid answers format - not an array:', answers);
+    if (!requestData || !requestData.answers || !Array.isArray(requestData.answers)) {
+      console.error('Invalid answers format:', requestData);
       throw new Error('Invalid quiz answers format: answers must be an array');
     }
+
+    const answers = requestData.answers;
 
     // Validate each answer object
     const isValidAnswer = (answer: any): boolean => {
@@ -40,8 +41,7 @@ serve(async (req) => {
         'questionId' in answer &&
         typeof answer.questionId === 'string' &&
         'answer' in answer &&
-        typeof answer.answer === 'string' &&
-        answer.answer.length > 0
+        typeof answer.answer === 'string'
       );
     };
 
