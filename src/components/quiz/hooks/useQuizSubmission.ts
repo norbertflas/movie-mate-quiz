@@ -54,6 +54,10 @@ export const useQuizSubmission = (
       console.log('Received recommendations:', data);
       await handleFinish(data);
       
+      toast({
+        title: t("quiz.completed"),
+        description: t("quiz.recommendationsReady"),
+      });
     } catch (error) {
       console.error('Error processing quiz answers:', error);
       

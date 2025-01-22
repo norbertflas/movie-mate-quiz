@@ -81,6 +81,10 @@ serve(async (req) => {
     const response = await result.response;
     const movieIds = JSON.parse(response.text());
 
+    if (!Array.isArray(movieIds) || movieIds.length === 0) {
+      throw new Error('Invalid response from Gemini: expected array of movie IDs');
+    }
+
     console.log('Received movie IDs from Gemini:', movieIds);
 
     // Get movie details from TMDB and streaming availability in parallel
@@ -142,8 +146,12 @@ serve(async (req) => {
 
     const movies = (await Promise.all(movieDetailsPromises))
       .filter(movie => movie !== null)
-      .sort((a, b) => b.vote_average - a.vote_average)
+      .sort((a, b) => (b?.vote_average || 0) - (a?.vote_average || 0))
       .slice(0, 6);
+
+    if (!movies || movies.length === 0) {
+      throw new Error('No valid movies found');
+    }
 
     console.log('Successfully processed movies:', movies.length);
 
