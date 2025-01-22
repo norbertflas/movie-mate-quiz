@@ -29,19 +29,25 @@ serve(async (req) => {
     // Validate answers format
     if (!answers || !Array.isArray(answers)) {
       console.error('Invalid answers format - not an array:', answers);
-      throw new Error('Invalid quiz answers format');
+      throw new Error('Invalid quiz answers format: answers must be an array');
     }
 
     // Validate each answer object
-    if (!answers.every(answer => 
-      answer && 
-      typeof answer === 'object' && 
-      'questionId' in answer && 
-      'answer' in answer &&
-      typeof answer.answer === 'string'
-    )) {
+    const isValidAnswer = (answer: any): boolean => {
+      return (
+        answer &&
+        typeof answer === 'object' &&
+        'questionId' in answer &&
+        typeof answer.questionId === 'string' &&
+        'answer' in answer &&
+        typeof answer.answer === 'string' &&
+        answer.answer.length > 0
+      );
+    };
+
+    if (!answers.every(isValidAnswer)) {
       console.error('Invalid answer object format:', answers);
-      throw new Error('Invalid quiz answers format');
+      throw new Error('Invalid quiz answers format: each answer must have questionId and answer as strings');
     }
 
     console.log('Validated answers array:', answers);

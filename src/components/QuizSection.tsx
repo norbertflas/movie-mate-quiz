@@ -31,11 +31,21 @@ export const QuizSection = () => {
     try {
       setIsSubmitting(true);
       
-      // Format answers as an array of objects with questionId and answer
-      const formattedAnswers = answers.map((answer, index) => ({
-        questionId: steps[index].id,
-        answer: answer.toString() // Ensure answer is a string
-      }));
+      // Validate answers array
+      if (!Array.isArray(answers) || answers.length === 0) {
+        throw new Error('No answers provided');
+      }
+      
+      // Format and validate each answer
+      const formattedAnswers = answers.map((answer, index) => {
+        if (answer === undefined || answer === null) {
+          throw new Error(`Invalid answer at question ${index + 1}`);
+        }
+        return {
+          questionId: steps[index].id,
+          answer: String(answer) // Explicitly convert to string
+        };
+      });
       
       console.log('Sending formatted answers to Edge Function:', formattedAnswers);
       
