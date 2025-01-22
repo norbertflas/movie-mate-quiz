@@ -35,13 +35,14 @@ export const useQuizSubmission = (
         answer: parseAnswer(answer.answer)
       }));
 
+      if (!formattedAnswers || formattedAnswers.length === 0) {
+        throw new Error('No answers provided');
+      }
+
       console.log('Sending formatted answers to Edge Function:', formattedAnswers);
       
       const { data, error } = await supabase.functions.invoke('get-personalized-recommendations', {
-        body: { 
-          answers: formattedAnswers,
-          includeExplanations: true
-        }
+        body: { answers: formattedAnswers }
       });
 
       if (error) {
