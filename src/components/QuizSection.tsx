@@ -38,12 +38,12 @@ export const QuizSection = () => {
       
       // Format and validate each answer
       const formattedAnswers = answers.map((answer, index) => {
-        if (answer === undefined || answer === null) {
+        if (!answer || !answer.answer) {
           throw new Error(`Invalid answer at question ${index + 1}`);
         }
         return {
-          questionId: steps[index].id,
-          answer: String(answer) // Explicitly convert to string
+          questionId: answer.questionId || steps[index].id,
+          answer: String(answer.answer)
         };
       });
       
