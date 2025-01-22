@@ -26,23 +26,27 @@ serve(async (req) => {
     const requestData = await req.json();
     console.log('Raw request data:', requestData);
 
-    if (!requestData || !requestData.answers || !Array.isArray(requestData.answers)) {
-      console.error('Invalid answers format:', requestData);
-      throw new Error('Invalid quiz answers format: answers must be an array');
+    if (!requestData || !requestData.answers) {
+      console.error('Invalid request format:', requestData);
+      throw new Error('Invalid request format: missing answers');
     }
 
-    const answers = requestData.answers;
+    const answers = Array.isArray(requestData.answers) ? requestData.answers : [requestData.answers];
+    console.log('Processed answers array:', answers);
 
     // Validate each answer object
     const isValidAnswer = (answer: any): boolean => {
-      return (
-        answer &&
+      const valid = answer &&
         typeof answer === 'object' &&
         'questionId' in answer &&
         typeof answer.questionId === 'string' &&
         'answer' in answer &&
-        typeof answer.answer === 'string'
-      );
+        typeof answer.answer === 'string';
+
+      if (!valid) {
+        console.error('Invalid answer format:', answer);
+      }
+      return valid;
     };
 
     if (!answers.every(isValidAnswer)) {
@@ -113,14 +117,13 @@ serve(async (req) => {
           console.warn(`No streaming data available for movie ${id}`);
         }
 
-        // Combine TMDB and streaming data
         return {
           id: movieData.id,
           title: movieData.title,
           overview: movieData.overview,
           poster_path: movieData.poster_path,
           release_date: movieData.release_date,
-          vote_average: movieData.vote_average * 10, // Convert to percentage
+          vote_average: movieData.vote_average * 10,
           genre: movieData.genres?.[0]?.name || 'Unknown',
           streaming_info: streamingData?.result?.streamingInfo || {},
           trailer_url: movieData.videos?.results?.[0]?.key 
