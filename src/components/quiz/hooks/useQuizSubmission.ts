@@ -13,6 +13,20 @@ export const useQuizSubmission = (
   const { t } = useTranslation();
   const { toast } = useToast();
 
+  const parseAnswer = (answer: string) => {
+    try {
+      // Handle nested JSON strings
+      let parsed = answer;
+      while (typeof parsed === 'string' && (parsed.startsWith('[') || parsed.startsWith('{'))) {
+        parsed = JSON.parse(parsed);
+      }
+      return Array.isArray(parsed) ? parsed : parsed;
+    } catch (error) {
+      console.log('Error parsing answer:', error);
+      return answer;
+    }
+  };
+
   const submitQuiz = async (answers: QuizAnswer[]) => {
     if (isSubmitting) return;
     
@@ -29,9 +43,10 @@ export const useQuizSubmission = (
         if (!answer || !answer.answer) {
           throw new Error(`Invalid answer at question ${index + 1}`);
         }
+
         return {
           questionId: answer.questionId || steps[index].id,
-          answer: String(answer.answer)
+          answer: parseAnswer(answer.answer)
         };
       });
       

@@ -40,8 +40,7 @@ serve(async (req) => {
         typeof answer === 'object' &&
         'questionId' in answer &&
         typeof answer.questionId === 'string' &&
-        'answer' in answer &&
-        typeof answer.answer === 'string';
+        'answer' in answer;
 
       if (!valid) {
         console.error('Invalid answer format:', answer);
@@ -51,14 +50,18 @@ serve(async (req) => {
 
     if (!answers.every(isValidAnswer)) {
       console.error('Invalid answer object format:', answers);
-      throw new Error('Invalid quiz answers format: each answer must have questionId and answer as strings');
+      throw new Error('Invalid quiz answers format: each answer must have questionId and answer');
     }
 
     console.log('Validated answers array:', answers);
 
     // Create a formatted string of answers for the prompt
     const formattedAnswers = answers.map(answer => 
-      `Question ${answer.questionId}: ${answer.answer}`
+      `Question ${answer.questionId}: ${
+        Array.isArray(answer.answer) 
+          ? answer.answer.join(', ') 
+          : answer.answer
+      }`
     ).join('\n');
 
     console.log('Formatted answers for Gemini:', formattedAnswers);
