@@ -2,12 +2,13 @@ import { QuizResults } from "./quiz/QuizResults";
 import { useQuizState } from "./quiz/hooks/useQuizState";
 import { useSurveySteps } from "./quiz/constants/surveySteps";
 import { useQuizSubmission } from "./quiz/hooks/useQuizSubmission";
-import { QuizForm } from "./quiz/QuizForm";
-import { useToast } from "./ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 export const QuizSection = () => {
   const { toast } = useToast();
   const steps = useSurveySteps();
+  const [showResults, setShowResults] = useState(false);
   const {
     currentStep,
     answers,
@@ -34,6 +35,11 @@ export const QuizSection = () => {
 
       console.log('Submitting quiz with answers:', answers);
       await submitQuiz(answers);
+      setShowResults(true);
+      toast({
+        title: "Success",
+        description: "Your recommendations are ready!",
+      });
     } catch (error) {
       console.error('Error submitting quiz:', error);
       toast({
@@ -44,7 +50,7 @@ export const QuizSection = () => {
     }
   };
 
-  if (isComplete && recommendations && recommendations.length > 0) {
+  if (showResults && recommendations && recommendations.length > 0) {
     return <QuizResults recommendations={recommendations} isGroupQuiz={false} />;
   }
 
