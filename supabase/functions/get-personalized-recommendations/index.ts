@@ -32,23 +32,33 @@ serve(async (req) => {
       throw new Error('Invalid request format: answers array must be provided');
     }
 
-    // Validate each answer object
-    const answers = requestData.answers;
-    const isValidAnswer = (answer: any): boolean => {
-      return answer &&
-        typeof answer === 'object' &&
-        'questionId' in answer &&
-        typeof answer.questionId === 'string' &&
-        'answer' in answer;
-    };
+    // Parse and clean up answers
+    const cleanAnswers = requestData.answers.map(answer => {
+      try {
+        // Handle nested JSON strings
+        let cleanAnswer = answer.answer;
+        while (typeof cleanAnswer === 'string' && (cleanAnswer.startsWith('[') || cleanAnswer.startsWith('{'))) {
+          try {
+            cleanAnswer = JSON.parse(cleanAnswer);
+          } catch {
+            break;
+          }
+        }
+        
+        return {
+          questionId: answer.questionId,
+          answer: Array.isArray(cleanAnswer) ? cleanAnswer : cleanAnswer
+        };
+      } catch (error) {
+        console.error('Error parsing answer:', error, answer);
+        return answer;
+      }
+    });
 
-    if (!answers.every(isValidAnswer)) {
-      console.error('Invalid answer format:', answers);
-      throw new Error('Invalid answer format: each answer must have questionId and answer properties');
-    }
+    console.log('Cleaned answers:', cleanAnswers);
 
     // Format answers for Gemini
-    const formattedAnswers = answers.map(answer => 
+    const formattedAnswers = cleanAnswers.map(answer => 
       `Question ${answer.questionId}: ${
         Array.isArray(answer.answer) 
           ? answer.answer.join(', ') 
