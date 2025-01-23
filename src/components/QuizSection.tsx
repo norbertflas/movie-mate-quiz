@@ -2,6 +2,7 @@ import { QuizResults } from "./quiz/QuizResults";
 import { useQuizState } from "./quiz/hooks/useQuizState";
 import { useSurveySteps } from "./quiz/constants/surveySteps";
 import { useQuizSubmission } from "./quiz/hooks/useQuizSubmission";
+import { QuizForm } from "./quiz/QuizForm";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 
