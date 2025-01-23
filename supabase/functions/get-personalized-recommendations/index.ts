@@ -90,13 +90,20 @@ serve(async (req) => {
     while (retries > 0) {
       try {
         result = await model.generateContent(aiPrompt);
+        const response = await result.response;
+        const text = response.text();
+        
+        // Validate the response is a valid JSON array
+        if (!text.trim().startsWith('[') || !text.trim().endsWith(']')) {
+          throw new Error('Invalid response format from Gemini');
+        }
+        
         break;
       } catch (e) {
         error = e;
         console.error(`Gemini API attempt failed, ${retries - 1} retries left:`, e);
         retries--;
         if (retries > 0) {
-          // Wait for 1 second before retrying
           await new Promise(resolve => setTimeout(resolve, 1000));
         }
       }
