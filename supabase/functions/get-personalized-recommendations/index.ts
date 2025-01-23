@@ -68,21 +68,44 @@ serve(async (req) => {
 
     console.log('Formatted answers for Gemini:', formattedAnswers);
 
-    // Initialize Gemini
+    // Initialize Gemini with retry logic
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
-    // Create prompt for Gemini
-    const aiPrompt = `As a movie recommendation expert, suggest 6 movies based on these quiz answers:
+    // Create prompt for Gemini with more specific instructions
+    const aiPrompt = `You are a movie recommendation expert. Based on these quiz answers:
     ${formattedAnswers}
     
+    Please suggest 6 highly relevant movies. Focus on popular, well-rated movies that match the genre and mood preferences.
     Format your response as a JSON array of TMDB movie IDs only, like this: [123, 456, 789]
     Only include the JSON array in your response, no other text.`;
 
     console.log('Sending prompt to Gemini:', aiPrompt);
 
-    // Get movie suggestions from Gemini
-    const result = await model.generateContent(aiPrompt);
+    // Implement retry logic for Gemini API
+    let retries = 3;
+    let result;
+    let error;
+
+    while (retries > 0) {
+      try {
+        result = await model.generateContent(aiPrompt);
+        break;
+      } catch (e) {
+        error = e;
+        console.error(`Gemini API attempt failed, ${retries - 1} retries left:`, e);
+        retries--;
+        if (retries > 0) {
+          // Wait for 1 second before retrying
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+    }
+
+    if (!result) {
+      throw error || new Error('Failed to get response from Gemini API after all retries');
+    }
+
     const response = await result.response;
     const movieIds = JSON.parse(response.text());
 
@@ -97,7 +120,6 @@ serve(async (req) => {
     const movieDetailsPromises = movieIds.map(async (id: number) => {
       try {
         console.log(`Fetching TMDB data for movie ${id}`);
-        // Get TMDB details
         const tmdbResponse = await fetch(
           `https://api.themoviedb.org/3/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=videos`
         );
