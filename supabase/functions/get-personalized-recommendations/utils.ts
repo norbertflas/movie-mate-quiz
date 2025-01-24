@@ -4,6 +4,7 @@ export function cleanAnswers(answers: QuizAnswer[]): QuizAnswer[] {
   return answers.map(answer => {
     try {
       let cleanAnswer = answer.answer;
+      // Handle nested JSON strings
       while (typeof cleanAnswer === 'string' && (cleanAnswer.startsWith('[') || cleanAnswer.startsWith('{'))) {
         try {
           cleanAnswer = JSON.parse(cleanAnswer);
@@ -42,10 +43,29 @@ export function getGenreId(genre: string): number {
     'movie.romance': 10749,
     'movie.sciFi': 878,
     'movie.thriller': 53,
-    'movie.documentary': 99
+    'movie.documentary': 99,
+    // Direct genre names
+    'action': 28,
+    'adventure': 12,
+    'comedy': 35,
+    'drama': 18,
+    'horror': 27,
+    'romance': 10749,
+    'sci-fi': 878,
+    'thriller': 53,
+    'documentary': 99
   };
 
-  return genreMap[genre] || 28; // Default to action if genre not found
+  const normalizedGenre = genre.toLowerCase();
+  const genreId = genreMap[normalizedGenre];
+
+  if (!genreId) {
+    console.error('Genre not found in map:', genre);
+    console.error('Available genres:', Object.keys(genreMap));
+    return 28; // Default to action if genre not found
+  }
+
+  return genreId;
 }
 
 export const corsHeaders = {

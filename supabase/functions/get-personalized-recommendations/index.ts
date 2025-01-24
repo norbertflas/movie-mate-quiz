@@ -29,10 +29,16 @@ serve(async (req) => {
     const cleanedAnswers = cleanAnswers(requestData.answers);
     console.log('Cleaned answers:', cleanedAnswers);
 
-    // Find the genre answer
-    const genreAnswer = cleanedAnswers.find(answer => answer.questionId === 'genre');
+    // Find the genre answer - check both 'genre' and 'type' question IDs
+    const genreAnswer = cleanedAnswers.find(answer => 
+      answer.questionId === 'genre' || 
+      (answer.questionId === 'type' && typeof answer.answer === 'string' && answer.answer.toLowerCase().includes('movie'))
+    );
+
     if (!genreAnswer) {
-      throw new Error('Genre preference not found in answers');
+      console.error('Available answers:', cleanedAnswers);
+      throw new Error('Genre preference not found in answers. Available answers: ' + 
+        JSON.stringify(cleanedAnswers.map(a => `${a.questionId}: ${a.answer}`)));
     }
 
     // Get the genre ID based on the user's selection
@@ -42,6 +48,10 @@ serve(async (req) => {
     // Get movies by genre first
     const genreMovies = await getMoviesByGenre(genreId, TMDB_API_KEY);
     console.log('Found movies by genre:', genreMovies.length);
+
+    if (!genreMovies || genreMovies.length === 0) {
+      throw new Error(`No movies found for genre ID ${genreId}`);
+    }
 
     // Use AI to refine the selection based on other preferences
     const formattedAnswers = formatAnswersForPrompt(cleanedAnswers);
@@ -55,8 +65,10 @@ serve(async (req) => {
     // If we don't have enough movies, add more from the genre-matched list
     const finalMovies = [
       ...prioritizedMovies,
-      ...genreMovies.filter(movie => !prioritizedMovies.includes(movie))
-    ].slice(0, 6);
+      ...genreMovies
+        .filter(movie => !prioritizedMovies.some(pm => pm.id === movie.id))
+        .slice(0, 6 - prioritizedMovies.length)
+    ];
 
     const movieDetailsPromises = finalMovies.map(movie => 
       getMovieDetails(movie.id, TMDB_API_KEY)
@@ -66,7 +78,7 @@ serve(async (req) => {
       .filter((movie): movie is MovieRecommendation => movie !== null);
 
     if (!movies || movies.length === 0) {
-      throw new Error('No valid movies found');
+      throw new Error('No valid movies found after processing');
     }
 
     console.log('Successfully processed movies:', movies.length);
