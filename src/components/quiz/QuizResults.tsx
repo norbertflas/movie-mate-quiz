@@ -1,11 +1,41 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { MovieCard } from "../MovieCard";
 import { Card } from "../ui/card";
 import type { QuizResultsProps } from "./QuizTypes";
 import { useTranslation } from "react-i18next";
+import { supabase } from "@/integrations/supabase/client";
 
 export const QuizResults = ({ recommendations, isGroupQuiz = false }: QuizResultsProps) => {
   const { t } = useTranslation();
+  const [movieStreamingServices, setMovieStreamingServices] = useState<{ [key: number]: string[] }>({});
+
+  useEffect(() => {
+    const fetchStreamingServices = async () => {
+      for (const movie of recommendations) {
+        const { data: availabilityData, error } = await supabase
+          .from('movie_streaming_availability')
+          .select(`
+            streaming_services (
+              name
+            )
+          `)
+          .eq('movie_id', movie.id);
+
+        if (!error && availabilityData) {
+          const services = availabilityData.map((item: any) => item.streaming_services.name);
+          setMovieStreamingServices(prev => ({
+            ...prev,
+            [movie.id]: services
+          }));
+        }
+      }
+    };
+
+    if (recommendations.length > 0) {
+      fetchStreamingServices();
+    }
+  }, [recommendations]);
 
   return (
     <motion.div
@@ -22,16 +52,17 @@ export const QuizResults = ({ recommendations, isGroupQuiz = false }: QuizResult
           <div key={movie.id} className="space-y-4">
             <MovieCard
               title={movie.title}
-              year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "N/A"}
+              year={movie.releaseDate ? new Date(movie.releaseDate).getFullYear().toString() : "N/A"}
               platform="TMDB"
               genre={movie.genre || "Movie"}
-              imageUrl={movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : "/placeholder.svg"}
+              imageUrl={movie.posterPath ? `https://image.tmdb.org/t/p/w500${movie.posterPath}` : "/placeholder.svg"}
               description={movie.overview || t("movie.noDescription")}
-              trailerUrl={movie.trailer_url || ""}
-              rating={movie.vote_average || 0}
+              trailerUrl={movie.trailerUrl || ""}
+              rating={movie.voteAverage || 0}
               tmdbId={movie.id}
               explanations={movie.explanations || []}
               tags={[movie.genre || "Movie"]}
+              streamingServices={movieStreamingServices[movie.id] || []}
             />
             {movie.explanations && movie.explanations.length > 0 && (
               <Card className="p-4 bg-muted/50 backdrop-blur">
