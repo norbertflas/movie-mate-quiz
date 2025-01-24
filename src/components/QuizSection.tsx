@@ -38,15 +38,17 @@ export const QuizSection = () => {
       // Format answers properly before submission
       const formattedAnswers = steps.map((step, index) => {
         const answer = answers[index];
-        if (!answer || !answer.answer) {
+        if (!answer) {
           console.error('Missing answer for step:', step.id);
           return null;
         }
         return {
           questionId: step.id,
-          answer: answer.answer
+          answer: answer.answer || ''
         };
       }).filter((answer): answer is QuizAnswer => answer !== null);
+
+      console.log('Formatted answers before submission:', formattedAnswers);
 
       if (formattedAnswers.length !== steps.length) {
         toast({
@@ -57,7 +59,6 @@ export const QuizSection = () => {
         return;
       }
 
-      console.log('Submitting quiz with formatted answers:', formattedAnswers);
       const results = await submitQuiz(formattedAnswers);
       
       if (results && results.length > 0) {
