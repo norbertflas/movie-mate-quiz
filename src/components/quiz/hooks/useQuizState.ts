@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useQuizLogic } from "../QuizLogic";
-import type { QuizAnswer, MovieRecommendation } from "../QuizTypes";
+import type { QuizAnswer, MovieRecommendation, SurveyStepType } from "../QuizTypes";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 
-export const useQuizState = (steps: any[]) => {
+export const useQuizState = (steps: SurveyStepType[]) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<QuizAnswer[]>([]);
   const [recommendations, setRecommendations] = useState<MovieRecommendation[]>([]);
@@ -35,7 +35,16 @@ export const useQuizState = (steps: any[]) => {
   };
 
   const handleNext = () => {
-    if (currentStep < steps.length - 1 && answers[currentStep]) {
+    if (!answers[currentStep]) {
+      toast({
+        title: t("errors.missingAnswer"),
+        description: t("errors.pleaseSelectOption"),
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (currentStep < steps.length - 1) {
       setCurrentStep(prev => prev + 1);
     }
   };

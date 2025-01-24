@@ -35,29 +35,27 @@ export const QuizSection = () => {
         return;
       }
 
-      // Validate answers before formatting
-      const validAnswers = answers.every(answer => 
-        answer && 
-        answer.questionId && 
-        answer.answer && 
-        typeof answer.answer === 'string'
-      );
+      // Format answers properly before submission
+      const formattedAnswers = steps.map((step, index) => {
+        const answer = answers[index];
+        if (!answer || !answer.answer) {
+          console.error('Missing answer for step:', step.id);
+          return null;
+        }
+        return {
+          questionId: step.id,
+          answer: answer.answer
+        };
+      }).filter((answer): answer is QuizAnswer => answer !== null);
 
-      if (!validAnswers) {
-        console.error('Invalid answers format:', answers);
+      if (formattedAnswers.length !== steps.length) {
         toast({
           title: "Error",
-          description: "Some answers are invalid. Please try again.",
+          description: "Please answer all questions before submitting",
           variant: "destructive",
         });
         return;
       }
-
-      // Format answers properly before submission
-      const formattedAnswers: QuizAnswer[] = answers.map((answer, index) => ({
-        questionId: steps[index].id,
-        answer: answer.answer
-      }));
 
       console.log('Submitting quiz with formatted answers:', formattedAnswers);
       const results = await submitQuiz(formattedAnswers);
