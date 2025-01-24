@@ -5,42 +5,77 @@ import { Card } from "../ui/card";
 import type { QuizResultsProps } from "./QuizTypes";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "../ui/use-toast";
 
 export const QuizResults = ({ recommendations, isGroupQuiz = false }: QuizResultsProps) => {
   const { t } = useTranslation();
+  const { toast } = useToast();
   const [movieStreamingServices, setMovieStreamingServices] = useState<{ [key: number]: string[] }>({});
+  const [expandedMovieId, setExpandedMovieId] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchStreamingServices = async () => {
       for (const movie of recommendations) {
-        // First get the movie_metadata UUID for the TMDB ID
-        const { data: movieData, error: movieError } = await supabase
-          .from('movie_metadata')
-          .select('id')
-          .eq('tmdb_id', movie.id)
-          .maybeSingle();
+        try {
+          // First get the movie_metadata UUID for the TMDB ID
+          const { data: movieData, error: movieError } = await supabase
+            .from('movie_metadata')
+            .select('id')
+            .eq('tmdb_id', movie.id)
+            .maybeSingle();
 
-        if (movieError || !movieData) {
-          console.error('Error fetching movie metadata:', movieError);
-          continue;
-        }
+          if (movieError) {
+            console.error('Error fetching movie metadata:', movieError);
+            continue;
+          }
 
-        // Then use that UUID to get streaming services
-        const { data: availabilityData, error } = await supabase
-          .from('movie_streaming_availability')
-          .select(`
-            streaming_services (
-              name
-            )
-          `)
-          .eq('movie_id', movieData.id);
+          if (!movieData) {
+            // If movie doesn't exist in metadata, insert it
+            const { data: newMovieData, error: insertError } = await supabase
+              .from('movie_metadata')
+              .insert({
+                tmdb_id: movie.id,
+                title: movie.title,
+                overview: movie.overview,
+                poster_path: movie.poster_path,
+                release_date: movie.release_date,
+                vote_average: movie.vote_average,
+              })
+              .select('id')
+              .single();
 
-        if (!error && availabilityData) {
-          const services = availabilityData.map((item: any) => item.streaming_services.name);
-          setMovieStreamingServices(prev => ({
-            ...prev,
-            [movie.id]: services
-          }));
+            if (insertError) {
+              console.error('Error inserting movie metadata:', insertError);
+              continue;
+            }
+
+            movieData = newMovieData;
+          }
+
+          // Then use that UUID to get streaming services
+          const { data: availabilityData, error: availabilityError } = await supabase
+            .from('movie_streaming_availability')
+            .select(`
+              streaming_services (
+                name
+              )
+            `)
+            .eq('movie_id', movieData.id);
+
+          if (availabilityError) {
+            console.error('Error fetching streaming availability:', availabilityError);
+            continue;
+          }
+
+          if (availabilityData) {
+            const services = availabilityData.map((item: any) => item.streaming_services.name);
+            setMovieStreamingServices(prev => ({
+              ...prev,
+              [movie.id]: services
+            }));
+          }
+        } catch (error) {
+          console.error('Error in streaming services fetch:', error);
         }
       }
     };
@@ -49,6 +84,10 @@ export const QuizResults = ({ recommendations, isGroupQuiz = false }: QuizResult
       fetchStreamingServices();
     }
   }, [recommendations]);
+
+  const handleMovieClose = () => {
+    setExpandedMovieId(null);
+  };
 
   return (
     <motion.div
@@ -76,6 +115,8 @@ export const QuizResults = ({ recommendations, isGroupQuiz = false }: QuizResult
               explanations={movie.explanations || []}
               tags={[movie.genre || "Movie"]}
               streamingServices={movieStreamingServices[movie.id] || []}
+              isExpanded={expandedMovieId === movie.id}
+              onClose={handleMovieClose}
             />
           </div>
         ))}
