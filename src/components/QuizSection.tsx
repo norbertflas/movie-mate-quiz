@@ -35,12 +35,14 @@ export const QuizSection = () => {
       }
 
       console.log('Submitting quiz with answers:', answers);
-      await submitQuiz(answers);
-      setShowResults(true);
-      toast({
-        title: "Success",
-        description: "Your recommendations are ready!",
-      });
+      const results = await submitQuiz(answers);
+      if (results && results.length > 0) {
+        setShowResults(true);
+        toast({
+          title: "Success",
+          description: "Your recommendations are ready!",
+        });
+      }
     } catch (error) {
       console.error('Error submitting quiz:', error);
       toast({

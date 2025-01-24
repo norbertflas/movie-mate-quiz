@@ -7,10 +7,11 @@ import { useTranslation } from "react-i18next";
 export const useQuizState = (steps: any[]) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<QuizAnswer[]>([]);
-  const { recommendations, processAnswers } = useQuizLogic();
+  const [recommendations, setRecommendations] = useState<MovieRecommendation[]>([]);
   const [isComplete, setIsComplete] = useState(false);
   const { toast } = useToast();
   const { t } = useTranslation();
+  const { processAnswers } = useQuizLogic();
 
   const handleAnswer = (answer: string) => {
     const currentQuestion = steps[currentStep];
@@ -49,12 +50,16 @@ export const useQuizState = (steps: any[]) => {
     }
 
     try {
-      await processAnswers(quizAnswers);
-      setIsComplete(true);
+      console.log('Processing answers in handleFinish:', quizAnswers);
+      const movieRecommendations = await processAnswers(quizAnswers);
       
-      if (!recommendations || recommendations.length === 0) {
+      if (!movieRecommendations || movieRecommendations.length === 0) {
         throw new Error("No recommendations generated");
       }
+
+      console.log('Setting recommendations:', movieRecommendations);
+      setRecommendations(movieRecommendations);
+      setIsComplete(true);
       
       toast({
         title: t("quiz.completed"),
@@ -62,6 +67,11 @@ export const useQuizState = (steps: any[]) => {
       });
     } catch (error) {
       console.error('Error processing quiz answers:', error);
+      toast({
+        title: t("errors.recommendationError"),
+        description: t("errors.tryAgain"),
+        variant: "destructive",
+      });
       throw error;
     }
   };
@@ -69,8 +79,8 @@ export const useQuizState = (steps: any[]) => {
   return {
     currentStep,
     answers,
-    isComplete,
     recommendations,
+    isComplete,
     handleAnswer,
     handleNext,
     handlePrevious,
