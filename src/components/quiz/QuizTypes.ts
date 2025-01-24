@@ -54,6 +54,6 @@ export interface QuizLogicHook {
   answers: QuizAnswer[];
   recommendations: MovieRecommendation[];
   handleStartQuiz: () => void;
-  handleQuizComplete: (answers: QuizAnswer[]) => Promise<void>;
-  processAnswers: (answers: QuizAnswer[]) => Promise<void>;
+  handleQuizComplete: (answers: QuizAnswer[]) => Promise<MovieRecommendation[]>;
+  processAnswers: (answers: QuizAnswer[]) => Promise<MovieRecommendation[]>;
 }

@@ -65,6 +65,8 @@ export const useQuizState = (steps: any[]) => {
         title: t("quiz.completed"),
         description: t("quiz.recommendationsReady"),
       });
+
+      return movieRecommendations;
     } catch (error) {
       console.error('Error processing quiz answers:', error);
       toast({

@@ -64,7 +64,7 @@ export const useQuizLogic = (): QuizLogicHook => {
     }
   };
 
-  const handleQuizComplete = async (quizAnswers: QuizAnswer[]) => {
+  const handleQuizComplete = async (quizAnswers: QuizAnswer[]): Promise<MovieRecommendation[]> => {
     try {
       const recommendations = await processAnswers(quizAnswers);
       return recommendations;
