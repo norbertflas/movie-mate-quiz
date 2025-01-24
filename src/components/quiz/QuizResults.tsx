@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { MovieCard } from "../MovieCard";
-import { Card } from "../ui/card";
 import type { QuizResultsProps } from "./QuizTypes";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,7 +17,7 @@ export const QuizResults = ({ recommendations, isGroupQuiz = false }: QuizResult
       for (const movie of recommendations) {
         try {
           // First get the movie_metadata UUID for the TMDB ID
-          const { data: movieData, error: movieError } = await supabase
+          let { data: movieData, error: movieError } = await supabase
             .from('movie_metadata')
             .select('id')
             .eq('tmdb_id', movie.id)

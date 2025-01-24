@@ -20,6 +20,7 @@ export interface MovieCardProps {
   tmdbId?: number;
   explanations?: string[];
   onClose?: () => void;
+  isExpanded?: boolean;
 }
 
 export interface MovieImageProps {
