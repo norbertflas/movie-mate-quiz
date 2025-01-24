@@ -19,9 +19,9 @@ export const useQuizLogic = (): QuizLogicHook => {
     setRecommendations([]);
   };
 
-  const handleQuizComplete = async (quizAnswers: QuizAnswer[]) => {
+  const processAnswers = async (quizAnswers: QuizAnswer[]) => {
     try {
-      console.log('Submitting quiz with answers:', quizAnswers);
+      console.log('Processing quiz answers:', quizAnswers);
       
       const { data: { user } } = await supabase.auth.getUser();
       
@@ -63,12 +63,22 @@ export const useQuizLogic = (): QuizLogicHook => {
     }
   };
 
+  const handleQuizComplete = async (quizAnswers: QuizAnswer[]) => {
+    try {
+      await processAnswers(quizAnswers);
+    } catch (error) {
+      console.error('Error completing quiz:', error);
+      throw error;
+    }
+  };
+
   return {
     showQuiz,
     showResults,
     answers,
     recommendations,
     handleStartQuiz,
-    handleQuizComplete
+    handleQuizComplete,
+    processAnswers
   };
 };
