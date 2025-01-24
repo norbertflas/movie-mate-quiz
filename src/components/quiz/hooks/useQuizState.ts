@@ -20,16 +20,23 @@ export const useQuizState = (steps: SurveyStepType[]) => {
       return;
     }
 
+    // Log the incoming answer for debugging
+    console.log('Handling answer for step:', {
+      step: currentStep,
+      questionId: currentQuestion.id,
+      answer: answer
+    });
+
     const newAnswer: QuizAnswer = {
       questionId: currentQuestion.id,
       answer: answer
     };
 
-    console.log('Setting answer for question:', currentQuestion.id, 'Answer:', answer);
-
     setAnswers(prev => {
       const updated = [...prev];
       updated[currentStep] = newAnswer;
+      // Log the updated answers array
+      console.log('Updated answers array:', updated);
       return updated;
     });
   };
@@ -66,7 +73,9 @@ export const useQuizState = (steps: SurveyStepType[]) => {
     }
 
     try {
+      // Log the answers being processed
       console.log('Processing answers in handleFinish:', quizAnswers);
+      
       const movieRecommendations = await processAnswers(quizAnswers);
       
       if (!movieRecommendations || movieRecommendations.length === 0) {

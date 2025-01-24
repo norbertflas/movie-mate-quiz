@@ -42,13 +42,27 @@ export const QuizSection = () => {
           console.error('Missing answer for step:', step.id);
           return null;
         }
+        
+        // Log each answer for debugging
+        console.log(`Formatting answer for step ${step.id}:`, {
+          questionId: step.id,
+          answer: answer.answer,
+          rawAnswer: answer
+        });
+
         return {
           questionId: step.id,
           answer: answer.answer
         };
-      }).filter((answer): answer is QuizAnswer => answer !== null);
+      }).filter((answer): answer is QuizAnswer => {
+        const isValid = answer !== null && answer.answer !== undefined;
+        if (!isValid) {
+          console.error('Invalid answer filtered out:', answer);
+        }
+        return isValid;
+      });
 
-      console.log('Formatted answers before submission:', formattedAnswers);
+      console.log('Final formatted answers:', formattedAnswers);
 
       if (formattedAnswers.length !== steps.length) {
         toast({
