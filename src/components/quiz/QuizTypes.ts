@@ -9,13 +9,14 @@ export type SurveyStepType = {
 
 export interface MovieRecommendation {
   id: number;
+  tmdbId?: number;  // Added this property
   title: string;
   overview: string;
-  posterPath: string;
-  releaseDate: string;
-  voteAverage: number;
+  poster_path: string;
+  release_date: string;
+  vote_average: number;
   genre: string;
-  trailerUrl: string | null;
+  trailer_url: string | null;
   explanations?: string[];
 }
 

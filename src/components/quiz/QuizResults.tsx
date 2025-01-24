@@ -18,7 +18,7 @@ export const QuizResults = ({ recommendations, isGroupQuiz = false }: QuizResult
           .from('movie_metadata')
           .select('id')
           .eq('tmdb_id', movie.id)
-          .single();
+          .maybeSingle();
 
         if (movieError || !movieData) {
           console.error('Error fetching movie metadata:', movieError);
@@ -65,30 +65,18 @@ export const QuizResults = ({ recommendations, isGroupQuiz = false }: QuizResult
           <div key={movie.id} className="space-y-4">
             <MovieCard
               title={movie.title}
-              year={movie.releaseDate ? new Date(movie.releaseDate).getFullYear().toString() : "N/A"}
+              year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "N/A"}
               platform="TMDB"
               genre={movie.genre || "Movie"}
-              imageUrl={movie.posterPath ? `https://image.tmdb.org/t/p/w500${movie.posterPath}` : "/placeholder.svg"}
+              imageUrl={movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : "/placeholder.svg"}
               description={movie.overview || t("movie.noDescription")}
-              trailerUrl={movie.trailerUrl || ""}
-              rating={movie.voteAverage || 0}
+              trailerUrl={movie.trailer_url || ""}
+              rating={movie.vote_average || 0}
               tmdbId={movie.id}
               explanations={movie.explanations || []}
               tags={[movie.genre || "Movie"]}
               streamingServices={movieStreamingServices[movie.id] || []}
             />
-            {movie.explanations && movie.explanations.length > 0 && (
-              <Card className="p-4 bg-muted/50 backdrop-blur">
-                <h3 className="font-medium mb-2 text-sm">{t("quiz.whyRecommended")}</h3>
-                <ul className="list-disc list-inside space-y-1">
-                  {movie.explanations.map((explanation, index) => (
-                    <li key={index} className="text-sm text-muted-foreground">
-                      {explanation}
-                    </li>
-                  ))}
-                </ul>
-              </Card>
-            )}
           </div>
         ))}
       </div>
