@@ -20,12 +20,12 @@ export const useQuizState = (steps: SurveyStepType[]) => {
       return;
     }
 
-    console.log('Setting answer for question:', currentQuestion.id, 'Answer:', answer);
-
     const newAnswer: QuizAnswer = {
       questionId: currentQuestion.id,
       answer: answer
     };
+
+    console.log('Setting answer for question:', currentQuestion.id, 'Answer:', answer);
 
     setAnswers(prev => {
       const updated = [...prev];

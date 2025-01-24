@@ -38,13 +38,13 @@ export const QuizSection = () => {
       // Format answers properly before submission
       const formattedAnswers = steps.map((step, index) => {
         const answer = answers[index];
-        if (!answer) {
+        if (!answer || !answer.answer) {
           console.error('Missing answer for step:', step.id);
           return null;
         }
         return {
           questionId: step.id,
-          answer: answer.answer || ''
+          answer: answer.answer
         };
       }).filter((answer): answer is QuizAnswer => answer !== null);
 
