@@ -13,6 +13,19 @@ export const QuizResults = ({ recommendations, isGroupQuiz = false }: QuizResult
   useEffect(() => {
     const fetchStreamingServices = async () => {
       for (const movie of recommendations) {
+        // First get the movie_metadata UUID for the TMDB ID
+        const { data: movieData, error: movieError } = await supabase
+          .from('movie_metadata')
+          .select('id')
+          .eq('tmdb_id', movie.id)
+          .single();
+
+        if (movieError || !movieData) {
+          console.error('Error fetching movie metadata:', movieError);
+          continue;
+        }
+
+        // Then use that UUID to get streaming services
         const { data: availabilityData, error } = await supabase
           .from('movie_streaming_availability')
           .select(`
@@ -20,7 +33,7 @@ export const QuizResults = ({ recommendations, isGroupQuiz = false }: QuizResult
               name
             )
           `)
-          .eq('movie_id', movie.id);
+          .eq('movie_id', movieData.id);
 
         if (!error && availabilityData) {
           const services = availabilityData.map((item: any) => item.streaming_services.name);
@@ -41,7 +54,7 @@ export const QuizResults = ({ recommendations, isGroupQuiz = false }: QuizResult
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.5 }}
       className="space-y-6"
     >
       <h2 className="text-2xl font-semibold tracking-tight mb-6">
