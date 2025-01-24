@@ -15,10 +15,17 @@ export const useQuizState = (steps: any[]) => {
 
   const handleAnswer = (answer: string) => {
     const currentQuestion = steps[currentStep];
+    if (!currentQuestion || !currentQuestion.id) {
+      console.error('Invalid question at step:', currentStep);
+      return;
+    }
+
     const newAnswer: QuizAnswer = {
       questionId: currentQuestion.id,
-      answer
+      answer: answer
     };
+
+    console.log('Setting answer for question:', currentQuestion.id, 'Answer:', answer);
 
     setAnswers(prev => {
       const updated = [...prev];

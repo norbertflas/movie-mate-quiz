@@ -35,6 +35,24 @@ export const QuizSection = () => {
         return;
       }
 
+      // Validate answers before formatting
+      const validAnswers = answers.every(answer => 
+        answer && 
+        answer.questionId && 
+        answer.answer && 
+        typeof answer.answer === 'string'
+      );
+
+      if (!validAnswers) {
+        console.error('Invalid answers format:', answers);
+        toast({
+          title: "Error",
+          description: "Some answers are invalid. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Format answers properly before submission
       const formattedAnswers: QuizAnswer[] = answers.map((answer, index) => ({
         questionId: steps[index].id,
