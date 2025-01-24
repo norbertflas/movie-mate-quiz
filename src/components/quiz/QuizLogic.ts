@@ -19,7 +19,7 @@ export const useQuizLogic = (): QuizLogicHook => {
     setRecommendations([]);
   };
 
-  const processAnswers = async (quizAnswers: QuizAnswer[]) => {
+  const processAnswers = async (quizAnswers: QuizAnswer[]): Promise<MovieRecommendation[]> => {
     try {
       console.log('Processing quiz answers:', quizAnswers);
       
@@ -57,6 +57,7 @@ export const useQuizLogic = (): QuizLogicHook => {
       setAnswers(quizAnswers);
       setRecommendations(data);
       setShowResults(true);
+      return data as MovieRecommendation[];
     } catch (error) {
       console.error('Error processing quiz answers:', error);
       throw error;
@@ -65,7 +66,8 @@ export const useQuizLogic = (): QuizLogicHook => {
 
   const handleQuizComplete = async (quizAnswers: QuizAnswer[]) => {
     try {
-      await processAnswers(quizAnswers);
+      const recommendations = await processAnswers(quizAnswers);
+      return recommendations;
     } catch (error) {
       console.error('Error completing quiz:', error);
       throw error;
