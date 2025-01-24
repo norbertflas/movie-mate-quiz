@@ -1,9 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { corsHeaders } from "./utils.ts";
-import { cleanAnswers, formatAnswersForPrompt } from "./utils.ts";
+import { cleanAnswers, formatAnswersForPrompt, getGenreId } from "./utils.ts";
 import { getMovieRecommendations } from "./aiService.ts";
-import { getMovieDetails } from "./movieService.ts";
+import { getMovieDetails, getMoviesByGenre } from "./movieService.ts";
 import type { RequestData, MovieRecommendation } from "./types.ts";
 
 serve(async (req) => {
@@ -29,15 +29,41 @@ serve(async (req) => {
     const cleanedAnswers = cleanAnswers(requestData.answers);
     console.log('Cleaned answers:', cleanedAnswers);
 
-    const formattedAnswers = formatAnswersForPrompt(cleanedAnswers);
-    console.log('Formatted answers for Gemini:', formattedAnswers);
+    // Find the genre answer
+    const genreAnswer = cleanedAnswers.find(answer => answer.questionId === 'genre');
+    if (!genreAnswer) {
+      throw new Error('Genre preference not found in answers');
+    }
 
-    const movieIds = await getMovieRecommendations(formattedAnswers, GEMINI_API_KEY);
+    // Get the genre ID based on the user's selection
+    const genreId = getGenreId(genreAnswer.answer.toString());
+    console.log('Selected genre ID:', genreId);
+
+    // Get movies by genre first
+    const genreMovies = await getMoviesByGenre(genreId, TMDB_API_KEY);
+    console.log('Found movies by genre:', genreMovies.length);
+
+    // Use AI to refine the selection based on other preferences
+    const formattedAnswers = formatAnswersForPrompt(cleanedAnswers);
+    const recommendedIds = await getMovieRecommendations(formattedAnswers, GEMINI_API_KEY);
     
-    const movieDetailsPromises = movieIds.map(id => getMovieDetails(id, TMDB_API_KEY));
-    const movies = (await Promise.all(movieDetailsPromises))
-      .filter((movie): movie is MovieRecommendation => movie !== null)
+    // Prioritize movies that match both genre and AI recommendations
+    const prioritizedMovies = genreMovies
+      .filter(movie => recommendedIds.includes(movie.id))
       .slice(0, 6);
+
+    // If we don't have enough movies, add more from the genre-matched list
+    const finalMovies = [
+      ...prioritizedMovies,
+      ...genreMovies.filter(movie => !prioritizedMovies.includes(movie))
+    ].slice(0, 6);
+
+    const movieDetailsPromises = finalMovies.map(movie => 
+      getMovieDetails(movie.id, TMDB_API_KEY)
+    );
+
+    const movies = (await Promise.all(movieDetailsPromises))
+      .filter((movie): movie is MovieRecommendation => movie !== null);
 
     if (!movies || movies.length === 0) {
       throw new Error('No valid movies found');
