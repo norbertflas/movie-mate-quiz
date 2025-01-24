@@ -3,8 +3,6 @@ import type { QuizAnswer, MovieRecommendation, QuizLogicHook } from "./QuizTypes
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
-import { getQuizRecommendations } from "./utils/quizRecommendations";
-import { saveQuizHistory } from "./utils/quizHistory";
 
 export const useQuizLogic = (): QuizLogicHook => {
   const [showQuiz, setShowQuiz] = useState(false);
@@ -22,37 +20,43 @@ export const useQuizLogic = (): QuizLogicHook => {
   };
 
   const handleQuizComplete = async (quizAnswers: QuizAnswer[]) => {
-    setAnswers(quizAnswers);
     try {
-      await processAnswers(quizAnswers);
-      setShowResults(true);
-    } catch (error) {
-      console.error('Error processing quiz answers:', error);
-      toast({
-        title: t("errors.recommendationError"),
-        description: t("errors.tryAgain"),
-        variant: "destructive",
-      });
-    }
-  };
-
-  const processAnswers = async (answers: QuizAnswer[]) => {
-    try {
+      console.log('Submitting quiz with answers:', quizAnswers);
+      
       const { data: { user } } = await supabase.auth.getUser();
       
-      // If user is authenticated, save quiz history
+      // Save quiz history if user is authenticated
       if (user) {
-        await saveQuizHistory(user.id, answers);
+        const { error: historyError } = await supabase
+          .from('quiz_history')
+          .insert([{ user_id: user.id, answers: quizAnswers }]);
+
+        if (historyError) {
+          console.error('Error saving quiz history:', historyError);
+        }
       }
 
-      // Get recommendations with explanations
-      const processedRecs = await getQuizRecommendations(user?.id);
-      
-      if (!processedRecs || processedRecs.length === 0) {
-        throw new Error("No recommendations generated");
+      // Get recommendations from Edge Function
+      const { data, error } = await supabase.functions.invoke('get-personalized-recommendations', {
+        body: { 
+          answers: quizAnswers,
+          userId: user?.id,
+          includeExplanations: true
+        }
+      });
+
+      if (error) {
+        throw error;
       }
-      
-      setRecommendations(processedRecs);
+
+      if (!data || !Array.isArray(data)) {
+        throw new Error('Invalid response from recommendations service');
+      }
+
+      console.log('Received recommendations:', data);
+      setAnswers(quizAnswers);
+      setRecommendations(data);
+      setShowResults(true);
     } catch (error) {
       console.error('Error processing quiz answers:', error);
       throw error;
@@ -65,7 +69,6 @@ export const useQuizLogic = (): QuizLogicHook => {
     answers,
     recommendations,
     handleStartQuiz,
-    handleQuizComplete,
-    processAnswers
+    handleQuizComplete
   };
 };
