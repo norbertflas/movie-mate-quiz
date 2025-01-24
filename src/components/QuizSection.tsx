@@ -5,6 +5,7 @@ import { useQuizSubmission } from "./quiz/hooks/useQuizSubmission";
 import { QuizForm } from "./quiz/QuizForm";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import type { QuizAnswer } from "./quiz/QuizTypes";
 
 export const QuizSection = () => {
   const { toast } = useToast();
@@ -34,8 +35,15 @@ export const QuizSection = () => {
         return;
       }
 
-      console.log('Submitting quiz with answers:', answers);
-      const results = await submitQuiz(answers);
+      // Format answers properly before submission
+      const formattedAnswers: QuizAnswer[] = answers.map((answer, index) => ({
+        questionId: steps[index].id,
+        answer: answer.answer
+      }));
+
+      console.log('Submitting quiz with formatted answers:', formattedAnswers);
+      const results = await submitQuiz(formattedAnswers);
+      
       if (results && results.length > 0) {
         setShowResults(true);
         toast({
