@@ -1,10 +1,10 @@
+import { useState } from "react";
 import { QuizResults } from "./quiz/QuizResults";
 import { useQuizState } from "./quiz/hooks/useQuizState";
 import { useSurveySteps } from "./quiz/constants/surveySteps";
 import { useQuizSubmission } from "./quiz/hooks/useQuizSubmission";
 import { QuizForm } from "./quiz/QuizForm";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
 import type { QuizAnswer } from "./quiz/QuizTypes";
 
 export const QuizSection = () => {
@@ -43,7 +43,6 @@ export const QuizSection = () => {
           return null;
         }
         
-        // Log each answer for debugging
         console.log(`Formatting answer for step ${step.id}:`, {
           questionId: step.id,
           answer: answer.answer,
@@ -76,10 +75,18 @@ export const QuizSection = () => {
       const results = await submitQuiz(formattedAnswers);
       
       if (results && results.length > 0) {
+        console.log('Setting showResults to true with recommendations:', results);
         setShowResults(true);
         toast({
           title: "Success",
           description: "Your recommendations are ready!",
+        });
+      } else {
+        console.error('No recommendations received');
+        toast({
+          title: "Error",
+          description: "No recommendations found. Please try again.",
+          variant: "destructive",
         });
       }
     } catch (error) {
@@ -91,6 +98,9 @@ export const QuizSection = () => {
       });
     }
   };
+
+  // Add debug log to check when recommendations should be shown
+  console.log('Current state:', { showResults, recommendations });
 
   if (showResults && recommendations && recommendations.length > 0) {
     return <QuizResults recommendations={recommendations} isGroupQuiz={false} />;
