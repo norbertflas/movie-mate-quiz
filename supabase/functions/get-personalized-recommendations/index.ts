@@ -31,8 +31,7 @@ serve(async (req) => {
 
     // Find the genre answer - check both 'genre' and 'type' question IDs
     const genreAnswer = cleanedAnswers.find(answer => 
-      answer.questionId === 'genre' || 
-      (answer.questionId === 'type' && typeof answer.answer === 'string' && answer.answer.toLowerCase().includes('movie'))
+      answer.questionId === 'genre'
     );
 
     if (!genreAnswer) {

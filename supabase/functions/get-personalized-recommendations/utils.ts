@@ -34,33 +34,30 @@ export function formatAnswersForPrompt(answers: QuizAnswer[]): string {
 }
 
 export function getGenreId(genre: string): number {
+  // Remove 'movie.' prefix if it exists and convert to lowercase
+  const normalizedGenre = genre.toLowerCase().replace('movie.', '');
+  
   const genreMap: Record<string, number> = {
-    'movie.action': 28,
-    'movie.adventure': 12,
-    'movie.comedy': 35,
-    'movie.drama': 18,
-    'movie.horror': 27,
-    'movie.romance': 10749,
-    'movie.sciFi': 878,
-    'movie.thriller': 53,
-    'movie.documentary': 99,
-    // Direct genre names
     'action': 28,
     'adventure': 12,
     'comedy': 35,
     'drama': 18,
     'horror': 27,
     'romance': 10749,
+    'scifi': 878,
     'sci-fi': 878,
     'thriller': 53,
     'documentary': 99
   };
 
-  const normalizedGenre = genre.toLowerCase();
+  console.log('Normalized genre:', normalizedGenre);
+  console.log('Available genres in map:', Object.keys(genreMap));
+  
   const genreId = genreMap[normalizedGenre];
 
   if (!genreId) {
     console.error('Genre not found in map:', genre);
+    console.error('Normalized genre not found:', normalizedGenre);
     console.error('Available genres:', Object.keys(genreMap));
     return 28; // Default to action if genre not found
   }
