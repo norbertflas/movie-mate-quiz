@@ -7,8 +7,13 @@ export const QuizQuestions = ({ questions, currentStep, onAnswer, answers }: Qui
   const currentQuestion = questions[currentStep];
 
   if (!currentQuestion) {
+    console.error('No question found for step:', currentStep);
     return null;
   }
+
+  // Get the current answer if it exists
+  const currentAnswer = answers[currentStep]?.answer;
+  console.log('Current answer for step', currentStep, ':', currentAnswer);
 
   // Translate options before passing them to SurveyStep
   const translatedOptions = currentQuestion.options.map(option => t(option));
@@ -22,7 +27,7 @@ export const QuizQuestions = ({ questions, currentStep, onAnswer, answers }: Qui
         currentStep={currentStep + 1}
         totalSteps={questions.length}
         type={currentQuestion.type}
-        selectedOptions={answers[currentStep] ? [answers[currentStep].answer] : []}
+        selectedOptions={currentAnswer ? [currentAnswer] : []}
       />
     </div>
   );

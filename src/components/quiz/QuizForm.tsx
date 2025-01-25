@@ -27,6 +27,9 @@ export const QuizForm = ({
 }: QuizFormProps) => {
   const { t } = useTranslation();
 
+  // Check if current step has an answer
+  const hasCurrentAnswer = answers[currentStep]?.answer !== undefined;
+
   return (
     <div className="space-y-6">
       <QuizQuestions
@@ -50,7 +53,7 @@ export const QuizForm = ({
         {currentStep < steps.length - 1 ? (
           <Button 
             onClick={onNext}
-            disabled={!answers[currentStep]}
+            disabled={!hasCurrentAnswer}
             className="ml-auto bg-blue-600 hover:bg-blue-700 text-white"
           >
             {t("quiz.next")}
@@ -58,7 +61,7 @@ export const QuizForm = ({
         ) : (
           <Button 
             onClick={onFinish}
-            disabled={!answers[currentStep] || isSubmitting}
+            disabled={!hasCurrentAnswer || isSubmitting}
             className="ml-auto bg-blue-600 hover:bg-blue-700 text-white"
           >
             {isSubmitting ? (
