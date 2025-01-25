@@ -45,8 +45,7 @@ export const QuizSection = () => {
         
         console.log(`Formatting answer for step ${step.id}:`, {
           questionId: step.id,
-          answer: answer.answer,
-          rawAnswer: answer
+          answer: answer.answer
         });
 
         return {
@@ -74,15 +73,16 @@ export const QuizSection = () => {
 
       const results = await submitQuiz(formattedAnswers);
       
-      if (results && results.length > 0) {
-        console.log('Setting showResults to true with recommendations:', results);
+      if (results && Array.isArray(results) && results.length > 0) {
+        console.log('Setting recommendations and showing results:', results);
+        handleFinish(results);
         setShowResults(true);
         toast({
           title: "Success",
           description: "Your recommendations are ready!",
         });
       } else {
-        console.error('No recommendations received');
+        console.error('No valid recommendations received:', results);
         toast({
           title: "Error",
           description: "No recommendations found. Please try again.",
