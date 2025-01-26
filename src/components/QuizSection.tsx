@@ -74,7 +74,7 @@ export const QuizSection = () => {
       const results = await submitQuiz(formattedAnswers);
       
       if (results && Array.isArray(results) && results.length > 0) {
-        console.log('Setting recommendations and showing results:', results);
+        console.log('Setting recommendations:', results);
         handleFinish(results);
         setShowResults(true);
         toast({
