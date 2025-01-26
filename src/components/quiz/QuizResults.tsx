@@ -1,125 +1,61 @@
-import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { useState } from "react";
 import { MovieCard } from "../MovieCard";
-import type { QuizResultsProps } from "./QuizTypes";
-import { useTranslation } from "react-i18next";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "../ui/use-toast";
+import { motion } from "framer-motion";
+import { UnifiedMovieDetails } from "../movie/UnifiedMovieDetails";
+import type { TMDBMovie } from "@/services/tmdb";
+
+interface QuizResultsProps {
+  recommendations: any[];
+  isGroupQuiz?: boolean;
+}
 
 export const QuizResults = ({ recommendations, isGroupQuiz = false }: QuizResultsProps) => {
-  const { t } = useTranslation();
-  const { toast } = useToast();
-  const [movieStreamingServices, setMovieStreamingServices] = useState<{ [key: number]: string[] }>({});
-  const [expandedMovieId, setExpandedMovieId] = useState<number | null>(null);
+  const [selectedMovie, setSelectedMovie] = useState<TMDBMovie | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
-  useEffect(() => {
-    const fetchStreamingServices = async () => {
-      for (const movie of recommendations) {
-        try {
-          // First get the movie_metadata UUID for the TMDB ID
-          let { data: movieData, error: movieError } = await supabase
-            .from('movie_metadata')
-            .select('id')
-            .eq('tmdb_id', movie.id)
-            .maybeSingle();
+  const handleMovieClick = (movie: TMDBMovie) => {
+    setSelectedMovie(movie);
+    setIsDetailsOpen(true);
+  };
 
-          if (movieError) {
-            console.error('Error fetching movie metadata:', movieError);
-            continue;
-          }
-
-          if (!movieData) {
-            // If movie doesn't exist in metadata, insert it
-            const { data: newMovieData, error: insertError } = await supabase
-              .from('movie_metadata')
-              .insert({
-                tmdb_id: movie.id,
-                title: movie.title,
-                overview: movie.overview,
-                poster_path: movie.poster_path,
-                release_date: movie.release_date,
-                vote_average: movie.vote_average,
-              })
-              .select('id')
-              .single();
-
-            if (insertError) {
-              console.error('Error inserting movie metadata:', insertError);
-              continue;
-            }
-
-            movieData = newMovieData;
-          }
-
-          // Then use that UUID to get streaming services
-          const { data: availabilityData, error: availabilityError } = await supabase
-            .from('movie_streaming_availability')
-            .select(`
-              streaming_services (
-                name
-              )
-            `)
-            .eq('movie_id', movieData.id);
-
-          if (availabilityError) {
-            console.error('Error fetching streaming availability:', availabilityError);
-            continue;
-          }
-
-          if (availabilityData) {
-            const services = availabilityData.map((item: any) => item.streaming_services.name);
-            setMovieStreamingServices(prev => ({
-              ...prev,
-              [movie.id]: services
-            }));
-          }
-        } catch (error) {
-          console.error('Error in streaming services fetch:', error);
-        }
-      }
-    };
-
-    if (recommendations.length > 0) {
-      fetchStreamingServices();
-    }
-  }, [recommendations]);
-
-  const handleMovieClose = () => {
-    setExpandedMovieId(null);
+  const handleCloseDetails = () => {
+    setIsDetailsOpen(false);
+    setSelectedMovie(null);
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="space-y-6"
-    >
-      <h2 className="text-2xl font-semibold tracking-tight mb-6">
-        {isGroupQuiz ? t("quiz.groupRecommendations") : t("quiz.yourRecommendations")}
-      </h2>
+    <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {recommendations.map((movie) => (
-          <div key={movie.id} className="space-y-4">
+        {recommendations.map((movie, index) => (
+          <motion.div
+            key={movie.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+            onClick={() => handleMovieClick(movie)}
+          >
             <MovieCard
               title={movie.title}
               year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "N/A"}
               platform="TMDB"
-              genre={movie.genre || "Movie"}
-              imageUrl={movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : "/placeholder.svg"}
-              description={movie.overview || t("movie.noDescription")}
-              trailerUrl={movie.trailer_url || ""}
-              rating={movie.vote_average || 0}
+              genre={movie.genres?.[0]?.name || "Film"}
+              imageUrl={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+              description={movie.overview}
+              trailerUrl=""
+              rating={movie.vote_average * 10}
               tmdbId={movie.id}
-              explanations={movie.explanations || []}
-              tags={[movie.genre || "Movie"]}
-              streamingServices={movieStreamingServices[movie.id] || []}
-              isExpanded={expandedMovieId === movie.id}
-              onClose={handleMovieClose}
+              explanations={movie.explanations}
             />
-          </div>
+          </motion.div>
         ))}
       </div>
-    </motion.div>
+
+      <UnifiedMovieDetails
+        isOpen={isDetailsOpen}
+        onClose={handleCloseDetails}
+        movie={selectedMovie}
+        explanations={selectedMovie?.explanations}
+      />
+    </div>
   );
 };
