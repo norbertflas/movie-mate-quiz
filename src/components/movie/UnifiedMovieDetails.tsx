@@ -140,15 +140,15 @@ export const UnifiedMovieDetails = ({
                       </div>
                       <div>
                         <dt className="text-muted-foreground">{t("movie.rating")}</dt>
-                        <dd>{movie.vote_average * 10}%</dd>
+                        <dd>{movie.vote_average ? (movie.vote_average * 10).toFixed(0) : 0}%</dd>
                       </div>
                       <div>
                         <dt className="text-muted-foreground">{t("movie.votes")}</dt>
-                        <dd>{movie.vote_count.toLocaleString()}</dd>
+                        <dd>{movie.vote_count?.toLocaleString() || 0}</dd>
                       </div>
                       <div>
                         <dt className="text-muted-foreground">{t("movie.popularity")}</dt>
-                        <dd>{Math.round(movie.popularity).toLocaleString()}</dd>
+                        <dd>{movie.popularity ? Math.round(movie.popularity).toLocaleString() : 0}</dd>
                       </div>
                     </dl>
                   </div>
