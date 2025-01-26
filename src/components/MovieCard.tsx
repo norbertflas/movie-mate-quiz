@@ -59,11 +59,8 @@ export const MovieCard = ({
     vote_count: 0,
     popularity: 0,
     backdrop_path: null,
-    adult: false,
     genre_ids: [],
-    original_language: '',
-    original_title: '',
-    video: false
+    explanations: explanations
   };
 
   return (
