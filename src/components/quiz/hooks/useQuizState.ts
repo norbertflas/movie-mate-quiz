@@ -20,12 +20,6 @@ export const useQuizState = (steps: SurveyStepType[]) => {
       return;
     }
 
-    console.log('Handling answer:', {
-      step: currentStep,
-      questionId: currentQuestion.id,
-      answer
-    });
-
     const newAnswer: QuizAnswer = {
       questionId: currentQuestion.id,
       answer
@@ -34,7 +28,7 @@ export const useQuizState = (steps: SurveyStepType[]) => {
     setAnswers(prev => {
       const updated = [...prev];
       updated[currentStep] = newAnswer;
-      console.log('Updated answers array:', updated);
+      console.log('Updated answers:', updated);
       return updated;
     });
   };
@@ -60,44 +54,10 @@ export const useQuizState = (steps: SurveyStepType[]) => {
     }
   };
 
-  const handleFinish = async (quizAnswers: QuizAnswer[]) => {
-    if (!quizAnswers || quizAnswers.some(answer => !answer || !answer.answer)) {
-      toast({
-        title: t("errors.incompleteQuiz"),
-        description: t("errors.answerAllQuestions"),
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      console.log('Processing answers:', quizAnswers);
-      
-      const movieRecommendations = await processAnswers(quizAnswers);
-      
-      if (!movieRecommendations || movieRecommendations.length === 0) {
-        throw new Error("No recommendations generated");
-      }
-
-      console.log('Setting recommendations:', movieRecommendations);
-      setRecommendations(movieRecommendations);
-      setIsComplete(true);
-      
-      toast({
-        title: t("quiz.completed"),
-        description: t("quiz.recommendationsReady"),
-      });
-
-      return movieRecommendations;
-    } catch (error) {
-      console.error('Error processing quiz answers:', error);
-      toast({
-        title: t("errors.recommendationError"),
-        description: t("errors.tryAgain"),
-        variant: "destructive",
-      });
-      throw error;
-    }
+  const handleFinish = async (results: MovieRecommendation[]) => {
+    console.log('Setting recommendations:', results);
+    setRecommendations(results);
+    setIsComplete(true);
   };
 
   return {

@@ -43,24 +43,13 @@ export const QuizSection = () => {
           return null;
         }
         
-        console.log(`Formatting answer for step ${step.id}:`, {
-          questionId: step.id,
-          answer: answer.answer
-        });
-
         return {
           questionId: step.id,
           answer: answer.answer
         };
-      }).filter((answer): answer is QuizAnswer => {
-        const isValid = answer !== null && answer.answer !== undefined;
-        if (!isValid) {
-          console.error('Invalid answer filtered out:', answer);
-        }
-        return isValid;
-      });
+      }).filter((answer): answer is QuizAnswer => answer !== null);
 
-      console.log('Final formatted answers:', formattedAnswers);
+      console.log('Submitting formatted answers:', formattedAnswers);
 
       if (formattedAnswers.length !== steps.length) {
         toast({
@@ -74,15 +63,11 @@ export const QuizSection = () => {
       const results = await submitQuiz(formattedAnswers);
       
       if (results && Array.isArray(results) && results.length > 0) {
-        console.log('Setting recommendations:', results);
+        console.log('Received recommendations:', results);
         handleFinish(results);
         setShowResults(true);
-        toast({
-          title: "Success",
-          description: "Your recommendations are ready!",
-        });
       } else {
-        console.error('No valid recommendations received:', results);
+        console.error('No valid recommendations received');
         toast({
           title: "Error",
           description: "No recommendations found. Please try again.",
@@ -99,8 +84,13 @@ export const QuizSection = () => {
     }
   };
 
-  // Add debug log to check when recommendations should be shown
-  console.log('Current state:', { showResults, recommendations });
+  console.log('Current quiz state:', { 
+    showResults, 
+    recommendations, 
+    currentStep,
+    answers,
+    isComplete 
+  });
 
   if (showResults && recommendations && recommendations.length > 0) {
     return <QuizResults recommendations={recommendations} isGroupQuiz={false} />;
