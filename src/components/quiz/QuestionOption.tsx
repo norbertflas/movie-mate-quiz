@@ -19,7 +19,7 @@ export const QuestionOption = ({
       <div
         className={`flex items-center space-x-3 p-4 rounded-lg border transition-all duration-200 ${
           isSelected 
-            ? 'border-blue-600 bg-blue-600/20 hover:bg-blue-600/30' 
+            ? 'border-primary bg-primary/20 hover:bg-primary/30' 
             : 'border-gray-800 hover:bg-gray-800/50'
         } cursor-pointer`}
         onClick={() => onSelect(option)}
@@ -27,7 +27,7 @@ export const QuestionOption = ({
         <Checkbox
           checked={isSelected}
           onCheckedChange={() => onSelect(option)}
-          className="h-5 w-5 border-2 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+          className="h-5 w-5 border-2 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
         />
         <label className="text-base text-gray-200 cursor-pointer select-none flex-grow">
           {option}
@@ -41,7 +41,7 @@ export const QuestionOption = ({
       variant="outline"
       className={`h-auto w-full py-4 px-6 text-left justify-start transition-all duration-200 ${
         isSelected 
-          ? 'bg-blue-600 hover:bg-blue-700 border-blue-500' 
+          ? 'bg-primary hover:bg-primary/90 border-primary/80' 
           : 'bg-black/20 hover:bg-gray-800/50 border-gray-800'
       }`}
       onClick={() => onSelect(option)}
