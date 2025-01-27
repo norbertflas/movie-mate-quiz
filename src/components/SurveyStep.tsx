@@ -29,13 +29,30 @@ export const SurveyStep = ({
     if (type === "single") {
       onSelect(option);
     } else {
-      const isSelected = selectedOptions.includes(option);
+      // For multiple selection, parse the current selections (if any) or use empty array
+      const currentSelections = selectedOptions.length > 0 
+        ? (typeof selectedOptions[0] === 'string' && selectedOptions[0].startsWith('[') 
+          ? JSON.parse(selectedOptions[0]) 
+          : selectedOptions)
+        : [];
+
+      // Toggle the selection
+      const isSelected = currentSelections.includes(option);
       const newSelection = isSelected
-        ? selectedOptions.filter(item => item !== option)
-        : [...selectedOptions, option];
+        ? currentSelections.filter((item: string) => item !== option)
+        : [...currentSelections, option];
+
+      // Send the new selection as a JSON string
       onSelect(JSON.stringify(newSelection));
     }
   };
+
+  // Parse selected options for multiple selection type
+  const parsedSelectedOptions = type === "multiple" && selectedOptions.length > 0
+    ? (typeof selectedOptions[0] === 'string' && selectedOptions[0].startsWith('[')
+      ? JSON.parse(selectedOptions[0])
+      : selectedOptions)
+    : selectedOptions;
 
   return (
     <motion.div
@@ -60,7 +77,7 @@ export const SurveyStep = ({
               key={option}
               option={option}
               isSelected={type === "multiple" 
-                ? JSON.parse(selectedOptions[0] || "[]").includes(option)
+                ? parsedSelectedOptions.includes(option)
                 : selectedOptions.includes(option)
               }
               onSelect={() => handleOptionSelect(option)}
