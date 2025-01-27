@@ -59,7 +59,10 @@ export const SurveyStep = ({
             <QuestionOption
               key={option}
               option={option}
-              isSelected={selectedOptions.includes(option)}
+              isSelected={type === "multiple" 
+                ? JSON.parse(selectedOptions[0] || "[]").includes(option)
+                : selectedOptions.includes(option)
+              }
               onSelect={() => handleOptionSelect(option)}
               type={type}
             />
