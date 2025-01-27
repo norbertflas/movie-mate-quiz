@@ -17,15 +17,17 @@ export const QuestionOption = ({
   if (type === "multiple") {
     return (
       <div
-        className={`flex items-center space-x-3 p-4 rounded-lg border ${
-          isSelected ? 'border-blue-600 bg-blue-600/20' : 'border-gray-800 hover:bg-gray-800/50'
-        } cursor-pointer transition-colors`}
+        className={`flex items-center space-x-3 p-4 rounded-lg border transition-all duration-200 ${
+          isSelected 
+            ? 'border-blue-600 bg-blue-600/20 hover:bg-blue-600/30' 
+            : 'border-gray-800 hover:bg-gray-800/50'
+        } cursor-pointer`}
         onClick={() => onSelect(option)}
       >
         <Checkbox
           checked={isSelected}
           onCheckedChange={() => onSelect(option)}
-          className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+          className="h-5 w-5 border-2 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
         />
         <label className="text-base text-gray-200 cursor-pointer select-none flex-grow">
           {option}
