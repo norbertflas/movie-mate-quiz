@@ -37,15 +37,32 @@ export const fr = {
     reset: "Réinitialiser les filtres",
   },
   quiz: {
-    start: "Commencer le quiz",
+    start: "Commencer le Quiz",
     next: "Suivant",
     previous: "Précédent",
-    submit: "Soumettre",
+    submit: "Terminer",
     recommendations: "Vos recommandations",
     loading: "Chargement des recommandations...",
     error: "Erreur lors du chargement des recommandations",
     welcome: "Trouvez votre film ou série parfait",
     description: "Répondez à quelques questions et nous vous aiderons à choisir quelque chose pour vous",
+    step: "Question {{current}} sur {{total}}",
+    questions: {
+      platforms: "Quels services de streaming utilisez-vous ?",
+      contentType: "Que souhaitez-vous regarder ?",
+      genre: "Quel genre vous intéresse ?",
+      mood: "Quelle ambiance recherchez-vous ?"
+    },
+    options: {
+      movie: "Un Film",
+      series: "Une Série",
+      mood: {
+        light: "Quelque chose de léger et amusant",
+        serious: "Quelque chose qui fait réfléchir",
+        suspense: "Quelque chose de palpitant",
+        inspiring: "Quelque chose d'inspirant"
+      }
+    }
   },
   services: {
     preferences: "Services de streaming",

@@ -103,4 +103,32 @@ export const pl = {
   },
   watchTrailer: "Zobacz zwiastun",
   hideTrailer: "Ukryj zwiastun",
+  quiz: {
+    start: "Rozpocznij Quiz",
+    next: "Dalej",
+    previous: "Wstecz",
+    submit: "Zakończ",
+    recommendations: "Twoje rekomendacje",
+    loading: "Ładowanie rekomendacji...",
+    error: "Błąd podczas ładowania rekomendacji",
+    welcome: "Znajdź idealny film lub serial",
+    description: "Odpowiedz na kilka pytań, a my pomożemy Ci wybrać coś dla Ciebie",
+    step: "Pytanie {{current}} z {{total}}",
+    questions: {
+      platforms: "Z jakich serwisów streamingowych korzystasz?",
+      contentType: "Co chcesz obejrzeć?",
+      genre: "Jaki gatunek Cię interesuje?",
+      mood: "Jaki nastrój Cię interesuje?"
+    },
+    options: {
+      movie: "Film",
+      series: "Serial",
+      mood: {
+        light: "Coś lekkiego i zabawnego",
+        serious: "Coś skłaniającego do myślenia",
+        suspense: "Coś trzymającego w napięciu",
+        inspiring: "Coś inspirującego"
+      }
+    }
+  }
 };

@@ -37,15 +37,32 @@ export const es = {
     reset: "Restablecer filtros",
   },
   quiz: {
-    start: "Iniciar cuestionario",
+    start: "Comenzar Cuestionario",
     next: "Siguiente",
     previous: "Anterior",
-    submit: "Enviar",
+    submit: "Finalizar",
     recommendations: "Tus recomendaciones",
     loading: "Cargando recomendaciones...",
     error: "Error al cargar recomendaciones",
     welcome: "Encuentra tu película o serie perfecta",
     description: "Responde algunas preguntas y te ayudaremos a elegir algo para ti",
+    step: "Pregunta {{current}} de {{total}}",
+    questions: {
+      platforms: "¿Qué servicios de streaming utilizas?",
+      contentType: "¿Qué te gustaría ver?",
+      genre: "¿Qué género te apetece?",
+      mood: "¿Qué estado de ánimo buscas?"
+    },
+    options: {
+      movie: "Una Película",
+      series: "Una Serie",
+      mood: {
+        light: "Algo ligero y divertido",
+        serious: "Algo que haga pensar",
+        suspense: "Algo emocionante",
+        inspiring: "Algo inspirador"
+      }
+    }
   },
   services: {
     preferences: "Servicios de streaming",

@@ -65,6 +65,23 @@ export default {
     finish: "Finish",
     results: "Results",
     startOver: "Start Over",
+    step: "Question {{current}} of {{total}}",
+    questions: {
+      platforms: "Which streaming services do you use?",
+      contentType: "What would you like to watch?",
+      genre: "What genre are you in the mood for?",
+      mood: "What kind of mood are you looking for?"
+    },
+    options: {
+      movie: "A Movie",
+      series: "A TV Series",
+      mood: {
+        light: "Something light and fun",
+        serious: "Something thought-provoking",
+        suspense: "Something thrilling",
+        inspiring: "Something uplifting"
+      }
+    }
   },
   trending: {
     weeklyTrending: "Trending This Week",

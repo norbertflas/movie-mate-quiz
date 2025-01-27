@@ -38,14 +38,31 @@ export const de = {
   },
   quiz: {
     start: "Quiz starten",
-    next: "Nächster",
-    previous: "Vorheriger",
-    submit: "Einreichen",
-    recommendations: "Ihre Empfehlungen",
+    next: "Weiter",
+    previous: "Zurück",
+    submit: "Abschließen",
+    recommendations: "Deine Empfehlungen",
     loading: "Empfehlungen werden geladen...",
     error: "Fehler beim Laden der Empfehlungen",
-    welcome: "Finden Sie Ihren perfekten Film oder Ihre Serie",
-    description: "Beantworten Sie einige Fragen und wir helfen Ihnen, etwas für Sie auszuwählen",
+    welcome: "Finde deinen perfekten Film oder Serie",
+    description: "Beantworte einige Fragen und wir helfen dir, etwas für dich zu finden",
+    step: "Frage {{current}} von {{total}}",
+    questions: {
+      platforms: "Welche Streaming-Dienste nutzt du?",
+      contentType: "Was möchtest du schauen?",
+      genre: "Auf welches Genre hast du Lust?",
+      mood: "Welche Stimmung suchst du?"
+    },
+    options: {
+      movie: "Einen Film",
+      series: "Eine Serie",
+      mood: {
+        light: "Etwas Leichtes und Unterhaltsames",
+        serious: "Etwas zum Nachdenken",
+        suspense: "Etwas Spannendes",
+        inspiring: "Etwas Inspirierendes"
+      }
+    }
   },
   services: {
     preferences: "Streaming-Dienste",
