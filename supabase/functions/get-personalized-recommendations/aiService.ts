@@ -1,5 +1,10 @@
 import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.1.3";
 
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1 second
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 export async function getMovieRecommendations(formattedAnswers: string, apiKey: string): Promise<number[]> {
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({ model: "gemini-pro" });
@@ -13,9 +18,12 @@ export async function getMovieRecommendations(formattedAnswers: string, apiKey: 
 
   console.log('Sending prompt to Gemini:', aiPrompt);
 
-  let retries = 3;
-  while (retries > 0) {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
+      console.log(`Attempt ${attempt} of ${MAX_RETRIES}`);
+      
       const result = await model.generateContent(aiPrompt);
       const response = await result.response;
       const text = response.text();
@@ -32,15 +40,18 @@ export async function getMovieRecommendations(formattedAnswers: string, apiKey: 
       console.log('Successfully received movie IDs:', movieIds);
       return movieIds;
     } catch (error) {
-      console.error(`Attempt failed, ${retries - 1} retries left:`, error);
-      retries--;
-      if (retries > 0) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      } else {
-        throw error;
+      lastError = error as Error;
+      console.error(`Attempt ${attempt} failed:`, error);
+      
+      // If it's not the last attempt, wait before retrying
+      if (attempt < MAX_RETRIES) {
+        const delay = RETRY_DELAY * attempt; // Exponential backoff
+        console.log(`Waiting ${delay}ms before retry...`);
+        await sleep(delay);
       }
     }
   }
 
-  throw new Error('Failed to get movie recommendations after all retries');
+  // If we get here, all retries failed
+  throw new Error(`Failed to get movie recommendations after ${MAX_RETRIES} attempts. Last error: ${lastError?.message}`);
 }

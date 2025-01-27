@@ -29,15 +29,14 @@ serve(async (req) => {
     const cleanedAnswers = cleanAnswers(requestData.answers);
     console.log('Cleaned answers:', cleanedAnswers);
 
-    // Find the genre answer - check both 'genre' and 'type' question IDs
+    // Find the genre answer
     const genreAnswer = cleanedAnswers.find(answer => 
       answer.questionId === 'genre'
     );
 
     if (!genreAnswer) {
       console.error('Available answers:', cleanedAnswers);
-      throw new Error('Genre preference not found in answers. Available answers: ' + 
-        JSON.stringify(cleanedAnswers.map(a => `${a.questionId}: ${a.answer}`)));
+      throw new Error('Genre preference not found in answers');
     }
 
     // Get the genre ID based on the user's selection
@@ -54,37 +53,60 @@ serve(async (req) => {
 
     // Use AI to refine the selection based on other preferences
     const formattedAnswers = formatAnswersForPrompt(cleanedAnswers);
-    const recommendedIds = await getMovieRecommendations(formattedAnswers, GEMINI_API_KEY);
     
-    // Prioritize movies that match both genre and AI recommendations
-    const prioritizedMovies = genreMovies
-      .filter(movie => recommendedIds.includes(movie.id))
-      .slice(0, 6);
+    try {
+      const recommendedIds = await getMovieRecommendations(formattedAnswers, GEMINI_API_KEY);
+      console.log('Received recommended IDs:', recommendedIds);
+      
+      // Prioritize movies that match both genre and AI recommendations
+      const prioritizedMovies = genreMovies
+        .filter(movie => recommendedIds.includes(movie.id))
+        .slice(0, 6);
 
-    // If we don't have enough movies, add more from the genre-matched list
-    const finalMovies = [
-      ...prioritizedMovies,
-      ...genreMovies
-        .filter(movie => !prioritizedMovies.some(pm => pm.id === movie.id))
-        .slice(0, 6 - prioritizedMovies.length)
-    ];
+      // If we don't have enough movies, add more from the genre-matched list
+      const finalMovies = [
+        ...prioritizedMovies,
+        ...genreMovies
+          .filter(movie => !prioritizedMovies.some(pm => pm.id === movie.id))
+          .slice(0, 6 - prioritizedMovies.length)
+      ];
 
-    const movieDetailsPromises = finalMovies.map(movie => 
-      getMovieDetails(movie.id, TMDB_API_KEY)
-    );
+      const movieDetailsPromises = finalMovies.map(movie => 
+        getMovieDetails(movie.id, TMDB_API_KEY)
+      );
 
-    const movies = (await Promise.all(movieDetailsPromises))
-      .filter((movie): movie is MovieRecommendation => movie !== null);
+      const movies = (await Promise.all(movieDetailsPromises))
+        .filter((movie): movie is MovieRecommendation => movie !== null);
 
-    if (!movies || movies.length === 0) {
-      throw new Error('No valid movies found after processing');
+      if (!movies || movies.length === 0) {
+        throw new Error('No valid movies found after processing');
+      }
+
+      console.log('Successfully processed movies:', movies.length);
+      
+      return new Response(JSON.stringify(movies), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+      
+    } catch (aiError) {
+      // If AI recommendations fail, fallback to genre-based recommendations
+      console.error('AI recommendations failed, falling back to genre-based:', aiError);
+      
+      const fallbackMovies = genreMovies
+        .slice(0, 6)
+        .map(movie => getMovieDetails(movie.id, TMDB_API_KEY));
+
+      const movies = (await Promise.all(fallbackMovies))
+        .filter((movie): movie is MovieRecommendation => movie !== null);
+
+      if (!movies || movies.length === 0) {
+        throw new Error('No valid movies found in fallback');
+      }
+
+      return new Response(JSON.stringify(movies), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
-
-    console.log('Successfully processed movies:', movies.length);
-    
-    return new Response(JSON.stringify(movies), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
     
   } catch (error) {
     console.error('Error in get-personalized-recommendations:', error);
