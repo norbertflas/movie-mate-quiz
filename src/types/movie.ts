@@ -21,6 +21,7 @@ export interface MovieCardProps {
   explanations?: string[];
   onClose?: () => void;
   isExpanded?: boolean;
+  onClick?: () => void;
 }
 
 export interface MovieImageProps {

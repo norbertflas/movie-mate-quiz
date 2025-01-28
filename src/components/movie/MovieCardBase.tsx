@@ -17,6 +17,7 @@ const MovieCardBase = ({
   rating,
   tmdbId,
   explanations,
+  onClick,
 }: MovieCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
@@ -24,8 +25,12 @@ const MovieCardBase = ({
   const { toast } = useToast();
 
   const handleCardClick = useCallback(() => {
-    setIsExpanded(!isExpanded);
-  }, [isExpanded]);
+    if (onClick) {
+      onClick();
+    } else {
+      setIsExpanded(!isExpanded);
+    }
+  }, [isExpanded, onClick]);
 
   const handleWatchTrailer = useCallback(() => {
     if (!trailerUrl) {
