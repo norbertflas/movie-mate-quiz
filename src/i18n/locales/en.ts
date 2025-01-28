@@ -90,6 +90,14 @@ export default {
     title: "Recommendations",
     based: "Based on your preferences",
     similar: "Similar to what you like",
+    promptLabel: "Tell us what kind of movie you're looking for",
+    promptPlaceholder: "E.g. A fun comedy for family movie night",
+    selectMovies: "Select some movies you like",
+    searchMovies: "Search for movies",
+    selectedMovies: "Selected Movies",
+    searchResults: "Search Results",
+    getRecommendations: "Get Recommendations",
+    yourRecommendations: "Your Recommendations"
   },
   noTrailerAvailable: "No trailer available",
   navigation: {

@@ -99,4 +99,14 @@ export const es = {
   availableOn: "Disponible en",
   watchTrailer: "Ver tráiler",
   hideTrailer: "Ocultar tráiler",
+  recommendations: {
+    promptLabel: "Dinos qué tipo de película buscas",
+    promptPlaceholder: "Ej. Una comedia divertida para una noche de película familiar",
+    selectMovies: "Selecciona algunas películas que te gusten",
+    searchMovies: "Buscar películas",
+    selectedMovies: "Películas Seleccionadas",
+    searchResults: "Resultados de búsqueda",
+    getRecommendations: "Obtener Recomendaciones",
+    yourRecommendations: "Tus Recomendaciones"
+  }
 };

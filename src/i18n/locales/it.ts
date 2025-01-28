@@ -99,4 +99,14 @@ export const it = {
   availableOn: "Disponibile su",
   watchTrailer: "Guarda il trailer",
   hideTrailer: "Nascondi il trailer",
+  recommendations: {
+    promptLabel: "Dicci che tipo di film stai cercando",
+    promptPlaceholder: "Es. Una divertente commedia per una serata film in famiglia",
+    selectMovies: "Seleziona alcuni film che ti piacciono",
+    searchMovies: "Cerca film",
+    selectedMovies: "Film Selezionati",
+    searchResults: "Risultati della ricerca",
+    getRecommendations: "Ottieni Consigli",
+    yourRecommendations: "I tuoi Consigli"
+  }
 };
