@@ -1,4 +1,4 @@
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useInView } from "framer-motion";
 import { MovieCardBase } from "./MovieCardBase";
@@ -7,10 +7,13 @@ import { discoverMovies } from "@/services/tmdb";
 import type { TMDBMovie } from "@/services/tmdb/types";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
+import { MovieDetailsDialog } from "./MovieDetailsDialog";
 
 export const InfiniteMovieList = () => {
   const loadMoreRef = useRef(null);
   const isLoadMoreInView = useInView(loadMoreRef);
+  const [selectedMovie, setSelectedMovie] = useState<TMDBMovie | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const {
     data,
@@ -31,8 +34,8 @@ export const InfiniteMovieList = () => {
       if (lastPage.length === 0) return undefined;
       return pages.length + 1;
     },
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-    gcTime: 10 * 60 * 1000, // Keep unused data for 10 minutes
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
     retry: 2,
     meta: {
       onError: (error: Error) => {
@@ -46,6 +49,16 @@ export const InfiniteMovieList = () => {
       fetchNextPage();
     }
   }, [fetchNextPage, hasNextPage, isFetchingNextPage, isLoadMoreInView]);
+
+  const handleMovieClick = useCallback((movie: TMDBMovie) => {
+    setSelectedMovie(movie);
+    setIsDialogOpen(true);
+  }, []);
+
+  const handleCloseDialog = useCallback(() => {
+    setIsDialogOpen(false);
+    setSelectedMovie(null);
+  }, []);
 
   if (isLoading) {
     return (
@@ -90,6 +103,7 @@ export const InfiniteMovieList = () => {
               trailerUrl=""
               rating={movie.vote_average * 10}
               tmdbId={movie.id}
+              onClick={() => handleMovieClick(movie)}
             />
           ))
         )}
@@ -117,6 +131,12 @@ export const InfiniteMovieList = () => {
           )}
         </div>
       )}
+
+      <MovieDetailsDialog 
+        isOpen={isDialogOpen}
+        onClose={handleCloseDialog}
+        movie={selectedMovie}
+      />
     </>
   );
 };
