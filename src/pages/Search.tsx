@@ -33,7 +33,7 @@ const Search = () => {
 
     const matchesYear = year >= filters.yearRange[0] && year <= filters.yearRange[1];
     const matchesRating = (rating * 10) >= filters.minRating;
-    const matchesPlatform = !filters.platform || true;
+    const matchesPlatform = !filters.platform || true; // We'll handle platform filtering later
     const matchesGenre = !filters.genre || movie.genre_ids.includes(parseInt(filters.genre));
 
     return matchesYear && matchesRating && matchesPlatform && matchesGenre;
@@ -56,8 +56,8 @@ const Search = () => {
       <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue="search" className="space-y-6">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="search">{t("search.title")}</TabsTrigger>
-            <TabsTrigger value="personalized">{t("search.personalized")}</TabsTrigger>
+            <TabsTrigger value="search">{t("navigation.search")}</TabsTrigger>
+            <TabsTrigger value="personalized">{t("recommendations.personalized")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="search">

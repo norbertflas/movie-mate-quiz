@@ -2,6 +2,7 @@ import { MovieFilterSection } from "../movie/MovieFilterSection";
 import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
 import { getStreamingServicesByRegion, languageToRegion } from "@/utils/streamingServices";
+import type { StreamingService } from "@/types/streaming";
 
 interface PlatformFilterProps {
   value?: string;
@@ -9,7 +10,7 @@ interface PlatformFilterProps {
 }
 
 export const PlatformFilter = ({ value, onChange }: PlatformFilterProps) => {
-  const [streamingServices, setStreamingServices] = useState<any[]>([]);
+  const [streamingServices, setStreamingServices] = useState<StreamingService[]>([]);
   const { i18n, t } = useTranslation();
 
   useEffect(() => {
@@ -30,7 +31,7 @@ export const PlatformFilter = ({ value, onChange }: PlatformFilterProps) => {
       placeholder={t("filters.selectPlatform")}
       options={streamingServices.map(service => ({
         id: service.id,
-        name: service.name,
+        name: t(`services.${service.name.toLowerCase()}`, service.name)
       }))}
     />
   );
