@@ -101,4 +101,13 @@ export default {
     logout: "Logout",
     streamingServices: "Streaming Services",
   },
+  favorites: {
+    noFavorites: "No Favorite Movies Yet",
+    noFavoritesDescription: "Save your favorite movies here to keep track of them and watch them later.",
+    loadError: "Failed to load favorite movies",
+  },
+  ratings: {
+    noRatings: "No Rated Movies Yet",
+    noRatingsDescription: "Rate movies to get personalized recommendations and keep track of what you like.",
+  },
 };
