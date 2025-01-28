@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import { FilterHeader } from "./filters/FilterHeader";
 import { FilterContent } from "./filters/FilterContent";
 import { MobileFilterSheet } from "./filters/MobileFilterSheet";
-import { Badge } from "./ui/badge";
 
 export interface MovieFilters {
   platform?: string;

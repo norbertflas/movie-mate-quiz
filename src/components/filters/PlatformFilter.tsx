@@ -29,7 +29,7 @@ export const PlatformFilter = ({ value, onChange }: PlatformFilterProps) => {
       onValueChange={onChange}
       placeholder={t("filters.selectPlatform")}
       options={streamingServices.map(service => ({
-        id: service.name,
+        id: service.id,
         name: service.name,
       }))}
     />

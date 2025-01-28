@@ -66,13 +66,13 @@ export const FilterContent = ({
       <RangeFilter
         label={t("filters.rating")}
         min={0}
-        max={100}
-        step={10}
-        value={[currentFilters.minRating, currentFilters.minRating]}
+        max={10}
+        step={0.5}
+        value={[currentFilters.minRating]}
         onValueChange={([minRating]) =>
           onFilterChange({ ...currentFilters, minRating })
         }
-        displayValue={(v) => `${v}%`}
+        displayValue={(v) => `${(v * 10).toFixed(0)}%`}
       />
       <TagsFilter
         tags={MOVIE_TAGS}
