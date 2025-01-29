@@ -79,7 +79,15 @@ export const PersonalizedRecommendationsForm = () => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Recommendation error:", error);
+        throw error;
+      }
+      
+      if (!data || !Array.isArray(data)) {
+        throw new Error("Invalid response format");
+      }
+      
       setRecommendations(data);
     } catch (error) {
       console.error("Error getting recommendations:", error);
