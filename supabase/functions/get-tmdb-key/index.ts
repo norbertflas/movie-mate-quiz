@@ -17,7 +17,10 @@ serve(async (req) => {
     if (!TMDB_API_KEY) {
       console.error('TMDB_API_KEY not found in environment variables')
       return new Response(
-        JSON.stringify({ error: 'API key not configured' }),
+        JSON.stringify({ 
+          error: 'API key not configured',
+          details: 'TMDB_API_KEY environment variable is missing'
+        }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 500,
@@ -35,7 +38,10 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in get-tmdb-key function:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        details: 'Internal server error in get-tmdb-key function'
+      }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,

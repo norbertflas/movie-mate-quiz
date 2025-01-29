@@ -5,11 +5,13 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { LoadingState } from "@/components/LoadingState";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
+import { useToast } from "@/hooks/use-toast";
 
 export const RecentlyViewedSection = () => {
   const { t } = useTranslation();
+  const { toast } = useToast();
 
-  const { data: recentMovies, isLoading } = useQuery({
+  const { data: recentMovies, isLoading, error } = useQuery({
     queryKey: ['recentlyViewedMovies'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -18,11 +20,24 @@ export const RecentlyViewedSection = () => {
         .order('watched_at', { ascending: false })
         .limit(3);
 
-      if (error) throw error;
-      return data;
+      if (error) {
+        console.error('Error fetching watched movies:', error);
+        throw error;
+      }
+
+      return data || [];
+    },
+    onError: (error) => {
+      console.error('Query error:', error);
+      toast({
+        title: t('errors.fetchError'),
+        description: t('errors.tryAgain'),
+        variant: "destructive",
+      });
     },
   });
 
+  if (error) return null;
   if (!recentMovies?.length) return null;
 
   return (
