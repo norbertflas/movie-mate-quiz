@@ -18,7 +18,15 @@ export const SearchBar = () => {
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!searchQuery.trim()) return;
+    
+    if (!searchQuery.trim()) {
+      toast({
+        title: t("errors.searchTooShort"),
+        description: t("errors.searchMinLength"),
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsSearching(true);
     try {
@@ -62,8 +70,8 @@ export const SearchBar = () => {
     } catch (error) {
       console.error("Search error:", error);
       toast({
-        title: t("search.error"),
-        description: t("search.errorDescription"),
+        title: t("errors.searchError"),
+        description: t("errors.tryAgain"),
         variant: "destructive",
       });
     } finally {
