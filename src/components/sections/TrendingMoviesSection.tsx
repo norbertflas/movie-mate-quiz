@@ -22,7 +22,6 @@ export const TrendingMoviesSection = () => {
   useEffect(() => {
     setIsTouchDevice('ontouchstart' in window);
     
-    // Add intersection observer
     const observer = new IntersectionObserver(
       ([entry]) => {
         setIsVisible(entry.isIntersecting);
@@ -92,6 +91,7 @@ export const TrendingMoviesSection = () => {
       animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 20 }}
       transition={{ duration: 0.5 }}
       id="trending-section"
+      className="mb-12"
     >
       <Card className="glass-panel overflow-hidden relative">
         <CardHeader>
