@@ -17,6 +17,7 @@ import { Button } from "./ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { getStreamingAvailability } from "@/services/streamingAvailability";
 import { useTranslation } from "react-i18next";
+import { useToast } from "@/hooks/use-toast";
 
 export const MovieCard = ({
   title,
@@ -39,6 +40,7 @@ export const MovieCard = ({
   const [trailerUrl, setTrailerUrl] = useState(initialTrailerUrl);
   const [insights, setInsights] = useState<MovieInsights | null>(null);
   const { t } = useTranslation();
+  const { toast } = useToast();
   
   const { userRating, handleRating } = useMovieRating(title);
 
@@ -46,6 +48,15 @@ export const MovieCard = ({
     queryKey: ['streamingAvailability', tmdbId],
     queryFn: () => getStreamingAvailability(tmdbId),
     enabled: !!tmdbId && isDetailsOpen,
+    meta: {
+      onError: () => {
+        toast({
+          title: t("errors.generic"),
+          description: t("errors.tryAgain"),
+          variant: "destructive",
+        });
+      }
+    }
   });
 
   const handleCardClick = () => {

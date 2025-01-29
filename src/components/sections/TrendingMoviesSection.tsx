@@ -8,6 +8,7 @@ import { useState, useCallback, useEffect } from "react";
 import { MovieDetailsDialog } from "../movie/MovieDetailsDialog";
 import { TrendingMoviesContainer } from "../movie/TrendingMoviesContainer";
 import type { TMDBMovie } from "@/services/tmdb";
+import { motion, AnimatePresence } from "framer-motion";
 
 export const TrendingMoviesSection = () => {
   const { t } = useTranslation();
@@ -16,13 +17,33 @@ export const TrendingMoviesSection = () => {
   const [selectedMovie, setSelectedMovie] = useState<TMDBMovie | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isTouchDevice, setIsTouchDevice] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     setIsTouchDevice('ontouchstart' in window);
+    
+    // Add intersection observer
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsVisible(entry.isIntersecting);
+      },
+      { threshold: 0.1 }
+    );
+
+    const element = document.getElementById('trending-section');
+    if (element) {
+      observer.observe(element);
+    }
+
+    return () => {
+      if (element) {
+        observer.unobserve(element);
+      }
+    };
   }, []);
 
   const { data: trendingMovies = [], isLoading: isLoadingMovies } = useQuery({
-    queryKey: ['trendingMovies', ''],
+    queryKey: ['trendingMovies'],
     queryFn: getTrendingMovies,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
@@ -41,13 +62,11 @@ export const TrendingMoviesSection = () => {
   const handleMovieClick = useCallback((movie: TMDBMovie) => {
     setSelectedMovie(movie);
     setIsDialogOpen(true);
-    document.body.classList.add('dialog-open');
   }, []);
 
   const handleCloseDialog = useCallback(() => {
     setIsDialogOpen(false);
     setSelectedMovie(null);
-    document.body.classList.remove('dialog-open');
   }, []);
 
   if (isLoadingMovies) {
@@ -55,7 +74,7 @@ export const TrendingMoviesSection = () => {
       <Card className="glass-panel">
         <CardHeader>
           <CardTitle className="gradient-text text-2xl">
-            {t("trending.weeklyTrending")}
+            {t("discover.trending")}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -68,33 +87,42 @@ export const TrendingMoviesSection = () => {
   }
 
   return (
-    <Card className="glass-panel overflow-hidden relative">
-      <CardHeader>
-        <CardTitle className="gradient-text text-2xl">
-          {t("trending.weeklyTrending")}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div 
-          className="relative"
-          onMouseEnter={() => !isTouchDevice && setIsHovered(true)}
-          onMouseLeave={() => !isTouchDevice && setIsHovered(false)}
-          onTouchStart={() => setIsHovered(true)}
-          onTouchEnd={() => setIsHovered(false)}
-        >
-          <TrendingMoviesContainer 
-            movies={trendingMovies}
-            onMovieClick={handleMovieClick}
-            isHovered={isHovered}
-          />
-        </div>
-      </CardContent>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 20 }}
+      transition={{ duration: 0.5 }}
+      id="trending-section"
+    >
+      <Card className="glass-panel overflow-hidden relative">
+        <CardHeader>
+          <CardTitle className="gradient-text text-2xl">
+            {t("discover.trending")}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div 
+            className="relative"
+            onMouseEnter={() => !isTouchDevice && setIsHovered(true)}
+            onMouseLeave={() => !isTouchDevice && setIsHovered(false)}
+            onTouchStart={() => setIsHovered(true)}
+            onTouchEnd={() => setIsHovered(false)}
+          >
+            <AnimatePresence mode="wait">
+              <TrendingMoviesContainer 
+                movies={trendingMovies}
+                onMovieClick={handleMovieClick}
+                isHovered={isHovered}
+              />
+            </AnimatePresence>
+          </div>
+        </CardContent>
+      </Card>
 
       <MovieDetailsDialog 
         isOpen={isDialogOpen}
         onClose={handleCloseDialog}
         movie={selectedMovie}
       />
-    </Card>
+    </motion.div>
   );
 };

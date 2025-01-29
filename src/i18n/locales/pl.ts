@@ -122,6 +122,26 @@ export default {
       logout: "Wyloguj",
       streamingServices: "Serwisy streamingowe"
     },
+    discover: {
+      popular: "Popularne filmy",
+      trending: "Trendy tego tygodnia"
+    },
+    streaming: {
+      availableOn: "Dostępne na",
+      addPlatform: "Dodaj platformę",
+      removePlatform: "Usuń platformę",
+      manageSubscriptions: "Zarządzaj subskrypcjami",
+      preferences: "Serwisy streamingowe"
+    },
+    favorites: {
+      noFavorites: "Brak ulubionych filmów",
+      noFavoritesDescription: "Dodaj filmy do ulubionych, aby móc je później łatwo znaleźć.",
+      loadError: "Nie udało się załadować ulubionych filmów"
+    },
+    ratings: {
+      noRatings: "Brak ocenionych filmów",
+      noRatingsDescription: "Oceń filmy, aby otrzymywać spersonalizowane rekomendacje.",
+    },
     search: {
       title: "Wyszukaj",
       placeholder: "Wpisz tytuł filmu...",
@@ -165,31 +185,17 @@ export default {
       getRecommendations: "Otrzymaj rekomendacje",
       yourRecommendations: "Twoje rekomendacje"
     },
-    movie: {
-      action: "Akcja",
-      adventure: "Przygodowy",
-      animation: "Animacja",
-      comedy: "Komedia",
-      crime: "Kryminał",
-      documentary: "Dokument",
-      drama: "Dramat",
-      family: "Familijny",
-      fantasy: "Fantasy",
-      history: "Historyczny",
-      horror: "Horror",
-      music: "Muzyczny",
-      mystery: "Tajemnica",
-      romance: "Romans",
-      sciFi: "Science Fiction",
-      thriller: "Thriller",
-      war: "Wojenny",
-      western: "Western",
-      genre: "Gatunek",
-      tags: "Tagi",
-      rating: "Ocena",
-      watchTrailer: "Zobacz zwiastun",
-      addToFavorites: "Dodaj do ulubionych",
-      removeFromFavorites: "Usuń z ulubionych"
-    }
+    errors: {
+      searchTooShort: "Wpisz co najmniej 3 znaki",
+      searchMinLength: "Wyszukiwanie wymaga minimum 3 znaków",
+      searchError: "Błąd wyszukiwania",
+      tryAgain: "Spróbuj ponownie później",
+      recommendationError: "Błąd podczas pobierania rekomendacji",
+      generic: "Wystąpił błąd. Spróbuj ponownie później.",
+      logout: "Błąd podczas wylogowywania"
+    },
+    languageChanged: "Zmieniono język",
+    languageChangedDescription: "Pomyślnie zmieniono język na Polski",
+    languageChangeError: "Nie udało się zmienić języka"
   }
 };
