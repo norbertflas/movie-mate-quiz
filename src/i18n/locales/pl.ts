@@ -111,7 +111,10 @@ export default {
       searchError: "Błąd wyszukiwania",
       tryAgain: "Spróbuj ponownie później",
       noResults: "Brak wyników",
-      noResultsDescription: "Nie znaleziono wyników dla: {{query}}"
+      noResultsDescription: "Nie znaleziono wyników dla: {{query}}",
+      recommendationError: "Błąd podczas pobierania rekomendacji",
+      generic: "Wystąpił błąd. Spróbuj ponownie później.",
+      logout: "Błąd podczas wylogowywania"
     },
     navigation: {
       home: "Strona główna",
@@ -140,7 +143,7 @@ export default {
     },
     ratings: {
       noRatings: "Brak ocenionych filmów",
-      noRatingsDescription: "Oceń filmy, aby otrzymywać spersonalizowane rekomendacje.",
+      noRatingsDescription: "Oceń filmy, aby otrzymywać spersonalizowane rekomendacje."
     },
     search: {
       title: "Wyszukaj",
@@ -184,15 +187,6 @@ export default {
       searchResults: "Wyniki wyszukiwania",
       getRecommendations: "Otrzymaj rekomendacje",
       yourRecommendations: "Twoje rekomendacje"
-    },
-    errors: {
-      searchTooShort: "Wpisz co najmniej 3 znaki",
-      searchMinLength: "Wyszukiwanie wymaga minimum 3 znaków",
-      searchError: "Błąd wyszukiwania",
-      tryAgain: "Spróbuj ponownie później",
-      recommendationError: "Błąd podczas pobierania rekomendacji",
-      generic: "Wystąpił błąd. Spróbuj ponownie później.",
-      logout: "Błąd podczas wylogowywania"
     },
     languageChanged: "Zmieniono język",
     languageChangedDescription: "Pomyślnie zmieniono język na Polski",
