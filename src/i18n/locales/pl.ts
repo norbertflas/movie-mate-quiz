@@ -102,8 +102,6 @@ export default {
       unlocked: "Odblokowane",
       enabled: "Włączone",
       disabled: "Wyłączone",
-      success: "Sukces",
-      error: "Błąd",
       warning: "Ostrzeżenie",
       info: "Informacja"
     },
