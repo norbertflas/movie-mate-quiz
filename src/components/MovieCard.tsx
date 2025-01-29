@@ -12,6 +12,11 @@ import { MovieCardWrapper } from "./movie/MovieCardWrapper";
 import type { MovieInsights, MovieCardProps } from "@/types/movie";
 import { UnifiedMovieDetails } from "./movie/UnifiedMovieDetails";
 import type { TMDBMovie } from "@/services/tmdb";
+import { X } from "lucide-react";
+import { Button } from "./ui/button";
+import { useQuery } from "@tanstack/react-query";
+import { getStreamingAvailability } from "@/services/streamingAvailability";
+import { useTranslation } from "react-i18next";
 
 export const MovieCard = ({
   title,
@@ -31,11 +36,17 @@ export const MovieCard = ({
   const [isFavorite, setIsFavorite] = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-  const [availableServices, setAvailableServices] = useState<string[]>([]);
   const [trailerUrl, setTrailerUrl] = useState(initialTrailerUrl);
   const [insights, setInsights] = useState<MovieInsights | null>(null);
+  const { t } = useTranslation();
   
   const { userRating, handleRating } = useMovieRating(title);
+
+  const { data: availableServices = [] } = useQuery({
+    queryKey: ['streamingAvailability', tmdbId],
+    queryFn: () => getStreamingAvailability(tmdbId),
+    enabled: !!tmdbId && isDetailsOpen,
+  });
 
   const handleCardClick = () => {
     setIsDetailsOpen(true);
@@ -67,20 +78,33 @@ export const MovieCard = ({
     <>
       <MovieCardWrapper onClick={handleCardClick}>
         <MovieCardContainer isExpanded={false} onClick={handleCardClick}>
-          <MovieTrailerSection
-            showTrailer={showTrailer}
-            title={title}
-            year={year}
-            trailerUrl={trailerUrl}
-            setTrailerUrl={setTrailerUrl}
-          />
+          <div className="relative">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-2 right-2 z-10 bg-background/80 hover:bg-background/90 rounded-full"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleCloseDetails();
+              }}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+            <MovieTrailerSection
+              showTrailer={showTrailer}
+              title={title}
+              year={year}
+              trailerUrl={trailerUrl}
+              setTrailerUrl={setTrailerUrl}
+            />
 
-          <MovieCardMedia
-            showTrailer={showTrailer}
-            trailerUrl={trailerUrl}
-            imageUrl={imageUrl}
-            title={title}
-          />
+            <MovieCardMedia
+              showTrailer={showTrailer}
+              trailerUrl={trailerUrl}
+              imageUrl={imageUrl}
+              title={title}
+            />
+          </div>
 
           <CardHeader className="space-y-1 p-4">
             <MovieCardHeader
@@ -94,11 +118,16 @@ export const MovieCard = ({
             {availableServices.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 <span className="text-sm font-medium text-muted-foreground">
-                  Available on:
+                  {t("streaming.availableOn")}:
                 </span>
                 {availableServices.map((service) => (
-                  <Badge key={service} variant="secondary">
-                    {service}
+                  <Badge key={service.service} variant="secondary" className="flex items-center gap-2">
+                    <img 
+                      src={`/streaming-icons/${service.service.toLowerCase()}.svg`} 
+                      alt={service.service}
+                      className="w-4 h-4"
+                    />
+                    {service.service}
                   </Badge>
                 ))}
               </div>

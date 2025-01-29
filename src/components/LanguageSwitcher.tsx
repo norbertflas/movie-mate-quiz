@@ -12,10 +12,6 @@ import { useToast } from "@/hooks/use-toast";
 const languages = [
   { code: "en", label: "English" },
   { code: "pl", label: "Polski" },
-  { code: "es", label: "Español" },
-  { code: "de", label: "Deutsch" },
-  { code: "fr", label: "Français" },
-  { code: "it", label: "Italiano" },
 ];
 
 export const LanguageSwitcher = () => {
