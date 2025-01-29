@@ -1,23 +1,21 @@
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { Card, CardHeader, CardTitle } from "../ui/card";
 import { useTranslation } from "react-i18next";
-import { getTrendingMovies } from "@/services/tmdb";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
-import { useState, useCallback, useEffect } from "react";
-import { MovieDetailsDialog } from "../movie/MovieDetailsDialog";
 import { TrendingMoviesContainer } from "../movie/TrendingMoviesContainer";
+import { motion } from "framer-motion";
 import type { TMDBMovie } from "@/services/tmdb";
-import { motion, AnimatePresence } from "framer-motion";
+import { UnifiedMovieDetails } from "../movie/UnifiedMovieDetails";
 
-export const TrendingMoviesSection = () => {
+interface TrendingMoviesSectionProps {
+  movies: TMDBMovie[];
+}
+
+export const TrendingMoviesSection = ({ movies }: TrendingMoviesSectionProps) => {
   const { t } = useTranslation();
-  const { toast } = useToast();
-  const [isHovered, setIsHovered] = useState(false);
   const [selectedMovie, setSelectedMovie] = useState<TMDBMovie | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isTouchDevice, setIsTouchDevice] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
     setIsTouchDevice('ontouchstart' in window);
@@ -41,49 +39,13 @@ export const TrendingMoviesSection = () => {
     };
   }, []);
 
-  const { data: trendingMovies = [], isLoading: isLoadingMovies } = useQuery({
-    queryKey: ['trendingMovies'],
-    queryFn: getTrendingMovies,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-    retry: 2,
-    meta: {
-      onError: () => {
-        toast({
-          title: t("errors.recommendationError"),
-          description: t("errors.tryAgain"),
-          variant: "destructive",
-        });
-      }
-    }
-  });
-
-  const handleMovieClick = useCallback((movie: TMDBMovie) => {
+  const handleMovieClick = (movie: TMDBMovie) => {
     setSelectedMovie(movie);
-    setIsDialogOpen(true);
-  }, []);
+  };
 
-  const handleCloseDialog = useCallback(() => {
-    setIsDialogOpen(false);
+  const handleCloseDetails = () => {
     setSelectedMovie(null);
-  }, []);
-
-  if (isLoadingMovies) {
-    return (
-      <Card className="glass-panel">
-        <CardHeader>
-          <CardTitle className="gradient-text text-2xl">
-            {t("discover.trending")}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  };
 
   return (
     <motion.div
@@ -95,34 +57,29 @@ export const TrendingMoviesSection = () => {
     >
       <Card className="glass-panel overflow-hidden relative">
         <CardHeader>
-          <CardTitle className="gradient-text text-2xl">
-            {t("discover.trending")}
-          </CardTitle>
+          <CardTitle>{t("trending.thisWeek")}</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div 
-            className="relative"
-            onMouseEnter={() => !isTouchDevice && setIsHovered(true)}
-            onMouseLeave={() => !isTouchDevice && setIsHovered(false)}
-            onTouchStart={() => setIsHovered(true)}
-            onTouchEnd={() => setIsHovered(false)}
-          >
-            <AnimatePresence mode="wait">
-              <TrendingMoviesContainer 
-                movies={trendingMovies}
-                onMovieClick={handleMovieClick}
-                isHovered={isHovered}
-              />
-            </AnimatePresence>
-          </div>
-        </CardContent>
+
+        <div 
+          className="relative"
+          onMouseEnter={() => !isTouchDevice && setIsHovered(true)}
+          onMouseLeave={() => !isTouchDevice && setIsHovered(false)}
+        >
+          <TrendingMoviesContainer
+            movies={movies}
+            onMovieClick={handleMovieClick}
+            isHovered={isHovered}
+          />
+        </div>
       </Card>
 
-      <MovieDetailsDialog 
-        isOpen={isDialogOpen}
-        onClose={handleCloseDialog}
-        movie={selectedMovie}
-      />
+      {selectedMovie && (
+        <UnifiedMovieDetails
+          isOpen={!!selectedMovie}
+          onClose={handleCloseDetails}
+          movie={selectedMovie}
+        />
+      )}
     </motion.div>
   );
 };

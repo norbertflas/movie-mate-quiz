@@ -22,9 +22,9 @@ const Search = () => {
   const { t } = useTranslation();
 
   const { data: movies = [], isLoading } = useQuery({
-    queryKey: ['searchMovies', query],
+    queryKey: ['searchMovies', query, filters],
     queryFn: () => searchMovies(query),
-    enabled: query.length > 2,
+    enabled: true, // Allow searching without query
   });
 
   const filteredMovies = movies.filter(movie => {
@@ -41,14 +41,6 @@ const Search = () => {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (query.length < 3) {
-      toast({
-        title: t("errors.searchTooShort"),
-        description: t("errors.searchMinLength"),
-        variant: "destructive",
-      });
-      return;
-    }
   };
 
   return (
@@ -87,7 +79,7 @@ const Search = () => {
                       <div key={i} className="h-[400px] bg-gray-200 dark:bg-gray-800 animate-pulse rounded-lg" />
                     ))}
                   </div>
-                ) : query.length > 2 ? (
+                ) : (
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -108,10 +100,6 @@ const Search = () => {
                       />
                     ))}
                   </motion.div>
-                ) : (
-                  <div className="text-center py-12 text-muted-foreground">
-                    {t("search.enterQuery")}
-                  </div>
                 )}
               </main>
             </div>
