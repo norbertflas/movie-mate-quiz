@@ -18,4 +18,10 @@ export interface RequestData {
   answers?: QuizAnswer[];
   userId?: string;
   includeExplanations?: boolean;
+  prompt?: string;
+  selectedMovies?: Array<{
+    id: number;
+    title: string;
+    genres?: number[];
+  }>;
 }

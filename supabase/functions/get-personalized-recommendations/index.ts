@@ -22,14 +22,43 @@ serve(async (req) => {
     const requestData: RequestData = await req.json();
     console.log('Raw request data:', requestData);
 
+    // Handle personalized recommendations based on prompt and selected movies
+    if (requestData.prompt && requestData.selectedMovies) {
+      console.log('Processing personalized recommendations with prompt:', requestData.prompt);
+      
+      try {
+        const { data: recommendations } = await getMovieRecommendations(
+          requestData.prompt,
+          requestData.selectedMovies,
+          GEMINI_API_KEY
+        );
+
+        const movieDetailsPromises = recommendations.slice(0, 6).map(movieId => 
+          getMovieDetails(movieId, TMDB_API_KEY)
+        );
+
+        const movies = (await Promise.all(movieDetailsPromises))
+          .filter((movie): movie is MovieRecommendation => movie !== null);
+
+        console.log('Successfully processed personalized recommendations:', movies.length);
+        
+        return new Response(JSON.stringify(movies), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      } catch (error) {
+        console.error('Error processing personalized recommendations:', error);
+        throw error;
+      }
+    }
+
+    // Handle quiz-based recommendations
     if (!requestData?.answers || !Array.isArray(requestData.answers)) {
-      throw new Error('Invalid request format: answers array must be provided');
+      throw new Error('Invalid request format: answers array must be provided for quiz recommendations');
     }
 
     const cleanedAnswers = cleanAnswers(requestData.answers);
     console.log('Cleaned answers:', cleanedAnswers);
 
-    // Find the genre answer
     const genreAnswer = cleanedAnswers.find(answer => 
       answer.questionId === 'genre'
     );
@@ -39,11 +68,9 @@ serve(async (req) => {
       throw new Error('Genre preference not found in answers');
     }
 
-    // Get the genre ID based on the user's selection
     const genreId = getGenreId(genreAnswer.answer.toString());
     console.log('Selected genre ID:', genreId);
 
-    // Get movies by genre first
     const genreMovies = await getMoviesByGenre(genreId, TMDB_API_KEY);
     console.log('Found movies by genre:', genreMovies.length);
 
@@ -51,19 +78,16 @@ serve(async (req) => {
       throw new Error(`No movies found for genre ID ${genreId}`);
     }
 
-    // Use AI to refine the selection based on other preferences
     const formattedAnswers = formatAnswersForPrompt(cleanedAnswers);
     
     try {
-      const recommendedIds = await getMovieRecommendations(formattedAnswers, GEMINI_API_KEY);
+      const recommendedIds = await getMovieRecommendations(formattedAnswers, [], GEMINI_API_KEY);
       console.log('Received recommended IDs:', recommendedIds);
       
-      // Prioritize movies that match both genre and AI recommendations
       const prioritizedMovies = genreMovies
         .filter(movie => recommendedIds.includes(movie.id))
         .slice(0, 6);
 
-      // If we don't have enough movies, add more from the genre-matched list
       const finalMovies = [
         ...prioritizedMovies,
         ...genreMovies
@@ -89,7 +113,6 @@ serve(async (req) => {
       });
       
     } catch (aiError) {
-      // If AI recommendations fail, fallback to genre-based recommendations
       console.error('AI recommendations failed, falling back to genre-based:', aiError);
       
       const fallbackMovies = genreMovies

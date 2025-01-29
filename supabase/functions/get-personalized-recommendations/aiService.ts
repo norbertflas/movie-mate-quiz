@@ -5,14 +5,22 @@ const RETRY_DELAY = 1000; // 1 second
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-export async function getMovieRecommendations(formattedAnswers: string, apiKey: string): Promise<number[]> {
+export async function getMovieRecommendations(
+  input: string,
+  selectedMovies: Array<{ id: number; title: string; genres?: number[]; }> = [],
+  apiKey: string
+): Promise<{ data: number[] }> {
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
-  const aiPrompt = `You are a movie recommendation expert. Based on these quiz answers:
-  ${formattedAnswers}
+  const movieContext = selectedMovies.length > 0 
+    ? `Based on these movies: ${selectedMovies.map(m => m.title).join(', ')}\n`
+    : '';
+
+  const aiPrompt = `You are a movie recommendation expert. ${movieContext}
+  Based on this input: ${input}
   
-  Please suggest 6 highly relevant movies. Focus on popular, well-rated movies that match the genre and mood preferences.
+  Please suggest 6 highly relevant movies. Focus on popular, well-rated movies that match the preferences.
   Format your response as a JSON array of TMDB movie IDs only, like this: [123, 456, 789]
   Only include the JSON array in your response, no other text.`;
 
@@ -38,20 +46,18 @@ export async function getMovieRecommendations(formattedAnswers: string, apiKey: 
       }
 
       console.log('Successfully received movie IDs:', movieIds);
-      return movieIds;
+      return { data: movieIds };
     } catch (error) {
       lastError = error as Error;
       console.error(`Attempt ${attempt} failed:`, error);
       
-      // If it's not the last attempt, wait before retrying
       if (attempt < MAX_RETRIES) {
-        const delay = RETRY_DELAY * attempt; // Exponential backoff
+        const delay = RETRY_DELAY * attempt;
         console.log(`Waiting ${delay}ms before retry...`);
         await sleep(delay);
       }
     }
   }
 
-  // If we get here, all retries failed
   throw new Error(`Failed to get movie recommendations after ${MAX_RETRIES} attempts. Last error: ${lastError?.message}`);
 }
