@@ -4,9 +4,16 @@ import { TrendingMoviesSection } from "./TrendingMoviesSection";
 import { RecentlyViewedSection } from "./RecentlyViewedSection";
 import { InfiniteMovieList } from "../movie/InfiniteMovieList";
 import { useTranslation } from "react-i18next";
+import { useQuery } from "@tanstack/react-query";
+import { getTrendingMovies } from "@/services/tmdb/trending";
 
 export const MainContent = () => {
   const { t } = useTranslation();
+  
+  const { data: trendingMovies = [] } = useQuery({
+    queryKey: ['trending-movies'],
+    queryFn: () => getTrendingMovies({ queryKey: ['trending-movies'] }),
+  });
 
   return (
     <motion.div
@@ -17,7 +24,7 @@ export const MainContent = () => {
       className="space-y-12 w-full"
     >
       <SearchSection />
-      <TrendingMoviesSection />
+      <TrendingMoviesSection movies={trendingMovies} />
       <RecentlyViewedSection />
 
       <section className="glass-panel p-6 rounded-xl w-full">
