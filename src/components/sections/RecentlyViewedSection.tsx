@@ -27,14 +27,16 @@ export const RecentlyViewedSection = () => {
 
       return data || [];
     },
-    onError: (error) => {
-      console.error('Query error:', error);
-      toast({
-        title: t('errors.fetchError'),
-        description: t('errors.tryAgain'),
-        variant: "destructive",
-      });
-    },
+    meta: {
+      onError: (error: Error) => {
+        console.error('Query error:', error);
+        toast({
+          title: t('errors.fetchError'),
+          description: t('errors.tryAgain'),
+          variant: "destructive",
+        });
+      }
+    }
   });
 
   if (error) return null;
