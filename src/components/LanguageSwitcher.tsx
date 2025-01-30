@@ -22,11 +22,19 @@ export const LanguageSwitcher = () => {
     try {
       await i18n.changeLanguage(langCode);
       localStorage.setItem("language", langCode);
+      
+      const message = langCode === 'pl' ? 
+        'Pomyślnie zmieniono język na Polski' : 
+        'Language successfully changed to English';
+      
       toast({
         title: t("languageChanged"),
-        description: t("languageChangedDescription"),
+        description: message,
         className: "bg-gradient-to-r from-blue-500 to-purple-500 text-white",
       });
+      
+      // Force reload to ensure all components update their translations
+      window.location.reload();
     } catch (error) {
       console.error("Failed to change language:", error);
       toast({
