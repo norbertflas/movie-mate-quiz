@@ -12,6 +12,11 @@ export const TrendingMoviesSection = ({ movies }: TrendingMoviesSectionProps) =>
   const [isHovered, setIsHovered] = useState(false);
   const { t } = useTranslation();
 
+  const handleMovieClick = (movie: TMDBMovie) => {
+    // Handle movie click if needed
+    console.log("Movie clicked:", movie.title);
+  };
+
   return (
     <section className="space-y-4">
       <h2 className="text-2xl font-bold">{t("discover.trending")}</h2>
@@ -37,6 +42,7 @@ export const TrendingMoviesSection = ({ movies }: TrendingMoviesSectionProps) =>
             <TrendingMovieCard
               key={movie.id}
               movie={movie}
+              onClick={handleMovieClick}
             />
           ))}
         </motion.div>
