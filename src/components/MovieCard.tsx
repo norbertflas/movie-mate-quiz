@@ -97,7 +97,7 @@ export const MovieCard = ({
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute top-2 right-2 z-10 bg-background/80 hover:bg-background/90 rounded-full"
+                className="absolute top-2 right-2 z-50 bg-background/80 hover:bg-background/90 rounded-full"
                 onClick={handleCloseDetails}
               >
                 <X className="h-4 w-4" />
@@ -149,12 +149,14 @@ export const MovieCard = ({
         </MovieCardContainer>
       </MovieCardWrapper>
 
-      <UnifiedMovieDetails
-        isOpen={isDetailsOpen}
-        onClose={handleCloseDetails}
-        movie={movieData}
-        explanations={explanations}
-      />
+      {isDetailsOpen && (
+        <UnifiedMovieDetails
+          isOpen={isDetailsOpen}
+          onClose={handleCloseDetails}
+          movie={movieData}
+          explanations={explanations}
+        />
+      )}
     </>
   );
 };

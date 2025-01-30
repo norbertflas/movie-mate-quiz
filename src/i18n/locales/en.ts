@@ -64,7 +64,7 @@ export default {
   },
   search: {
     title: "Search",
-    placeholder: "Search for a movie...",
+    placeholder: "Search for a movie",
     button: "Search",
     movies: "Movies",
     creators: "Creators",
@@ -95,36 +95,7 @@ export default {
   trending: {
     weeklyTrending: "Trending This Week",
   },
-  recommendations: {
-    title: "Recommendations",
-    based: "Based on your preferences",
-    similar: "Similar to what you like",
-    promptLabel: "Tell us what kind of movie you're looking for",
-    promptPlaceholder: "E.g. A fun comedy for family movie night",
-    selectMovies: "Select some movies you like",
-    searchMovies: "Search for movies",
-    selectedMovies: "Selected Movies",
-    searchResults: "Search Results",
-    getRecommendations: "Get Recommendations",
-    yourRecommendations: "Your Recommendations"
-  },
-  noTrailerAvailable: "No trailer available",
-  navigation: {
-    home: "Home",
-    search: "Search",
-    quiz: "Quiz",
-    favorites: "Favorites",
-    ratings: "Ratings",
-    logout: "Logout",
-    streamingServices: "Streaming Services",
-  },
-  favorites: {
-    noFavorites: "No Favorite Movies Yet",
-    noFavoritesDescription: "Save your favorite movies here to keep track of them and watch them later.",
-    loadError: "Failed to load favorite movies",
-  },
-  ratings: {
-    noRatings: "No Rated Movies Yet",
-    noRatingsDescription: "Rate movies to get personalized recommendations and keep track of what you like.",
-  },
+  streaming: {
+    availableOn: "Available on"
+  }
 };

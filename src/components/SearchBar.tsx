@@ -19,7 +19,8 @@ export const SearchBar = () => {
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!searchQuery.trim()) {
+    // Allow empty search when using filters
+    if (!searchQuery.trim() && searchType === "creators") {
       toast({
         title: t("errors.searchTooShort"),
         description: t("errors.searchMinLength"),
@@ -38,13 +39,13 @@ export const SearchBar = () => {
         if (results.length > 0) {
           toast({
             title: t("search.resultsFound"),
-            description: t("search.resultsDescription", { count: results.length, query: searchQuery }),
+            description: t("search.resultsDescription", { count: results.length, query: searchQuery || "filters" }),
             className: "bg-gradient-to-r from-blue-500 to-purple-500 text-white",
           });
         } else {
           toast({
             title: t("search.noResults"),
-            description: t("search.noResultsDescription", { query: searchQuery }),
+            description: t("search.noResultsDescription", { query: searchQuery || "filters" }),
             variant: "destructive",
           });
         }
@@ -77,33 +78,6 @@ export const SearchBar = () => {
     } finally {
       setIsSearching(false);
     }
-  };
-
-  const getGenreTranslationKey = (genreId: number) => {
-    // Map TMDB genre IDs to our translation keys
-    const genreMap: Record<number, string> = {
-      28: "action",
-      12: "adventure",
-      16: "animation",
-      35: "comedy",
-      80: "crime",
-      99: "documentary",
-      18: "drama",
-      10751: "family",
-      14: "fantasy",
-      36: "history",
-      27: "horror",
-      10402: "music",
-      9648: "mystery",
-      10749: "romance",
-      878: "sciFi",
-      10770: "tvMovie",
-      53: "thriller",
-      10752: "war",
-      37: "western"
-    };
-    
-    return `movie.${genreMap[genreId] || "unknown"}`;
   };
 
   return (
