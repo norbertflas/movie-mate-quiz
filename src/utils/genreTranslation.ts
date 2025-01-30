@@ -1,6 +1,5 @@
 export const getGenreTranslationKey = (genreId: number): string => {
-  // TMDB genre IDs mapped to our translation keys
-  const genreMap: Record<number, string> = {
+  const genreMap: { [key: number]: string } = {
     28: "action",
     12: "adventure",
     16: "animation",
@@ -15,7 +14,8 @@ export const getGenreTranslationKey = (genreId: number): string => {
     10402: "music",
     9648: "mystery",
     10749: "romance",
-    878: "sciFi",
+    878: "scienceFiction",
+    10770: "tvMovie",
     53: "thriller",
     10752: "war",
     37: "western"
