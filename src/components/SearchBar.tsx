@@ -6,6 +6,7 @@ import type { TMDBMovie, TMDBPerson } from "@/services/tmdb";
 import { SearchInput } from "./search/SearchInput";
 import { SearchResults } from "./search/SearchResults";
 import { motion } from "framer-motion";
+import { getGenreTranslationKey } from "@/utils/genreTranslation";
 
 export const SearchBar = () => {
   const [searchQuery, setSearchQuery] = useState("");
