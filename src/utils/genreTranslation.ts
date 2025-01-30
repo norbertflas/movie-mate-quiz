@@ -1,5 +1,5 @@
 export const getGenreTranslationKey = (genreId: number): string => {
-  const genreMap: { [key: number]: string } = {
+  const genreMap: Record<number, string> = {
     28: "action",
     12: "adventure",
     16: "animation",
@@ -14,8 +14,7 @@ export const getGenreTranslationKey = (genreId: number): string => {
     10402: "music",
     9648: "mystery",
     10749: "romance",
-    878: "scienceFiction",
-    10770: "tvMovie",
+    878: "sciFi",
     53: "thriller",
     10752: "war",
     37: "western"
