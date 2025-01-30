@@ -24,7 +24,7 @@ const Search = () => {
   const { data: movies = [], isLoading } = useQuery({
     queryKey: ['searchMovies', query, filters],
     queryFn: () => searchMovies(query),
-    enabled: true, // Allow searching without query
+    enabled: true, // Allow searching with just filters
   });
 
   const filteredMovies = movies.filter(movie => {
@@ -33,22 +33,18 @@ const Search = () => {
 
     const matchesYear = year >= filters.yearRange[0] && year <= filters.yearRange[1];
     const matchesRating = (rating * 10) >= filters.minRating;
-    const matchesPlatform = !filters.platform || true; // We'll handle platform filtering later
+    const matchesPlatform = !filters.platform || true;
     const matchesGenre = !filters.genre || movie.genre_ids.includes(parseInt(filters.genre));
 
     return matchesYear && matchesRating && matchesPlatform && matchesGenre;
   });
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background/80 to-background/40">
       <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue="search" className="space-y-6">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="search">{t("navigation.search")}</TabsTrigger>
+            <TabsTrigger value="search">{t("search.movies")}</TabsTrigger>
             <TabsTrigger value="personalized">{t("recommendations.personalized")}</TabsTrigger>
           </TabsList>
 
@@ -59,7 +55,7 @@ const Search = () => {
               </aside>
               
               <main className="flex-1 space-y-6">
-                <form onSubmit={handleSearch} className="flex gap-2">
+                <form className="flex gap-2">
                   <Input
                     type="text"
                     placeholder={t("search.placeholder")}
@@ -81,8 +77,9 @@ const Search = () => {
                   </div>
                 ) : (
                   <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
                     className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
                   >
                     {filteredMovies.map((movie) => (

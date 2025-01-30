@@ -63,7 +63,10 @@ export const MovieCard = ({
     setIsDetailsOpen(true);
   };
 
-  const handleCloseDetails = () => {
+  const handleCloseDetails = (e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
     setIsDetailsOpen(false);
     if (onClose) {
       onClose();
@@ -90,17 +93,16 @@ export const MovieCard = ({
       <MovieCardWrapper onClick={handleCardClick}>
         <MovieCardContainer isExpanded={false} onClick={handleCardClick}>
           <div className="relative">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute top-2 right-2 z-10 bg-background/80 hover:bg-background/90 rounded-full"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleCloseDetails();
-              }}
-            >
-              <X className="h-4 w-4" />
-            </Button>
+            {isDetailsOpen && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute top-2 right-2 z-10 bg-background/80 hover:bg-background/90 rounded-full"
+                onClick={handleCloseDetails}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
             <MovieTrailerSection
               showTrailer={showTrailer}
               title={title}
