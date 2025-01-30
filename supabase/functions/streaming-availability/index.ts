@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { tmdbId, country = 'us', services } = await req.json()
+    const { tmdbId, country = 'us' } = await req.json()
     const rapidApiKey = Deno.env.get('RAPIDAPI_KEY')
     
     if (!rapidApiKey) {
@@ -20,43 +20,36 @@ serve(async (req) => {
       throw new Error('RAPIDAPI_KEY not configured')
     }
 
-    const baseUrl = 'https://streaming-availability.p.rapidapi.com/v2'
-    const headers = {
-      'X-RapidAPI-Key': rapidApiKey,
-      'X-RapidAPI-Host': 'streaming-availability.p.rapidapi.com',
-      'Content-Type': 'application/json',
-    }
+    console.log(`Fetching streaming availability for movie: ${tmdbId}`)
 
-    let url: string
-    let options: RequestInit = { headers }
-
-    if (tmdbId) {
-      url = `${baseUrl}/get/basic/tmdb/movie/${tmdbId}`
-      console.log('Fetching streaming availability for movie:', tmdbId)
-    } else if (services) {
-      url = `${baseUrl}/search/basic`
-      options = {
-        ...options,
-        method: 'POST',
-        body: JSON.stringify({
-          services,
-          country,
-          output_language: 'en',
-          show_type: 'movie',
-          order_by: 'popularity'
-        })
+    const url = `https://movies-tv-shows-database.p.rapidapi.com/movie/id/${tmdbId}`
+    const options = {
+      method: 'GET',
+      headers: {
+        'X-RapidAPI-Key': rapidApiKey,
+        'X-RapidAPI-Host': 'movies-tv-shows-database.p.rapidapi.com',
+        'Type': 'get-movie-details'
       }
-      console.log('Searching movies by streaming services:', services)
-    } else {
-      throw new Error('Invalid request parameters')
     }
 
     const response = await fetch(url, options)
     const data = await response.json()
+    
+    console.log('API Response:', data)
+
+    // Extract streaming services from the response
+    const streamingServices = data?.streamingAvailability?.[country] || []
+    
+    console.log('Streaming services found:', streamingServices)
 
     return new Response(
-      JSON.stringify(data),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ result: streamingServices }),
+      { 
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        } 
+      }
     )
   } catch (error) {
     console.error('Error in streaming-availability function:', error)
@@ -64,7 +57,10 @@ serve(async (req) => {
       JSON.stringify({ error: error.message }),
       { 
         status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        } 
       }
     )
   }
