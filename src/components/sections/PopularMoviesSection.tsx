@@ -14,27 +14,46 @@ export const PopularMoviesSection = ({ movies }: PopularMoviesSectionProps) => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true });
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const movieVariants = {
+    hidden: { 
+      opacity: 0,
+      y: -50 // Start from above
+    },
+    visible: { 
+      opacity: 1,
+      y: 0, // Move to original position
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 15
+      }
+    }
+  };
+
   return (
     <section className="space-y-4" ref={ref}>
       <h2 className="text-2xl font-bold">{t("discover.popular")}</h2>
       <motion.div 
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-        initial={{ opacity: 0, y: 50 }}
-        animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
-        transition={{ 
-          duration: 0.5,
-          staggerChildren: 0.1
-        }}
+        variants={containerVariants}
+        initial="hidden"
+        animate={isInView ? "visible" : "hidden"}
       >
         {movies.map((movie, index) => (
           <motion.div
             key={movie.id}
-            initial={{ opacity: 0, y: 50 }}
-            animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
-            transition={{ 
-              duration: 0.5,
-              delay: index * 0.1
-            }}
+            variants={movieVariants}
+            custom={index}
           >
             <MovieCard
               title={movie.title}
