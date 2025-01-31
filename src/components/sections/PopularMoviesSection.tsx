@@ -3,7 +3,7 @@ import { MovieCard } from "../MovieCard";
 import type { TMDBMovie } from "@/services/tmdb";
 import { useTranslation } from "react-i18next";
 import { useInView } from "framer-motion";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 
 interface PopularMoviesSectionProps {
   movies: TMDBMovie[];
@@ -13,47 +13,34 @@ export const PopularMoviesSection = ({ movies }: PopularMoviesSectionProps) => {
   const { t } = useTranslation();
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true });
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  };
-
-  const movieVariants = {
-    hidden: { 
-      opacity: 0,
-      y: -50 // Start from above
-    },
-    visible: { 
-      opacity: 1,
-      y: 0, // Move to original position
-      transition: {
-        type: "spring",
-        stiffness: 100,
-        damping: 15
-      }
-    }
-  };
+  const [isHovered, setIsHovered] = useState(false);
 
   return (
-    <section className="space-y-4" ref={ref}>
+    <section 
+      className="space-y-4 overflow-hidden" 
+      ref={ref}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       <h2 className="text-2xl font-bold">{t("discover.popular")}</h2>
       <motion.div 
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-        variants={containerVariants}
-        initial="hidden"
-        animate={isInView ? "visible" : "hidden"}
+        initial={{ y: 0 }}
+        animate={{ 
+          y: isHovered ? 0 : [-800, 0]
+        }}
+        transition={{ 
+          duration: 20,
+          repeat: Infinity,
+          ease: "linear",
+          repeatType: "loop"
+        }}
       >
         {movies.map((movie, index) => (
           <motion.div
             key={movie.id}
-            variants={movieVariants}
-            custom={index}
+            className="transform transition-transform hover:scale-105"
+            whileHover={{ scale: 1.05 }}
           >
             <MovieCard
               title={movie.title}
