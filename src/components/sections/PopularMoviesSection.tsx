@@ -12,7 +12,7 @@ interface PopularMoviesSectionProps {
 export const PopularMoviesSection = ({ movies }: PopularMoviesSectionProps) => {
   const { t } = useTranslation();
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: false, amount: 0.2 }); // Changed to repeat animations
+  const isInView = useInView(ref, { once: false, amount: 0.1 });
   const [isHovered, setIsHovered] = useState(false);
 
   const containerVariants = {
@@ -20,8 +20,9 @@ export const PopularMoviesSection = ({ movies }: PopularMoviesSectionProps) => {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.15, // Increased stagger effect
-        delayChildren: 0.2
+        staggerChildren: 0.2,
+        delayChildren: 0.1,
+        duration: 0.5
       }
     }
   };
@@ -29,34 +30,42 @@ export const PopularMoviesSection = ({ movies }: PopularMoviesSectionProps) => {
   const cardVariants = {
     hidden: { 
       opacity: 0,
-      y: 50, // Increased distance
-      scale: 0.8 // More dramatic scale
+      y: 100,
+      rotateX: -45
     },
     visible: { 
       opacity: 1,
       y: 0,
-      scale: 1,
+      rotateX: 0,
       transition: {
         type: "spring",
-        stiffness: 100,
-        damping: 12,
-        duration: 0.6
+        stiffness: 80,
+        damping: 15,
+        duration: 0.8
+      }
+    },
+    hover: {
+      scale: 1.05,
+      y: -10,
+      transition: {
+        duration: 0.3,
+        ease: "easeOut"
       }
     }
   };
 
   return (
     <section 
-      className="space-y-4 overflow-hidden" 
+      className="space-y-4 overflow-hidden py-8" 
       ref={ref}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       <motion.h2 
         className="text-2xl font-bold"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7 }}
+        initial={{ opacity: 0, x: -50 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.7, ease: "easeOut" }}
       >
         {t("discover.popular")}
       </motion.h2>
@@ -71,16 +80,14 @@ export const PopularMoviesSection = ({ movies }: PopularMoviesSectionProps) => {
           <motion.div
             key={movie.id}
             variants={cardVariants}
-            whileHover={{ 
-              scale: 1.05,
-              transition: { duration: 0.3 }
-            }}
-            className="transform origin-center"
+            whileHover="hover"
+            custom={index}
+            className="transform-gpu"
           >
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.8, delay: index * 0.1 }}
+              transition={{ duration: 0.8, delay: index * 0.15 }}
             >
               <MovieCard
                 title={movie.title}
