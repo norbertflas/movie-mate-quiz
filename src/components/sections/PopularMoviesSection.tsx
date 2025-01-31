@@ -12,7 +12,7 @@ interface PopularMoviesSectionProps {
 export const PopularMoviesSection = ({ movies }: PopularMoviesSectionProps) => {
   const { t } = useTranslation();
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true });
+  const isInView = useInView(ref, { once: false, amount: 0.2 }); // Changed to repeat animations
   const [isHovered, setIsHovered] = useState(false);
 
   const containerVariants = {
@@ -20,8 +20,8 @@ export const PopularMoviesSection = ({ movies }: PopularMoviesSectionProps) => {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.3
+        staggerChildren: 0.15, // Increased stagger effect
+        delayChildren: 0.2
       }
     }
   };
@@ -29,8 +29,8 @@ export const PopularMoviesSection = ({ movies }: PopularMoviesSectionProps) => {
   const cardVariants = {
     hidden: { 
       opacity: 0,
-      y: 20,
-      scale: 0.95
+      y: 50, // Increased distance
+      scale: 0.8 // More dramatic scale
     },
     visible: { 
       opacity: 1,
@@ -39,7 +39,8 @@ export const PopularMoviesSection = ({ movies }: PopularMoviesSectionProps) => {
       transition: {
         type: "spring",
         stiffness: 100,
-        damping: 15
+        damping: 12,
+        duration: 0.6
       }
     }
   };
@@ -55,7 +56,7 @@ export const PopularMoviesSection = ({ movies }: PopularMoviesSectionProps) => {
         className="text-2xl font-bold"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.7 }}
       >
         {t("discover.popular")}
       </motion.h2>
@@ -72,14 +73,14 @@ export const PopularMoviesSection = ({ movies }: PopularMoviesSectionProps) => {
             variants={cardVariants}
             whileHover={{ 
               scale: 1.05,
-              transition: { duration: 0.2 }
+              transition: { duration: 0.3 }
             }}
             className="transform origin-center"
           >
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
+              transition={{ duration: 0.8, delay: index * 0.1 }}
             >
               <MovieCard
                 title={movie.title}
