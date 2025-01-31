@@ -15,6 +15,35 @@ export const PopularMoviesSection = ({ movies }: PopularMoviesSectionProps) => {
   const isInView = useInView(ref, { once: true });
   const [isHovered, setIsHovered] = useState(false);
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.3
+      }
+    }
+  };
+
+  const cardVariants = {
+    hidden: { 
+      opacity: 0,
+      y: 20,
+      scale: 0.95
+    },
+    visible: { 
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 15
+      }
+    }
+  };
+
   return (
     <section 
       className="space-y-4 overflow-hidden" 
@@ -22,37 +51,48 @@ export const PopularMoviesSection = ({ movies }: PopularMoviesSectionProps) => {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <h2 className="text-2xl font-bold">{t("discover.popular")}</h2>
+      <motion.h2 
+        className="text-2xl font-bold"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        {t("discover.popular")}
+      </motion.h2>
+      
       <motion.div 
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-        initial={{ y: 0 }}
-        animate={{ 
-          y: isHovered ? 0 : [-800, 0]
-        }}
-        transition={{ 
-          duration: 20,
-          repeat: Infinity,
-          ease: "linear",
-          repeatType: "loop"
-        }}
+        variants={containerVariants}
+        initial="hidden"
+        animate={isInView ? "visible" : "hidden"}
       >
         {movies.map((movie, index) => (
           <motion.div
             key={movie.id}
-            className="transform transition-transform hover:scale-105"
-            whileHover={{ scale: 1.05 }}
+            variants={cardVariants}
+            whileHover={{ 
+              scale: 1.05,
+              transition: { duration: 0.2 }
+            }}
+            className="transform origin-center"
           >
-            <MovieCard
-              title={movie.title}
-              year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "N/A"}
-              platform="TMDB"
-              genre={t("movie.genre")}
-              imageUrl={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
-              description={movie.overview}
-              trailerUrl=""
-              rating={movie.vote_average * 10}
-              tmdbId={movie.id}
-            />
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+            >
+              <MovieCard
+                title={movie.title}
+                year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "N/A"}
+                platform="TMDB"
+                genre={t("movie.genre")}
+                imageUrl={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+                description={movie.overview}
+                trailerUrl=""
+                rating={movie.vote_average * 10}
+                tmdbId={movie.id}
+              />
+            </motion.div>
           </motion.div>
         ))}
       </motion.div>
