@@ -7,6 +7,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const RETRY_AFTER = 60; // seconds to wait before retrying
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -44,10 +46,15 @@ Deno.serve(async (req) => {
           JSON.stringify({ 
             result: [], 
             error: 'Invalid response format from Gemini API',
-            fallback: true 
+            fallback: true,
+            retryAfter: RETRY_AFTER
           }),
           {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            headers: { 
+              ...corsHeaders, 
+              'Content-Type': 'application/json',
+              'Retry-After': RETRY_AFTER.toString()
+            },
             status: 422
           },
         );
@@ -71,21 +78,27 @@ Deno.serve(async (req) => {
     } catch (error) {
       console.error('Gemini API Error:', error);
       
-      // Check if it's a rate limit or safety error
+      // Check if it's a rate limit error
       if (error.message?.includes('429') || error.message?.includes('quota')) {
         return new Response(
           JSON.stringify({ 
             result: [], 
             error: 'Rate limit exceeded. Please try again later.',
-            fallback: true 
+            fallback: true,
+            retryAfter: RETRY_AFTER
           }),
           {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            headers: { 
+              ...corsHeaders, 
+              'Content-Type': 'application/json',
+              'Retry-After': RETRY_AFTER.toString()
+            },
             status: 429
           },
         );
       }
 
+      // Handle safety errors
       if (error.message?.includes('SAFETY')) {
         return new Response(
           JSON.stringify({ 
