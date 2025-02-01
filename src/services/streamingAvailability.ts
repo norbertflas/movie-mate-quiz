@@ -14,20 +14,32 @@ export async function getStreamingAvailability(tmdbId: number, title?: string, y
         body: { tmdbId, title, year, country }
       });
 
-    if (regularError && geminiError) {
+    // Log errors for debugging
+    if (regularError) {
       console.error('Regular API Error:', regularError);
+    }
+    if (geminiError) {
       console.error('Gemini API Error:', geminiError);
-      // If both APIs fail, return an empty array rather than throwing
+      // If it's a rate limit error, just log it and continue with regular data
+      if (geminiError.status === 429) {
+        console.log('Gemini API rate limit reached, falling back to regular data only');
+      }
+    }
+
+    // If both APIs fail with non-rate-limit errors, return an empty array
+    if (regularError && (geminiError && geminiError.status !== 429)) {
       return [];
     }
 
-    // Combine and deduplicate results from both sources
+    // Get services from both sources
     const regularServices = regularData?.result?.[0]?.streamingInfo?.[country] || [];
-    const geminiServices = geminiData?.result || [];
+    // Only include Gemini services if there was no error or it wasn't a rate limit error
+    const geminiServices = (!geminiError || geminiError.status === 429) ? (geminiData?.result || []) : [];
 
     console.log('Regular services:', regularServices);
     console.log('Gemini services:', geminiServices);
 
+    // Combine and deduplicate results from both sources
     const allServices = [...regularServices, ...geminiServices];
     
     // Deduplicate services by name
