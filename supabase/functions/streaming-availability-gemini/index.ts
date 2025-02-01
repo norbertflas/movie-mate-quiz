@@ -1,5 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+// Import from CDN URL instead of npm package
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
+import { GoogleGenerativeAI } from 'https://esm.sh/@google/generative-ai@0.1.3';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,6 +14,7 @@ Deno.serve(async (req) => {
 
   try {
     const { tmdbId, title, year, country = 'us' } = await req.json();
+    console.log(`Checking streaming availability for: ${title} (${year}) in ${country}`);
 
     // Initialize Gemini
     const genAI = new GoogleGenerativeAI(Deno.env.get('GEMINI_API_KEY') || '');
@@ -20,9 +22,12 @@ Deno.serve(async (req) => {
 
     const prompt = `Tell me on which streaming platforms the movie "${title}" (${year}) is currently available to watch in ${country}. Only include major streaming platforms like Netflix, Amazon Prime Video, Disney+, Hulu, HBO Max, Apple TV+. Format the response as a JSON array with objects containing 'service' and 'link' properties. If you're not completely sure about availability, don't include that service.`;
 
+    console.log('Sending prompt to Gemini:', prompt);
+
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
+    console.log('Received response from Gemini:', text);
     
     let streamingServices = [];
     try {
@@ -30,6 +35,7 @@ Deno.serve(async (req) => {
       const match = text.match(/\[.*\]/s);
       if (match) {
         streamingServices = JSON.parse(match[0]);
+        console.log('Parsed streaming services:', streamingServices);
       }
     } catch (error) {
       console.error('Error parsing Gemini response:', error);
@@ -41,6 +47,8 @@ Deno.serve(async (req) => {
       typeof service.service === 'string' && 
       typeof service.link === 'string'
     );
+
+    console.log('Returning valid services:', validServices);
 
     return new Response(
       JSON.stringify({ result: validServices }),
