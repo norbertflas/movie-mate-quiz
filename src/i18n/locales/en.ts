@@ -45,7 +45,7 @@ export default {
     action: "Action",
     comedy: "Comedy",
     drama: "Drama",
-    sciFi: "Sci-Fi",
+    sciFi: "Science Fiction",
     horror: "Horror",
     romance: "Romance",
     thriller: "Thriller",
@@ -61,6 +61,8 @@ export default {
     tags: "Tags",
     apply: "Apply Filters",
     clear: "Clear Filters",
+    title: "Filters",
+    applySearch: "Search with Filters"
   },
   search: {
     title: "Search",
@@ -73,29 +75,7 @@ export default {
     noResults: "No Results",
     noResultsDescription: "No results found for {{query}}",
     enterQuery: "Enter search terms",
+    filteredResults: "Found {{count}} movies matching your filters",
+    tryDifferentFilters: "Try adjusting your filters to find more movies"
   },
-  quiz: {
-    questions: {
-      platforms: "Which streaming services do you use?",
-      contentType: "What would you like to watch?",
-      genre: "What genre are you in the mood for?",
-      mood: "What kind of mood are you looking for?"
-    },
-    options: {
-      movie: "A Movie",
-      series: "A TV Series",
-      mood: {
-        light: "Something light and fun",
-        serious: "Something thought-provoking",
-        suspense: "Something thrilling",
-        inspiring: "Something uplifting"
-      }
-    }
-  },
-  trending: {
-    weeklyTrending: "Trending This Week",
-  },
-  streaming: {
-    availableOn: "Available on"
-  }
 };
