@@ -15,7 +15,8 @@ export async function getStreamingAvailability(tmdbId: number, title?: string, y
       });
 
     if (regularError && geminiError) {
-      console.error('Error fetching streaming availability:', regularError || geminiError);
+      console.error('Regular API Error:', regularError);
+      console.error('Gemini API Error:', geminiError);
       // If both APIs fail, return an empty array rather than throwing
       return [];
     }
@@ -24,6 +25,9 @@ export async function getStreamingAvailability(tmdbId: number, title?: string, y
     const regularServices = regularData?.result?.[0]?.streamingInfo?.[country] || [];
     const geminiServices = geminiData?.result || [];
 
+    console.log('Regular services:', regularServices);
+    console.log('Gemini services:', geminiServices);
+
     const allServices = [...regularServices, ...geminiServices];
     
     // Deduplicate services by name
@@ -31,6 +35,8 @@ export async function getStreamingAvailability(tmdbId: number, title?: string, y
       new Map(allServices.map(item => [item.service.toLowerCase(), item]))
       .values()
     );
+
+    console.log('Combined unique services:', uniqueServices);
 
     return uniqueServices.map(info => ({
       service: info.service,

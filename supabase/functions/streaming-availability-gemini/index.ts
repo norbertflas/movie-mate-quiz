@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
     const genAI = new GoogleGenerativeAI(Deno.env.get('GEMINI_API_KEY') || '');
     const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
-    const prompt = `Tell me on which streaming platforms the movie "${title}" (${year}) is currently available to watch in ${country}. Only include major streaming platforms like Netflix, Amazon Prime Video, Disney+, Hulu, HBO Max, Apple TV+. Format the response as a JSON array with objects containing 'service' and 'link' properties. If you're not completely sure about availability, don't include that service.`;
+    const prompt = `Tell me on which major streaming platforms the movie "${title}" (${year}) is currently available to watch in ${country}. Only include major streaming platforms like Netflix, Amazon Prime Video, Disney+, Hulu, HBO Max, Apple TV+. Format the response as a JSON array with objects containing 'service' and 'link' properties. If you're not completely sure about availability, don't include that service. Only include factual information.`;
 
     console.log('Sending prompt to Gemini:', prompt);
 
@@ -40,7 +40,17 @@ Deno.serve(async (req) => {
         }
       } catch (error) {
         console.error('Error parsing Gemini response:', error);
-        throw new Error('Invalid response format from Gemini API');
+        return new Response(
+          JSON.stringify({ 
+            result: [], 
+            error: 'Invalid response format from Gemini API',
+            fallback: true 
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 422
+          },
+        );
       }
 
       // Validate and format the response
@@ -61,9 +71,8 @@ Deno.serve(async (req) => {
     } catch (error) {
       console.error('Gemini API Error:', error);
       
-      // Check if it's a rate limit error
+      // Check if it's a rate limit or safety error
       if (error.message?.includes('429') || error.message?.includes('quota')) {
-        // Fall back to regular streaming availability data
         return new Response(
           JSON.stringify({ 
             result: [], 
@@ -77,7 +86,32 @@ Deno.serve(async (req) => {
         );
       }
 
-      throw error; // Re-throw other errors
+      if (error.message?.includes('SAFETY')) {
+        return new Response(
+          JSON.stringify({ 
+            result: [], 
+            error: 'Content safety check failed. Using alternative data source.',
+            fallback: true 
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 422
+          },
+        );
+      }
+
+      // For any other error, return a generic error response
+      return new Response(
+        JSON.stringify({ 
+          result: [], 
+          error: 'Unable to process request. Using alternative data source.',
+          fallback: true 
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 422
+        },
+      );
     }
   } catch (error) {
     console.error('Error in streaming-availability-gemini function:', error);
@@ -85,7 +119,8 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         error: error.message || 'Internal server error',
-        result: [] 
+        result: [],
+        fallback: true
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
