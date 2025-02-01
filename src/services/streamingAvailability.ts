@@ -18,16 +18,20 @@ export async function getStreamingAvailability(tmdbId: number, title?: string, y
     if (regularError) {
       console.error('Regular API Error:', regularError);
     }
-    
+
     // Handle rate limit errors gracefully
     if (geminiError) {
       console.error('Gemini API Error:', geminiError);
+      
+      // If it's a rate limit error, fall back to regular data
       if (geminiError.status === 429) {
         console.log('Gemini API rate limit reached, falling back to regular data only');
+        
         // If we have regular data, return it
         if (regularData?.result?.[0]?.streamingInfo?.[country]) {
           return regularData.result[0].streamingInfo[country];
         }
+        
         // Otherwise return empty array
         return [];
       }
