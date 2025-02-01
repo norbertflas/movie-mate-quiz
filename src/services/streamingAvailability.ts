@@ -1,23 +1,37 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export async function getStreamingAvailability(tmdbId: number, country: string = 'us') {
+export async function getStreamingAvailability(tmdbId: number, title?: string, year?: string, country: string = 'us') {
   try {
-    const { data, error } = await supabase
+    // First, try the regular streaming availability API
+    const { data: regularData, error: regularError } = await supabase
       .functions.invoke('streaming-availability', {
         body: { tmdbId, country }
       });
 
-    if (error) {
-      console.error('Error fetching streaming availability:', error);
+    // Then, try the Gemini-powered availability check
+    const { data: geminiData, error: geminiError } = await supabase
+      .functions.invoke('streaming-availability-gemini', {
+        body: { tmdbId, title, year, country }
+      });
+
+    if (regularError && geminiError) {
+      console.error('Error fetching streaming availability:', regularError || geminiError);
       return [];
     }
 
-    if (!data?.result?.[0]?.streamingInfo?.[country]) {
-      return [];
-    }
+    // Combine and deduplicate results from both sources
+    const regularServices = regularData?.result?.[0]?.streamingInfo?.[country] || [];
+    const geminiServices = geminiData?.result || [];
 
-    const streamingInfo = data.result[0].streamingInfo[country];
-    return streamingInfo.map((info: any) => ({
+    const allServices = [...regularServices, ...geminiServices];
+    
+    // Deduplicate services by name
+    const uniqueServices = Array.from(
+      new Map(allServices.map(item => [item.service.toLowerCase(), item]))
+      .values()
+    );
+
+    return uniqueServices.map(info => ({
       service: info.service,
       link: info.link,
       availableSince: info.availableSince,

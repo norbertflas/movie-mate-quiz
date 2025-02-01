@@ -46,8 +46,8 @@ export const MovieCard = ({
 
   // Query streaming availability when the card is opened
   const { data: availableServices = [] } = useQuery({
-    queryKey: ['streamingAvailability', tmdbId],
-    queryFn: () => getStreamingAvailability(tmdbId),
+    queryKey: ['streamingAvailability', tmdbId, title, year],
+    queryFn: () => getStreamingAvailability(tmdbId, title, year),
     enabled: !!tmdbId,
     meta: {
       onError: () => {
@@ -160,6 +160,7 @@ export const MovieCard = ({
           onClose={handleCloseDetails}
           movie={movieData}
           explanations={explanations}
+          streamingServices={availableServices}
         />
       )}
     </>

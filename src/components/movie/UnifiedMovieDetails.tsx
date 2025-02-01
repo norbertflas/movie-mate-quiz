@@ -8,19 +8,26 @@ import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { getMovieTrailer } from "@/services/youtube";
 import type { TMDBMovie } from "@/services/tmdb";
+import { Badge } from "@/components/ui/badge";
 
 interface UnifiedMovieDetailsProps {
   isOpen: boolean;
   onClose: () => void;
   movie: TMDBMovie | null;
   explanations?: string[];
+  streamingServices?: Array<{
+    service: string;
+    link: string;
+    availableSince?: string;
+  }>;
 }
 
 export const UnifiedMovieDetails = ({ 
   isOpen, 
   onClose, 
   movie,
-  explanations 
+  explanations,
+  streamingServices = []
 }: UnifiedMovieDetailsProps) => {
   const [showTrailer, setShowTrailer] = useState(false);
   const [trailerUrl, setTrailerUrl] = useState("");
@@ -112,6 +119,31 @@ export const UnifiedMovieDetails = ({
                     showTrailer={showTrailer}
                     explanations={explanations}
                   />
+                  
+                  {streamingServices && streamingServices.length > 0 && (
+                    <div className="space-y-2">
+                      <h3 className="text-lg font-semibold">{t("streaming.availableOn")}</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {streamingServices.map((service) => (
+                          <a
+                            key={service.service}
+                            href={service.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <Badge variant="secondary" className="flex items-center gap-2 hover:bg-accent">
+                              <img 
+                                src={`/streaming-icons/${service.service.toLowerCase()}.svg`} 
+                                alt={service.service}
+                                className="w-4 h-4"
+                              />
+                              {service.service}
+                            </Badge>
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   
                   <div className="flex flex-col gap-4">
                     <MovieActions
