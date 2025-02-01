@@ -24,7 +24,11 @@ const Search = () => {
 
   const { data: movies = [], isLoading } = useQuery({
     queryKey: ['searchMovies', query, filters, shouldSearch],
-    queryFn: () => searchMovies(query),
+    queryFn: async () => {
+      if (!shouldSearch) return [];
+      const results = await searchMovies(query);
+      return results;
+    },
     enabled: shouldSearch,
   });
 
@@ -35,24 +39,24 @@ const Search = () => {
 
   const handleFilterChange = (newFilters: MovieFiltersType) => {
     setFilters(newFilters);
-    setShouldSearch(false); // Reset search state when filters change
   };
 
   const filteredMovies = movies.filter(movie => {
     const year = movie.release_date ? new Date(movie.release_date).getFullYear() : 0;
-    const rating = movie.vote_average;
+    const rating = movie.vote_average * 10; // Convert to percentage
 
     const matchesYear = year >= filters.yearRange[0] && year <= filters.yearRange[1];
-    const matchesRating = (rating * 10) >= filters.minRating;
-    const matchesPlatform = !filters.platform || true; // TODO: Implement platform filtering
-    const matchesGenre = !filters.genre || movie.genre_ids.includes(parseInt(filters.genre));
-    const matchesTags = !filters.tags?.length || filters.tags.every(tag => true); // TODO: Implement tag filtering
+    const matchesRating = rating >= filters.minRating;
+    const matchesGenre = !filters.genre || movie.genre_ids?.includes(parseInt(filters.genre));
+    const matchesTags = !filters.tags?.length || true; // TODO: Implement tag filtering when available
 
-    return matchesYear && matchesRating && matchesPlatform && matchesGenre && matchesTags;
+    return matchesYear && matchesRating && matchesGenre && matchesTags;
   });
 
   const handleFilterSearch = () => {
     setShouldSearch(true);
+    
+    // Show appropriate toast based on results
     if (filteredMovies.length === 0) {
       toast({
         title: t("search.noResults"),
@@ -125,7 +129,7 @@ const Search = () => {
                         title={movie.title}
                         year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "N/A"}
                         platform="TMDB"
-                        genre={t("movie.genre")}
+                        genre={t(`movie.${movie.genre_ids?.[0] || 'unknown'}`)}
                         imageUrl={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
                         description={movie.overview}
                         trailerUrl=""
