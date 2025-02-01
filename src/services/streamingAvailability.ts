@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export async function getStreamingAvailability(tmdbId: number, country: string = 'us'): Promise<any[]> {
+export async function getStreamingAvailability(tmdbId: number, country: string = 'us') {
   try {
     const { data, error } = await supabase
       .functions.invoke('streaming-availability', {
@@ -12,7 +12,11 @@ export async function getStreamingAvailability(tmdbId: number, country: string =
       return [];
     }
 
-    const streamingInfo = data?.result?.[0]?.streamingInfo?.[country] || [];
+    if (!data?.result?.[0]?.streamingInfo?.[country]) {
+      return [];
+    }
+
+    const streamingInfo = data.result[0].streamingInfo[country];
     return streamingInfo.map((info: any) => ({
       service: info.service,
       link: info.link,

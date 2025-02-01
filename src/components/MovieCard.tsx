@@ -44,10 +44,11 @@ export const MovieCard = ({
   
   const { userRating, handleRating } = useMovieRating(title);
 
+  // Query streaming availability when the card is opened
   const { data: availableServices = [] } = useQuery({
     queryKey: ['streamingAvailability', tmdbId],
     queryFn: () => getStreamingAvailability(tmdbId),
-    enabled: !!tmdbId && isDetailsOpen,
+    enabled: !!tmdbId,
     meta: {
       onError: () => {
         toast({
@@ -128,7 +129,7 @@ export const MovieCard = ({
           </CardHeader>
 
           <CardContent className="space-y-4 flex-grow p-4">
-            {availableServices.length > 0 && (
+            {availableServices.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 <span className="text-sm font-medium text-muted-foreground">
                   {t("streaming.availableOn")}:
@@ -144,6 +145,10 @@ export const MovieCard = ({
                   </Badge>
                 ))}
               </div>
+            ) : (
+              <span className="text-sm text-muted-foreground">
+                {t("streaming.notAvailable")}
+              </span>
             )}
           </CardContent>
         </MovieCardContainer>
