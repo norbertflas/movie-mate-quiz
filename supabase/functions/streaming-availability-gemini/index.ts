@@ -1,4 +1,3 @@
-// Import from CDN URL instead of npm package
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
 import { GoogleGenerativeAI } from 'https://esm.sh/@google/generative-ai@0.1.3';
 

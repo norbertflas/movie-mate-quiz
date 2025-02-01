@@ -19,13 +19,16 @@ export async function getStreamingAvailability(tmdbId: number, title?: string, y
       console.error('Regular API Error:', regularError);
     }
 
-    // Handle rate limit errors gracefully
+    // Handle various error cases from Gemini API
     if (geminiError) {
       console.error('Gemini API Error:', geminiError);
       
-      // If it's a rate limit error, fall back to regular data
-      if (geminiError.status === 429) {
-        console.log('Gemini API rate limit reached, falling back to regular data only');
+      // If it's a rate limit error or content safety error, fall back to regular data
+      if (geminiError.status === 429 || geminiError.status === 422) {
+        const errorMessage = geminiError.status === 429 
+          ? 'Gemini API rate limit reached, falling back to regular data only'
+          : 'Content safety check failed, falling back to regular data only';
+        console.log(errorMessage);
         
         // If we have regular data, return it
         if (regularData?.result?.[0]?.streamingInfo?.[country]) {
@@ -37,15 +40,12 @@ export async function getStreamingAvailability(tmdbId: number, title?: string, y
       }
     }
 
-    // If both APIs fail with non-rate-limit errors, return an empty array
-    if (regularError && (geminiError && geminiError.status !== 429)) {
-      return [];
-    }
-
     // Get services from both sources
     const regularServices = regularData?.result?.[0]?.streamingInfo?.[country] || [];
-    // Only include Gemini services if there was no error or it wasn't a rate limit error
-    const geminiServices = (!geminiError || geminiError.status === 429) ? (geminiData?.result || []) : [];
+    // Only include Gemini services if there was no error or it wasn't a rate limit/safety error
+    const geminiServices = (!geminiError || ![429, 422].includes(geminiError.status)) 
+      ? (geminiData?.result || []) 
+      : [];
 
     console.log('Regular services:', regularServices);
     console.log('Gemini services:', geminiServices);
