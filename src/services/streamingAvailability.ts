@@ -16,6 +16,7 @@ export async function getStreamingAvailability(tmdbId: number, title?: string, y
 
     if (regularError && geminiError) {
       console.error('Error fetching streaming availability:', regularError || geminiError);
+      // If both APIs fail, return an empty array rather than throwing
       return [];
     }
 
@@ -40,6 +41,7 @@ export async function getStreamingAvailability(tmdbId: number, title?: string, y
     }));
   } catch (error) {
     console.error('Error fetching streaming availability:', error);
+    // Return empty array instead of throwing to prevent UI disruption
     return [];
   }
 }

@@ -24,45 +24,72 @@ Deno.serve(async (req) => {
 
     console.log('Sending prompt to Gemini:', prompt);
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
-    console.log('Received response from Gemini:', text);
-    
-    let streamingServices = [];
     try {
-      // Extract JSON from the response
-      const match = text.match(/\[.*\]/s);
-      if (match) {
-        streamingServices = JSON.parse(match[0]);
-        console.log('Parsed streaming services:', streamingServices);
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+      console.log('Received response from Gemini:', text);
+      
+      let streamingServices = [];
+      try {
+        // Extract JSON array from response
+        const match = text.match(/\[.*\]/s);
+        if (match) {
+          streamingServices = JSON.parse(match[0]);
+          console.log('Parsed streaming services:', streamingServices);
+        }
+      } catch (error) {
+        console.error('Error parsing Gemini response:', error);
+        throw new Error('Invalid response format from Gemini API');
       }
+
+      // Validate and format the response
+      const validServices = streamingServices.filter(service => 
+        service && 
+        typeof service.service === 'string' && 
+        typeof service.link === 'string'
+      );
+
+      console.log('Returning valid services:', validServices);
+
+      return new Response(
+        JSON.stringify({ result: validServices }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      );
     } catch (error) {
-      console.error('Error parsing Gemini response:', error);
+      console.error('Gemini API Error:', error);
+      
+      // Check if it's a rate limit error
+      if (error.message?.includes('429') || error.message?.includes('quota')) {
+        // Fall back to regular streaming availability data
+        return new Response(
+          JSON.stringify({ 
+            result: [], 
+            error: 'Rate limit exceeded. Please try again later.',
+            fallback: true 
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 429
+          },
+        );
+      }
+
+      throw error; // Re-throw other errors
     }
-
-    // Validate and format the response
-    const validServices = streamingServices.filter(service => 
-      service && 
-      typeof service.service === 'string' && 
-      typeof service.link === 'string'
-    );
-
-    console.log('Returning valid services:', validServices);
-
-    return new Response(
-      JSON.stringify({ result: validServices }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      },
-    );
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error in streaming-availability-gemini function:', error);
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message || 'Internal server error',
+        result: [] 
+      }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
+        status: error.status || 500,
       },
     );
   }
