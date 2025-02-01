@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { searchMovies, type TMDBMovie } from "@/services/tmdb";
 import { MovieCard } from "@/components/MovieCard";
 import { MovieFilters, type MovieFilters as MovieFiltersType } from "@/components/MovieFilters";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { PersonalizedRecommendationsForm } from "@/components/recommendations/PersonalizedRecommendationsForm";
@@ -18,14 +18,25 @@ const Search = () => {
     yearRange: [1900, new Date().getFullYear()],
     minRating: 0,
   });
+  const [shouldSearch, setShouldSearch] = useState(false);
   const { toast } = useToast();
   const { t } = useTranslation();
 
   const { data: movies = [], isLoading } = useQuery({
-    queryKey: ['searchMovies', query, filters],
+    queryKey: ['searchMovies', query, filters, shouldSearch],
     queryFn: () => searchMovies(query),
-    enabled: true, // Allow searching with just filters
+    enabled: shouldSearch,
   });
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setShouldSearch(true);
+  };
+
+  const handleFilterChange = (newFilters: MovieFiltersType) => {
+    setFilters(newFilters);
+    setShouldSearch(false); // Reset search state when filters change
+  };
 
   const filteredMovies = movies.filter(movie => {
     const year = movie.release_date ? new Date(movie.release_date).getFullYear() : 0;
@@ -33,11 +44,29 @@ const Search = () => {
 
     const matchesYear = year >= filters.yearRange[0] && year <= filters.yearRange[1];
     const matchesRating = (rating * 10) >= filters.minRating;
-    const matchesPlatform = !filters.platform || true;
+    const matchesPlatform = !filters.platform || true; // TODO: Implement platform filtering
     const matchesGenre = !filters.genre || movie.genre_ids.includes(parseInt(filters.genre));
+    const matchesTags = !filters.tags?.length || filters.tags.every(tag => true); // TODO: Implement tag filtering
 
-    return matchesYear && matchesRating && matchesPlatform && matchesGenre;
+    return matchesYear && matchesRating && matchesPlatform && matchesGenre && matchesTags;
   });
+
+  const handleFilterSearch = () => {
+    setShouldSearch(true);
+    if (filteredMovies.length === 0) {
+      toast({
+        title: t("search.noResults"),
+        description: t("search.tryDifferentFilters"),
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: t("search.resultsFound"),
+        description: t("search.filteredResults", { count: filteredMovies.length }),
+        className: "bg-gradient-to-r from-blue-500 to-purple-500 text-white",
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background/80 to-background/40">
@@ -51,11 +80,19 @@ const Search = () => {
           <TabsContent value="search">
             <div className="flex flex-col lg:flex-row gap-6">
               <aside className="w-full lg:w-64">
-                <MovieFilters onFilterChange={setFilters} />
+                <MovieFilters onFilterChange={handleFilterChange} />
+                <Button 
+                  onClick={handleFilterSearch}
+                  className="w-full mt-4"
+                  variant="secondary"
+                >
+                  <SearchIcon className="mr-2 h-4 w-4" />
+                  {t("search.applyFilters")}
+                </Button>
               </aside>
               
               <main className="flex-1 space-y-6">
-                <form className="flex gap-2">
+                <form className="flex gap-2" onSubmit={handleSearch}>
                   <Input
                     type="text"
                     placeholder={t("search.placeholder")}
