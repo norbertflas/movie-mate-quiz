@@ -9,7 +9,6 @@ const corsHeaders = {
 const RETRY_AFTER = 60;
 const MAX_RETRIES = 3;
 const INITIAL_RETRY_DELAY = 1000;
-const CACHE_DURATION = 24 * 60 * 60; // 24 hours in seconds
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
