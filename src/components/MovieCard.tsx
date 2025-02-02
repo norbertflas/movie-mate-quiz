@@ -14,10 +14,8 @@ import { UnifiedMovieDetails } from "./movie/UnifiedMovieDetails";
 import type { TMDBMovie } from "@/services/tmdb";
 import { X } from "lucide-react";
 import { Button } from "./ui/button";
-import { useQuery } from "@tanstack/react-query";
-import { getStreamingAvailability } from "@/services/streamingAvailability";
+import { useStreamingAvailability } from "@/hooks/use-streaming-availability";
 import { useTranslation } from "react-i18next";
-import { useToast } from "@/hooks/use-toast";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card";
 import { Skeleton } from "./ui/skeleton";
 import { Alert, AlertDescription } from "./ui/alert";
@@ -44,46 +42,9 @@ export const MovieCard = ({
   const [trailerUrl, setTrailerUrl] = useState(initialTrailerUrl);
   const [insights, setInsights] = useState<MovieInsights | null>(null);
   const { t } = useTranslation();
-  const { toast } = useToast();
   
   const { userRating, handleRating } = useMovieRating(title);
-
-  const { data: availableServices = [], isLoading, isError, error } = useQuery({
-    queryKey: ['streamingAvailability', tmdbId, title, year],
-    queryFn: () => getStreamingAvailability(tmdbId, title, year),
-    enabled: !!tmdbId,
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
-    retry: (failureCount, error: any) => {
-      if (error?.status === 429) {
-        // Only retry rate limit errors up to 3 times
-        return failureCount < 3;
-      }
-      return false; // Don't retry other errors
-    },
-    retryDelay: (attemptIndex) => {
-      // Exponential backoff: 2^attemptIndex * 1000ms, max 30 seconds
-      return Math.min(1000 * Math.pow(2, attemptIndex), 30000);
-    },
-    meta: {
-      onError: (error: any) => {
-        const errorBody = typeof error.body === 'string' ? JSON.parse(error.body) : error.body;
-        if (error?.status === 429) {
-          const retryAfter = errorBody?.retryAfter || 60;
-          toast({
-            title: t("errors.rateLimitExceeded"),
-            description: t("errors.tryAgainIn", { seconds: retryAfter }),
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: t("errors.generic"),
-            description: t("errors.tryAgain"),
-            variant: "destructive",
-          });
-        }
-      }
-    }
-  });
+  const { data: availableServices = [], isLoading, isError, error } = useStreamingAvailability(tmdbId, title, year);
 
   const handleCardClick = () => {
     setIsDetailsOpen(true);
