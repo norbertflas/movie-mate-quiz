@@ -25,7 +25,7 @@ async function tryGenerateContent(model: any, prompt: string, attempt = 1): Prom
     }
 
     if (error.message?.includes('429') || error.message?.includes('quota')) {
-      const delay = INITIAL_RETRY_DELAY * Math.pow(2, attempt - 1); // True exponential backoff
+      const delay = INITIAL_RETRY_DELAY * Math.pow(2, attempt - 1);
       console.log(`Rate limit hit, waiting ${delay}ms before retry ${attempt + 1}`);
       await sleep(delay);
       return tryGenerateContent(model, prompt, attempt + 1);
@@ -44,7 +44,6 @@ Deno.serve(async (req) => {
     const { tmdbId, title, year, country = 'us' } = await req.json();
     console.log(`Checking streaming availability for: ${title} (${year}) in ${country}`);
 
-    // Initialize Gemini
     const genAI = new GoogleGenerativeAI(Deno.env.get('GEMINI_API_KEY') || '');
     const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
@@ -58,7 +57,6 @@ Deno.serve(async (req) => {
       const text = response.text();
       console.log('Received response from Gemini:', text);
       
-      // Extract JSON from response
       const streamingServices = text.match(/\[[\s\S]*?\]/)?.[0];
       console.log('Extracted streaming services:', streamingServices);
 
@@ -83,7 +81,6 @@ Deno.serve(async (req) => {
           throw new Error('Invalid response format: not an array');
         }
 
-        // Validate services
         const validServices = parsedServices.filter(service => 
           service && 
           typeof service === 'object' && 
@@ -108,7 +105,6 @@ Deno.serve(async (req) => {
     } catch (error) {
       console.error('Gemini API Error:', error);
       
-      // Check if it's a rate limit error
       if (error.message?.includes('429') || error.message?.includes('quota')) {
         return new Response(
           JSON.stringify({ 
@@ -128,7 +124,6 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Handle safety errors
       if (error.message?.includes('SAFETY')) {
         return new Response(
           JSON.stringify({ 

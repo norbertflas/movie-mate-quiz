@@ -17,7 +17,7 @@ async function retryWithBackoff<T>(
       throw error;
     }
 
-    console.log(`Retrying after ${delay}ms...`);
+    console.log(`Rate limit hit, waiting ${delay}ms before retry ${retries}`);
     await sleep(delay);
     
     return retryWithBackoff(fn, retries - 1, delay * 2);
@@ -46,7 +46,7 @@ export async function getStreamingAvailability(tmdbId: number, title?: string, y
       }));
     }
 
-    // If no cached data, try the regular streaming availability API with retry logic
+    // If no cached data, try the streaming availability API with retry logic
     const { data: regularData } = await retryWithBackoff(async () => {
       const response = await supabase.functions.invoke('streaming-availability', {
         body: { tmdbId, country }
@@ -106,7 +106,7 @@ export async function getStreamingAvailability(tmdbId: number, title?: string, y
     }));
   } catch (error) {
     console.error('Error fetching streaming availability:', error);
-    throw error; // Let the component handle the error
+    throw error;
   }
 }
 
