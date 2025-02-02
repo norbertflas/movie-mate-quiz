@@ -1,5 +1,29 @@
 import { supabase } from "@/integrations/supabase/client";
 
+const RETRY_DELAY = 2000; // Base delay of 2 seconds
+const MAX_RETRIES = 3;
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  retries: number = MAX_RETRIES,
+  delay: number = RETRY_DELAY
+): Promise<T> {
+  try {
+    return await fn();
+  } catch (error: any) {
+    if (retries === 0 || !error?.message?.includes('429')) {
+      throw error;
+    }
+
+    console.log(`Retrying after ${delay}ms...`);
+    await sleep(delay);
+    
+    return retryWithBackoff(fn, retries - 1, delay * 2);
+  }
+}
+
 export async function getStreamingAvailability(tmdbId: number, title?: string, year?: string, country: string = 'us') {
   try {
     // First, check our database for cached streaming info
@@ -22,23 +46,21 @@ export async function getStreamingAvailability(tmdbId: number, title?: string, y
       }));
     }
 
-    // If no cached data, try the regular streaming availability API
-    const { data: regularData, error: regularError } = await supabase
-      .functions.invoke('streaming-availability', {
+    // If no cached data, try the regular streaming availability API with retry logic
+    const { data: regularData } = await retryWithBackoff(async () => {
+      const response = await supabase.functions.invoke('streaming-availability', {
         body: { tmdbId, country }
       });
+      return response;
+    });
 
-    // Then, try the Gemini-powered availability check
-    const { data: geminiData, error: geminiError } = await supabase
-      .functions.invoke('streaming-availability-gemini', {
+    // Then, try the Gemini-powered availability check with retry logic
+    const { data: geminiData } = await retryWithBackoff(async () => {
+      const response = await supabase.functions.invoke('streaming-availability-gemini', {
         body: { tmdbId, title, year, country }
       });
-
-    // Handle various error cases
-    if (regularError && geminiError) {
-      console.error('Both APIs failed:', { regularError, geminiError });
-      return [];
-    }
+      return response;
+    });
 
     // Combine and deduplicate results from both sources
     const allServices = [
