@@ -25,8 +25,9 @@ async function tryGenerateContent(model: any, prompt: string, attempt = 1): Prom
     }
 
     if (error.message?.includes('429') || error.message?.includes('quota')) {
-      console.log(`Rate limit hit, waiting ${RETRY_DELAY * attempt}ms before retry`);
-      await sleep(RETRY_DELAY * attempt); // Exponential backoff
+      const delay = RETRY_DELAY * Math.pow(2, attempt - 1); // Exponential backoff
+      console.log(`Rate limit hit, waiting ${delay}ms before retry`);
+      await sleep(delay);
       return tryGenerateContent(model, prompt, attempt + 1);
     }
 

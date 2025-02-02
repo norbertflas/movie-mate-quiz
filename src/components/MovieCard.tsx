@@ -20,6 +20,8 @@ import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card";
 import { Skeleton } from "./ui/skeleton";
+import { Alert, AlertDescription } from "./ui/alert";
+import { AlertCircle } from "lucide-react";
 
 export const MovieCard = ({
   title,
@@ -46,21 +48,24 @@ export const MovieCard = ({
   
   const { userRating, handleRating } = useMovieRating(title);
 
-  // Query streaming availability when the card is opened
+  // Query streaming availability with improved error handling
   const { data: availableServices = [], isLoading, isError, error } = useQuery({
     queryKey: ['streamingAvailability', tmdbId, title, year],
     queryFn: () => getStreamingAvailability(tmdbId, title, year),
     enabled: !!tmdbId,
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
-    retry: 3, // Retry up to 3 times
+    retry: (failureCount, error: any) => {
+      // Only retry if it's a rate limit error and we haven't tried 3 times
+      return error?.status === 429 && failureCount < 3;
+    },
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
     meta: {
       onError: (error: any) => {
-        // Check if it's a rate limit error
         if (error?.status === 429) {
+          const retryAfter = error?.body?.retryAfter || 60;
           toast({
             title: t("errors.rateLimitExceeded"),
-            description: t("errors.tryAgainLater"),
+            description: t("errors.tryAgainIn", { seconds: retryAfter }),
             variant: "destructive",
           });
         } else {
@@ -114,22 +119,26 @@ export const MovieCard = ({
     }
 
     if (isError) {
+      const isRateLimit = (error as any)?.status === 429;
       return (
-        <div className="flex items-center justify-center p-4 border rounded-lg bg-destructive/10">
-          <span className="text-sm text-destructive">
-            {t("streaming.errorChecking")}
-          </span>
-        </div>
+        <Alert variant="destructive" className="bg-destructive/10 border-none">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {isRateLimit 
+              ? t("streaming.rateLimitError")
+              : t("streaming.errorChecking")}
+          </AlertDescription>
+        </Alert>
       );
     }
 
     if (availableServices.length === 0) {
       return (
-        <div className="flex items-center justify-center p-4 border rounded-lg bg-muted/50">
-          <span className="text-sm text-muted-foreground">
+        <Alert variant="default" className="bg-muted/50 border-none">
+          <AlertDescription>
             {t("streaming.notAvailable")}
-          </span>
-        </div>
+          </AlertDescription>
+        </Alert>
       );
     }
 
