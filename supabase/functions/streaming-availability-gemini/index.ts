@@ -7,6 +7,32 @@ const corsHeaders = {
 };
 
 const RETRY_AFTER = 60; // seconds to wait before retrying
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 2000; // 2 seconds between retries
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+async function tryGenerateContent(model: any, prompt: string, attempt = 1): Promise<any> {
+  try {
+    console.log(`Attempt ${attempt} to generate content`);
+    const result = await model.generateContent(prompt);
+    return result;
+  } catch (error) {
+    console.error(`Error on attempt ${attempt}:`, error);
+    
+    if (attempt >= MAX_RETRIES) {
+      throw error;
+    }
+
+    if (error.message?.includes('429') || error.message?.includes('quota')) {
+      console.log(`Rate limit hit, waiting ${RETRY_DELAY}ms before retry`);
+      await sleep(RETRY_DELAY * attempt); // Exponential backoff
+      return tryGenerateContent(model, prompt, attempt + 1);
+    }
+
+    throw error;
+  }
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -26,7 +52,7 @@ Deno.serve(async (req) => {
     console.log('Sending prompt to Gemini:', prompt);
 
     try {
-      const result = await model.generateContent(prompt);
+      const result = await tryGenerateContent(model, prompt);
       const response = await result.response;
       const text = response.text();
       console.log('Received response from Gemini:', text);
