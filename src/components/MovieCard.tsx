@@ -55,9 +55,13 @@ export const MovieCard = ({
     enabled: !!tmdbId,
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
     retry: (failureCount, error: any) => {
+      // Only retry on rate limit errors, up to 3 times
       return error?.status === 429 && failureCount < 3;
     },
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    retryDelay: (attemptIndex) => {
+      // Exponential backoff with max delay of 30 seconds
+      return Math.min(1000 * 2 ** attemptIndex, 30000);
+    },
     meta: {
       onError: (error: any) => {
         if (error?.status === 429) {
