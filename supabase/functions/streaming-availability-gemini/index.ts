@@ -34,6 +34,48 @@ async function tryGenerateContent(model: any, prompt: string, attempt = 1): Prom
   }
 }
 
+function extractJsonFromText(text: string): any[] {
+  try {
+    // Try to find a JSON array in the text using a more robust regex
+    const jsonRegex = /\[[\s\S]*?\]/g;
+    const matches = text.match(jsonRegex);
+    
+    if (!matches) {
+      console.log('No JSON array found in text');
+      return [];
+    }
+
+    // Try each match until we find valid JSON
+    for (const match of matches) {
+      try {
+        const parsed = JSON.parse(match);
+        if (Array.isArray(parsed)) {
+          return parsed;
+        }
+      } catch (e) {
+        console.log('Failed to parse match:', match);
+        continue;
+      }
+    }
+
+    return [];
+  } catch (error) {
+    console.error('Error extracting JSON from text:', error);
+    return [];
+  }
+}
+
+function validateStreamingService(service: any): boolean {
+  return (
+    service &&
+    typeof service === 'object' &&
+    typeof service.service === 'string' &&
+    typeof service.link === 'string' &&
+    service.service.length > 0 &&
+    service.link.length > 0
+  );
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -47,7 +89,7 @@ Deno.serve(async (req) => {
     const genAI = new GoogleGenerativeAI(Deno.env.get('GEMINI_API_KEY') || '');
     const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
-    const prompt = `Tell me on which major streaming platforms the movie "${title}" (${year}) is currently available to watch in ${country}. Only include major streaming platforms like Netflix, Amazon Prime Video, Disney+, Hulu, HBO Max, Apple TV+. Format the response as a JSON array with objects containing 'service' and 'link' properties. If you're not completely sure about availability, don't include that service. Only include factual information.`;
+    const prompt = `Tell me on which major streaming platforms the movie "${title}" (${year}) is currently available to watch in ${country}. Only include major streaming platforms like Netflix, Amazon Prime Video, Disney+, Hulu, HBO Max, Apple TV+. Format the response as a JSON array with objects containing 'service' and 'link' properties. If you're not completely sure about availability, don't include that service. Only include factual information. Example format: [{"service": "Netflix", "link": "https://netflix.com"}]`;
 
     console.log('Sending prompt to Gemini:', prompt);
 
@@ -57,42 +99,33 @@ Deno.serve(async (req) => {
       const text = response.text();
       console.log('Received response from Gemini:', text);
       
-      let streamingServices = [];
-      try {
-        // Extract JSON array from response
-        const match = text.match(/\[.*\]/s);
-        if (match) {
-          streamingServices = JSON.parse(match[0]);
-          console.log('Parsed streaming services:', streamingServices);
-        }
-      } catch (error) {
-        console.error('Error parsing Gemini response:', error);
-        return new Response(
-          JSON.stringify({ 
-            result: [], 
-            error: 'Invalid response format from Gemini API',
-            fallback: true,
-            retryAfter: RETRY_AFTER
-          }),
-          {
-            headers: { 
-              ...corsHeaders, 
-              'Content-Type': 'application/json',
-              'Retry-After': RETRY_AFTER.toString()
-            },
-            status: 422
-          },
-        );
+      // Extract and validate streaming services
+      const streamingServices = extractJsonFromText(text);
+      console.log('Extracted streaming services:', streamingServices);
+
+      if (!Array.isArray(streamingServices)) {
+        console.error('Invalid response format: not an array');
+        throw new Error('Invalid response format: not an array');
       }
 
       // Validate and format the response
-      const validServices = streamingServices.filter(service => 
-        service && 
-        typeof service.service === 'string' && 
-        typeof service.link === 'string'
-      );
+      const validServices = streamingServices.filter(validateStreamingService);
+      console.log('Valid services after filtering:', validServices);
 
-      console.log('Returning valid services:', validServices);
+      if (validServices.length === 0) {
+        console.log('No valid streaming services found');
+        return new Response(
+          JSON.stringify({ 
+            result: [], 
+            message: 'No streaming services found',
+            fallback: true
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200
+          },
+        );
+      }
 
       return new Response(
         JSON.stringify({ result: validServices }),
