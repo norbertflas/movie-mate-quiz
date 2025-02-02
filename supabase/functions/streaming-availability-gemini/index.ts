@@ -8,7 +8,7 @@ const corsHeaders = {
 
 const RETRY_AFTER = 60; // seconds to wait before retrying
 const MAX_RETRIES = 3;
-const RETRY_DELAY = 2000; // 2 seconds between retries
+const INITIAL_RETRY_DELAY = 1000; // Start with 1 second
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -25,8 +25,8 @@ async function tryGenerateContent(model: any, prompt: string, attempt = 1): Prom
     }
 
     if (error.message?.includes('429') || error.message?.includes('quota')) {
-      const delay = RETRY_DELAY * Math.pow(2, attempt - 1); // Exponential backoff
-      console.log(`Rate limit hit, waiting ${delay}ms before retry`);
+      const delay = INITIAL_RETRY_DELAY * Math.pow(2, attempt - 1); // True exponential backoff
+      console.log(`Rate limit hit, waiting ${delay}ms before retry ${attempt + 1}`);
       await sleep(delay);
       return tryGenerateContent(model, prompt, attempt + 1);
     }
@@ -112,10 +112,10 @@ Deno.serve(async (req) => {
       if (error.message?.includes('429') || error.message?.includes('quota')) {
         return new Response(
           JSON.stringify({ 
-            result: [], 
-            error: 'Rate limit exceeded. Please try again later.',
-            fallback: true,
-            retryAfter: RETRY_AFTER
+            error: 'Rate limit exceeded',
+            message: `Please try again in ${RETRY_AFTER} seconds`,
+            retryAfter: RETRY_AFTER,
+            result: []
           }),
           {
             headers: { 
@@ -132,9 +132,9 @@ Deno.serve(async (req) => {
       if (error.message?.includes('SAFETY')) {
         return new Response(
           JSON.stringify({ 
-            result: [], 
-            error: 'Content safety check failed. Using alternative data source.',
-            fallback: true 
+            error: 'Content safety check failed',
+            message: 'Using alternative data source',
+            result: []
           }),
           {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -143,18 +143,7 @@ Deno.serve(async (req) => {
         );
       }
 
-      // For any other error, return a generic error response
-      return new Response(
-        JSON.stringify({ 
-          result: [], 
-          error: 'Unable to process request. Using alternative data source.',
-          fallback: true 
-        }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 422
-        },
-      );
+      throw error;
     }
   } catch (error) {
     console.error('Error in streaming-availability-gemini function:', error);
@@ -162,8 +151,8 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         error: error.message || 'Internal server error',
-        result: [],
-        fallback: true
+        message: 'An unexpected error occurred',
+        result: []
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

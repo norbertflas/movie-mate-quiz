@@ -48,7 +48,7 @@ export const MovieCard = ({
   
   const { userRating, handleRating } = useMovieRating(title);
 
-  // Query streaming availability with improved error handling
+  // Query streaming availability with improved error handling and retry logic
   const { data: availableServices = [], isLoading, isError, error } = useQuery({
     queryKey: ['streamingAvailability', tmdbId, title, year],
     queryFn: () => getStreamingAvailability(tmdbId, title, year),
