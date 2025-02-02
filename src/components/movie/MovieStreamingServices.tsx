@@ -1,12 +1,30 @@
 import { Badge } from "../ui/badge";
 import { motion } from "framer-motion";
 import { Card } from "../ui/card";
+import { Skeleton } from "../ui/skeleton";
 
-interface MovieStreamingServicesProps {
+export interface MovieStreamingServicesProps {
   services?: string[];
+  isLoading?: boolean;
+  onError?: () => void;
 }
 
-export const MovieStreamingServices = ({ services = [] }: MovieStreamingServicesProps) => {
+export const MovieStreamingServices = ({ 
+  services = [], 
+  isLoading = false,
+  onError 
+}: MovieStreamingServicesProps) => {
+  if (isLoading) {
+    return (
+      <Card className="p-4 bg-background/50 backdrop-blur-sm">
+        <div className="flex gap-2">
+          <Skeleton className="h-8 w-24" />
+          <Skeleton className="h-8 w-24" />
+        </div>
+      </Card>
+    );
+  }
+
   if (!services?.length) return null;
 
   return (
