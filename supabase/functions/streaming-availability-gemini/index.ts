@@ -9,6 +9,7 @@ const corsHeaders = {
 const RETRY_AFTER = 60;
 const MAX_RETRIES = 3;
 const INITIAL_RETRY_DELAY = 1000;
+const CACHE_DURATION = 24 * 60 * 60; // 24 hours in seconds
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -35,6 +36,29 @@ async function tryGenerateContent(model: any, prompt: string, attempt = 1): Prom
   }
 }
 
+async function getCachedResult(supabase: any, tmdbId: number, country: string) {
+  const { data } = await supabase
+    .from('movie_streaming_availability')
+    .select('service_id, available_since')
+    .eq('tmdb_id', tmdbId)
+    .eq('region', country)
+    .gte('available_since', new Date(Date.now() - CACHE_DURATION * 1000).toISOString());
+
+  if (data?.length > 0) {
+    const { data: services } = await supabase
+      .from('streaming_services')
+      .select('name')
+      .in('id', data.map(d => d.service_id));
+      
+    return services?.map(s => ({
+      service: s.name,
+      link: `https://${s.name.toLowerCase()}.com/watch/${tmdbId}`
+    }));
+  }
+
+  return null;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -43,6 +67,21 @@ Deno.serve(async (req) => {
   try {
     const { tmdbId, title, year, country = 'us' } = await req.json();
     console.log(`Checking streaming availability for: ${title} (${year}) in ${country}`);
+
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const supabase = createClient(supabaseUrl!, supabaseKey!);
+
+    // Check cache first
+    const cachedResult = await getCachedResult(supabase, tmdbId, country);
+    if (cachedResult) {
+      console.log('Returning cached result');
+      return new Response(
+        JSON.stringify({ result: cachedResult }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     const genAI = new GoogleGenerativeAI(Deno.env.get('GEMINI_API_KEY') || '');
     const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
@@ -63,11 +102,7 @@ Deno.serve(async (req) => {
       if (!streamingServices) {
         console.log('No streaming services found in response');
         return new Response(
-          JSON.stringify({ 
-            result: [], 
-            message: 'No streaming services found',
-            fallback: true
-          }),
+          JSON.stringify({ result: [] }),
           {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 200
@@ -89,6 +124,30 @@ Deno.serve(async (req) => {
           service.service.length > 0 &&
           service.link.length > 0
         );
+
+        // Cache the results
+        if (validServices.length > 0) {
+          const { data: services } = await supabase
+            .from('streaming_services')
+            .select('id, name')
+            .in('name', validServices.map(s => s.service));
+
+          if (services?.length > 0) {
+            const serviceMap = new Map(services.map(s => [s.name.toLowerCase(), s.id]));
+            const availabilityRecords = validServices.map(service => ({
+              tmdb_id: tmdbId,
+              service_id: serviceMap.get(service.service.toLowerCase()),
+              region: country,
+              available_since: new Date().toISOString()
+            }));
+
+            await supabase
+              .from('movie_streaming_availability')
+              .upsert(availabilityRecords, {
+                onConflict: 'tmdb_id,service_id,region'
+              });
+          }
+        }
 
         console.log('Valid services after filtering:', validServices);
 
@@ -120,20 +179,6 @@ Deno.serve(async (req) => {
               'Retry-After': RETRY_AFTER.toString()
             },
             status: 429
-          },
-        );
-      }
-
-      if (error.message?.includes('SAFETY')) {
-        return new Response(
-          JSON.stringify({ 
-            error: 'Content safety check failed',
-            message: 'Using alternative data source',
-            result: []
-          }),
-          {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 422
           },
         );
       }
