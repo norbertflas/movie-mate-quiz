@@ -172,7 +172,9 @@ export const MovieCard = ({
             <HoverCardContent className="w-80">
               <div className="flex justify-between space-x-4">
                 <div className="space-y-1">
-                  <h4 className="text-sm font-semibold">{t("streaming.watchOn", { service: service.service })}</h4>
+                  <h4 className="text-sm font-semibold">
+                    {t("streaming.watchOn", { service: service.service })}
+                  </h4>
                   <p className="text-sm text-muted-foreground">
                     {t("streaming.clickToWatch")}
                   </p>

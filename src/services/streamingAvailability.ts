@@ -106,7 +106,7 @@ export async function getStreamingAvailability(tmdbId: number, title?: string, y
     }));
   } catch (error) {
     console.error('Error fetching streaming availability:', error);
-    return [];
+    throw error; // Let the component handle the error
   }
 }
 
