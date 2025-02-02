@@ -18,6 +18,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getStreamingAvailability } from "@/services/streamingAvailability";
 import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card";
 
 export const MovieCard = ({
   title,
@@ -49,6 +50,7 @@ export const MovieCard = ({
     queryKey: ['streamingAvailability', tmdbId, title, year],
     queryFn: () => getStreamingAvailability(tmdbId, title, year),
     enabled: !!tmdbId,
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
     meta: {
       onError: () => {
         toast({
@@ -135,20 +137,46 @@ export const MovieCard = ({
                   {t("streaming.availableOn")}:
                 </span>
                 {availableServices.map((service) => (
-                  <Badge key={service.service} variant="secondary" className="flex items-center gap-2">
-                    <img 
-                      src={`/streaming-icons/${service.service.toLowerCase()}.svg`} 
-                      alt={service.service}
-                      className="w-4 h-4"
-                    />
-                    {service.service}
-                  </Badge>
+                  <HoverCard key={service.service}>
+                    <HoverCardTrigger asChild>
+                      <a 
+                        href={service.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Badge 
+                          variant="secondary" 
+                          className="flex items-center gap-2 hover:bg-accent cursor-pointer"
+                        >
+                          <img 
+                            src={service.logo || `/streaming-icons/${service.service.toLowerCase()}.svg`}
+                            alt={service.service}
+                            className="w-4 h-4"
+                          />
+                          {service.service}
+                        </Badge>
+                      </a>
+                    </HoverCardTrigger>
+                    <HoverCardContent className="w-80">
+                      <div className="flex justify-between space-x-4">
+                        <div className="space-y-1">
+                          <h4 className="text-sm font-semibold">{t("streaming.watchOn", { service: service.service })}</h4>
+                          <p className="text-sm text-muted-foreground">
+                            {t("streaming.clickToWatch")}
+                          </p>
+                        </div>
+                      </div>
+                    </HoverCardContent>
+                  </HoverCard>
                 ))}
               </div>
             ) : (
-              <span className="text-sm text-muted-foreground">
-                {t("streaming.notAvailable")}
-              </span>
+              <div className="flex items-center justify-center p-4 border rounded-lg bg-muted/50">
+                <span className="text-sm text-muted-foreground">
+                  {t("streaming.checkingAvailability")}
+                </span>
+              </div>
             )}
           </CardContent>
         </MovieCardContainer>
