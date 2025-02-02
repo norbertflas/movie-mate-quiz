@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 
-const RETRY_DELAY = 2000; // Base delay of 2 seconds
+const RETRY_DELAY = 2000;
 const MAX_RETRIES = 3;
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -46,21 +46,21 @@ export async function getStreamingAvailability(tmdbId: number, title?: string, y
       }));
     }
 
-    // If no cached data, try the streaming availability API with retry logic
-    const { data: regularData } = await retryWithBackoff(async () => {
-      const response = await supabase.functions.invoke('streaming-availability', {
-        body: { tmdbId, country }
-      });
-      return response;
-    });
-
-    // Then, try the Gemini-powered availability check with retry logic
-    const { data: geminiData } = await retryWithBackoff(async () => {
-      const response = await supabase.functions.invoke('streaming-availability-gemini', {
-        body: { tmdbId, title, year, country }
-      });
-      return response;
-    });
+    // Try both APIs in parallel for faster results
+    const [regularData, geminiData] = await Promise.all([
+      retryWithBackoff(async () => {
+        const response = await supabase.functions.invoke('streaming-availability', {
+          body: { tmdbId, country }
+        });
+        return response.data;
+      }),
+      retryWithBackoff(async () => {
+        const response = await supabase.functions.invoke('streaming-availability-gemini', {
+          body: { tmdbId, title, year, country }
+        });
+        return response.data;
+      })
+    ]);
 
     // Combine and deduplicate results from both sources
     const allServices = [
@@ -110,15 +110,12 @@ export async function getStreamingAvailability(tmdbId: number, title?: string, y
   }
 }
 
-export async function searchByStreaming(
-  services: string[],
-  country: string = 'us'
-): Promise<number[]> {
+export async function searchByStreaming(services: string[], country: string = 'us'): Promise<number[]> {
   try {
     const { data, error } = await supabase
       .from('movie_streaming_availability')
-      .select('tmdb_id, streaming_services!inner(name)')
-      .in('streaming_services.name', services)
+      .select('tmdb_id')
+      .in('service_id', services)
       .eq('region', country);
 
     if (error) {
@@ -130,5 +127,15 @@ export async function searchByStreaming(
   } catch (error) {
     console.error('Error searching streaming movies:', error);
     return [];
+  }
+}
+
+export async function isMovieStreamingAvailable(tmdbId: number, country: string = 'us'): Promise<boolean> {
+  try {
+    const services = await getStreamingAvailability(tmdbId, undefined, undefined, country);
+    return services.length > 0;
+  } catch (error) {
+    console.error('Error checking streaming availability:', error);
+    return false;
   }
 }

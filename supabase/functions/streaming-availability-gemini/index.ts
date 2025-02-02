@@ -6,9 +6,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const RETRY_AFTER = 60; // seconds to wait before retrying
+const RETRY_AFTER = 60;
 const MAX_RETRIES = 3;
-const INITIAL_RETRY_DELAY = 1000; // Start with 1 second
+const INITIAL_RETRY_DELAY = 1000;
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 

@@ -55,10 +55,9 @@ export const MovieCard = ({
     enabled: !!tmdbId,
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
     retry: (failureCount, error: any) => {
-      // Only retry if it's a rate limit error and we haven't tried 3 times
       return error?.status === 429 && failureCount < 3;
     },
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
     meta: {
       onError: (error: any) => {
         if (error?.status === 429) {
@@ -78,6 +77,11 @@ export const MovieCard = ({
       }
     }
   });
+
+  // If the movie is not available on any streaming service, don't render the card
+  if (!isLoading && !isError && availableServices.length === 0) {
+    return null;
+  }
 
   const handleCardClick = () => {
     setIsDetailsOpen(true);
@@ -127,16 +131,6 @@ export const MovieCard = ({
             {isRateLimit 
               ? t("streaming.rateLimitError")
               : t("streaming.errorChecking")}
-          </AlertDescription>
-        </Alert>
-      );
-    }
-
-    if (availableServices.length === 0) {
-      return (
-        <Alert variant="default" className="bg-muted/50 border-none">
-          <AlertDescription>
-            {t("streaming.notAvailable")}
           </AlertDescription>
         </Alert>
       );
