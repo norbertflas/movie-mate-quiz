@@ -46,11 +46,13 @@ export const MovieCard = ({
   const { userRating, handleRating } = useMovieRating(title);
 
   // Query streaming availability when the card is opened
-  const { data: availableServices = [] } = useQuery({
+  const { data: availableServices = [], isError } = useQuery({
     queryKey: ['streamingAvailability', tmdbId, title, year],
     queryFn: () => getStreamingAvailability(tmdbId, title, year),
     enabled: !!tmdbId,
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    retry: 3, // Retry up to 3 times
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
     meta: {
       onError: () => {
         toast({
