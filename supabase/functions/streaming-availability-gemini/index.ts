@@ -34,48 +34,6 @@ async function tryGenerateContent(model: any, prompt: string, attempt = 1): Prom
   }
 }
 
-function extractJsonFromText(text: string): any[] {
-  try {
-    // Try to find a JSON array in the text using a more robust regex
-    const jsonRegex = /\[[\s\S]*?\]/g;
-    const matches = text.match(jsonRegex);
-    
-    if (!matches) {
-      console.log('No JSON array found in text');
-      return [];
-    }
-
-    // Try each match until we find valid JSON
-    for (const match of matches) {
-      try {
-        const parsed = JSON.parse(match);
-        if (Array.isArray(parsed)) {
-          return parsed;
-        }
-      } catch (e) {
-        console.log('Failed to parse match:', match);
-        continue;
-      }
-    }
-
-    return [];
-  } catch (error) {
-    console.error('Error extracting JSON from text:', error);
-    return [];
-  }
-}
-
-function validateStreamingService(service: any): boolean {
-  return (
-    service &&
-    typeof service === 'object' &&
-    typeof service.service === 'string' &&
-    typeof service.link === 'string' &&
-    service.service.length > 0 &&
-    service.link.length > 0
-  );
-}
-
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -99,21 +57,12 @@ Deno.serve(async (req) => {
       const text = response.text();
       console.log('Received response from Gemini:', text);
       
-      // Extract and validate streaming services
-      const streamingServices = extractJsonFromText(text);
+      // Extract JSON from response
+      const streamingServices = text.match(/\[[\s\S]*?\]/)?.[0];
       console.log('Extracted streaming services:', streamingServices);
 
-      if (!Array.isArray(streamingServices)) {
-        console.error('Invalid response format: not an array');
-        throw new Error('Invalid response format: not an array');
-      }
-
-      // Validate and format the response
-      const validServices = streamingServices.filter(validateStreamingService);
-      console.log('Valid services after filtering:', validServices);
-
-      if (validServices.length === 0) {
-        console.log('No valid streaming services found');
+      if (!streamingServices) {
+        console.log('No streaming services found in response');
         return new Response(
           JSON.stringify({ 
             result: [], 
@@ -127,12 +76,34 @@ Deno.serve(async (req) => {
         );
       }
 
-      return new Response(
-        JSON.stringify({ result: validServices }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      );
+      try {
+        const parsedServices = JSON.parse(streamingServices);
+        if (!Array.isArray(parsedServices)) {
+          throw new Error('Invalid response format: not an array');
+        }
+
+        // Validate services
+        const validServices = parsedServices.filter(service => 
+          service && 
+          typeof service === 'object' && 
+          typeof service.service === 'string' && 
+          typeof service.link === 'string' &&
+          service.service.length > 0 &&
+          service.link.length > 0
+        );
+
+        console.log('Valid services after filtering:', validServices);
+
+        return new Response(
+          JSON.stringify({ result: validServices }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          },
+        );
+      } catch (error) {
+        console.error('Error parsing streaming services:', error);
+        throw error;
+      }
     } catch (error) {
       console.error('Gemini API Error:', error);
       
