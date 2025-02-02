@@ -7,6 +7,7 @@ import { MovieFavoriteHandler } from "./MovieFavoriteHandler";
 import { MovieMediaSection } from "./MovieMediaSection";
 import { MovieExpandedContent } from "./MovieExpandedContent";
 import { useMovieRating } from "./MovieRatingLogic";
+import { useToast } from "../ui/use-toast";
 
 interface MovieCardProps {
   title: string;
@@ -38,6 +39,8 @@ export const MovieCard = ({
   const [isFavorite, setIsFavorite] = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isLoadingServices, setIsLoadingServices] = useState(false);
+  const { toast } = useToast();
   
   const { userRating, handleRating } = useMovieRating(title);
 
@@ -49,6 +52,14 @@ export const MovieCard = ({
 
   const handleTrailerToggle = () => {
     setShowTrailer(!showTrailer);
+  };
+
+  const handleStreamingError = () => {
+    toast({
+      title: "Streaming Services Unavailable",
+      description: "We're having trouble loading streaming services. Please try again later.",
+      variant: "destructive",
+    });
   };
 
   return (
@@ -80,7 +91,11 @@ export const MovieCard = ({
         </CardHeader>
 
         <CardContent className="space-y-4 flex-grow p-4">
-          <MovieStreamingServices services={streamingServices} />
+          <MovieStreamingServices 
+            services={streamingServices} 
+            isLoading={isLoadingServices}
+            onError={handleStreamingError}
+          />
           
           <MovieExpandedContent
             isExpanded={isExpanded}
