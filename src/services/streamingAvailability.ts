@@ -11,7 +11,7 @@ export async function getStreamingAvailability(tmdbId: number, title?: string, y
           logo_url
         )
       `)
-      .eq('movie_id', tmdbId)
+      .eq('tmdb_id', tmdbId)
       .eq('region', country);
 
     if (cachedData?.length > 0) {
@@ -63,7 +63,7 @@ export async function getStreamingAvailability(tmdbId: number, title?: string, y
         const serviceMap = new Map(services.map(s => [s.name.toLowerCase(), s.id]));
         
         const availabilityRecords = uniqueServices.map(service => ({
-          movie_id: tmdbId,
+          tmdb_id: tmdbId,
           service_id: serviceMap.get(service.service.toLowerCase()),
           region: country,
           available_since: new Date().toISOString()
@@ -71,7 +71,9 @@ export async function getStreamingAvailability(tmdbId: number, title?: string, y
 
         await supabase
           .from('movie_streaming_availability')
-          .upsert(availabilityRecords);
+          .upsert(availabilityRecords, {
+            onConflict: 'tmdb_id,service_id,region'
+          });
       }
     }
 
@@ -93,7 +95,7 @@ export async function searchByStreaming(
   try {
     const { data, error } = await supabase
       .from('movie_streaming_availability')
-      .select('movie_id, streaming_services!inner(name)')
+      .select('tmdb_id, streaming_services!inner(name)')
       .in('streaming_services.name', services)
       .eq('region', country);
 
@@ -102,7 +104,7 @@ export async function searchByStreaming(
       return [];
     }
 
-    return data?.map(item => item.movie_id) || [];
+    return data?.map(item => item.tmdb_id) || [];
   } catch (error) {
     console.error('Error searching streaming movies:', error);
     return [];

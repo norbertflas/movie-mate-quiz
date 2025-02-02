@@ -141,6 +141,7 @@ export type Database = {
           movie_id: string | null
           region: string
           service_id: string | null
+          tmdb_id: number | null
         }
         Insert: {
           available_since?: string
@@ -148,6 +149,7 @@ export type Database = {
           movie_id?: string | null
           region: string
           service_id?: string | null
+          tmdb_id?: number | null
         }
         Update: {
           available_since?: string
@@ -155,6 +157,7 @@ export type Database = {
           movie_id?: string | null
           region?: string
           service_id?: string | null
+          tmdb_id?: number | null
         }
         Relationships: [
           {
