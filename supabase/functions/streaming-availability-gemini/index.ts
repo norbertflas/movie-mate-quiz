@@ -9,6 +9,7 @@ const corsHeaders = {
 const RETRY_AFTER = 60;
 const MAX_RETRIES = 3;
 const INITIAL_RETRY_DELAY = 1000;
+const CACHE_DURATION = 24 * 60 * 60; // 24 hours in seconds
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -35,6 +36,27 @@ async function tryGenerateContent(model: any, prompt: string, attempt = 1): Prom
   }
 }
 
+async function getCachedStreamingData(supabase: any, tmdbId: number, country: string) {
+  const { data, error } = await supabase
+    .from('movie_streaming_availability')
+    .select(`
+      streaming_services:service_id(
+        name,
+        logo_url
+      )
+    `)
+    .eq('tmdb_id', tmdbId)
+    .eq('region', country)
+    .single();
+
+  if (error) {
+    console.error('Error fetching cached streaming data:', error);
+    return null;
+  }
+
+  return data;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -43,6 +65,27 @@ Deno.serve(async (req) => {
   try {
     const { tmdbId, title, year, country = 'us' } = await req.json();
     console.log(`Checking streaming availability for: ${title} (${year}) in ${country}`);
+
+    // Check cache first
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') || '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+    );
+
+    const cachedData = await getCachedStreamingData(supabase, tmdbId, country);
+    if (cachedData) {
+      console.log('Returning cached streaming data');
+      return new Response(
+        JSON.stringify({ 
+          result: [{
+            service: cachedData.streaming_services.name,
+            link: `https://${cachedData.streaming_services.name.toLowerCase()}.com/watch/${tmdbId}`,
+            logo: cachedData.streaming_services.logo_url
+          }]
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     const genAI = new GoogleGenerativeAI(Deno.env.get('GEMINI_API_KEY') || '');
     const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
@@ -87,6 +130,31 @@ Deno.serve(async (req) => {
         );
 
         console.log('Valid services after filtering:', validServices);
+
+        // Cache the results
+        if (validServices.length > 0) {
+          const { data: services } = await supabase
+            .from('streaming_services')
+            .select('id, name')
+            .in('name', validServices.map(s => s.service));
+
+          if (services?.length > 0) {
+            const serviceMap = new Map(services.map(s => [s.name.toLowerCase(), s.id]));
+            
+            const availabilityRecords = validServices.map(service => ({
+              tmdb_id: tmdbId,
+              service_id: serviceMap.get(service.service.toLowerCase()),
+              region: country,
+              available_since: new Date().toISOString()
+            }));
+
+            await supabase
+              .from('movie_streaming_availability')
+              .upsert(availabilityRecords, {
+                onConflict: 'tmdb_id,service_id,region'
+              });
+          }
+        }
 
         return new Response(
           JSON.stringify({ result: validServices }),
