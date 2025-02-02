@@ -48,24 +48,27 @@ export const MovieCard = ({
   
   const { userRating, handleRating } = useMovieRating(title);
 
-  // Query streaming availability with improved error handling and retry logic
   const { data: availableServices = [], isLoading, isError, error } = useQuery({
     queryKey: ['streamingAvailability', tmdbId, title, year],
     queryFn: () => getStreamingAvailability(tmdbId, title, year),
     enabled: !!tmdbId,
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
     retry: (failureCount, error: any) => {
-      // Only retry on rate limit errors, up to 3 times
-      return error?.status === 429 && failureCount < 3;
+      if (error?.status === 429) {
+        // Only retry rate limit errors up to 3 times
+        return failureCount < 3;
+      }
+      return false; // Don't retry other errors
     },
     retryDelay: (attemptIndex) => {
-      // Exponential backoff with max delay of 30 seconds
-      return Math.min(1000 * 2 ** attemptIndex, 30000);
+      // Exponential backoff: 2^attemptIndex * 1000ms, max 30 seconds
+      return Math.min(1000 * Math.pow(2, attemptIndex), 30000);
     },
     meta: {
       onError: (error: any) => {
+        const errorBody = typeof error.body === 'string' ? JSON.parse(error.body) : error.body;
         if (error?.status === 429) {
-          const retryAfter = error?.body?.retryAfter || 60;
+          const retryAfter = errorBody?.retryAfter || 60;
           toast({
             title: t("errors.rateLimitExceeded"),
             description: t("errors.tryAgainIn", { seconds: retryAfter }),
@@ -81,11 +84,6 @@ export const MovieCard = ({
       }
     }
   });
-
-  // If the movie is not available on any streaming service, don't render the card
-  if (!isLoading && !isError && availableServices.length === 0) {
-    return null;
-  }
 
   const handleCardClick = () => {
     setIsDetailsOpen(true);
@@ -128,16 +126,26 @@ export const MovieCard = ({
 
     if (isError) {
       const isRateLimit = (error as any)?.status === 429;
+      const errorBody = typeof (error as any)?.body === 'string' 
+        ? JSON.parse((error as any)?.body) 
+        : (error as any)?.body;
+      
       return (
         <Alert variant="destructive" className="bg-destructive/10 border-none">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
             {isRateLimit 
-              ? t("streaming.rateLimitError")
-              : t("streaming.errorChecking")}
+              ? t("errors.rateLimitWithRetry", { 
+                  seconds: errorBody?.retryAfter || 60 
+                })
+              : t("errors.streamingCheckFailed")}
           </AlertDescription>
         </Alert>
       );
+    }
+
+    if (!availableServices.length) {
+      return null;
     }
 
     return (
