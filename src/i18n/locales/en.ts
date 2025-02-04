@@ -78,4 +78,18 @@ export default {
     filteredResults: "Found {{count}} movies matching your filters",
     tryDifferentFilters: "Try adjusting your filters to find more movies"
   },
+  errors: {
+    rateLimitExceeded: "Rate limit exceeded",
+    rateLimitWithRetry: "Please try again in {{seconds}} seconds",
+    streamingCheckFailed: "Failed to check streaming availability",
+    tryAgainIn: "Please try again in {{seconds}} seconds",
+    trailerNotFound: "No trailer found",
+    tryAgain: "Please try again later",
+    trailerError: "Error loading trailer"
+  },
+  streaming: {
+    availableOn: "Available on",
+    watchOn: "Watch on {{service}}",
+    clickToWatch: "Click to watch now"
+  },
 };
