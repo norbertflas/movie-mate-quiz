@@ -22,25 +22,6 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
     retryDelay: (attemptIndex) => {
       // Exponential backoff: 2^attemptIndex * 1000ms, max 30 seconds
       return Math.min(1000 * Math.pow(2, attemptIndex), 30000);
-    },
-    meta: {
-      onError: (error: any) => {
-        const errorBody = typeof error.body === 'string' ? JSON.parse(error.body) : error.body;
-        if (error?.status === 429) {
-          const retryAfter = errorBody?.retryAfter || 60;
-          toast({
-            title: t("errors.rateLimitExceeded"),
-            description: t("errors.tryAgainIn", { seconds: retryAfter }),
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: t("errors.generic"),
-            description: t("errors.tryAgain"),
-            variant: "destructive",
-          });
-        }
-      }
     }
   });
 };

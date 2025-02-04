@@ -109,33 +109,3 @@ export async function getStreamingAvailability(tmdbId: number, title?: string, y
     throw error;
   }
 }
-
-export async function searchByStreaming(services: string[], country: string = 'us'): Promise<number[]> {
-  try {
-    const { data, error } = await supabase
-      .from('movie_streaming_availability')
-      .select('tmdb_id')
-      .in('service_id', services)
-      .eq('region', country);
-
-    if (error) {
-      console.error('Error searching streaming movies:', error);
-      return [];
-    }
-
-    return data?.map(item => item.tmdb_id) || [];
-  } catch (error) {
-    console.error('Error searching streaming movies:', error);
-    return [];
-  }
-}
-
-export async function isMovieStreamingAvailable(tmdbId: number, country: string = 'us'): Promise<boolean> {
-  try {
-    const services = await getStreamingAvailability(tmdbId, undefined, undefined, country);
-    return services.length > 0;
-  } catch (error) {
-    console.error('Error checking streaming availability:', error);
-    return false;
-  }
-}
