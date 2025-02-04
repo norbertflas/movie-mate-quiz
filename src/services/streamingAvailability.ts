@@ -16,18 +16,15 @@ async function retryWithBackoff<T>(
     if (retries === 0 || !error?.message?.includes('429')) {
       throw error;
     }
-
     console.log(`Rate limit hit, waiting ${delay}ms before retry ${retries}`);
     await sleep(delay);
-    
     return retryWithBackoff(fn, retries - 1, delay * 2);
   }
 }
 
 export async function getStreamingAvailability(tmdbId: number, title?: string, year?: string, country: string = 'us') {
   try {
-    // First, check our database for cached streaming info
-    const { data: cachedData, error: cacheError } = await supabase
+    const { data: cachedServices, error: cacheError } = await supabase
       .from('movie_streaming_availability')
       .select(`
         streaming_services:service_id(
@@ -38,53 +35,34 @@ export async function getStreamingAvailability(tmdbId: number, title?: string, y
       .eq('tmdb_id', tmdbId)
       .eq('region', country);
 
-    if (cachedData?.length > 0) {
-      return cachedData.map(item => ({
+    if (cachedServices?.length > 0) {
+      console.log('Using cached streaming data for movie:', tmdbId);
+      return cachedServices.map(item => ({
         service: item.streaming_services.name,
         link: `https://${item.streaming_services.name.toLowerCase()}.com/watch/${tmdbId}`,
         logo: item.streaming_services.logo_url
       }));
     }
 
-    // Try both APIs in parallel for faster results
-    const [regularData, geminiData] = await Promise.all([
-      retryWithBackoff(async () => {
-        const response = await supabase.functions.invoke('streaming-availability', {
-          body: { tmdbId, country }
-        });
-        return response.data;
-      }),
-      retryWithBackoff(async () => {
-        const response = await supabase.functions.invoke('streaming-availability-gemini', {
-          body: { tmdbId, title, year, country }
-        });
-        return response.data;
-      })
-    ]);
+    console.log('Fetching fresh streaming data for movie:', tmdbId);
+    const response = await retryWithBackoff(async () => {
+      return await supabase.functions.invoke('streaming-availability-gemini', {
+        body: { tmdbId, title, year, country }
+      });
+    });
 
-    // Combine and deduplicate results from both sources
-    const allServices = [
-      ...(regularData?.result || []),
-      ...(geminiData?.result || [])
-    ];
+    const services = response.data?.result || [];
     
-    // Deduplicate services by name
-    const uniqueServices = Array.from(
-      new Map(allServices.map(item => [item.service.toLowerCase(), item]))
-      .values()
-    );
-
-    // Cache the results in our database
-    if (uniqueServices.length > 0) {
-      const { data: services } = await supabase
+    if (services.length > 0) {
+      const { data: streamingServices } = await supabase
         .from('streaming_services')
         .select('id, name')
-        .in('name', uniqueServices.map(s => s.service));
+        .in('name', services.map(s => s.service));
 
-      if (services?.length > 0) {
-        const serviceMap = new Map(services.map(s => [s.name.toLowerCase(), s.id]));
+      if (streamingServices?.length > 0) {
+        const serviceMap = new Map(streamingServices.map(s => [s.name.toLowerCase(), s.id]));
         
-        const availabilityRecords = uniqueServices.map(service => ({
+        const availabilityRecords = services.map(service => ({
           tmdb_id: tmdbId,
           service_id: serviceMap.get(service.service.toLowerCase()),
           region: country,
@@ -99,7 +77,7 @@ export async function getStreamingAvailability(tmdbId: number, title?: string, y
       }
     }
 
-    return uniqueServices.map(info => ({
+    return services.map(info => ({
       service: info.service,
       link: info.link || `https://${info.service.toLowerCase()}.com/watch/${tmdbId}`,
       logo: `/streaming-icons/${info.service.toLowerCase()}.svg`

@@ -15,13 +15,17 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
     gcTime: 1000 * 60 * 10, // Keep unused data for 10 minutes
     retry: (failureCount, error: any) => {
       if (error?.status === 429) {
-        return failureCount < 3; // Only retry rate limit errors up to 3 times
+        const errorBody = typeof error.body === 'string' ? JSON.parse(error.body) : error.body;
+        const retryAfter = errorBody?.retryAfter || 60;
+        toast({
+          title: t("errors.rateLimitExceeded"),
+          description: t("errors.tryAgainIn", { seconds: retryAfter }),
+          variant: "destructive",
+        });
+        return failureCount < 3;
       }
-      return false; // Don't retry other errors
+      return false;
     },
-    retryDelay: (attemptIndex) => {
-      // Exponential backoff: 2^attemptIndex * 1000ms, max 30 seconds
-      return Math.min(1000 * Math.pow(2, attemptIndex), 30000);
-    }
+    retryDelay: (attemptIndex) => Math.min(1000 * Math.pow(2, attemptIndex), 30000)
   });
 };
