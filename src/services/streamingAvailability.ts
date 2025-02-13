@@ -79,13 +79,15 @@ export async function getStreamingAvailability(tmdbId: number, title?: string, y
           service_id: serviceMap.get(service.service.toLowerCase()),
           region: country,
           available_since: new Date().toISOString()
-        }));
+        })).filter(record => record.service_id !== undefined);
 
-        await supabase
-          .from('movie_streaming_availability')
-          .upsert(availabilityRecords, {
-            onConflict: 'tmdb_id,service_id,region'
-          });
+        if (availabilityRecords.length > 0) {
+          await supabase
+            .from('movie_streaming_availability')
+            .upsert(availabilityRecords, {
+              onConflict: 'tmdb_id,service_id,region'
+            });
+        }
       }
     }
 
