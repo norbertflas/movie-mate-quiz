@@ -29,34 +29,46 @@ export const InfiniteMovieList = () => {
     queryFn: async ({ pageParam }) => {
       const movies = await discoverMovies({ page: pageParam as number });
       
-      // Check streaming availability for each movie
-      const moviesWithAvailability = await Promise.all(
-        movies.map(async (movie) => {
-          try {
-            setLoadingStates(prev => ({ ...prev, [movie.id]: true }));
-            const availability = await getStreamingAvailability(
-              movie.id,
-              movie.title,
-              movie.release_date ? new Date(movie.release_date).getFullYear().toString() : undefined
-            );
-            setLoadingStates(prev => ({ ...prev, [movie.id]: false }));
-            return {
-              ...movie,
-              hasStreamingServices: availability.length > 0
-            };
-          } catch (error) {
-            console.error('Error checking availability:', error);
-            setLoadingStates(prev => ({ ...prev, [movie.id]: false }));
-            return {
-              ...movie,
-              hasStreamingServices: false
-            };
-          }
-        })
-      );
+      // Check streaming availability for each movie, but only a few at a time
+      const batchSize = 3; // Process 3 movies at a time
+      const results = [];
+      
+      for (let i = 0; i < movies.length; i += batchSize) {
+        const batch = movies.slice(i, i + batchSize);
+        const batchResults = await Promise.all(
+          batch.map(async (movie) => {
+            try {
+              setLoadingStates(prev => ({ ...prev, [movie.id]: true }));
+              const availability = await getStreamingAvailability(
+                movie.id,
+                movie.title,
+                movie.release_date ? new Date(movie.release_date).getFullYear().toString() : undefined
+              );
+              setLoadingStates(prev => ({ ...prev, [movie.id]: false }));
+              return {
+                ...movie,
+                hasStreamingServices: availability.length > 0
+              };
+            } catch (error) {
+              console.error('Error checking availability:', error);
+              setLoadingStates(prev => ({ ...prev, [movie.id]: false }));
+              return {
+                ...movie,
+                hasStreamingServices: false
+              };
+            }
+          })
+        );
+        results.push(...batchResults);
+        
+        // Add a small delay between batches to avoid rate limits
+        if (i + batchSize < movies.length) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
 
       // Filter movies to only include those with streaming availability
-      const availableMovies = moviesWithAvailability.filter(movie => movie.hasStreamingServices);
+      const availableMovies = results.filter(movie => movie.hasStreamingServices);
 
       return {
         movies: availableMovies,
