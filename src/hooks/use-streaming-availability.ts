@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 // Global request queue management
 let lastRequestTime = 0;
 const MIN_REQUEST_INTERVAL = 2000; // 2 seconds between requests
-const MAX_CONCURRENT_REQUESTS = 5;
+const MAX_CONCURRENT_REQUESTS = 3; // Reduce concurrent requests
 let activeRequests = 0;
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -65,8 +65,10 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
       } catch (error: any) {
         console.error('Streaming availability error:', error);
         
+        // Parse error body if it's a string
+        const errorBody = typeof error.body === 'string' ? JSON.parse(error.body) : error.body;
+        
         if (error?.status === 429) {
-          const errorBody = typeof error.body === 'string' ? JSON.parse(error.body) : error.body;
           const retryAfter = errorBody?.retryAfter || 60;
           
           toast({
@@ -75,8 +77,15 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
             variant: "destructive",
           });
           
+          // Update the lastRequestTime to enforce the retry delay
           lastRequestTime = Date.now() + (retryAfter * 1000);
-          throw error;
+          
+          // Return empty result instead of throwing
+          return {
+            services: [],
+            timestamp: new Date().toISOString(),
+            isStale: true
+          };
         }
         
         // For other errors, return empty services array
@@ -92,19 +101,8 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
     enabled: !!tmdbId,
     staleTime: 1000 * 60 * 60, // Cache for 1 hour
     gcTime: 1000 * 60 * 120, // Keep unused data for 2 hours
-    retry: (failureCount, error: any) => {
-      // Only retry rate limit errors a few times
-      if (error?.status === 429) {
-        return failureCount < 2;
-      }
-      return false;
-    },
-    retryDelay: (_, error: any) => {
-      if (error?.status === 429) {
-        const errorBody = typeof error.body === 'string' ? JSON.parse(error.body) : error.body;
-        return (errorBody?.retryAfter || 60) * 1000;
-      }
-      return 0;
-    }
+    retry: false, // Disable automatic retries since we handle them manually
+    refetchOnWindowFocus: false, // Disable refetch on window focus to reduce API calls
+    refetchOnReconnect: false // Disable refetch on reconnect to reduce API calls
   });
 };

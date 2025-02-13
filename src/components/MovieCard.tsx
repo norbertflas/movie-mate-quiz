@@ -42,7 +42,7 @@ export const MovieCard = ({
   const { t } = useTranslation();
   
   const { userRating, handleRating } = useMovieRating(title);
-  const { data: availabilityData, isLoading, isError, error } = useStreamingAvailability(tmdbId, title, year);
+  const { data: availabilityData, isLoading, isError } = useStreamingAvailability(tmdbId, title, year);
 
   // Extract services from the availability data or use initial services
   const availableServices: StreamingService[] = availabilityData?.services || 
