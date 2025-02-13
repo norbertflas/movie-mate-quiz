@@ -49,14 +49,19 @@ async function getCachedStreamingData(supabase: any, tmdbId: number, country: st
       )
     `)
     .eq('tmdb_id', tmdbId)
-    .eq('region', country)
-    .single();
+    .eq('region', country);
 
   if (error) {
     console.error('Error fetching cached streaming data:', error);
     return null;
   }
 
+  // Return null if no data found
+  if (!data || data.length === 0) {
+    return null;
+  }
+
+  // Return all streaming services for this movie
   return data;
 }
 
@@ -84,11 +89,11 @@ Deno.serve(async (req) => {
       console.log('Returning cached streaming data');
       return new Response(
         JSON.stringify({ 
-          result: [{
-            service: cachedData.streaming_services.name,
-            link: `https://${cachedData.streaming_services.name.toLowerCase()}.com/watch/${tmdbId}`,
-            logo: cachedData.streaming_services.logo_url
-          }]
+          result: cachedData.map(item => ({
+            service: item.streaming_services.name,
+            link: `https://${item.streaming_services.name.toLowerCase()}.com/watch/${tmdbId}`,
+            logo: item.streaming_services.logo_url
+          }))
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -156,13 +161,15 @@ Deno.serve(async (req) => {
               service_id: serviceMap.get(service.service.toLowerCase()),
               region: country,
               available_since: new Date().toISOString()
-            }));
+            })).filter(record => record.service_id !== undefined);
 
-            await supabase
-              .from('movie_streaming_availability')
-              .upsert(availabilityRecords, {
-                onConflict: 'tmdb_id,service_id,region'
-              });
+            if (availabilityRecords.length > 0) {
+              await supabase
+                .from('movie_streaming_availability')
+                .upsert(availabilityRecords, {
+                  onConflict: 'tmdb_id,service_id,region'
+                });
+            }
           }
         }
 
