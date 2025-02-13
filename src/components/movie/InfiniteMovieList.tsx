@@ -6,6 +6,13 @@ import { MovieCard } from "../MovieCard";
 import { Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { getStreamingAvailability } from "@/services/streamingAvailability";
+import type { TMDBMovie } from "@/services/tmdb";
+
+interface MoviePageData {
+  movies: TMDBMovie[];
+  nextPage: number;
+  hasMore: boolean;
+}
 
 export const InfiniteMovieList = () => {
   const [loadingStates, setLoadingStates] = useState<{ [key: number]: boolean }>({});
@@ -16,10 +23,11 @@ export const InfiniteMovieList = () => {
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
-  } = useInfiniteQuery({
+  } = useInfiniteQuery<MoviePageData>({
     queryKey: ['discoverMovies'],
-    queryFn: async ({ pageParam = 1 }) => {
-      const movies = await discoverMovies({ page: pageParam });
+    initialPageParam: 1,
+    queryFn: async ({ pageParam }) => {
+      const movies = await discoverMovies({ page: pageParam as number });
       
       // Check streaming availability for each movie
       const moviesWithAvailability = await Promise.all(
@@ -52,7 +60,7 @@ export const InfiniteMovieList = () => {
 
       return {
         movies: availableMovies,
-        nextPage: pageParam + 1,
+        nextPage: (pageParam as number) + 1,
         hasMore: availableMovies.length > 0
       };
     },
@@ -92,7 +100,7 @@ export const InfiniteMovieList = () => {
               }
             }}
           >
-            {page.movies.map((movie, index) => (
+            {page.movies.map((movie) => (
               <motion.div
                 key={movie.id}
                 variants={{

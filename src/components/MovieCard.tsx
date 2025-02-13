@@ -17,6 +17,7 @@ import { X } from "lucide-react";
 import { Button } from "./ui/button";
 import { useStreamingAvailability } from "@/hooks/use-streaming-availability";
 import { useTranslation } from "react-i18next";
+import type { StreamingService } from "@/hooks/use-streaming-availability";
 
 export const MovieCard = ({
   title,
@@ -44,7 +45,13 @@ export const MovieCard = ({
   const { data: availabilityData, isLoading, isError, error } = useStreamingAvailability(tmdbId, title, year);
 
   // Extract services from the availability data or use initial services
-  const availableServices = availabilityData?.services || streamingServices;
+  const availableServices: StreamingService[] = availabilityData?.services || 
+    (typeof streamingServices[0] === 'string' 
+      ? streamingServices.map(service => ({
+          service: service as string,
+          link: `https://${(service as string).toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch/${tmdbId}`,
+        }))
+      : streamingServices as StreamingService[]);
 
   const handleCardClick = () => {
     setIsDetailsOpen(true);
