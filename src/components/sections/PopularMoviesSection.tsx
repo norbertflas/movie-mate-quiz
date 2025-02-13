@@ -1,3 +1,4 @@
+
 import { motion } from "framer-motion";
 import { MovieCard } from "../MovieCard";
 import type { TMDBMovie } from "@/services/tmdb";

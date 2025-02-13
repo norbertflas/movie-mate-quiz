@@ -2,11 +2,11 @@
 import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { InfiniteMovieList } from "../movie/InfiniteMovieList";
 import { SearchBar } from "../SearchBar";
 import { TrendingMoviesSection } from "./TrendingMoviesSection";
 import { useQuery } from "@tanstack/react-query";
-import { getTrendingMovies } from "@/services/tmdb/trending";
+import { getTrendingMovies, getPopularMovies } from "@/services/tmdb/trending";
+import { PopularMoviesSection } from "./PopularMoviesSection";
 
 export const MainContent = () => {
   const { t } = useTranslation();
@@ -14,6 +14,11 @@ export const MainContent = () => {
   const { data: trendingMovies = [] } = useQuery({
     queryKey: ['trendingMovies', 'US', '1'],
     queryFn: getTrendingMovies,
+  });
+
+  const { data: popularMovies = [] } = useQuery({
+    queryKey: ['popularMovies', 'US', '1'],
+    queryFn: getPopularMovies,
   });
 
   return (
@@ -40,33 +45,14 @@ export const MainContent = () => {
         <TrendingMoviesSection movies={trendingMovies} />
       </motion.div>
       
-      <motion.section
+      <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{
-          duration: 0.5,
-          delay: 0.4,
-          ease: "easeOut"
-        }}
-        className="glass-panel p-6 rounded-xl w-full transform-gpu"
+        transition={{ duration: 0.5, delay: 0.4 }}
+        className="glass-panel p-6 rounded-xl"
       >
-        <motion.h2 
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.5 }}
-          className="text-2xl font-bold mb-6 gradient-text"
-        >
-          {t("discover.popular")}
-        </motion.h2>
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.6 }}
-          className="w-full max-h-[800px] overflow-y-auto"
-        >
-          <InfiniteMovieList />
-        </motion.div>
-      </motion.section>
+        <PopularMoviesSection movies={popularMovies} />
+      </motion.div>
     </div>
   );
 };
