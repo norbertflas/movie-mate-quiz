@@ -6,6 +6,12 @@ const MAX_RETRIES = 3;
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+type StreamingService = {
+  service: string;
+  link: string;
+  logo?: string;
+};
+
 async function retryWithBackoff<T>(
   fn: () => Promise<T>,
   retries: number = MAX_RETRIES,
@@ -32,7 +38,7 @@ async function retryWithBackoff<T>(
   }
 }
 
-export async function getStreamingAvailability(tmdbId: number, title?: string, year?: string, country: string = 'us'): Promise<Array<{ service: string; link: string; logo?: string }>> {
+export async function getStreamingAvailability(tmdbId: number, title?: string, year?: string, country: string = 'us'): Promise<StreamingService[]> {
   try {
     const { data: cachedServices, error: cacheError } = await supabase
       .from('movie_streaming_availability')
@@ -49,7 +55,7 @@ export async function getStreamingAvailability(tmdbId: number, title?: string, y
       console.log('Using cached streaming data for movie:', tmdbId);
       return cachedServices.map(item => ({
         service: item.streaming_services.name,
-        link: `https://${item.streaming_services.name.toLowerCase()}.com/watch/${tmdbId}`,
+        link: `https://${item.streaming_services.name.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch/${tmdbId}`,
         logo: item.streaming_services.logo_url
       }));
     }
@@ -71,14 +77,26 @@ export async function getStreamingAvailability(tmdbId: number, title?: string, y
     ]);
 
     // Combine results from both APIs
-    const services = new Set<string>();
+    const services = new Set<StreamingService>();
     
     if (geminiResponse.status === 'fulfilled' && geminiResponse.value.data?.result) {
-      geminiResponse.value.data.result.forEach((s: any) => services.add(s.service));
+      geminiResponse.value.data.result.forEach((s: StreamingService) => {
+        services.add({
+          service: s.service,
+          link: s.link,
+          logo: s.logo
+        });
+      });
     }
     
     if (deepseekResponse.status === 'fulfilled' && deepseekResponse.value.data?.result) {
-      deepseekResponse.value.data.result.forEach((s: any) => services.add(s.service));
+      deepseekResponse.value.data.result.forEach((s: StreamingService) => {
+        services.add({
+          service: s.service,
+          link: s.link,
+          logo: s.logo
+        });
+      });
     }
 
     const serviceArray = Array.from(services);
@@ -88,14 +106,14 @@ export async function getStreamingAvailability(tmdbId: number, title?: string, y
       const { data: streamingServices } = await supabase
         .from('streaming_services')
         .select('id, name')
-        .in('name', serviceArray);
+        .in('name', serviceArray.map(s => s.service));
 
       if (streamingServices?.length > 0) {
         const serviceMap = new Map(streamingServices.map(s => [s.name.toLowerCase(), s.id]));
         
         const availabilityRecords = serviceArray.map(service => ({
           tmdb_id: tmdbId,
-          service_id: serviceMap.get(service.toLowerCase()),
+          service_id: serviceMap.get(service.service.toLowerCase()),
           region: country,
           available_since: new Date().toISOString()
         })).filter(record => record.service_id !== undefined);
@@ -110,11 +128,7 @@ export async function getStreamingAvailability(tmdbId: number, title?: string, y
       }
     }
 
-    return serviceArray.map(service => ({
-      service,
-      link: `https://${service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch/${tmdbId}`,
-      logo: `/streaming-icons/${service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.svg`
-    }));
+    return serviceArray;
   } catch (error) {
     console.error('Error fetching streaming availability:', error);
     throw error;

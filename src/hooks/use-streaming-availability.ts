@@ -21,17 +21,23 @@ const getNextRequestDelay = () => {
   return 0;
 };
 
-type StreamingService = {
+export type StreamingService = {
   service: string;
   link: string;
   logo?: string;
+};
+
+export type StreamingAvailabilityData = {
+  services: StreamingService[];
+  timestamp: string;
+  isStale: boolean;
 };
 
 export const useStreamingAvailability = (tmdbId: number | undefined, title?: string, year?: string) => {
   const { t } = useTranslation();
   const { toast } = useToast();
 
-  return useQuery({
+  return useQuery<StreamingAvailabilityData, Error>({
     queryKey: ['streamingAvailability', tmdbId, title, year],
     queryFn: async () => {
       // Check if we need to wait before making the request
