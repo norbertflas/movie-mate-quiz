@@ -1,9 +1,12 @@
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
 import { GoogleGenerativeAI } from 'https://esm.sh/@google/generative-ai@0.1.3';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Max-Age': '86400',
 };
 
 const RETRY_AFTER = 60;
@@ -58,8 +61,12 @@ async function getCachedStreamingData(supabase: any, tmdbId: number, country: st
 }
 
 Deno.serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response(null, {
+      headers: corsHeaders,
+      status: 204,
+    });
   }
 
   try {
@@ -83,7 +90,10 @@ Deno.serve(async (req) => {
             logo: cachedData.streaming_services.logo_url
           }]
         }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200
+        }
       );
     }
 
@@ -110,7 +120,7 @@ Deno.serve(async (req) => {
           {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 200
-          },
+          }
         );
       }
 
@@ -160,7 +170,8 @@ Deno.serve(async (req) => {
           JSON.stringify({ result: validServices }),
           {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          },
+            status: 200
+          }
         );
       } catch (error) {
         console.error('Error parsing streaming services:', error);
@@ -184,7 +195,7 @@ Deno.serve(async (req) => {
               'Retry-After': RETRY_AFTER.toString()
             },
             status: 429
-          },
+          }
         );
       }
 
@@ -202,7 +213,7 @@ Deno.serve(async (req) => {
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: error.status || 500,
-      },
+      }
     );
   }
 });
