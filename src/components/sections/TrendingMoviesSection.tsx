@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { TMDBMovie } from "@/services/tmdb";
 import { TrendingMovieCard } from "../movie/TrendingMovieCard";
 import { useTranslation } from "react-i18next";
+import { UnifiedMovieDetails } from "../movie/UnifiedMovieDetails";
 
 interface TrendingMoviesSectionProps {
   movies: TMDBMovie[];
@@ -11,10 +12,15 @@ interface TrendingMoviesSectionProps {
 
 export const TrendingMoviesSection = ({ movies }: TrendingMoviesSectionProps) => {
   const [isHovered, setIsHovered] = useState(false);
+  const [selectedMovie, setSelectedMovie] = useState<TMDBMovie | null>(null);
   const { t } = useTranslation();
 
   const handleMovieClick = (movie: TMDBMovie) => {
-    console.log("Movie clicked:", movie.title);
+    setSelectedMovie(movie);
+  };
+
+  const handleCloseDetails = () => {
+    setSelectedMovie(null);
   };
 
   return (
@@ -47,6 +53,13 @@ export const TrendingMoviesSection = ({ movies }: TrendingMoviesSectionProps) =>
           ))}
         </motion.div>
       </motion.div>
+
+      <UnifiedMovieDetails
+        isOpen={!!selectedMovie}
+        onClose={handleCloseDetails}
+        movie={selectedMovie}
+        explanations={selectedMovie?.explanations}
+      />
     </section>
   );
 };
