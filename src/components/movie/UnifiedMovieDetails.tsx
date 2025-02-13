@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MovieDetailsSection } from "./MovieDetailsSection";
 import { MovieActions } from "./MovieActions";
@@ -41,11 +40,15 @@ export const UnifiedMovieDetails = ({
   const { toast } = useToast();
   const { t } = useTranslation();
   
-  const { data: availableServices = [], isLoading: isLoadingServices } = useStreamingAvailability(
+  const { data: availabilityData, isLoading: isLoadingServices, isError } = useStreamingAvailability(
     movie?.id,
     movie?.title,
     movie?.release_date ? new Date(movie.release_date).getFullYear().toString() : undefined
   );
+
+  const services = availabilityData?.services || initialStreamingServices;
+  const lastUpdated = availabilityData?.timestamp ? new Date(availabilityData.timestamp) : null;
+  const isDataStale = lastUpdated && (Date.now() - lastUpdated.getTime() > 24 * 60 * 60 * 1000);
 
   const handleWatchTrailer = async () => {
     if (!movie) return;
@@ -85,8 +88,6 @@ export const UnifiedMovieDetails = ({
   };
 
   if (!movie) return null;
-
-  const services = availableServices.length > 0 ? availableServices : initialStreamingServices;
 
   return (
     <AnimatePresence>
@@ -134,43 +135,90 @@ export const UnifiedMovieDetails = ({
                     explanations={explanations}
                   />
                   
-                  {services && services.length > 0 && (
-                    <div className="space-y-2">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
                       <h3 className="text-lg font-semibold">{t("streaming.availableOn")}</h3>
-                      <div className="flex flex-wrap gap-2">
-                        {services.map((service, index) => (
-                          <HoverCard key={`${service.service}-${index}`}>
-                            <HoverCardTrigger asChild>
-                              <a
-                                href={service.link}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center"
-                              >
-                                <Badge variant="secondary" className="flex items-center gap-2 hover:bg-accent cursor-pointer">
-                                  {service.logo ? (
-                                    <img 
-                                      src={service.logo}
-                                      alt={service.service}
-                                      className="w-4 h-4 object-contain"
-                                      onError={(e) => {
-                                        const target = e.target as HTMLImageElement;
-                                        target.src = `/streaming-icons/${service.service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.svg`;
-                                      }}
-                                    />
-                                  ) : (
-                                    <img 
-                                      src={`/streaming-icons/${service.service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.svg`}
-                                      alt={service.service}
-                                      className="w-4 h-4 object-contain"
-                                    />
-                                  )}
-                                  {service.service}
-                                </Badge>
-                              </a>
-                            </HoverCardTrigger>
-                            <HoverCardContent className="w-80">
-                              <div className="flex justify-between space-x-4">
+                      {lastUpdated && (
+                        <span className="text-xs text-muted-foreground">
+                          {t("streaming.lastChecked", {
+                            time: lastUpdated.toLocaleDateString(undefined, {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })
+                          })}
+                        </span>
+                      )}
+                    </div>
+
+                    {isLoadingServices ? (
+                      <div className="flex gap-2">
+                        {[1, 2, 3].map((i) => (
+                          <Skeleton key={i} className="h-8 w-24" />
+                        ))}
+                      </div>
+                    ) : isError ? (
+                      <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>
+                          {t("streaming.errorChecking")}
+                        </AlertDescription>
+                      </Alert>
+                    ) : services.length === 0 ? (
+                      <Alert>
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>
+                          {t("streaming.notAvailable")}
+                        </AlertDescription>
+                      </Alert>
+                    ) : (
+                      <>
+                        {isDataStale && (
+                          <Alert>
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertDescription>
+                              {t("streaming.dataStale")}
+                            </AlertDescription>
+                          </Alert>
+                        )}
+                        <div className="flex flex-wrap gap-2">
+                          {services.map((service, index) => (
+                            <HoverCard key={`${service.service}-${index}`}>
+                              <HoverCardTrigger asChild>
+                                <a
+                                  href={service.link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center"
+                                >
+                                  <Badge 
+                                    variant="secondary" 
+                                    className="flex items-center gap-2 hover:bg-accent cursor-pointer"
+                                  >
+                                    {service.logo ? (
+                                      <img 
+                                        src={service.logo}
+                                        alt={service.service}
+                                        className="w-4 h-4 object-contain"
+                                        onError={(e) => {
+                                          const target = e.target as HTMLImageElement;
+                                          target.src = `/streaming-icons/${service.service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.svg`;
+                                        }}
+                                      />
+                                    ) : (
+                                      <img 
+                                        src={`/streaming-icons/${service.service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.svg`}
+                                        alt={service.service}
+                                        className="w-4 h-4 object-contain"
+                                      />
+                                    )}
+                                    {service.service}
+                                  </Badge>
+                                </a>
+                              </HoverCardTrigger>
+                              <HoverCardContent className="w-80">
                                 <div className="space-y-1">
                                   <h4 className="text-sm font-semibold">
                                     {t("streaming.watchOn", { service: service.service })}
@@ -178,14 +226,19 @@ export const UnifiedMovieDetails = ({
                                   <p className="text-sm text-muted-foreground">
                                     {t("streaming.clickToWatch")}
                                   </p>
+                                  {isDataStale && (
+                                    <p className="text-sm text-yellow-500">
+                                      {t("streaming.availabilityMayChange")}
+                                    </p>
+                                  )}
                                 </div>
-                              </div>
-                            </HoverCardContent>
-                          </HoverCard>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                              </HoverCardContent>
+                            </HoverCard>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
                   
                   <div className="flex flex-col gap-4">
                     <MovieActions

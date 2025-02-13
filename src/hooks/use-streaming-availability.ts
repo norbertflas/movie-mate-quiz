@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 // Global request queue management
 let lastRequestTime = 0;
 const MIN_REQUEST_INTERVAL = 2000; // 2 seconds between requests
+const MAX_CACHE_AGE = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -37,7 +38,14 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
       lastRequestTime = Date.now();
       
       try {
-        return await getStreamingAvailability(tmdbId!, title, year);
+        const result = await getStreamingAvailability(tmdbId!, title, year);
+        
+        // Add timestamp to the results
+        return {
+          services: result,
+          timestamp: new Date().toISOString(),
+          isStale: false
+        };
       } catch (error: any) {
         if (error?.status === 429) {
           const errorBody = typeof error.body === 'string' ? JSON.parse(error.body) : error.body;
@@ -49,7 +57,6 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
             variant: "destructive",
           });
           
-          // Update the global request timing
           lastRequestTime = Date.now() + (retryAfter * 1000);
         }
         throw error;
@@ -59,16 +66,15 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
     staleTime: 1000 * 60 * 60, // Cache for 1 hour
     gcTime: 1000 * 60 * 120, // Keep unused data for 2 hours
     retry: (failureCount, error: any) => {
-      // Only retry rate limit errors
       if (error?.status === 429) {
-        return failureCount < 2; // Max 2 retries for rate limits
+        return failureCount < 2;
       }
-      return false; // Don't retry other errors
+      return false;
     },
     retryDelay: (_, error: any) => {
       if (error?.status === 429) {
         const errorBody = typeof error.body === 'string' ? JSON.parse(error.body) : error.body;
-        return (errorBody?.retryAfter || 60) * 1000; // Use server's retry-after value
+        return (errorBody?.retryAfter || 60) * 1000;
       }
       return 0;
     }
