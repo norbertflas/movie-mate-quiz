@@ -1,3 +1,4 @@
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MovieDetailsSection } from "./MovieDetailsSection";
 import { MovieActions } from "./MovieActions";
@@ -9,6 +10,10 @@ import { useTranslation } from "react-i18next";
 import { getMovieTrailer } from "@/services/youtube";
 import type { TMDBMovie } from "@/services/tmdb";
 import { Badge } from "@/components/ui/badge";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 interface UnifiedMovieDetailsProps {
   isOpen: boolean;
@@ -18,7 +23,7 @@ interface UnifiedMovieDetailsProps {
   streamingServices?: Array<{
     service: string;
     link: string;
-    availableSince?: string;
+    logo?: string;
   }>;
 }
 
@@ -125,21 +130,36 @@ export const UnifiedMovieDetails = ({
                       <h3 className="text-lg font-semibold">{t("streaming.availableOn")}</h3>
                       <div className="flex flex-wrap gap-2">
                         {streamingServices.map((service) => (
-                          <a
-                            key={service.service}
-                            href={service.link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            <Badge variant="secondary" className="flex items-center gap-2 hover:bg-accent">
-                              <img 
-                                src={`/streaming-icons/${service.service.toLowerCase()}.svg`} 
-                                alt={service.service}
-                                className="w-4 h-4"
-                              />
-                              {service.service}
-                            </Badge>
-                          </a>
+                          <HoverCard key={service.service}>
+                            <HoverCardTrigger asChild>
+                              <a
+                                href={service.link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <Badge variant="secondary" className="flex items-center gap-2 hover:bg-accent cursor-pointer">
+                                  <img 
+                                    src={service.logo || `/streaming-icons/${service.service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.svg`}
+                                    alt={service.service}
+                                    className="w-4 h-4"
+                                  />
+                                  {service.service}
+                                </Badge>
+                              </a>
+                            </HoverCardTrigger>
+                            <HoverCardContent className="w-80">
+                              <div className="flex justify-between space-x-4">
+                                <div className="space-y-1">
+                                  <h4 className="text-sm font-semibold">
+                                    {t("streaming.watchOn", { service: service.service })}
+                                  </h4>
+                                  <p className="text-sm text-muted-foreground">
+                                    {t("streaming.clickToWatch")}
+                                  </p>
+                                </div>
+                              </div>
+                            </HoverCardContent>
+                          </HoverCard>
                         ))}
                       </div>
                     </div>
