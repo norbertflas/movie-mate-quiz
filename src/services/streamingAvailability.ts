@@ -32,7 +32,7 @@ async function retryWithBackoff<T>(
   }
 }
 
-export async function getStreamingAvailability(tmdbId: number, title?: string, year?: string, country: string = 'us') {
+export async function getStreamingAvailability(tmdbId: number, title?: string, year?: string, country: string = 'us'): Promise<Array<{ service: string; link: string; logo?: string }>> {
   try {
     const { data: cachedServices, error: cacheError } = await supabase
       .from('movie_streaming_availability')

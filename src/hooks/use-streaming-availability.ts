@@ -7,7 +7,6 @@ import { useTranslation } from "react-i18next";
 // Global request queue management
 let lastRequestTime = 0;
 const MIN_REQUEST_INTERVAL = 2000; // 2 seconds between requests
-const MAX_CACHE_AGE = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -20,6 +19,12 @@ const getNextRequestDelay = () => {
   }
   
   return 0;
+};
+
+type StreamingService = {
+  service: string;
+  link: string;
+  logo?: string;
 };
 
 export const useStreamingAvailability = (tmdbId: number | undefined, title?: string, year?: string) => {
@@ -38,11 +43,9 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
       lastRequestTime = Date.now();
       
       try {
-        const result = await getStreamingAvailability(tmdbId!, title, year);
-        
-        // Add timestamp to the results
+        const services = await getStreamingAvailability(tmdbId!, title, year);
         return {
-          services: result,
+          services,
           timestamp: new Date().toISOString(),
           isStale: false
         };

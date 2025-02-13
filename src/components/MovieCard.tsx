@@ -41,7 +41,10 @@ export const MovieCard = ({
   const { t } = useTranslation();
   
   const { userRating, handleRating } = useMovieRating(title);
-  const { data: availableServices = [], isLoading, isError, error } = useStreamingAvailability(tmdbId, title, year);
+  const { data: availabilityData, isLoading, isError, error } = useStreamingAvailability(tmdbId, title, year);
+
+  // Extract services from the availability data or use initial services
+  const availableServices = availabilityData?.services || streamingServices;
 
   const handleCardClick = () => {
     setIsDetailsOpen(true);
