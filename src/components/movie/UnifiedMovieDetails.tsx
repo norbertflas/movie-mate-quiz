@@ -14,6 +14,7 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/h
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
+import { useStreamingAvailability } from "@/hooks/use-streaming-availability";
 
 interface UnifiedMovieDetailsProps {
   isOpen: boolean;
@@ -32,13 +33,19 @@ export const UnifiedMovieDetails = ({
   onClose, 
   movie,
   explanations,
-  streamingServices = []
+  streamingServices: initialStreamingServices = []
 }: UnifiedMovieDetailsProps) => {
   const [showTrailer, setShowTrailer] = useState(false);
   const [trailerUrl, setTrailerUrl] = useState("");
   const [userRating, setUserRating] = useState<"like" | "dislike" | null>(null);
   const { toast } = useToast();
   const { t } = useTranslation();
+  
+  const { data: availableServices = [], isLoading: isLoadingServices } = useStreamingAvailability(
+    movie?.id,
+    movie?.title,
+    movie?.release_date ? new Date(movie.release_date).getFullYear().toString() : undefined
+  );
 
   const handleWatchTrailer = async () => {
     if (!movie) return;
@@ -78,6 +85,8 @@ export const UnifiedMovieDetails = ({
   };
 
   if (!movie) return null;
+
+  const services = availableServices.length > 0 ? availableServices : initialStreamingServices;
 
   return (
     <AnimatePresence>
@@ -125,24 +134,37 @@ export const UnifiedMovieDetails = ({
                     explanations={explanations}
                   />
                   
-                  {streamingServices && streamingServices.length > 0 && (
+                  {services && services.length > 0 && (
                     <div className="space-y-2">
                       <h3 className="text-lg font-semibold">{t("streaming.availableOn")}</h3>
                       <div className="flex flex-wrap gap-2">
-                        {streamingServices.map((service) => (
-                          <HoverCard key={service.service}>
+                        {services.map((service, index) => (
+                          <HoverCard key={`${service.service}-${index}`}>
                             <HoverCardTrigger asChild>
                               <a
                                 href={service.link}
                                 target="_blank"
                                 rel="noopener noreferrer"
+                                className="inline-flex items-center"
                               >
                                 <Badge variant="secondary" className="flex items-center gap-2 hover:bg-accent cursor-pointer">
-                                  <img 
-                                    src={service.logo || `/streaming-icons/${service.service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.svg`}
-                                    alt={service.service}
-                                    className="w-4 h-4"
-                                  />
+                                  {service.logo ? (
+                                    <img 
+                                      src={service.logo}
+                                      alt={service.service}
+                                      className="w-4 h-4 object-contain"
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.src = `/streaming-icons/${service.service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.svg`;
+                                      }}
+                                    />
+                                  ) : (
+                                    <img 
+                                      src={`/streaming-icons/${service.service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.svg`}
+                                      alt={service.service}
+                                      className="w-4 h-4 object-contain"
+                                    />
+                                  )}
                                   {service.service}
                                 </Badge>
                               </a>
