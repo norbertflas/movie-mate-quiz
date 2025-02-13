@@ -4,36 +4,73 @@ import { getStreamingAvailability } from "@/services/streamingAvailability";
 import { useToast } from "./use-toast";
 import { useTranslation } from "react-i18next";
 
+// Global request queue management
+let lastRequestTime = 0;
+const MIN_REQUEST_INTERVAL = 2000; // 2 seconds between requests
+
+const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+const getNextRequestDelay = () => {
+  const now = Date.now();
+  const timeSinceLastRequest = now - lastRequestTime;
+  
+  if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
+    return MIN_REQUEST_INTERVAL - timeSinceLastRequest;
+  }
+  
+  return 0;
+};
+
 export const useStreamingAvailability = (tmdbId: number | undefined, title?: string, year?: string) => {
   const { t } = useTranslation();
   const { toast } = useToast();
 
   return useQuery({
     queryKey: ['streamingAvailability', tmdbId, title, year],
-    queryFn: () => getStreamingAvailability(tmdbId!, title, year),
-    enabled: !!tmdbId,
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
-    gcTime: 1000 * 60 * 10, // Keep unused data for 10 minutes
-    retry: (failureCount, error: any) => {
-      if (error?.status === 429) {
-        const errorBody = typeof error.body === 'string' ? JSON.parse(error.body) : error.body;
-        const retryAfter = errorBody?.retryAfter || 60;
-        toast({
-          title: t("errors.rateLimitExceeded"),
-          description: t("errors.tryAgainIn", { seconds: retryAfter }),
-          variant: "destructive",
-        });
-        return failureCount < 3;
+    queryFn: async () => {
+      // Check if we need to wait before making the request
+      const delay = getNextRequestDelay();
+      if (delay > 0) {
+        await wait(delay);
       }
-      return false;
+      
+      lastRequestTime = Date.now();
+      
+      try {
+        return await getStreamingAvailability(tmdbId!, title, year);
+      } catch (error: any) {
+        if (error?.status === 429) {
+          const errorBody = typeof error.body === 'string' ? JSON.parse(error.body) : error.body;
+          const retryAfter = errorBody?.retryAfter || 60;
+          
+          toast({
+            title: t("errors.rateLimitExceeded"),
+            description: t("errors.tryAgainIn", { seconds: retryAfter }),
+            variant: "destructive",
+          });
+          
+          // Update the global request timing
+          lastRequestTime = Date.now() + (retryAfter * 1000);
+        }
+        throw error;
+      }
     },
-    retryDelay: (attemptIndex, error: any) => {
+    enabled: !!tmdbId,
+    staleTime: 1000 * 60 * 60, // Cache for 1 hour
+    gcTime: 1000 * 60 * 120, // Keep unused data for 2 hours
+    retry: (failureCount, error: any) => {
+      // Only retry rate limit errors
+      if (error?.status === 429) {
+        return failureCount < 2; // Max 2 retries for rate limits
+      }
+      return false; // Don't retry other errors
+    },
+    retryDelay: (_, error: any) => {
       if (error?.status === 429) {
         const errorBody = typeof error.body === 'string' ? JSON.parse(error.body) : error.body;
-        const retryAfter = errorBody?.retryAfter || 60;
-        return retryAfter * 1000; // Convert seconds to milliseconds
+        return (errorBody?.retryAfter || 60) * 1000; // Use server's retry-after value
       }
-      return Math.min(1000 * Math.pow(2, attemptIndex), 30000);
+      return 0;
     }
   });
 };
