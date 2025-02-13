@@ -1,3 +1,4 @@
+
 import { motion } from "framer-motion";
 import { MovieCard } from "../MovieCard";
 import type { TMDBMovie } from "@/services/tmdb";
@@ -10,7 +11,7 @@ interface TrendingMovieCardProps {
 export const TrendingMovieCard = ({ movie, onClick }: TrendingMovieCardProps) => {
   return (
     <motion.div
-      className="flex-none w-[300px]"
+      className="flex-none w-[200px]"
       whileHover={{ scale: 1.05 }}
       onClick={() => onClick(movie)}
       transition={{ duration: 0.2 }}
@@ -20,9 +21,9 @@ export const TrendingMovieCard = ({ movie, onClick }: TrendingMovieCardProps) =>
         title={movie.title}
         year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "N/A"}
         platform="TMDB"
-        genre="movie.genre"
+        genre=""
         imageUrl={movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : '/placeholder.svg'}
-        description={movie.overview}
+        description=""
         trailerUrl=""
         rating={movie.vote_average * 10}
         tmdbId={movie.id}

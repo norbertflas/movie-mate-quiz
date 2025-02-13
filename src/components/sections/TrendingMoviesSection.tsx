@@ -1,3 +1,4 @@
+
 import { motion } from "framer-motion";
 import { useState } from "react";
 import type { TMDBMovie } from "@/services/tmdb";
@@ -13,7 +14,6 @@ export const TrendingMoviesSection = ({ movies }: TrendingMoviesSectionProps) =>
   const { t } = useTranslation();
 
   const handleMovieClick = (movie: TMDBMovie) => {
-    // Handle movie click if needed
     console.log("Movie clicked:", movie.title);
   };
 
