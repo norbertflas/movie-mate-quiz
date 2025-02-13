@@ -46,12 +46,15 @@ export const MovieCard = ({
 
   // Extract services from the availability data or use initial services
   const availableServices: StreamingService[] = availabilityData?.services || 
-    (typeof streamingServices[0] === 'string' 
-      ? streamingServices.map(service => ({
-          service: service as string,
-          link: `https://${(service as string).toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch/${tmdbId}`,
-        }))
-      : streamingServices as StreamingService[]);
+    streamingServices.map(service => {
+      if (typeof service === 'string') {
+        return {
+          service: service,
+          link: `https://${service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch/${tmdbId}`,
+        };
+      }
+      return service as StreamingService;
+    });
 
   const handleCardClick = () => {
     setIsDetailsOpen(true);
