@@ -1,7 +1,6 @@
 
 import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import { ContentSection } from "@/components/sections/ContentSection";
 import { useTranslation } from "react-i18next";
 import { InfiniteMovieList } from "../movie/InfiniteMovieList";
 import { SearchBar } from "../SearchBar";
@@ -40,8 +39,6 @@ export const MainContent = () => {
       >
         <TrendingMoviesSection movies={trendingMovies} />
       </motion.div>
-
-      <ContentSection />
       
       <section className="glass-panel p-6 rounded-xl w-full">
         <h2 className="text-2xl font-bold mb-6 gradient-text">{t("discover.popular")}</h2>
