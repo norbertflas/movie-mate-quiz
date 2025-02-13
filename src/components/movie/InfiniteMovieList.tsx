@@ -1,142 +1,142 @@
-import { useRef, useCallback, useState } from "react";
+
+import { useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { useInView } from "framer-motion";
-import { MovieCardBase } from "./MovieCardBase";
-import { Skeleton } from "@/components/ui/skeleton";
 import { discoverMovies } from "@/services/tmdb";
-import type { TMDBMovie } from "@/services/tmdb/types";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
-import { MovieDetailsDialog } from "./MovieDetailsDialog";
+import { MovieCard } from "../MovieCard";
+import { Loader2 } from "lucide-react";
+import { motion } from "framer-motion";
+import { getStreamingAvailability } from "@/services/streamingAvailability";
 
 export const InfiniteMovieList = () => {
-  const loadMoreRef = useRef(null);
-  const isLoadMoreInView = useInView(loadMoreRef);
-  const [selectedMovie, setSelectedMovie] = useState<TMDBMovie | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [loadingStates, setLoadingStates] = useState<{ [key: number]: boolean }>({});
 
   const {
     data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
     isLoading,
-    isError,
-    error,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
   } = useInfiniteQuery({
-    queryKey: ["movies", "infinite"],
+    queryKey: ['discoverMovies'],
     queryFn: async ({ pageParam = 1 }) => {
       const movies = await discoverMovies({ page: pageParam });
-      return movies;
+      
+      // Check streaming availability for each movie
+      const moviesWithAvailability = await Promise.all(
+        movies.map(async (movie) => {
+          try {
+            setLoadingStates(prev => ({ ...prev, [movie.id]: true }));
+            const availability = await getStreamingAvailability(
+              movie.id,
+              movie.title,
+              movie.release_date ? new Date(movie.release_date).getFullYear().toString() : undefined
+            );
+            setLoadingStates(prev => ({ ...prev, [movie.id]: false }));
+            return {
+              ...movie,
+              hasStreamingServices: availability.length > 0
+            };
+          } catch (error) {
+            console.error('Error checking availability:', error);
+            setLoadingStates(prev => ({ ...prev, [movie.id]: false }));
+            return {
+              ...movie,
+              hasStreamingServices: false
+            };
+          }
+        })
+      );
+
+      // Filter movies to only include those with streaming availability
+      const availableMovies = moviesWithAvailability.filter(movie => movie.hasStreamingServices);
+
+      return {
+        movies: availableMovies,
+        nextPage: pageParam + 1,
+        hasMore: availableMovies.length > 0
+      };
     },
-    initialPageParam: 1,
-    getNextPageParam: (lastPage, pages) => {
-      if (lastPage.length === 0) return undefined;
-      return pages.length + 1;
-    },
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-    retry: 2,
-    meta: {
-      onError: (error: Error) => {
-        console.error("Error fetching movies:", error);
-      }
-    }
+    getNextPageParam: (lastPage) => lastPage.hasMore ? lastPage.nextPage : undefined,
   });
 
-  const loadMore = useCallback(() => {
-    if (hasNextPage && !isFetchingNextPage && isLoadMoreInView) {
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const bottom = e.currentTarget.scrollHeight - e.currentTarget.scrollTop === e.currentTarget.clientHeight;
+    if (bottom && hasNextPage && !isFetchingNextPage) {
       fetchNextPage();
     }
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage, isLoadMoreInView]);
-
-  const handleMovieClick = useCallback((movie: TMDBMovie) => {
-    setSelectedMovie(movie);
-    setIsDialogOpen(true);
-  }, []);
-
-  const handleCloseDialog = useCallback(() => {
-    setIsDialogOpen(false);
-    setSelectedMovie(null);
-  }, []);
+  };
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="space-y-4">
-            <Skeleton className="aspect-[2/3] w-full" />
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-4 w-1/2" />
-            </div>
-          </div>
-        ))}
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <Alert variant="destructive" className="mb-6">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          {error?.message || "Error loading movies. Please try again later."}
-        </AlertDescription>
-      </Alert>
     );
   }
 
   return (
-    <>
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {data?.pages.map((page) =>
-          page.map((movie: TMDBMovie) => (
-            <MovieCardBase
-              key={movie.id}
-              title={movie.title}
-              year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "N/A"}
-              platform="TMDB"
-              genre={movie.genre_ids?.[0]?.toString() || "Unknown"}
-              imageUrl={movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : "/placeholder.svg"}
-              description={movie.overview || "No description available"}
-              trailerUrl=""
-              rating={movie.vote_average * 10}
-              tmdbId={movie.id}
-              onClick={() => handleMovieClick(movie)}
-            />
-          ))
-        )}
-      </div>
-      {hasNextPage && (
-        <div
-          ref={loadMoreRef}
-          className="py-8 text-center"
-          onMouseEnter={loadMore}
-        >
-          {isFetchingNextPage && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="space-y-4">
-                    <Skeleton className="aspect-[2/3] w-full" />
-                    <div className="space-y-2">
-                      <Skeleton className="h-4 w-3/4" />
-                      <Skeleton className="h-4 w-1/2" />
-                    </div>
+    <div className="space-y-6 overflow-auto max-h-[800px]" onScroll={handleScroll}>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {data?.pages.map((page, pageIndex) => (
+          <motion.div 
+            key={pageIndex}
+            initial="hidden"
+            animate="visible"
+            variants={{
+              hidden: { opacity: 0 },
+              visible: {
+                opacity: 1,
+                transition: {
+                  staggerChildren: 0.1
+                }
+              }
+            }}
+          >
+            {page.movies.map((movie, index) => (
+              <motion.div
+                key={movie.id}
+                variants={{
+                  hidden: { opacity: 0, y: 20 },
+                  visible: { 
+                    opacity: 1, 
+                    y: 0,
+                    transition: {
+                      duration: 0.5,
+                      ease: "easeOut"
+                    }
+                  }
+                }}
+                whileHover={{ scale: 1.02 }}
+                transition={{ duration: 0.2 }}
+              >
+                {loadingStates[movie.id] ? (
+                  <div className="flex justify-center items-center h-64">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
+                ) : (
+                  <MovieCard
+                    title={movie.title}
+                    year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "N/A"}
+                    platform="TMDB"
+                    genre="Film"
+                    imageUrl={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+                    description={movie.overview}
+                    trailerUrl=""
+                    rating={movie.vote_average * 10}
+                    tmdbId={movie.id}
+                  />
+                )}
+              </motion.div>
+            ))}
+          </motion.div>
+        ))}
+      </div>
+      
+      {isFetchingNextPage && (
+        <div className="flex justify-center py-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       )}
-
-      <MovieDetailsDialog 
-        isOpen={isDialogOpen}
-        onClose={handleCloseDialog}
-        movie={selectedMovie}
-      />
-    </>
+    </div>
   );
 };
