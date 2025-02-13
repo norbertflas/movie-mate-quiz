@@ -40,12 +40,33 @@ export const MainContent = () => {
         <TrendingMoviesSection movies={trendingMovies} />
       </motion.div>
       
-      <section className="glass-panel p-6 rounded-xl w-full">
-        <h2 className="text-2xl font-bold mb-6 gradient-text">{t("discover.popular")}</h2>
-        <div className="w-full max-h-[800px] overflow-y-auto">
+      <motion.section
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{
+          duration: 0.5,
+          delay: 0.4,
+          ease: "easeOut"
+        }}
+        className="glass-panel p-6 rounded-xl w-full transform-gpu"
+      >
+        <motion.h2 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.5 }}
+          className="text-2xl font-bold mb-6 gradient-text"
+        >
+          {t("discover.popular")}
+        </motion.h2>
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.6 }}
+          className="w-full max-h-[800px] overflow-y-auto"
+        >
           <InfiniteMovieList />
-        </div>
-      </section>
+        </motion.div>
+      </motion.section>
     </div>
   );
 };
