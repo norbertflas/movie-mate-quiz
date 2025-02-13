@@ -62,47 +62,44 @@ export async function getStreamingAvailability(tmdbId: number, title?: string, y
 
     console.log('Fetching fresh streaming data for movie:', tmdbId);
     
-    // Try both APIs in parallel
-    const [geminiResponse, deepseekResponse] = await Promise.allSettled([
+    // Try both APIs in parallel with error handling
+    const results = await Promise.allSettled([
       retryWithBackoff(async () => {
-        return await supabase.functions.invoke('streaming-availability-gemini', {
+        const response = await supabase.functions.invoke('streaming-availability-gemini', {
           body: { tmdbId, title, year, country }
         });
+        return response.data?.result || [];
       }),
       retryWithBackoff(async () => {
-        return await supabase.functions.invoke('streaming-availability-deepseek', {
+        const response = await supabase.functions.invoke('streaming-availability-deepseek', {
           body: { tmdbId, title, year, country }
         });
+        return response.data?.result || [];
       })
     ]);
 
-    // Combine results from both APIs
+    // Combine successful results
     const services = new Set<StreamingService>();
     
-    if (geminiResponse.status === 'fulfilled' && geminiResponse.value.data?.result) {
-      geminiResponse.value.data.result.forEach((s: StreamingService) => {
-        services.add({
-          service: s.service,
-          link: s.link,
-          logo: s.logo
+    results.forEach(result => {
+      if (result.status === 'fulfilled' && Array.isArray(result.value)) {
+        result.value.forEach((s: StreamingService) => {
+          if (s && s.service && s.link) {
+            services.add({
+              service: s.service,
+              link: s.link,
+              logo: s.logo
+            });
+          }
         });
-      });
-    }
-    
-    if (deepseekResponse.status === 'fulfilled' && deepseekResponse.value.data?.result) {
-      deepseekResponse.value.data.result.forEach((s: StreamingService) => {
-        services.add({
-          service: s.service,
-          link: s.link,
-          logo: s.logo
-        });
-      });
-    }
+      }
+    });
 
     const serviceArray = Array.from(services);
     console.log('Combined streaming services found:', serviceArray);
 
     if (serviceArray.length > 0) {
+      // Cache the results
       const { data: streamingServices } = await supabase
         .from('streaming_services')
         .select('id, name')
@@ -131,6 +128,6 @@ export async function getStreamingAvailability(tmdbId: number, title?: string, y
     return serviceArray;
   } catch (error) {
     console.error('Error fetching streaming availability:', error);
-    throw error;
+    return [];
   }
 }
