@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 const RETRY_DELAY = 2000;
@@ -13,10 +14,21 @@ async function retryWithBackoff<T>(
   try {
     return await fn();
   } catch (error: any) {
-    if (retries === 0 || !error?.message?.includes('429')) {
+    if (retries === 0) {
       throw error;
     }
-    console.log(`Rate limit hit, waiting ${delay}ms before retry ${retries}`);
+
+    // If it's a rate limit error, use the retryAfter value from the response
+    if (error?.message?.includes('429')) {
+      const errorBody = typeof error.body === 'string' ? JSON.parse(error.body) : error.body;
+      const retryAfter = (errorBody?.retryAfter || 60) * 1000; // Convert to milliseconds
+      console.log(`Rate limit hit, waiting ${retryAfter}ms as specified by the server`);
+      await sleep(retryAfter);
+      return retryWithBackoff(fn, retries - 1, delay * 2);
+    }
+
+    // For other errors, use exponential backoff
+    console.log(`Error occurred, retrying in ${delay}ms`);
     await sleep(delay);
     return retryWithBackoff(fn, retries - 1, delay * 2);
   }

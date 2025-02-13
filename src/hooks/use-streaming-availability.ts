@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { getStreamingAvailability } from "@/services/streamingAvailability";
 import { useToast } from "./use-toast";
@@ -26,6 +27,13 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
       }
       return false;
     },
-    retryDelay: (attemptIndex) => Math.min(1000 * Math.pow(2, attemptIndex), 30000)
+    retryDelay: (attemptIndex, error: any) => {
+      if (error?.status === 429) {
+        const errorBody = typeof error.body === 'string' ? JSON.parse(error.body) : error.body;
+        const retryAfter = errorBody?.retryAfter || 60;
+        return retryAfter * 1000; // Convert seconds to milliseconds
+      }
+      return Math.min(1000 * Math.pow(2, attemptIndex), 30000);
+    }
   });
 };
