@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MovieDetailsSection } from "./MovieDetailsSection";
 import { MovieActions } from "./MovieActions";
@@ -89,8 +88,7 @@ export const UnifiedMovieDetails = ({
     });
   };
 
-  const handleClose = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleClose = () => {
     onClose();
   };
 
@@ -104,7 +102,7 @@ export const UnifiedMovieDetails = ({
             <Button
               variant="ghost"
               size="icon"
-              className="absolute top-4 right-4 z-50 rounded-full bg-background/90 hover:bg-background/70 shadow-md dark:bg-background/80 dark:hover:bg-background/60"
+              className="absolute right-4 top-4 z-50 rounded-full bg-background/90 hover:bg-background/70 shadow-md dark:bg-background/80 dark:hover:bg-background/60"
               onClick={handleClose}
             >
               <X className="h-5 w-5 text-foreground" />
