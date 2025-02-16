@@ -7,6 +7,7 @@ import { Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { getStreamingAvailability } from "@/services/streamingAvailability";
 import type { TMDBMovie } from "@/services/tmdb";
+import { useToast } from "@/hooks/use-toast";
 
 interface MoviePageData {
   movies: TMDBMovie[];
@@ -14,8 +15,38 @@ interface MoviePageData {
   hasMore: boolean;
 }
 
+// Queue management
+const queue: (() => Promise<void>)[] = [];
+let isProcessingQueue = false;
+
+const processQueue = async () => {
+  if (isProcessingQueue || queue.length === 0) return;
+  
+  isProcessingQueue = true;
+  
+  while (queue.length > 0) {
+    const task = queue.shift();
+    if (task) {
+      try {
+        await task();
+        // Wait 5 seconds between each request
+        await new Promise(resolve => setTimeout(resolve, 5000));
+      } catch (error) {
+        console.error('Error processing queue task:', error);
+        // If we hit a rate limit, pause the queue for 60 seconds
+        if (error?.status === 429) {
+          await new Promise(resolve => setTimeout(resolve, 60000));
+        }
+      }
+    }
+  }
+  
+  isProcessingQueue = false;
+};
+
 export const InfiniteMovieList = () => {
   const [loadingStates, setLoadingStates] = useState<{ [key: number]: boolean }>({});
+  const { toast } = useToast();
 
   const {
     data,
@@ -28,15 +59,12 @@ export const InfiniteMovieList = () => {
     initialPageParam: 1,
     queryFn: async ({ pageParam }) => {
       const movies = await discoverMovies({ page: pageParam as number });
-      
-      // Check streaming availability for each movie, but only a few at a time
-      const batchSize = 3; // Process 3 movies at a time
       const results = [];
       
-      for (let i = 0; i < movies.length; i += batchSize) {
-        const batch = movies.slice(i, i + batchSize);
-        const batchResults = await Promise.all(
-          batch.map(async (movie) => {
+      // Process one movie at a time with proper queuing
+      for (const movie of movies) {
+        await new Promise<void>((resolve, reject) => {
+          const task = async () => {
             try {
               setLoadingStates(prev => ({ ...prev, [movie.id]: true }));
               const availability = await getStreamingAvailability(
@@ -45,26 +73,40 @@ export const InfiniteMovieList = () => {
                 movie.release_date ? new Date(movie.release_date).getFullYear().toString() : undefined
               );
               setLoadingStates(prev => ({ ...prev, [movie.id]: false }));
-              return {
+              results.push({
                 ...movie,
                 hasStreamingServices: availability.length > 0
-              };
-            } catch (error) {
+              });
+              resolve();
+            } catch (error: any) {
               console.error('Error checking availability:', error);
               setLoadingStates(prev => ({ ...prev, [movie.id]: false }));
-              return {
-                ...movie,
-                hasStreamingServices: false
-              };
+              
+              if (error?.status === 429) {
+                toast({
+                  title: "Rate limit exceeded",
+                  description: "Please wait a moment before loading more movies",
+                  variant: "destructive",
+                });
+                // Don't reject on rate limit, just add to results with no services
+                results.push({
+                  ...movie,
+                  hasStreamingServices: false
+                });
+                resolve();
+              } else {
+                results.push({
+                  ...movie,
+                  hasStreamingServices: false
+                });
+                resolve();
+              }
             }
-          })
-        );
-        results.push(...batchResults);
-        
-        // Add a small delay between batches to avoid rate limits
-        if (i + batchSize < movies.length) {
-          await new Promise(resolve => setTimeout(resolve, 2000));
-        }
+          };
+          
+          queue.push(task);
+          processQueue();
+        });
       }
 
       // Filter movies to only include those with streaming availability
@@ -77,6 +119,8 @@ export const InfiniteMovieList = () => {
       };
     },
     getNextPageParam: (lastPage) => lastPage.hasMore ? lastPage.nextPage : undefined,
+    retry: false, // Disable automatic retries
+    refetchOnWindowFocus: false, // Prevent refetching on window focus
   });
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
