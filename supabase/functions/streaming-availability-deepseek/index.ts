@@ -108,28 +108,8 @@ serve(async (req) => {
         );
       }
 
-      const responseText = await response.text();
-      console.log('Raw API response:', responseText);
-
-      if (!responseText) {
-        console.error('Empty response from DeepSeek API');
-        // Return empty result instead of throwing
-        return new Response(
-          JSON.stringify({ 
-            result: [],
-            error: 'Empty response from DeepSeek API'
-          }),
-          { 
-            headers: { 
-              ...corsHeaders,
-              'Content-Type': 'application/json'
-            },
-            status: 200
-          }
-        );
-      }
-
-      const data = JSON.parse(responseText);
+      const data = await response.json();
+      console.log('DeepSeek API response:', data);
 
       if (!data?.choices?.[0]?.message?.content) {
         console.error('Unexpected API response structure:', data);
