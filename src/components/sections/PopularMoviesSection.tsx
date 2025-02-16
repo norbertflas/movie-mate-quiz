@@ -4,7 +4,7 @@ import { MovieCard } from "../MovieCard";
 import type { TMDBMovie } from "@/services/tmdb";
 import { useTranslation } from "react-i18next";
 import { useInView } from "framer-motion";
-import { useRef, useState } from "react";
+import { useRef } from "react";
 
 interface PopularMoviesSectionProps {
   movies: TMDBMovie[];
@@ -14,7 +14,6 @@ export const PopularMoviesSection = ({ movies }: PopularMoviesSectionProps) => {
   const { t } = useTranslation();
   const ref = useRef(null);
   const isInView = useInView(ref, { once: false, amount: 0.1 });
-  const [isHovered, setIsHovered] = useState(false);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -44,24 +43,11 @@ export const PopularMoviesSection = ({ movies }: PopularMoviesSectionProps) => {
         damping: 15,
         duration: 0.8
       }
-    },
-    hover: {
-      scale: 1.05,
-      y: -10,
-      transition: {
-        duration: 0.3,
-        ease: "easeOut"
-      }
     }
   };
 
   return (
-    <section 
-      className="space-y-4 overflow-hidden py-8" 
-      ref={ref}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
+    <section className="space-y-4 overflow-hidden py-8" ref={ref}>
       <motion.h2 
         className="text-2xl font-bold"
         initial={{ opacity: 0, x: -50 }}
@@ -81,7 +67,6 @@ export const PopularMoviesSection = ({ movies }: PopularMoviesSectionProps) => {
           <motion.div
             key={movie.id}
             variants={cardVariants}
-            whileHover="hover"
             custom={index}
             className="transform-gpu"
           >

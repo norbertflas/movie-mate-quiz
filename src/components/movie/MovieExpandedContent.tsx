@@ -1,18 +1,10 @@
+
 import { motion } from "framer-motion";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { MovieRating } from "./MovieRating";
 import { useTranslation } from "react-i18next";
-import { Card } from "../ui/card";
 import { ScrollArea } from "../ui/scroll-area";
-
-interface MovieInsights {
-  themes: string[];
-  contentWarnings: string[];
-  similarMovies: string[];
-  targetAudience: string;
-  analysis: string;
-}
 
 interface MovieExpandedContentProps {
   isExpanded: boolean;
@@ -27,9 +19,6 @@ interface MovieExpandedContentProps {
   userRating?: "like" | "dislike" | null;
   onRate?: (rating: "like" | "dislike") => void;
   tmdbId?: number;
-  explanations?: string[];
-  streamingServices?: string[];
-  insights?: MovieInsights | null;
 }
 
 export const MovieExpandedContent = ({
@@ -44,9 +33,6 @@ export const MovieExpandedContent = ({
   onWatchTrailer,
   userRating,
   onRate,
-  explanations,
-  streamingServices,
-  insights,
 }: MovieExpandedContentProps) => {
   const { t } = useTranslation();
 
@@ -81,69 +67,16 @@ export const MovieExpandedContent = ({
           {description}
         </p>
 
-        {insights && (
-          <div className="mt-4 space-y-4">
-            {insights.themes.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="text-sm font-semibold">{t("movie.themes")}</h4>
-                <div className="flex flex-wrap gap-2">
-                  {insights.themes.map((theme, index) => (
-                    <Badge key={index} variant="outline">
-                      {theme}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {insights.contentWarnings.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="text-sm font-semibold">{t("movie.contentWarnings")}</h4>
-                <div className="flex flex-wrap gap-2">
-                  {insights.contentWarnings.map((warning, index) => (
-                    <Badge key={index} variant="destructive">
-                      {warning}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <h4 className="text-sm font-semibold">{t("movie.targetAudience")}</h4>
-              <p className="text-sm text-muted-foreground">{insights.targetAudience}</p>
-            </div>
-
-            <div className="space-y-2">
-              <h4 className="text-sm font-semibold">{t("movie.analysis")}</h4>
-              <p className="text-sm text-muted-foreground">{insights.analysis}</p>
-            </div>
-
-            {insights.similarMovies.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="text-sm font-semibold">{t("movie.similarMovies")}</h4>
-                <div className="flex flex-wrap gap-2">
-                  {insights.similarMovies.map((movie, index) => (
-                    <Badge key={index} variant="secondary">
-                      {movie}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
+        {tags && tags.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-4">
+            {tags.map((tag) => (
+              <Badge key={tag} variant="outline">
+                {tag}
+              </Badge>
+            ))}
           </div>
         )}
       </ScrollArea>
-
-      {tags && tags.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {tags.map((tag) => (
-            <Badge key={tag} variant="outline">
-              {tag}
-            </Badge>
-          ))}
-        </div>
-      )}
 
       <div className="space-y-2">
         <Button

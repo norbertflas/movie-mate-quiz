@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader } from "../ui/card";
 import { MovieStreamingServices } from "./MovieStreamingServices";
@@ -8,6 +9,8 @@ import { MovieMediaSection } from "./MovieMediaSection";
 import { MovieExpandedContent } from "./MovieExpandedContent";
 import { useMovieRating } from "./MovieRatingLogic";
 import { useToast } from "../ui/use-toast";
+import { X } from "lucide-react";
+import { Button } from "../ui/button";
 
 interface MovieCardProps {
   title: string;
@@ -62,6 +65,11 @@ export const MovieCard = ({
     });
   };
 
+  const handleClose = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsExpanded(false);
+  };
+
   return (
     <motion.div
       layout
@@ -75,6 +83,17 @@ export const MovieCard = ({
         className="group relative overflow-hidden h-full flex flex-col bg-gradient-to-br from-background/80 via-background/50 to-purple-500/5 dark:from-background/80 dark:via-background/50 dark:to-purple-500/10 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-accent/20 hover:shadow-xl transition-all duration-300 cursor-pointer" 
         onClick={() => setIsExpanded(!isExpanded)}
       >
+        {isExpanded && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-2 right-2 z-50 bg-background/80 hover:bg-background/90 rounded-full"
+            onClick={handleClose}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        )}
+
         <MovieMediaSection
           showTrailer={showTrailer}
           trailerUrl={trailerUrl}
