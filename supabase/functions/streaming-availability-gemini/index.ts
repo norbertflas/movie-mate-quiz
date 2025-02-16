@@ -1,4 +1,5 @@
 
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { GoogleGenerativeAI } from 'https://esm.sh/@google/generative-ai@0.1.3'
 
 const corsHeaders = {
@@ -32,6 +33,7 @@ async function fetchWithRetry(fn: () => Promise<any>, attempts: number = RETRY_A
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
