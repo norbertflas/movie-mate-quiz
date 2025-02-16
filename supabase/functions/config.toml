@@ -1,4 +1,5 @@
+
 project_id = "haerhfrlzkvkmzllxpvu"
 
-[functions.get-tmdb-key]
+[functions.streaming-availability-deepseek]
 verify_jwt = false
