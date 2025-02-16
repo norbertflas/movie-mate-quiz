@@ -1,3 +1,4 @@
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MovieDetailsSection } from "./MovieDetailsSection";
 import { MovieActions } from "./MovieActions";
@@ -7,8 +8,6 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { getMovieTrailer } from "@/services/youtube";
-import { Button } from "../ui/button";
-import { Play } from "lucide-react";
 import type { TMDBMovie } from "@/services/tmdb";
 
 interface MovieDetailsDialogProps {
@@ -111,8 +110,6 @@ export const MovieDetailsDialog = ({ isOpen, onClose, movie }: MovieDetailsDialo
                   <div className="flex flex-col gap-4">
                     <MovieActions
                       userRating={userRating}
-                      showTrailer={showTrailer}
-                      onToggleTrailer={handleWatchTrailer}
                       onRate={handleRate}
                       title={movie.title}
                     />
