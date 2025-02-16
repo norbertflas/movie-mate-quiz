@@ -1,3 +1,4 @@
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MovieDetailsSection } from "./MovieDetailsSection";
 import { MovieActions } from "./MovieActions";
@@ -100,18 +101,18 @@ export const UnifiedMovieDetails = ({
       {isOpen && (
         <Dialog open={isOpen} onOpenChange={onClose}>
           <DialogContent className="max-w-4xl">
-            <DialogHeader>
-              <DialogTitle className="text-2xl font-bold">{movie.title}</DialogTitle>
-            </DialogHeader>
-            
             <Button
               variant="ghost"
               size="icon"
-              className="absolute top-2 right-2 z-50 bg-background/80 hover:bg-background/90 rounded-full"
+              className="absolute top-4 right-4 z-50 rounded-full bg-background/90 hover:bg-background/70 shadow-md dark:bg-background/80 dark:hover:bg-background/60"
               onClick={handleClose}
             >
-              <X className="h-4 w-4" />
+              <X className="h-5 w-5 text-foreground" />
             </Button>
+
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-bold">{movie.title}</DialogTitle>
+            </DialogHeader>
 
             <motion.div
               initial={{ opacity: 0, y: 20 }}
