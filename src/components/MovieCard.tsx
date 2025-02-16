@@ -13,11 +13,9 @@ import { MovieCardWrapper } from "./movie/MovieCardWrapper";
 import type { MovieInsights, MovieCardProps } from "@/types/movie";
 import { UnifiedMovieDetails } from "./movie/UnifiedMovieDetails";
 import type { TMDBMovie } from "@/services/tmdb";
-import { X } from "lucide-react";
-import { Button } from "./ui/button";
-import { useStreamingAvailability } from "@/hooks/use-streaming-availability";
 import { useTranslation } from "react-i18next";
 import type { StreamingService } from "@/hooks/use-streaming-availability";
+import { useStreamingAvailability } from "@/hooks/use-streaming-availability";
 
 export const MovieCard = ({
   title,
@@ -90,16 +88,6 @@ export const MovieCard = ({
       <MovieCardWrapper onClick={handleCardClick}>
         <MovieCardContainer isExpanded={false} onClick={handleCardClick}>
           <div className="relative">
-            {isDetailsOpen && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute top-2 right-2 z-50 bg-background/80 hover:bg-background/90 rounded-full"
-                onClick={handleCloseDetails}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            )}
             <MovieTrailerSection
               showTrailer={showTrailer}
               title={title}
