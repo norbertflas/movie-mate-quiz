@@ -1,6 +1,6 @@
 
 import { Button } from '@/components/ui/button';
-import { Share2, X, Facebook, Link } from 'lucide-react';
+import { Instagram, X, Facebook, Link } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useTranslation } from 'react-i18next';
 
@@ -14,20 +14,14 @@ export const MovieSocialShare = ({ title, description, url }: MovieSocialSharePr
   const { toast } = useToast();
   const { t } = useTranslation();
 
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title,
-          text: description,
-          url,
-        });
-      } catch (error) {
-        console.error('Error sharing:', error);
-      }
-    } else {
-      handleCopyLink();
-    }
+  const shareOnInstagram = () => {
+    // Since Instagram doesn't have a direct share URL, we'll copy the info to clipboard
+    const shareText = `${title}\n${description}\n${url}`;
+    navigator.clipboard.writeText(shareText);
+    toast({
+      title: t('share.linkCopied'),
+      description: t('share.shareToInstagram'),
+    });
   };
 
   const handleCopyLink = () => {
@@ -56,9 +50,9 @@ export const MovieSocialShare = ({ title, description, url }: MovieSocialSharePr
         variant="outline"
         size="icon"
         className="w-full h-9"
-        onClick={handleShare}
+        onClick={shareOnInstagram}
       >
-        <Share2 className="w-4 h-4" />
+        <Instagram className="w-4 h-4" />
       </Button>
       
       <Button
