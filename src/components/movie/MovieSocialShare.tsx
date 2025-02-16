@@ -51,45 +51,41 @@ export const MovieSocialShare = ({ title, description, url }: MovieSocialSharePr
   };
 
   return (
-    <div className="grid grid-cols-1 gap-2">
+    <div className="grid grid-cols-4 gap-2">
       <Button
         variant="outline"
-        size="sm"
-        className="w-full flex items-center justify-center gap-2"
+        size="icon"
+        className="w-full h-9"
         onClick={handleShare}
       >
         <Share2 className="w-4 h-4" />
-        {t('share.share')}
       </Button>
       
       <Button
         variant="outline"
-        size="sm"
-        className="w-full flex items-center justify-center gap-2"
+        size="icon"
+        className="w-full h-9"
         onClick={shareOnTwitter}
       >
         <Twitter className="w-4 h-4" />
-        Twitter
       </Button>
       
       <Button
         variant="outline"
-        size="sm"
-        className="w-full flex items-center justify-center gap-2"
+        size="icon"
+        className="w-full h-9"
         onClick={shareOnFacebook}
       >
         <Facebook className="w-4 h-4" />
-        Facebook
       </Button>
       
       <Button
         variant="outline"
-        size="sm"
-        className="w-full flex items-center justify-center gap-2"
+        size="icon"
+        className="w-full h-9"
         onClick={handleCopyLink}
       >
         <Link className="w-4 h-4" />
-        {t('share.copyLink')}
       </Button>
     </div>
   );
