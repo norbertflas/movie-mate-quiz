@@ -20,6 +20,8 @@ async function retryWithBackoff<T>(
   try {
     return await fn();
   } catch (error: any) {
+    console.error('Error in retryWithBackoff:', error);
+
     if (retries === 0) {
       throw error;
     }
@@ -70,8 +72,16 @@ export async function getStreamingAvailability(tmdbId: number, title?: string, y
     try {
       const deepseekResponse = await retryWithBackoff(async () => {
         const response = await supabase.functions.invoke('streaming-availability-deepseek', {
-          body: { tmdbId, title, year, country }
+          body: { tmdbId, title, year, country },
+          headers: {
+            'Content-Type': 'application/json'
+          }
         });
+        
+        if (!response.data) {
+          throw new Error('Empty response from DeepSeek API');
+        }
+        
         return response.data?.result || [];
       });
 
@@ -83,12 +93,22 @@ export async function getStreamingAvailability(tmdbId: number, title?: string, y
       console.error('DeepSeek API error:', error);
     }
 
-    // Try Gemini as fallback
+    // Try Gemini as fallback with a delay
+    await sleep(1000); // Add delay before trying Gemini
+
     try {
       const geminiResponse = await retryWithBackoff(async () => {
         const response = await supabase.functions.invoke('streaming-availability-gemini', {
-          body: { tmdbId, title, year, country }
+          body: { tmdbId, title, year, country },
+          headers: {
+            'Content-Type': 'application/json'
+          }
         });
+        
+        if (!response.data) {
+          throw new Error('Empty response from Gemini API');
+        }
+        
         return response.data?.result || [];
       });
 
@@ -126,11 +146,15 @@ async function cacheResults(services: StreamingService[], tmdbId: number, countr
         })).filter(record => record.service_id !== undefined);
 
         if (availabilityRecords.length > 0) {
-          await supabase
+          const { error } = await supabase
             .from('movie_streaming_availability')
             .upsert(availabilityRecords, {
               onConflict: 'tmdb_id,service_id,region'
             });
+
+          if (error) {
+            console.error('Error caching streaming results:', error);
+          }
         }
       }
     }
