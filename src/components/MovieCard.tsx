@@ -14,7 +14,7 @@ import type { MovieInsights, MovieCardProps } from "@/types/movie";
 import { UnifiedMovieDetails } from "./movie/UnifiedMovieDetails";
 import type { TMDBMovie } from "@/services/tmdb";
 import { useTranslation } from "react-i18next";
-import type { StreamingService } from "@/hooks/use-streaming-availability";
+import type { StreamingService } from "@/types/streaming";
 import { useStreamingAvailability } from "@/hooks/use-streaming-availability";
 
 export const MovieCard = ({
