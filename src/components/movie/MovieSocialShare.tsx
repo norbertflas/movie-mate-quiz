@@ -1,6 +1,6 @@
 
 import { Button } from '@/components/ui/button';
-import { Share2, Twitter, Facebook, Link } from 'lucide-react';
+import { Share2, X, Facebook, Link } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useTranslation } from 'react-i18next';
 
@@ -38,11 +38,11 @@ export const MovieSocialShare = ({ title, description, url }: MovieSocialSharePr
     });
   };
 
-  const shareOnTwitter = () => {
-    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
+  const shareOnX = () => {
+    const xUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
       `${title}\n${description}\n${url}`
     )}`;
-    window.open(twitterUrl, '_blank');
+    window.open(xUrl, '_blank');
   };
 
   const shareOnFacebook = () => {
@@ -65,9 +65,9 @@ export const MovieSocialShare = ({ title, description, url }: MovieSocialSharePr
         variant="outline"
         size="icon"
         className="w-full h-9"
-        onClick={shareOnTwitter}
+        onClick={shareOnX}
       >
-        <Twitter className="w-4 h-4" />
+        <X className="w-4 h-4" />
       </Button>
       
       <Button
