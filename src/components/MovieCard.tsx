@@ -14,7 +14,7 @@ import type { MovieInsights, MovieCardProps } from "@/types/movie";
 import { UnifiedMovieDetails } from "./movie/UnifiedMovieDetails";
 import type { TMDBMovie } from "@/services/tmdb";
 import { useTranslation } from "react-i18next";
-import type { StreamingService } from "@/types/streaming";
+import type { StreamingPlatformData } from "@/types/streaming";
 import { useStreamingAvailability } from "@/hooks/use-streaming-availability";
 
 export const MovieCard = ({
@@ -42,17 +42,21 @@ export const MovieCard = ({
   const { userRating, handleRating } = useMovieRating(title);
   const { data: availabilityData, isLoading, isError } = useStreamingAvailability(tmdbId, title, year);
 
-  // Extract services from the availability data or use initial services
-  const availableServices: StreamingService[] = availabilityData?.services || 
-    streamingServices.map(service => {
-      if (typeof service === 'string') {
-        return {
-          service: service,
-          link: `https://${service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch/${tmdbId}`,
-        };
-      }
-      return service as StreamingService;
-    });
+  // Transform streaming services to the expected format
+  const availableServices = availabilityData?.services.map(service => ({
+    service: service.service,
+    link: service.link || `https://${service.service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch/${tmdbId}`,
+    logo: service.logo
+  })) || streamingServices.map(service => {
+    if (typeof service === 'string') {
+      return {
+        service: service,
+        link: `https://${service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch/${tmdbId}`,
+        logo: undefined
+      };
+    }
+    return service;
+  });
 
   const handleCardClick = () => {
     setIsDetailsOpen(true);
