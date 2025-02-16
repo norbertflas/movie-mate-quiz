@@ -37,16 +37,33 @@ serve(async (req) => {
     })
 
     if (!response.ok) {
-      throw new Error(`DeepSeek API error: ${response.status} ${response.statusText}`)
+      console.error(`DeepSeek API error: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('Error response:', errorText);
+      throw new Error(`DeepSeek API error: ${response.status} ${response.statusText}`);
     }
 
-    const data = await response.json()
+    let data;
+    try {
+      const responseText = await response.text();
+      console.log('Raw API response:', responseText);
+      data = JSON.parse(responseText);
+    } catch (error) {
+      console.error('Failed to parse DeepSeek API response:', error);
+      throw new Error('Invalid JSON response from DeepSeek API');
+    }
+
+    if (!data?.choices?.[0]?.message?.content) {
+      console.error('Unexpected API response structure:', data);
+      throw new Error('Invalid response structure from DeepSeek API');
+    }
+
     const services = data.choices[0].message.content
       .split(',')
       .map((s: string) => s.trim())
-      .filter((s: string) => s.length > 0)
+      .filter((s: string) => s.length > 0);
     
-    console.log('DeepSeek found streaming services:', services)
+    console.log('DeepSeek found streaming services:', services);
 
     return new Response(
       JSON.stringify({ 
@@ -63,14 +80,14 @@ serve(async (req) => {
       }
     )
   } catch (error) {
-    console.error('Error in streaming-availability-deepseek function:', error)
+    console.error('Error in streaming-availability-deepseek function:', error);
+    
     return new Response(
       JSON.stringify({ 
         error: error.message,
         result: []
       }),
       { 
-        status: error.status || 400,
         headers: { 
           ...corsHeaders,
           'Content-Type': 'application/json'
