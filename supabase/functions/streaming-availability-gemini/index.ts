@@ -1,6 +1,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { GoogleGenerativeAI } from 'https://esm.sh/@google/generative-ai@0.1.3'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,6 +11,10 @@ const corsHeaders = {
 const RETRY_ATTEMPTS = 3;
 const RETRY_DELAY = 2000; // 2 seconds
 const RATE_LIMIT_DELAY = 60000; // 60 seconds
+
+const supabaseUrl = Deno.env.get('SUPABASE_URL') as string;
+const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') as string;
+const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
 async function fetchWithRetry(fn: () => Promise<any>, attempts: number = RETRY_ATTEMPTS): Promise<any> {
   try {
@@ -29,6 +34,65 @@ async function fetchWithRetry(fn: () => Promise<any>, attempts: number = RETRY_A
       return fetchWithRetry(fn, attempts - 1);
     }
     throw error;
+  }
+}
+
+async function getStreamingServices(country: string): Promise<{ id: string; name: string }[]> {
+  try {
+    const { data: services, error } = await supabase
+      .from('streaming_services')
+      .select('id, name')
+      .contains('regions', [country.toLowerCase()]);
+
+    if (error) {
+      console.error('Error fetching streaming services:', error);
+      return [];
+    }
+
+    return services || [];
+  } catch (error) {
+    console.error('Error in getStreamingServices:', error);
+    return [];
+  }
+}
+
+async function saveStreamingAvailability(
+  tmdbId: number,
+  services: string[],
+  country: string
+): Promise<void> {
+  try {
+    // Get service IDs for the available streaming services
+    const { data: serviceIds } = await supabase
+      .from('streaming_services')
+      .select('id, name')
+      .in('name', services);
+
+    if (!serviceIds?.length) {
+      console.log('No matching service IDs found');
+      return;
+    }
+
+    // Prepare the records for insertion
+    const records = serviceIds.map(service => ({
+      tmdb_id: tmdbId,
+      service_id: service.id,
+      region: country.toLowerCase(),
+    }));
+
+    // Insert the availability records
+    const { error } = await supabase
+      .from('movie_streaming_availability')
+      .upsert(
+        records,
+        { onConflict: 'tmdb_id,service_id,region' }
+      );
+
+    if (error) {
+      console.error('Error saving streaming availability:', error);
+    }
+  } catch (error) {
+    console.error('Error in saveStreamingAvailability:', error);
   }
 }
 
@@ -73,6 +137,12 @@ serve(async (req) => {
       );
     }
 
+    // Get available streaming services for the country
+    const availableServices = await getStreamingServices(country);
+    const serviceNames = availableServices.map(s => s.name);
+
+    console.log('Available streaming services for country:', serviceNames);
+
     const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
     if (!geminiApiKey) {
       console.error('GEMINI_API_KEY not configured');
@@ -95,7 +165,7 @@ serve(async (req) => {
     const genAI = new GoogleGenerativeAI(geminiApiKey);
     const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
-    const prompt = `Find streaming services where the movie "${title}" (${year}) is available for streaming in ${country.toUpperCase()}. Only return a list of streaming service names from these options: Netflix, Amazon Prime Video, Disney+, Hulu, Apple TV+, Max, Paramount+, Peacock. Do not include any explanation or additional text, just the service names separated by commas.`;
+    const prompt = `Find streaming services where the movie "${title}" (${year}) is available for streaming in ${country.toUpperCase()}. Only return a list of streaming service names from these options: ${serviceNames.join(', ')}. Do not include any explanation or additional text, just the service names separated by commas.`;
 
     console.log('Making request to Gemini API with prompt:', prompt);
 
@@ -158,16 +228,27 @@ serve(async (req) => {
     const services = result
       .split(',')
       .map(s => s.trim())
-      .filter(s => s.length > 0);
+      .filter(s => s.length > 0 && serviceNames.includes(s));
 
     console.log('Processed streaming services:', services);
 
+    // Save the streaming availability data
+    if (services.length > 0) {
+      await saveStreamingAvailability(tmdbId, services, country);
+    }
+
+    // Map services to their logos
+    const servicesWithLogos = services.map(service => {
+      const serviceInfo = availableServices.find(s => s.name === service);
+      return {
+        service,
+        link: `https://${service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch/${tmdbId}`
+      };
+    });
+
     return new Response(
       JSON.stringify({
-        result: services.map(service => ({
-          service,
-          link: `https://${service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch/${tmdbId}`
-        }))
+        result: servicesWithLogos
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -189,3 +270,4 @@ serve(async (req) => {
     );
   }
 });
+
