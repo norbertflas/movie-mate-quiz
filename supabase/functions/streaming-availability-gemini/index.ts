@@ -14,6 +14,8 @@ async function fetchWithRetry(fn: () => Promise<any>, attempts: number = RETRY_A
   try {
     return await fn();
   } catch (error) {
+    console.error('Error in fetchWithRetry:', error);
+    
     if (error.message?.includes('quota') || error.message?.includes('rate limit')) {
       console.log('Rate limit hit, waiting 60 seconds...');
       await new Promise(resolve => setTimeout(resolve, RATE_LIMIT_DELAY));
@@ -38,8 +40,31 @@ serve(async (req) => {
   }
 
   try {
-    const { tmdbId, title, year, country = 'us' } = await req.json()
-    const geminiApiKey = Deno.env.get('GEMINI_API_KEY')
+    const body = await req.json();
+    console.log('Request body:', body);
+    
+    const { tmdbId, title, year, country = 'us' } = body;
+    
+    // Validate required parameters
+    if (!title || !year) {
+      console.error('Missing required parameters');
+      return new Response(
+        JSON.stringify({ 
+          result: [],
+          error: 'Missing required parameters: title and year are required'
+        }),
+        { 
+          headers: { 
+            ...corsHeaders,
+            'Content-Type': 'application/json'
+          },
+          status: 400
+        }
+      );
+    }
+
+    const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
+    console.log('GEMINI_API_KEY present:', !!geminiApiKey);
     
     if (!geminiApiKey) {
       console.error('GEMINI_API_KEY not configured');
@@ -61,15 +86,15 @@ serve(async (req) => {
     // Add initial delay to help prevent rate limiting
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    const genAI = new GoogleGenerativeAI(geminiApiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-
-    const prompt = `Find streaming services where the movie "${title}" (${year}) is available for streaming in ${country.toUpperCase()}. Only return a list of streaming service names from these options: Netflix, Amazon Prime Video, Disney+, Hulu, Apple TV+, Max, Paramount+, Peacock. Do not include any explanation or additional text, just the service names separated by commas.`;
-
-    console.log('Making request to Gemini API...');
-    console.log('Request details:', { title, year, country });
-
     try {
+      const genAI = new GoogleGenerativeAI(geminiApiKey);
+      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+
+      const prompt = `Find streaming services where the movie "${title}" (${year}) is available for streaming in ${country.toUpperCase()}. Only return a list of streaming service names from these options: Netflix, Amazon Prime Video, Disney+, Hulu, Apple TV+, Max, Paramount+, Peacock. Do not include any explanation or additional text, just the service names separated by commas.`;
+
+      console.log('Making request to Gemini API...');
+      console.log('Request details:', { title, year, country });
+
       const result = await fetchWithRetry(async () => {
         const response = await model.generateContent(prompt);
         const text = response.response.text();
@@ -103,7 +128,7 @@ serve(async (req) => {
             'Content-Type': 'application/json'
           } 
         }
-      )
+      );
     } catch (apiError) {
       console.error('Gemini API error:', apiError);
       
@@ -126,19 +151,7 @@ serve(async (req) => {
         );
       }
 
-      return new Response(
-        JSON.stringify({ 
-          result: [],
-          error: `Gemini API error: ${apiError.message}`
-        }),
-        { 
-          headers: { 
-            ...corsHeaders,
-            'Content-Type': 'application/json'
-          },
-          status: 200
-        }
-      );
+      throw apiError; // Re-throw to be caught by outer try-catch
     }
   } catch (error) {
     console.error('Error in streaming-availability-gemini function:', error);
@@ -146,16 +159,16 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         result: [],
-        error: error.message || 'Internal server error'
+        error: error.message || 'Internal server error',
+        details: error.toString()
       }),
       { 
         headers: { 
           ...corsHeaders,
           'Content-Type': 'application/json'
         },
-        status: 200
+        status: 200 // We return 200 even for errors to handle them gracefully in the frontend
       }
-    )
+    );
   }
-})
-
+});
