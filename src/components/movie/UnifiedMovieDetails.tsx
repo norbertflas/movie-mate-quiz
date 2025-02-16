@@ -12,8 +12,9 @@ import { Badge } from "@/components/ui/badge";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, X } from "lucide-react";
 import { useStreamingAvailability } from "@/hooks/use-streaming-availability";
+import { Button } from "@/components/ui/button";
 
 interface UnifiedMovieDetailsProps {
   isOpen: boolean;
@@ -87,6 +88,11 @@ export const UnifiedMovieDetails = ({
     });
   };
 
+  const handleClose = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onClose();
+  };
+
   if (!movie) return null;
 
   return (
@@ -98,6 +104,15 @@ export const UnifiedMovieDetails = ({
               <DialogTitle className="text-2xl font-bold">{movie.title}</DialogTitle>
             </DialogHeader>
             
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-2 right-2 z-50 bg-background/80 hover:bg-background/90 rounded-full"
+              onClick={handleClose}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
