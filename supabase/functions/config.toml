@@ -3,3 +3,6 @@ project_id = "haerhfrlzkvkmzllxpvu"
 
 [functions.streaming-availability-deepseek]
 verify_jwt = false
+
+[functions.streaming-availability-gemini]
+verify_jwt = false

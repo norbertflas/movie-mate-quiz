@@ -1,148 +1,161 @@
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
-import { GoogleGenerativeAI } from 'https://esm.sh/@google/generative-ai@0.1.3';
+import { GoogleGenerativeAI } from 'https://esm.sh/@google/generative-ai@0.1.3'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Max-Age': '86400',
-};
+}
 
-const RETRY_AFTER = 60;
-const MAX_RETRIES = 3;
-const INITIAL_RETRY_DELAY = 1000;
-const CACHE_DURATION = 24 * 60 * 60; // 24 hours in seconds
+const RETRY_ATTEMPTS = 3;
+const RETRY_DELAY = 2000; // 2 seconds
+const RATE_LIMIT_DELAY = 60000; // 60 seconds
 
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-async function tryGenerateContent(model: any, prompt: string, attempt = 1): Promise<any> {
+async function fetchWithRetry(fn: () => Promise<any>, attempts: number = RETRY_ATTEMPTS): Promise<any> {
   try {
-    console.log(`Attempt ${attempt} to generate content`);
-    const result = await model.generateContent(prompt);
-    return result;
+    return await fn();
   } catch (error) {
-    console.error(`Error on attempt ${attempt}:`, error);
+    if (error.message?.includes('quota') || error.message?.includes('rate limit')) {
+      console.log('Rate limit hit, waiting 60 seconds...');
+      await new Promise(resolve => setTimeout(resolve, RATE_LIMIT_DELAY));
+      if (attempts > 1) {
+        return fetchWithRetry(fn, attempts - 1);
+      }
+    }
     
-    if (attempt >= MAX_RETRIES) {
-      throw error;
+    if (attempts > 1) {
+      console.log(`Attempt failed, retrying... (${attempts - 1} attempts left)`);
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+      return fetchWithRetry(fn, attempts - 1);
     }
-
-    if (error.message?.includes('429') || error.message?.includes('quota')) {
-      const delay = INITIAL_RETRY_DELAY * Math.pow(2, attempt - 1);
-      console.log(`Rate limit hit, waiting ${delay}ms before retry ${attempt + 1}`);
-      await sleep(delay);
-      return tryGenerateContent(model, prompt, attempt + 1);
-    }
-
     throw error;
   }
 }
 
-Deno.serve(async (req) => {
+serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      headers: corsHeaders,
-      status: 204,
-    });
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { tmdbId, title, year, country = 'us' } = await req.json();
-    console.log(`Checking streaming availability for: ${title} (${year}) in ${country}`);
+    const { tmdbId, title, year, country = 'us' } = await req.json()
+    const geminiApiKey = Deno.env.get('GEMINI_API_KEY')
+    
+    if (!geminiApiKey) {
+      console.error('GEMINI_API_KEY not configured');
+      return new Response(
+        JSON.stringify({ 
+          result: [],
+          error: 'GEMINI_API_KEY not configured'
+        }),
+        { 
+          headers: { 
+            ...corsHeaders,
+            'Content-Type': 'application/json'
+          },
+          status: 200
+        }
+      );
+    }
 
-    const genAI = new GoogleGenerativeAI(Deno.env.get('GEMINI_API_KEY') || '');
+    // Add initial delay to help prevent rate limiting
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    const genAI = new GoogleGenerativeAI(geminiApiKey);
     const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
-    const prompt = `Tell me on which major streaming platforms the movie "${title}" (${year}) is CURRENTLY available to watch in ${country}. Only include major streaming platforms like Netflix, Amazon Prime Video, Disney+, Hulu, HBO Max, Apple TV+. Format the response as a JSON array with objects containing 'service' and 'link' properties. If you're not completely sure about current availability, don't include that service. Only include factual information about CURRENT availability, no historical data. Example format: [{"service": "Netflix", "link": "https://netflix.com"}]`;
+    const prompt = `Find streaming services where the movie "${title}" (${year}) is available for streaming in ${country.toUpperCase()}. Only return a list of streaming service names from these options: Netflix, Amazon Prime Video, Disney+, Hulu, Apple TV+, Max, Paramount+, Peacock. Do not include any explanation or additional text, just the service names separated by commas.`;
 
-    console.log('Sending prompt to Gemini:', prompt);
+    console.log('Making request to Gemini API...');
+    console.log('Request details:', { title, year, country });
 
     try {
-      const result = await tryGenerateContent(model, prompt);
-      const response = await result.response;
-      const text = response.text();
-      console.log('Received response from Gemini:', text);
-      
-      const streamingServices = text.match(/\[[\s\S]*?\]/)?.[0];
-      console.log('Extracted streaming services:', streamingServices);
-
-      if (!streamingServices) {
-        console.log('No streaming services found in response');
-        return new Response(
-          JSON.stringify({ result: [] }),
-          {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 200
-          }
-        );
-      }
-
-      try {
-        const parsedServices = JSON.parse(streamingServices);
-        if (!Array.isArray(parsedServices)) {
-          throw new Error('Invalid response format: not an array');
+      const result = await fetchWithRetry(async () => {
+        const response = await model.generateContent(prompt);
+        const text = response.response.text();
+        console.log('Raw API response:', text);
+        
+        if (!text) {
+          console.error('Empty response from Gemini API');
+          throw new Error('Empty response from Gemini API');
         }
 
-        const validServices = parsedServices.filter(service => 
-          service && 
-          typeof service === 'object' && 
-          typeof service.service === 'string' && 
-          typeof service.link === 'string' &&
-          service.service.length > 0 &&
-          service.link.length > 0
-        );
+        return text;
+      });
 
-        console.log('Valid services after filtering:', validServices);
-
-        return new Response(
-          JSON.stringify({ result: validServices }),
-          {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 200
-          }
-        );
-      } catch (error) {
-        console.error('Error parsing streaming services:', error);
-        throw error;
-      }
-    } catch (error) {
-      console.error('Gemini API Error:', error);
+      const services = result
+        .split(',')
+        .map((s: string) => s.trim())
+        .filter((s: string) => s.length > 0);
       
-      if (error.message?.includes('429') || error.message?.includes('quota')) {
+      console.log('Gemini found streaming services:', services);
+
+      return new Response(
+        JSON.stringify({ 
+          result: services.map((service: string) => ({
+            service,
+            link: `https://${service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch/${tmdbId}`
+          }))
+        }),
+        { 
+          headers: { 
+            ...corsHeaders,
+            'Content-Type': 'application/json'
+          } 
+        }
+      )
+    } catch (apiError) {
+      console.error('Gemini API error:', apiError);
+      
+      if (apiError.message?.includes('quota') || apiError.message?.includes('rate limit')) {
         return new Response(
           JSON.stringify({ 
             error: 'Rate limit exceeded',
-            message: `Please try again in ${RETRY_AFTER} seconds`,
-            retryAfter: RETRY_AFTER,
+            message: 'Please try again in 60 seconds',
+            retryAfter: 60,
             result: []
           }),
-          {
+          { 
             headers: { 
-              ...corsHeaders, 
+              ...corsHeaders,
               'Content-Type': 'application/json',
-              'Retry-After': RETRY_AFTER.toString()
+              'Retry-After': '60'
             },
             status: 429
           }
         );
       }
 
-      throw error;
+      return new Response(
+        JSON.stringify({ 
+          result: [],
+          error: `Gemini API error: ${apiError.message}`
+        }),
+        { 
+          headers: { 
+            ...corsHeaders,
+            'Content-Type': 'application/json'
+          },
+          status: 200
+        }
+      );
     }
   } catch (error) {
     console.error('Error in streaming-availability-gemini function:', error);
     
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'Internal server error',
-        message: 'An unexpected error occurred',
-        result: []
+        result: [],
+        error: error.message || 'Internal server error'
       }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: error.status || 500,
+      { 
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        },
+        status: 200
       }
-    );
+    )
   }
-});
+})
+
