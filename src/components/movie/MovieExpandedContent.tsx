@@ -19,6 +19,7 @@ interface MovieExpandedContentProps {
   userRating?: "like" | "dislike" | null;
   onRate?: (rating: "like" | "dislike") => void;
   tmdbId?: number;
+  explanations?: string[];  // Added this property
 }
 
 export const MovieExpandedContent = ({
@@ -33,6 +34,7 @@ export const MovieExpandedContent = ({
   onWatchTrailer,
   userRating,
   onRate,
+  explanations,  // Added this parameter
 }: MovieExpandedContentProps) => {
   const { t } = useTranslation();
 
@@ -66,6 +68,19 @@ export const MovieExpandedContent = ({
         <p className="text-sm text-muted-foreground">
           {description}
         </p>
+
+        {explanations && explanations.length > 0 && (
+          <div className="mt-4 space-y-2">
+            <h4 className="text-sm font-semibold">Why we recommend this:</h4>
+            <ul className="list-disc list-inside space-y-1">
+              {explanations.map((explanation, index) => (
+                <li key={index} className="text-sm text-muted-foreground">
+                  {explanation}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {tags && tags.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-4">
