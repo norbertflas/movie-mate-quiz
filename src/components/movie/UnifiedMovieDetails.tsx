@@ -1,3 +1,4 @@
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MovieDetailsSection } from "./MovieDetailsSection";
 import { MovieActions } from "./MovieActions";
@@ -15,6 +16,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, X } from "lucide-react";
 import { useStreamingAvailability } from "@/hooks/use-streaming-availability";
 import { Button } from "@/components/ui/button";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface UnifiedMovieDetailsProps {
   isOpen: boolean;
@@ -40,6 +42,7 @@ export const UnifiedMovieDetails = ({
   const [userRating, setUserRating] = useState<"like" | "dislike" | null>(null);
   const { toast } = useToast();
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
   
   const { data: availabilityData, isLoading: isLoadingServices, isError } = useStreamingAvailability(
     movie?.id,
@@ -98,204 +101,209 @@ export const UnifiedMovieDetails = ({
     <AnimatePresence>
       {isOpen && (
         <Dialog open={isOpen} onOpenChange={onClose}>
-          <DialogContent className="max-w-4xl">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute right-4 top-4 z-50 rounded-full bg-background/90 hover:bg-background/70 shadow-md dark:bg-background/80 dark:hover:bg-background/60"
-              onClick={handleClose}
-            >
-              <X className="h-5 w-5 text-foreground" />
-            </Button>
-
-            <DialogHeader>
-              <DialogTitle className="text-2xl font-bold">{movie.title}</DialogTitle>
-            </DialogHeader>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="space-y-6"
-            >
-              <div className="relative aspect-video rounded-lg overflow-hidden">
-                {showTrailer && trailerUrl ? (
-                  <iframe
-                    src={trailerUrl}
-                    title={`${movie.title} trailer`}
-                    className="absolute inset-0 w-full h-full"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
-                ) : (
-                  <img
-                    src={`https://image.tmdb.org/t/p/w1280${movie.backdrop_path || movie.poster_path}`}
-                    alt={movie.title}
-                    className="absolute inset-0 w-full h-full object-cover"
-                  />
-                )}
+          <DialogContent className="max-w-4xl h-[90vh] overflow-y-auto p-0 gap-0">
+            <div className="sticky top-0 w-full z-50 bg-background/80 backdrop-blur-sm border-b">
+              <div className="flex items-center justify-between p-4">
+                <DialogHeader className="p-0">
+                  <DialogTitle className="text-2xl font-bold">{movie.title}</DialogTitle>
+                </DialogHeader>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="rounded-full hover:bg-background/70"
+                  onClick={handleClose}
+                >
+                  <X className="h-5 w-5" />
+                </Button>
               </div>
-              
-              <div className="grid gap-6 md:grid-cols-[2fr,1fr]">
-                <div className="space-y-4">
-                  <MovieDetailsSection
-                    title={movie.title}
-                    year={new Date(movie.release_date).getFullYear().toString()}
-                    description={movie.overview}
-                    rating={movie.vote_average * 10}
-                    genre="movie"
-                    onWatchTrailer={handleWatchTrailer}
-                    showTrailer={showTrailer}
-                    explanations={explanations}
-                  />
-                  
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-semibold">{t("streaming.availableOn")}</h3>
-                      {lastUpdated && (
-                        <span className="text-xs text-muted-foreground">
-                          {t("streaming.lastChecked", {
-                            time: lastUpdated.toLocaleDateString(undefined, {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })
-                          })}
-                        </span>
-                      )}
-                    </div>
+            </div>
 
-                    {isLoadingServices ? (
-                      <div className="flex gap-2">
-                        {[1, 2, 3].map((i) => (
-                          <Skeleton key={i} className="h-8 w-24" />
-                        ))}
-                      </div>
-                    ) : isError ? (
-                      <Alert variant="destructive">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertDescription>
-                          {t("streaming.errorChecking")}
-                        </AlertDescription>
-                      </Alert>
-                    ) : services.length === 0 ? (
-                      <Alert>
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertDescription>
-                          {t("streaming.notAvailable")}
-                        </AlertDescription>
-                      </Alert>
-                    ) : (
-                      <>
-                        {isDataStale && (
-                          <Alert>
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertDescription>
-                              {t("streaming.dataStale")}
-                            </AlertDescription>
-                          </Alert>
-                        )}
-                        <div className="flex flex-wrap gap-2">
-                          {services.map((service, index) => (
-                            <HoverCard key={`${service.service}-${index}`}>
-                              <HoverCardTrigger asChild>
-                                <a
-                                  href={service.link}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center"
-                                >
-                                  <Badge 
-                                    variant="secondary" 
-                                    className="flex items-center gap-2 hover:bg-accent cursor-pointer"
-                                  >
-                                    {service.logo ? (
-                                      <img 
-                                        src={service.logo}
-                                        alt={service.service}
-                                        className="w-4 h-4 object-contain"
-                                        onError={(e) => {
-                                          const target = e.target as HTMLImageElement;
-                                          target.src = `/streaming-icons/${service.service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.svg`;
-                                        }}
-                                      />
-                                    ) : (
-                                      <img 
-                                        src={`/streaming-icons/${service.service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.svg`}
-                                        alt={service.service}
-                                        className="w-4 h-4 object-contain"
-                                      />
-                                    )}
-                                    {service.service}
-                                  </Badge>
-                                </a>
-                              </HoverCardTrigger>
-                              <HoverCardContent className="w-80">
-                                <div className="space-y-1">
-                                  <h4 className="text-sm font-semibold">
-                                    {t("streaming.watchOn", { service: service.service })}
-                                  </h4>
-                                  <p className="text-sm text-muted-foreground">
-                                    {t("streaming.clickToWatch")}
-                                  </p>
-                                  {isDataStale && (
-                                    <p className="text-sm text-yellow-500">
-                                      {t("streaming.availabilityMayChange")}
-                                    </p>
-                                  )}
-                                </div>
-                              </HoverCardContent>
-                            </HoverCard>
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                  
-                  <div className="flex flex-col gap-4">
-                    <MovieActions
-                      userRating={userRating}
-                      showTrailer={showTrailer}
-                      onToggleTrailer={handleWatchTrailer}
-                      onRate={handleRate}
-                      title={movie.title}
+            <div className="p-4 space-y-6 overflow-y-auto">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="space-y-6"
+              >
+                <div className="relative aspect-video rounded-lg overflow-hidden">
+                  {showTrailer && trailerUrl ? (
+                    <iframe
+                      src={trailerUrl}
+                      title={`${movie.title} trailer`}
+                      className="absolute inset-0 w-full h-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
                     />
-                    
-                    <MovieSocialShare
-                      title={movie.title}
-                      description={movie.overview}
-                      url={window.location.href}
+                  ) : (
+                    <img
+                      src={`https://image.tmdb.org/t/p/w1280${movie.backdrop_path || movie.poster_path}`}
+                      alt={movie.title}
+                      className="absolute inset-0 w-full h-full object-cover"
                     />
-                  </div>
+                  )}
                 </div>
                 
-                <div className="space-y-4">
-                  <div className="rounded-lg bg-card p-4 space-y-2">
-                    <h3 className="font-semibold">{t("movie.details")}</h3>
-                    <dl className="space-y-2 text-sm">
-                      <div>
-                        <dt className="text-muted-foreground">{t("movie.releaseDate")}</dt>
-                        <dd>{new Date(movie.release_date).toLocaleDateString()}</dd>
+                <div className="grid gap-6 md:grid-cols-[2fr,1fr]">
+                  <div className="space-y-4">
+                    <MovieDetailsSection
+                      title={movie.title}
+                      year={new Date(movie.release_date).getFullYear().toString()}
+                      description={movie.overview}
+                      rating={movie.vote_average * 10}
+                      genre="movie"
+                      onWatchTrailer={handleWatchTrailer}
+                      showTrailer={showTrailer}
+                      explanations={explanations}
+                    />
+                    
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold">{t("streaming.availableOn")}</h3>
+                        {lastUpdated && (
+                          <span className="text-xs text-muted-foreground">
+                            {t("streaming.lastChecked", {
+                              time: lastUpdated.toLocaleDateString(undefined, {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })
+                            })}
+                          </span>
+                        )}
                       </div>
-                      <div>
-                        <dt className="text-muted-foreground">{t("movie.rating")}</dt>
-                        <dd>{movie.vote_average ? (movie.vote_average * 10).toFixed(0) : 0}%</dd>
-                      </div>
-                      <div>
-                        <dt className="text-muted-foreground">{t("movie.votes")}</dt>
-                        <dd>{movie.vote_count?.toLocaleString() || 0}</dd>
-                      </div>
-                      <div>
-                        <dt className="text-muted-foreground">{t("movie.popularity")}</dt>
-                        <dd>{movie.popularity ? Math.round(movie.popularity).toLocaleString() : 0}</dd>
-                      </div>
-                    </dl>
+
+                      {isLoadingServices ? (
+                        <div className="flex gap-2">
+                          {[1, 2, 3].map((i) => (
+                            <Skeleton key={i} className="h-8 w-24" />
+                          ))}
+                        </div>
+                      ) : isError ? (
+                        <Alert variant="destructive">
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertDescription>
+                            {t("streaming.errorChecking")}
+                          </AlertDescription>
+                        </Alert>
+                      ) : services.length === 0 ? (
+                        <Alert>
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertDescription>
+                            {t("streaming.notAvailable")}
+                          </AlertDescription>
+                        </Alert>
+                      ) : (
+                        <>
+                          {isDataStale && (
+                            <Alert>
+                              <AlertCircle className="h-4 w-4" />
+                              <AlertDescription>
+                                {t("streaming.dataStale")}
+                              </AlertDescription>
+                            </Alert>
+                          )}
+                          <div className="flex flex-wrap gap-2">
+                            {services.map((service, index) => (
+                              <HoverCard key={`${service.service}-${index}`}>
+                                <HoverCardTrigger asChild>
+                                  <a
+                                    href={service.link}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center"
+                                  >
+                                    <Badge 
+                                      variant="secondary" 
+                                      className="flex items-center gap-2 hover:bg-accent cursor-pointer"
+                                    >
+                                      {service.logo ? (
+                                        <img 
+                                          src={service.logo}
+                                          alt={service.service}
+                                          className="w-4 h-4 object-contain"
+                                          onError={(e) => {
+                                            const target = e.target as HTMLImageElement;
+                                            target.src = `/streaming-icons/${service.service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.svg`;
+                                          }}
+                                        />
+                                      ) : (
+                                        <img 
+                                          src={`/streaming-icons/${service.service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.svg`}
+                                          alt={service.service}
+                                          className="w-4 h-4 object-contain"
+                                        />
+                                      )}
+                                      {service.service}
+                                    </Badge>
+                                  </a>
+                                </HoverCardTrigger>
+                                <HoverCardContent className="w-80">
+                                  <div className="space-y-1">
+                                    <h4 className="text-sm font-semibold">
+                                      {t("streaming.watchOn", { service: service.service })}
+                                    </h4>
+                                    <p className="text-sm text-muted-foreground">
+                                      {t("streaming.clickToWatch")}
+                                    </p>
+                                    {isDataStale && (
+                                      <p className="text-sm text-yellow-500">
+                                        {t("streaming.availabilityMayChange")}
+                                      </p>
+                                    )}
+                                  </div>
+                                </HoverCardContent>
+                              </HoverCard>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    
+                    <div className="flex flex-col gap-4">
+                      <MovieActions
+                        userRating={userRating}
+                        showTrailer={showTrailer}
+                        onToggleTrailer={handleWatchTrailer}
+                        onRate={handleRate}
+                        title={movie.title}
+                      />
+                      
+                      <MovieSocialShare
+                        title={movie.title}
+                        description={movie.overview}
+                        url={window.location.href}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="rounded-lg bg-card p-4 space-y-2">
+                      <h3 className="font-semibold">{t("movie.details")}</h3>
+                      <dl className="space-y-2 text-sm">
+                        <div>
+                          <dt className="text-muted-foreground">{t("movie.releaseDate")}</dt>
+                          <dd>{new Date(movie.release_date).toLocaleDateString()}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-muted-foreground">{t("movie.rating")}</dt>
+                          <dd>{movie.vote_average ? (movie.vote_average * 10).toFixed(0) : 0}%</dd>
+                        </div>
+                        <div>
+                          <dt className="text-muted-foreground">{t("movie.votes")}</dt>
+                          <dd>{movie.vote_count?.toLocaleString() || 0}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-muted-foreground">{t("movie.popularity")}</dt>
+                          <dd>{movie.popularity ? Math.round(movie.popularity).toLocaleString() : 0}</dd>
+                        </div>
+                      </dl>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            </div>
           </DialogContent>
         </Dialog>
       )}
