@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MovieDetailsSection } from "./MovieDetailsSection";
 import { MovieActions } from "./MovieActions";
@@ -264,8 +263,6 @@ export const UnifiedMovieDetails = ({
                     <div className="flex flex-col gap-4">
                       <MovieActions
                         userRating={userRating}
-                        showTrailer={showTrailer}
-                        onToggleTrailer={handleWatchTrailer}
                         onRate={handleRate}
                         title={movie.title}
                       />

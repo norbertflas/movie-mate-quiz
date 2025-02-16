@@ -1,3 +1,4 @@
+
 import { Button } from '@/components/ui/button';
 import { Share2, Twitter, Facebook, Link } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
@@ -50,11 +51,11 @@ export const MovieSocialShare = ({ title, description, url }: MovieSocialSharePr
   };
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="grid grid-cols-1 gap-2">
       <Button
         variant="outline"
         size="sm"
-        className="flex items-center gap-2"
+        className="w-full flex items-center justify-center gap-2"
         onClick={handleShare}
       >
         <Share2 className="w-4 h-4" />
@@ -64,7 +65,7 @@ export const MovieSocialShare = ({ title, description, url }: MovieSocialSharePr
       <Button
         variant="outline"
         size="sm"
-        className="flex items-center gap-2"
+        className="w-full flex items-center justify-center gap-2"
         onClick={shareOnTwitter}
       >
         <Twitter className="w-4 h-4" />
@@ -74,7 +75,7 @@ export const MovieSocialShare = ({ title, description, url }: MovieSocialSharePr
       <Button
         variant="outline"
         size="sm"
-        className="flex items-center gap-2"
+        className="w-full flex items-center justify-center gap-2"
         onClick={shareOnFacebook}
       >
         <Facebook className="w-4 h-4" />
@@ -84,7 +85,7 @@ export const MovieSocialShare = ({ title, description, url }: MovieSocialSharePr
       <Button
         variant="outline"
         size="sm"
-        className="flex items-center gap-2"
+        className="w-full flex items-center justify-center gap-2"
         onClick={handleCopyLink}
       >
         <Link className="w-4 h-4" />
