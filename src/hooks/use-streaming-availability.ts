@@ -3,11 +3,15 @@ import { useQuery } from "@tanstack/react-query";
 import { getStreamingAvailability } from "@/services/streamingAvailability";
 import { useToast } from "./use-toast";
 import { useTranslation } from "react-i18next";
+import type { StreamingPlatformData, StreamingAvailabilityCache } from "@/types/streaming";
+
+const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+const CACHE_PREFIX = 'streaming_';
 
 // Global request queue management
 let lastRequestTime = 0;
 const MIN_REQUEST_INTERVAL = 2000; // 2 seconds between requests
-const MAX_CONCURRENT_REQUESTS = 3; // Reduce concurrent requests
+const MAX_CONCURRENT_REQUESTS = 3;
 let activeRequests = 0;
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -23,27 +27,66 @@ const getNextRequestDelay = () => {
   return 0;
 };
 
-export type StreamingService = {
-  service: string;
-  link: string;
-  logo?: string;
+const cacheStreamingData = (movieId: number, data: StreamingPlatformData[]) => {
+  const cacheItem: StreamingAvailabilityCache = {
+    data,
+    timestamp: Date.now()
+  };
+  localStorage.setItem(`${CACHE_PREFIX}${movieId}`, JSON.stringify(cacheItem));
 };
 
-export type StreamingAvailabilityData = {
-  services: StreamingService[];
-  timestamp: string;
-  isStale: boolean;
+const getCachedStreamingData = (movieId: number): StreamingPlatformData[] | null => {
+  try {
+    const cached = localStorage.getItem(`${CACHE_PREFIX}${movieId}`);
+    if (!cached) return null;
+
+    const { data, timestamp } = JSON.parse(cached) as StreamingAvailabilityCache;
+    if (Date.now() - timestamp > CACHE_DURATION) {
+      localStorage.removeItem(`${CACHE_PREFIX}${movieId}`);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error reading cache:', error);
+    return null;
+  }
+};
+
+const validateStreamingData = (services: StreamingPlatformData[]): StreamingPlatformData[] => {
+  const now = new Date();
+  return services.filter(service => {
+    const endDate = service.endDate ? new Date(service.endDate) : null;
+    const startDate = service.startDate ? new Date(service.startDate) : null;
+    
+    return (
+      service.available !== false &&
+      (!endDate || endDate > now) &&
+      (!startDate || startDate <= now)
+    );
+  });
 };
 
 export const useStreamingAvailability = (tmdbId: number | undefined, title?: string, year?: string) => {
   const { t } = useTranslation();
   const { toast } = useToast();
 
-  return useQuery<StreamingAvailabilityData, Error>({
+  return useQuery({
     queryKey: ['streamingAvailability', tmdbId, title, year],
     queryFn: async () => {
       if (!tmdbId) {
         throw new Error('TMDB ID is required');
+      }
+
+      // Check cache first
+      const cachedData = getCachedStreamingData(tmdbId);
+      if (cachedData) {
+        console.log('Using cached streaming data for movie:', tmdbId);
+        return {
+          services: validateStreamingData(cachedData),
+          timestamp: new Date().toISOString(),
+          isStale: false
+        };
       }
 
       // Check if we need to wait before making the request
@@ -57,8 +100,15 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
       
       try {
         const services = await getStreamingAvailability(tmdbId, title, year);
+        const validatedServices = validateStreamingData(services);
+        
+        // Cache the validated results
+        if (validatedServices.length > 0) {
+          cacheStreamingData(tmdbId, validatedServices);
+        }
+
         return {
-          services,
+          services: validatedServices,
           timestamp: new Date().toISOString(),
           isStale: false
         };
@@ -77,10 +127,8 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
             variant: "destructive",
           });
           
-          // Update the lastRequestTime to enforce the retry delay
           lastRequestTime = Date.now() + (retryAfter * 1000);
           
-          // Return empty result instead of throwing
           return {
             services: [],
             timestamp: new Date().toISOString(),
@@ -88,7 +136,6 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
           };
         }
         
-        // For other errors, return empty services array
         return {
           services: [],
           timestamp: new Date().toISOString(),
@@ -99,10 +146,10 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
       }
     },
     enabled: !!tmdbId,
-    staleTime: 1000 * 60 * 60, // Cache for 1 hour
-    gcTime: 1000 * 60 * 120, // Keep unused data for 2 hours
-    retry: false, // Disable automatic retries since we handle them manually
-    refetchOnWindowFocus: false, // Disable refetch on window focus to reduce API calls
-    refetchOnReconnect: false // Disable refetch on reconnect to reduce API calls
+    staleTime: CACHE_DURATION,
+    gcTime: CACHE_DURATION * 2,
+    retry: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false
   });
 };

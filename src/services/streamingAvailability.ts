@@ -1,16 +1,11 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import type { StreamingPlatformData } from "@/types/streaming";
 
 const RETRY_DELAY = 2000;
 const MAX_RETRIES = 3;
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-type StreamingService = {
-  service: string;
-  link: string;
-  logo?: string;
-};
 
 async function retryWithBackoff<T>(
   fn: () => Promise<T>,
@@ -26,7 +21,6 @@ async function retryWithBackoff<T>(
       throw error;
     }
 
-    // Parse error body if it's a string
     const errorBody = typeof error.body === 'string' ? JSON.parse(error.body) : error.body;
     
     if (error?.status === 429 || error?.message?.includes('429')) {
@@ -36,13 +30,17 @@ async function retryWithBackoff<T>(
       return retryWithBackoff(fn, retries - 1, delay * 2);
     }
 
-    console.log(`Error occurred, retrying in ${delay}ms`);
     await sleep(delay);
     return retryWithBackoff(fn, retries - 1, delay * 2);
   }
 }
 
-export async function getStreamingAvailability(tmdbId: number, title?: string, year?: string, country: string = 'us'): Promise<StreamingService[]> {
+export async function getStreamingAvailability(
+  tmdbId: number,
+  title?: string,
+  year?: string,
+  country: string = 'us'
+): Promise<StreamingPlatformData[]> {
   try {
     // Check cache first with proper handling of expired data
     const { data: cachedServices, error: cacheError } = await supabase
@@ -62,20 +60,20 @@ export async function getStreamingAvailability(tmdbId: number, title?: string, y
       return cachedServices.map(item => ({
         service: item.streaming_services.name,
         link: `https://${item.streaming_services.name.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch/${tmdbId}`,
-        logo: item.streaming_services.logo_url
+        logo: item.streaming_services.logo_url,
+        available: true,
+        startDate: new Date().toISOString()
       }));
     }
 
     console.log('Fetching fresh streaming data for movie:', tmdbId);
     
-    // Try DeepSeek first as it seems more reliable
+    // Try DeepSeek first
     try {
       const deepseekResponse = await retryWithBackoff(async () => {
         const response = await supabase.functions.invoke('streaming-availability-deepseek', {
           body: { tmdbId, title, year, country },
-          headers: {
-            'Content-Type': 'application/json'
-          }
+          headers: { 'Content-Type': 'application/json' }
         });
         
         if (!response.data) {
@@ -93,16 +91,14 @@ export async function getStreamingAvailability(tmdbId: number, title?: string, y
       console.error('DeepSeek API error:', error);
     }
 
-    // Try Gemini as fallback with a delay
-    await sleep(1000); // Add delay before trying Gemini
+    // Try Gemini as fallback
+    await sleep(1000);
 
     try {
       const geminiResponse = await retryWithBackoff(async () => {
         const response = await supabase.functions.invoke('streaming-availability-gemini', {
           body: { tmdbId, title, year, country },
-          headers: {
-            'Content-Type': 'application/json'
-          }
+          headers: { 'Content-Type': 'application/json' }
         });
         
         if (!response.data) {
@@ -127,7 +123,7 @@ export async function getStreamingAvailability(tmdbId: number, title?: string, y
   }
 }
 
-async function cacheResults(services: StreamingService[], tmdbId: number, country: string) {
+async function cacheResults(services: StreamingPlatformData[], tmdbId: number, country: string) {
   try {
     if (services.length > 0) {
       const { data: streamingServices } = await supabase
