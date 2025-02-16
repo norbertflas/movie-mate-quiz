@@ -40,7 +40,19 @@ serve(async (req) => {
     
     if (!deepseekApiKey) {
       console.error('DEEPSEEK_API_KEY not configured');
-      throw new Error('DEEPSEEK_API_KEY not configured');
+      return new Response(
+        JSON.stringify({ 
+          result: [],
+          error: 'DEEPSEEK_API_KEY not configured'
+        }),
+        { 
+          headers: { 
+            ...corsHeaders,
+            'Content-Type': 'application/json'
+          },
+          status: 200 // Return 200 to handle gracefully in frontend
+        }
+      );
     }
 
     // Add delay to prevent rate limiting
@@ -157,7 +169,7 @@ serve(async (req) => {
             'Content-Type': 'application/json'
           } 
         }
-      )
+      );
     } catch (fetchError) {
       clearTimeout(timeout);
       console.error('Fetch error:', fetchError);
@@ -192,6 +204,6 @@ serve(async (req) => {
         },
         status: 200 // Return 200 even on error
       }
-    )
+    );
   }
 })

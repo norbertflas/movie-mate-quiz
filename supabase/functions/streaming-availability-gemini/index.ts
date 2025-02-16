@@ -45,12 +45,12 @@ serve(async (req) => {
       console.error('Error parsing request body:', parseError);
       return new Response(
         JSON.stringify({ 
-          error: 'Invalid JSON in request body',
-          result: []
+          result: [],
+          error: 'Invalid JSON in request body'
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400
+          status: 200
         }
       );
     }
@@ -61,12 +61,12 @@ serve(async (req) => {
       console.error('Missing required parameters:', { title, year });
       return new Response(
         JSON.stringify({
-          error: 'Missing required parameters: title and year are required',
-          result: []
+          result: [],
+          error: 'Missing required parameters: title and year are required'
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400
+          status: 200
         }
       );
     }
@@ -76,15 +76,18 @@ serve(async (req) => {
       console.error('GEMINI_API_KEY not configured');
       return new Response(
         JSON.stringify({
-          error: 'GEMINI_API_KEY not configured',
-          result: []
+          result: [],
+          error: 'GEMINI_API_KEY not configured'
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 500
+          status: 200
         }
       );
     }
+
+    // Add initial delay to help prevent rate limiting
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
     console.log('Initializing Gemini API...');
     const genAI = new GoogleGenerativeAI(geminiApiKey);
@@ -108,10 +111,10 @@ serve(async (req) => {
       if (apiError.message?.includes('quota') || apiError.message?.includes('rate limit')) {
         return new Response(
           JSON.stringify({
+            result: [],
             error: 'Rate limit exceeded',
             message: 'Please try again in 60 seconds',
-            retryAfter: 60,
-            result: []
+            retryAfter: 60
           }),
           {
             headers: {
@@ -119,20 +122,20 @@ serve(async (req) => {
               'Content-Type': 'application/json',
               'Retry-After': '60'
             },
-            status: 429
+            status: 200
           }
         );
       }
       
       return new Response(
         JSON.stringify({
+          result: [],
           error: 'Gemini API error',
-          message: apiError.message,
-          result: []
+          message: apiError.message
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 500
+          status: 200
         }
       );
     }
@@ -140,12 +143,12 @@ serve(async (req) => {
     if (!result) {
       return new Response(
         JSON.stringify({
-          error: 'Empty response from Gemini API',
-          result: []
+          result: [],
+          error: 'Empty response from Gemini API'
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 500
+          status: 200
         }
       );
     }
@@ -173,13 +176,13 @@ serve(async (req) => {
     console.error('Unhandled error in edge function:', error);
     return new Response(
       JSON.stringify({
+        result: [],
         error: 'Internal server error',
-        message: error.message,
-        result: []
+        message: error.message
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500
+        status: 200
       }
     );
   }
