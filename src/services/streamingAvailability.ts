@@ -40,6 +40,7 @@ async function retryWithBackoff<T>(
 
 export async function getStreamingAvailability(tmdbId: number, title?: string, year?: string, country: string = 'us'): Promise<StreamingService[]> {
   try {
+    // Check cache first
     const { data: cachedServices, error: cacheError } = await supabase
       .from('movie_streaming_availability')
       .select(`
@@ -49,7 +50,8 @@ export async function getStreamingAvailability(tmdbId: number, title?: string, y
         )
       `)
       .eq('tmdb_id', tmdbId)
-      .eq('region', country);
+      .eq('region', country)
+      .gte('available_since', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()); // Only get entries from last 24 hours
 
     if (cachedServices?.length > 0) {
       console.log('Using cached streaming data for movie:', tmdbId);

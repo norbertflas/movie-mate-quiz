@@ -39,34 +39,7 @@ async function tryGenerateContent(model: any, prompt: string, attempt = 1): Prom
   }
 }
 
-async function getCachedStreamingData(supabase: any, tmdbId: number, country: string) {
-  const { data, error } = await supabase
-    .from('movie_streaming_availability')
-    .select(`
-      streaming_services:service_id(
-        name,
-        logo_url
-      )
-    `)
-    .eq('tmdb_id', tmdbId)
-    .eq('region', country);
-
-  if (error) {
-    console.error('Error fetching cached streaming data:', error);
-    return null;
-  }
-
-  // Return null if no data found
-  if (!data || data.length === 0) {
-    return null;
-  }
-
-  // Return all streaming services for this movie
-  return data;
-}
-
 Deno.serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, {
       headers: corsHeaders,
@@ -78,34 +51,10 @@ Deno.serve(async (req) => {
     const { tmdbId, title, year, country = 'us' } = await req.json();
     console.log(`Checking streaming availability for: ${title} (${year}) in ${country}`);
 
-    // Check cache first
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') || '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
-    );
-
-    const cachedData = await getCachedStreamingData(supabase, tmdbId, country);
-    if (cachedData) {
-      console.log('Returning cached streaming data');
-      return new Response(
-        JSON.stringify({ 
-          result: cachedData.map(item => ({
-            service: item.streaming_services.name,
-            link: `https://${item.streaming_services.name.toLowerCase()}.com/watch/${tmdbId}`,
-            logo: item.streaming_services.logo_url
-          }))
-        }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200
-        }
-      );
-    }
-
     const genAI = new GoogleGenerativeAI(Deno.env.get('GEMINI_API_KEY') || '');
     const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
-    const prompt = `Tell me on which major streaming platforms the movie "${title}" (${year}) is currently available to watch in ${country}. Only include major streaming platforms like Netflix, Amazon Prime Video, Disney+, Hulu, HBO Max, Apple TV+. Format the response as a JSON array with objects containing 'service' and 'link' properties. If you're not completely sure about availability, don't include that service. Only include factual information. Example format: [{"service": "Netflix", "link": "https://netflix.com"}]`;
+    const prompt = `Tell me on which major streaming platforms the movie "${title}" (${year}) is CURRENTLY available to watch in ${country}. Only include major streaming platforms like Netflix, Amazon Prime Video, Disney+, Hulu, HBO Max, Apple TV+. Format the response as a JSON array with objects containing 'service' and 'link' properties. If you're not completely sure about current availability, don't include that service. Only include factual information about CURRENT availability, no historical data. Example format: [{"service": "Netflix", "link": "https://netflix.com"}]`;
 
     console.log('Sending prompt to Gemini:', prompt);
 
@@ -145,33 +94,6 @@ Deno.serve(async (req) => {
         );
 
         console.log('Valid services after filtering:', validServices);
-
-        // Cache the results
-        if (validServices.length > 0) {
-          const { data: services } = await supabase
-            .from('streaming_services')
-            .select('id, name')
-            .in('name', validServices.map(s => s.service));
-
-          if (services?.length > 0) {
-            const serviceMap = new Map(services.map(s => [s.name.toLowerCase(), s.id]));
-            
-            const availabilityRecords = validServices.map(service => ({
-              tmdb_id: tmdbId,
-              service_id: serviceMap.get(service.service.toLowerCase()),
-              region: country,
-              available_since: new Date().toISOString()
-            })).filter(record => record.service_id !== undefined);
-
-            if (availabilityRecords.length > 0) {
-              await supabase
-                .from('movie_streaming_availability')
-                .upsert(availabilityRecords, {
-                  onConflict: 'tmdb_id,service_id,region'
-                });
-            }
-          }
-        }
 
         return new Response(
           JSON.stringify({ result: validServices }),
