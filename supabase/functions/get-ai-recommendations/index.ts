@@ -17,6 +17,7 @@ serve(async (req) => {
     const apiKey = Deno.env.get('GEMINI_API_KEY');
     
     if (!apiKey) {
+      console.error('Gemini API key is not configured');
       throw new Error('Gemini API key not configured');
     }
 
@@ -46,12 +47,13 @@ Important:
 - Each movie must have both a title and reason
 - Keep the reasons concise but informative`;
 
+    const requestUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${apiKey}`;
+    
     // Call Gemini API
-    const response = await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent', {
+    const response = await fetch(requestUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         contents: [{
@@ -75,8 +77,10 @@ Important:
     });
 
     if (!response.ok) {
-      console.error('Gemini API error:', await response.text());
-      throw new Error(`Gemini API returned status ${response.status}`);
+      const errorText = await response.text();
+      console.error('Gemini API error status:', response.status);
+      console.error('Gemini API error response:', errorText);
+      throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
