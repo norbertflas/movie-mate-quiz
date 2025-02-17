@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { tmdbFetch } from "@/services/tmdb/utils";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useLocation } from "react-router-dom";
 
 interface SearchResultsProps {
   searchResults: TMDBMovie[];
@@ -22,20 +23,20 @@ export const SearchResults = ({
 }: SearchResultsProps) => {
   const { t } = useTranslation();
   const [selectedCreator, setSelectedCreator] = useState<TMDBPerson | null>(null);
+  const location = useLocation();
+  const isMainPage = location.pathname === "/";
 
   const { data: creatorMovies = [] } = useQuery({
     queryKey: ['creatorMovies', selectedCreator?.id],
     queryFn: async () => {
       if (!selectedCreator?.id) return [];
       
-      // Fetch both cast and crew credits
       const creditsResponse = await tmdbFetch(`/person/${selectedCreator.id}/combined_credits?`);
       
-      // Combine and deduplicate movies from both acting and crew work
       const allWorks = [...creditsResponse.cast, ...creditsResponse.crew];
       const uniqueWorks = Array.from(new Map(allWorks.map(work => [work.id, work])).values());
       
-      return uniqueWorks
+      const sortedWorks = uniqueWorks
         .filter((work: any) => 
           (work.media_type === 'movie' || work.media_type === 'tv') && 
           work.poster_path
@@ -57,6 +58,8 @@ export const SearchResults = ({
           job: work.job,
           department: work.department
         }));
+
+      return isMainPage ? sortedWorks.slice(0, 6) : sortedWorks;
     },
     enabled: !!selectedCreator?.id
   });
@@ -132,10 +135,10 @@ export const SearchResults = ({
           >
             <div>
               <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-blue-500">
-                {selectedCreator.name}'s Filmography
+                {isMainPage ? t("creator.bestWorks") : t("creator.filmography")}
               </h2>
               <p className="text-muted-foreground mt-2">
-                {creatorMovies.length} movies and TV shows
+                {creatorMovies.length} {t("creator.moviesAndShows")}
               </p>
             </div>
             <Button
@@ -167,7 +170,7 @@ export const SearchResults = ({
                   platform="TMDB"
                   genre={t(`movie.${getGenreTranslationKey(movie.genre_ids?.[0] || 0)}`)}
                   imageUrl={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
-                  description={`${movie.character ? `As ${movie.character}` : movie.job ? `${movie.job}` : movie.department} - ${movie.overview}`}
+                  description={`${movie.character ? `${t("creator.asRole")} ${movie.character}` : movie.job ? `${movie.job}` : movie.department} - ${movie.overview}`}
                   trailerUrl=""
                   rating={movie.vote_average * 10}
                   tmdbId={movie.id}

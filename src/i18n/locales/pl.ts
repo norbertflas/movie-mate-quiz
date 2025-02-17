@@ -1,4 +1,3 @@
-
 export default {
   translation: {
     common: {
@@ -88,17 +87,13 @@ export default {
       clear: "Wyczyść"
     },
     search: {
-      title: "Wyszukaj",
-      placeholder: "Wpisz tytuł filmu...",
-      button: "Szukaj",
       movies: "Filmy",
       creators: "Twórcy",
-      resultsFound: "Znaleziono wyniki",
-      resultsDescription: "Znaleziono {{count}} wyników dla: {{query}}",
+      button: "Szukaj",
+      placeholder: "Wpisz tytuł filmu...",
+      creatorPlaceholder: "Wyszukaj twórców filmowych...",
+      resultsFound: "Znalezione wyniki",
       noResults: "Brak wyników",
-      noResultsDescription: "Nie znaleziono wyników dla: {{query}}",
-      enterQuery: "Wpisz frazę do wyszukania",
-      creatorPlaceholder: "Wyszukaj twórców..."
     },
     quiz: {
       questions: {
@@ -144,7 +139,7 @@ export default {
       startJourney: "Rozpocznij swoją filmową podróż"
     },
     recommendations: {
-      personalized: "Spersonalizowane rekomendacje",
+      personalized: "Spersonalizowane",
       forYou: "Dla Ciebie",
       basedOn: "Na podstawie Twoich preferencji",
       popular: "Popularne teraz",
@@ -165,6 +160,15 @@ export default {
       watchOn: "Oglądaj na {{service}}",
       clickToWatch: "Kliknij, aby obejrzeć",
       availabilityMayChange: "Dostępność może ulec zmianie"
-    }
+    },
+    creator: {
+      filmography: "Filmografia",
+      moviesAndShows: "filmów i seriali",
+      asActor: "Jako",
+      asRole: "Rola:",
+      bestWorks: "Najlepsze dzieła",
+      viewAll: "Zobacz wszystkie dzieła",
+      clickToSeeWorks: "Zobacz filmografię",
+    },
   }
 };
