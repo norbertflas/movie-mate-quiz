@@ -1,3 +1,4 @@
+
 import { MovieFilterSection } from "../movie/MovieFilterSection";
 import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
@@ -5,11 +6,11 @@ import { getStreamingServicesByRegion, languageToRegion } from "@/utils/streamin
 import type { StreamingService } from "@/types/streaming";
 
 interface PlatformFilterProps {
-  value?: string;
-  onChange: (value: string | undefined) => void;
+  selectedPlatforms: string[];
+  onPlatformChange: (selected: string[]) => void;
 }
 
-export const PlatformFilter = ({ value, onChange }: PlatformFilterProps) => {
+export const PlatformFilter = ({ selectedPlatforms, onPlatformChange }: PlatformFilterProps) => {
   const [streamingServices, setStreamingServices] = useState<StreamingService[]>([]);
   const { i18n, t } = useTranslation();
 
@@ -26,8 +27,8 @@ export const PlatformFilter = ({ value, onChange }: PlatformFilterProps) => {
   return (
     <MovieFilterSection
       label={t("filters.platform")}
-      value={value}
-      onValueChange={onChange}
+      value={selectedPlatforms.join(',')}
+      onValueChange={(value) => onPlatformChange(value ? value.split(',') : [])}
       placeholder={t("filters.selectPlatform")}
       options={streamingServices.map(service => ({
         id: service.id,
