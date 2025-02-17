@@ -27,7 +27,7 @@ export const SearchResults = ({
   const isMainPage = location.pathname === "/";
 
   const { data: creatorMovies = [] } = useQuery({
-    queryKey: ['creatorMovies', selectedCreator?.id],
+    queryKey: ['creatorMovies', selectedCreator?.id, isMainPage],
     queryFn: async () => {
       if (!selectedCreator?.id) return [];
       
@@ -36,14 +36,16 @@ export const SearchResults = ({
       const allWorks = [...creditsResponse.cast, ...creditsResponse.crew];
       const uniqueWorks = Array.from(new Map(allWorks.map(work => [work.id, work])).values());
       
+      // First, sort all works by score
       const sortedWorks = uniqueWorks
         .filter((work: any) => 
           (work.media_type === 'movie' || work.media_type === 'tv') && 
           work.poster_path
         )
         .sort((a: any, b: any) => {
-          const aScore = (a.vote_average * a.vote_count * a.popularity) || 0;
-          const bScore = (b.vote_average * b.vote_count * b.popularity) || 0;
+          // Calculate a comprehensive score based on vote average, vote count, and popularity
+          const aScore = ((a.vote_average || 0) * Math.log(a.vote_count || 1) * (a.popularity || 0));
+          const bScore = ((b.vote_average || 0) * Math.log(b.vote_count || 1) * (b.popularity || 0));
           return bScore - aScore;
         })
         .map((work: any) => ({
@@ -59,8 +61,11 @@ export const SearchResults = ({
           department: work.department
         }));
 
+      console.log(`Is main page: ${isMainPage}, Total works: ${sortedWorks.length}`);
       // Return only 6 best works on main page, all works on search page
-      return isMainPage ? sortedWorks.slice(0, 6) : sortedWorks;
+      const finalResults = isMainPage ? sortedWorks.slice(0, 6) : sortedWorks;
+      console.log(`Final results length: ${finalResults.length}`);
+      return finalResults;
     },
     enabled: !!selectedCreator?.id
   });
@@ -85,6 +90,11 @@ export const SearchResults = ({
     }
     return `${roleDescription} - ${movie.overview}`;
   };
+
+  // Add debug logs for current state
+  console.log(`Current location: ${location.pathname}`);
+  console.log(`Is main page: ${isMainPage}`);
+  console.log(`Number of movies shown: ${creatorMovies.length}`);
 
   return (
     <AnimatePresence mode="wait">
