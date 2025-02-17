@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { TMDB_BASE_URL, getTMDBApiKey } from "./config";
 import type { TMDBMovie, TMDBPerson } from "./types";
@@ -40,7 +41,28 @@ export async function searchPeople(query: string): Promise<TMDBPerson[]> {
     }
     
     const data = await response.json();
-    return data.results;
+    
+    // Fetch detailed information for each person
+    const detailedPeople = await Promise.all(
+      data.results.map(async (person: TMDBPerson) => {
+        const detailResponse = await fetch(
+          `${TMDB_BASE_URL}/person/${person.id}?api_key=${apiKey}&language=${currentLang}`
+        );
+        
+        if (!detailResponse.ok) return person;
+        
+        const detailData = await detailResponse.json();
+        return {
+          ...person,
+          birthday: detailData.birthday,
+          deathday: detailData.deathday,
+          place_of_birth: detailData.place_of_birth,
+          biography: detailData.biography
+        };
+      })
+    );
+    
+    return detailedPeople;
   } catch (error) {
     console.error('Error searching people:', error);
     throw error;
