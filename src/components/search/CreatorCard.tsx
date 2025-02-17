@@ -4,6 +4,7 @@ import type { TMDBPerson } from "@/services/tmdb";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
+import { CalendarDays, MapPin, ScrollText } from "lucide-react";
 
 interface CreatorCardProps {
   person: TMDBPerson;
@@ -24,8 +25,6 @@ export const CreatorCard = ({ person, index, onClick }: CreatorCardProps) => {
       return "";
     }
   };
-
-  console.log("Person data:", person); // Debugging log to see what data we receive
 
   return (
     <div 
@@ -50,34 +49,39 @@ export const CreatorCard = ({ person, index, onClick }: CreatorCardProps) => {
         {/* Right side - Content */}
         <div className="flex-1">
           {/* Header section */}
-          <h3 className="text-2xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-blue-500">
-            {person.name}
-          </h3>
-          
-          <p className="text-lg font-medium text-muted-foreground mb-4">
-            {person.known_for_department && t(`creator.department.${person.known_for_department.toLowerCase()}`)}
-          </p>
+          <div className="mb-6">
+            <h3 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-blue-500">
+              {person.name}
+            </h3>
+            <p className="text-lg text-muted-foreground mt-1">
+              {person.known_for_department && t(`creator.department.${person.known_for_department.toLowerCase()}`)}
+            </p>
+          </div>
 
           {/* General information section */}
-          <div className="space-y-3">
+          <div className="space-y-4 mb-6">
             {person.birthday && (
-              <div className="text-sm">
-                <span className="font-medium">{t('creator.birthDate')}:</span>{' '}
-                <span className="text-muted-foreground">{formatDate(person.birthday)}</span>
+              <div className="flex items-center gap-2">
+                <CalendarDays className="h-4 w-4 text-purple-500" />
+                <span className="text-sm text-muted-foreground">
+                  {formatDate(person.birthday)}
+                </span>
               </div>
             )}
             
             {person.place_of_birth && (
-              <div className="text-sm">
-                <span className="font-medium">{t('creator.placeOfBirth')}:</span>{' '}
-                <span className="text-muted-foreground">{person.place_of_birth}</span>
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-purple-500" />
+                <span className="text-sm text-muted-foreground">
+                  {person.place_of_birth}
+                </span>
               </div>
             )}
 
             {person.biography && (
-              <div className="text-sm">
-                <span className="font-medium">{t('creator.biography')}:</span>{' '}
-                <p className="text-muted-foreground mt-1 line-clamp-2">
+              <div className="flex items-start gap-2">
+                <ScrollText className="h-4 w-4 text-purple-500 mt-0.5" />
+                <p className="text-sm text-muted-foreground line-clamp-2">
                   {person.biography}
                 </p>
               </div>
@@ -86,13 +90,16 @@ export const CreatorCard = ({ person, index, onClick }: CreatorCardProps) => {
 
           {/* Known for section */}
           {person.known_for && person.known_for.length > 0 && (
-            <div className="mt-4">
-              <p className="text-sm font-medium mb-2">
-                {t("creator.knownFor")}:
-              </p>
+            <div>
+              <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
+                {t("creator.knownFor")}
+              </h4>
               <ul className="text-sm text-muted-foreground space-y-1">
                 {person.known_for.slice(0, 3).map((work: any) => (
-                  <li key={work.id}>{work.title || work.name}</li>
+                  <li key={work.id} className="flex items-center gap-2">
+                    <span className="w-1 h-1 rounded-full bg-purple-500"></span>
+                    {work.title || work.name}
+                  </li>
                 ))}
               </ul>
               <p className="text-sm text-purple-500 mt-3 hover:text-purple-600 transition-colors">
