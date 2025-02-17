@@ -82,26 +82,35 @@ export const SearchResults = ({
       )}
 
       {creatorResults.length > 0 && !selectedCreator && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 0.5 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-        >
-          {creatorResults.map((person, index) => (
-            <motion.div
-              key={person.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              onClick={() => handleCreatorSelect(person)}
-              className="cursor-pointer transform hover:scale-105 transition-transform duration-200"
-            >
-              <CreatorCard person={person} index={index} />
-            </motion.div>
-          ))}
-        </motion.div>
+        <>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-muted-foreground mb-4 text-center"
+          >
+            {t("search.clickCreatorInfo")}
+          </motion.p>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.5 }}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          >
+            {creatorResults.map((person, index) => (
+              <motion.div
+                key={person.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                onClick={() => handleCreatorSelect(person)}
+                className="cursor-pointer transform hover:scale-105 transition-transform duration-200"
+              >
+                <CreatorCard person={person} index={index} />
+              </motion.div>
+            ))}
+          </motion.div>
+        </>
       )}
 
       {selectedCreator && creatorMovies.length > 0 && (
@@ -112,7 +121,7 @@ export const SearchResults = ({
             className="flex justify-between items-center mb-8"
           >
             <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-blue-500">
-              {t("recommendations.popular")} - {selectedCreator.name}
+              {t("recommendations.creatorWorks")} {selectedCreator.name}
             </h2>
             <button
               onClick={() => setSelectedCreator(null)}

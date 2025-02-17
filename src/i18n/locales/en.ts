@@ -93,7 +93,9 @@ const translations = {
       noResultsDescription: "No results found for {{query}}",
       enterQuery: "Enter search terms",
       filteredResults: "Found {{count}} movies matching your filters",
-      tryDifferentFilters: "Try adjusting your filters to find more movies"
+      tryDifferentFilters: "Try adjusting your filters to find more movies",
+      clickCreatorInfo: "Click on a creator to see their most popular works",
+      knownFor: "Known For"
     },
     errors: {
       rateLimitExceeded: "Rate limit exceeded",
@@ -134,7 +136,8 @@ const translations = {
       promptPlaceholder: "Example: I want a heartwarming comedy about family relationships, similar to Little Miss Sunshine",
       success: "Recommendations Ready!",
       aiGenerated: "Here are your AI-powered recommendations",
-      submit: "Get Recommendations"
+      submit: "Get Recommendations",
+      creatorWorks: "Most Popular Works by"
     }
   }
 };
