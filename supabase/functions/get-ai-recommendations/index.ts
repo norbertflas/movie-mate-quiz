@@ -12,19 +12,35 @@ interface TMDBMovie {
   title: string;
   overview: string;
   poster_path: string;
+  backdrop_path: string;
   release_date: string;
   vote_average: number;
+  genres: Array<{ id: number; name: string }>;
 }
 
-async function searchTMDBMovie(title: string, apiKey: string): Promise<TMDBMovie | null> {
-  const searchUrl = `https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&query=${encodeURIComponent(title)}`;
-  const response = await fetch(searchUrl);
-  const data = await response.json();
-  
-  if (data.results && data.results.length > 0) {
-    return data.results[0];
+async function searchTMDBMovie(title: string, apiKey: string, language: string): Promise<TMDBMovie | null> {
+  try {
+    // First search for the movie
+    const searchUrl = `https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&query=${encodeURIComponent(title)}&language=${language}`;
+    const searchResponse = await fetch(searchUrl);
+    const searchData = await searchResponse.json();
+    
+    if (!searchData.results?.[0]?.id) {
+      console.warn(`No movie found for title: ${title}`);
+      return null;
+    }
+
+    // Then get detailed movie information
+    const movieId = searchData.results[0].id;
+    const detailsUrl = `https://api.themoviedb.org/3/movie/${movieId}?api_key=${apiKey}&language=${language}&append_to_response=credits,images`;
+    const detailsResponse = await fetch(detailsUrl);
+    const movieDetails = await detailsResponse.json();
+
+    return movieDetails;
+  } catch (error) {
+    console.error(`Error fetching movie data for ${title}:`, error);
+    return null;
   }
-  return null;
 }
 
 serve(async (req) => {
@@ -33,7 +49,7 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, filters } = await req.json();
+    const { prompt, filters, language = 'en' } = await req.json();
     const geminiKey = Deno.env.get('GEMINI_API_KEY');
     const tmdbKey = Deno.env.get('TMDB_API_KEY');
     
@@ -43,9 +59,33 @@ serve(async (req) => {
 
     console.log('Processing request with prompt:', prompt);
     console.log('Filters:', filters);
+    console.log('Language:', language);
 
-    // Format the system prompt
-    const systemPrompt = `Act as a movie recommendation expert. Based on the user's request: "${prompt}" and considering these filters: ${JSON.stringify(filters)}, recommend exactly 6 movies that best match their preferences.
+    // Format the system prompt based on language
+    const systemPrompt = language === 'pl' 
+      ? `Działaj jako ekspert od rekomendacji filmowych. Na podstawie prośby użytkownika: "${prompt}" i uwzględniając te filtry: ${JSON.stringify(filters)}, zarekomenduj dokładnie 6 filmów, które najlepiej pasują do preferencji.
+
+Dla każdego filmu podaj:
+1. Dokładny tytuł filmu
+2. Jasne wyjaśnienie, dlaczego pasuje do preferencji
+
+Ustrukturyzuj swoją odpowiedź jako prawidłowy obiekt JSON w tym formacie:
+{
+  "recommendations": [
+    {
+      "title": "Dokładny tytuł filmu",
+      "reason": "Jasne wyjaśnienie, dlaczego ten film pasuje do preferencji"
+    }
+  ]
+}
+
+Ważne:
+- Zarekomenduj dokładnie 6 filmów
+- Upewnij się, że JSON jest prawidłowy
+- Każdy film musi mieć zarówno tytuł jak i powód
+- Trzymaj wyjaśnienia zwięzłe, ale informatywne
+- Użyj dokładnego oficjalnego tytułu filmu dla dokładnego dopasowania`
+      : `Act as a movie recommendation expert. Based on the user's request: "${prompt}" and considering these filters: ${JSON.stringify(filters)}, recommend exactly 6 movies that best match their preferences.
 
 For each movie, provide:
 1. The exact movie title
@@ -138,16 +178,18 @@ Important:
             throw new Error('Missing title or reason in recommendation');
           }
 
-          const movieData = await searchTMDBMovie(rec.title, tmdbKey);
+          const movieData = await searchTMDBMovie(rec.title, tmdbKey, language);
           if (!movieData) {
             console.warn(`No TMDB data found for movie: ${rec.title}`);
             return {
               ...rec,
               poster_path: null,
+              backdrop_path: null,
               overview: rec.reason,
               release_date: null,
               vote_average: null,
-              id: null
+              id: null,
+              genres: []
             };
           }
 
@@ -155,10 +197,12 @@ Important:
             title: movieData.title,
             reason: rec.reason,
             poster_path: movieData.poster_path ? `https://image.tmdb.org/t/p/w500${movieData.poster_path}` : null,
+            backdrop_path: movieData.backdrop_path ? `https://image.tmdb.org/t/p/w1280${movieData.backdrop_path}` : null,
             overview: movieData.overview,
             release_date: movieData.release_date,
             vote_average: movieData.vote_average,
-            id: movieData.id
+            id: movieData.id,
+            genres: movieData.genres || []
           };
         })
       );
