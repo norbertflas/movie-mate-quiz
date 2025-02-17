@@ -47,6 +47,32 @@ export default {
       recommended: "Polecane dla Ciebie",
       upcoming: "Nadchodzące premiery"
     },
+    recommendations: {
+      personalized: "Spersonalizowane rekomendacje",
+      personalizedDescription: "Filmy dobrane specjalnie dla Ciebie",
+      generatingRecommendations: "Generowanie rekomendacji...",
+      recommendationError: "Błąd podczas generowania rekomendacji",
+      tryAgain: "Spróbuj ponownie",
+      noRecommendations: "Brak rekomendacji",
+      based: "Na podstawie:",
+      userPreferences: "Twoich preferencji",
+      similarMovies: "Podobnych filmów",
+      watchHistory: "Historii oglądania",
+      seeMore: "Zobacz więcej",
+      matchScore: "Dopasowanie",
+      why: "Dlaczego to polecamy?",
+      becauseYouLiked: "Ponieważ lubisz:",
+      becauseOfGenres: "Ze względu na gatunki:",
+      becauseOfMood: "Ze względu na nastrój:",
+      becausePopular: "Popularne wśród podobnych użytkowników"
+    },
+    errors: {
+      recommendationError: "Nie udało się wygenerować rekomendacji",
+      tryAgain: "Spróbuj ponownie później",
+      searchError: "Błąd wyszukiwania",
+      searchTooShort: "Zbyt krótkie zapytanie",
+      searchMinLength: "Wpisz co najmniej jeden znak"
+    },
     movie: {
       action: "Akcja",
       comedy: "Komedia",
