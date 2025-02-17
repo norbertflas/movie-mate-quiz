@@ -1,3 +1,4 @@
+
 export default {
   translation: {
     common: {
@@ -79,17 +80,17 @@ export default {
       bestMovies: "Najlepsze filmy",
       allMovies: "Wszystkie filmy",
       department: {
-        Acting: "Aktor",
-        Directing: "Reżyser",
-        Writing: "Scenarzysta",
-        Production: "Producent",
-        Sound: "Dźwięk",
-        Camera: "Operator",
-        Editing: "Montażysta",
-        Art: "Artysta",
-        "Visual Effects": "Efekty specjalne",
-        "Costume & Make-Up": "Kostiumy i charakteryzacja",
-        Crew: "Ekipa filmowa"
+        acting: "Aktor",
+        directing: "Reżyser",
+        writing: "Scenarzysta",
+        production: "Producent",
+        sound: "Dźwięk",
+        camera: "Operator",
+        editing: "Montażysta",
+        art: "Artysta",
+        "visual effects": "Efekty specjalne",
+        "costume & make-up": "Kostiumy i charakteryzacja",
+        crew: "Ekipa filmowa"
       },
       birthDate: "Data urodzenia",
       deathDate: "Data śmierci",

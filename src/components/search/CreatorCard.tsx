@@ -51,7 +51,7 @@ export const CreatorCard = ({ person, index, onClick }: CreatorCardProps) => {
               {person.name}
             </h3>
             <p className="text-lg font-medium text-muted-foreground">
-              {person.known_for_department && t(`creator.department.${person.known_for_department}`)}
+              {person.known_for_department && t(`creator.department.${person.known_for_department.toLowerCase()}`)}
             </p>
           </div>
 
@@ -59,19 +59,19 @@ export const CreatorCard = ({ person, index, onClick }: CreatorCardProps) => {
           <div className="space-y-3 mb-4">
             {person.birthday && (
               <p className="text-sm">
-                <span className="font-medium text-muted-foreground">{t("creator.birthDate")}:</span>{" "}
+                <span className="font-medium">{t("creator.birthDate")}</span>:{" "}
                 <span className="text-muted-foreground">{formatDate(person.birthday)}</span>
               </p>
             )}
             {person.place_of_birth && (
               <p className="text-sm">
-                <span className="font-medium text-muted-foreground">{t("creator.placeOfBirth")}:</span>{" "}
+                <span className="font-medium">{t("creator.placeOfBirth")}</span>:{" "}
                 <span className="text-muted-foreground">{person.place_of_birth}</span>
               </p>
             )}
             {person.biography && (
               <div className="text-sm">
-                <span className="font-medium text-muted-foreground">{t("creator.biography")}:</span>{" "}
+                <span className="font-medium">{t("creator.biography")}</span>:{" "}
                 <p className="text-muted-foreground mt-1 line-clamp-2">{person.biography}</p>
               </div>
             )}
@@ -80,7 +80,7 @@ export const CreatorCard = ({ person, index, onClick }: CreatorCardProps) => {
           {/* Known for section */}
           {person.known_for && person.known_for.length > 0 && (
             <div className="mt-auto">
-              <p className="text-sm font-medium text-muted-foreground mb-2">
+              <p className="text-sm font-medium mb-2">
                 {t("creator.knownFor")}:
               </p>
               <ul className="text-sm text-muted-foreground space-y-1">
