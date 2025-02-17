@@ -46,7 +46,7 @@ export default {
     title: "Title",
     year: "Year",
     genre: "Genre",
-    rating: "Rating",
+    rating: "Minimum rating",
     description: "Description",
     watchTrailer: "Watch Trailer",
     addToFavorites: "Add to Favorites",
@@ -72,10 +72,12 @@ export default {
     year: "Year",
     rating: "Rating",
     tags: "Tags",
-    apply: "Apply Filters",
-    clear: "Clear Filters",
+    apply: "Apply",
+    clear: "Clear",
     title: "Filters",
-    applySearch: "Search with Filters"
+    applySearch: "Search with Filters",
+    includeRated: "Include rated movies",
+    excludeWatched: "Exclude watched movies"
   },
   search: {
     title: "Search",

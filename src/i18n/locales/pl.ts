@@ -80,6 +80,8 @@ export default {
       year: "Rok",
       rating: "Ocena",
       tags: "Tagi",
+      includeRated: "Uwzględnij ocenione filmy",
+      excludeWatched: "Wyklucz obejrzane filmy",
       apply: "Zastosuj",
       clear: "Wyczyść"
     },
