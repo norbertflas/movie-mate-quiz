@@ -1,4 +1,3 @@
-
 export default {
   translation: {
     common: {
@@ -35,6 +34,18 @@ export default {
       update: "Aktualizuj",
       refresh: "Odśwież",
       retry: "Spróbuj ponownie"
+    },
+    site: {
+      description: "Znajdź swój następny ulubiony film",
+      author: "Stworzono z pasją do kina",
+      copyright: "Wszystkie prawa zastrzeżone"
+    },
+    discover: {
+      popular: "Popularne filmy",
+      trending: "Popularne w tym tygodniu",
+      newest: "Najnowsze",
+      recommended: "Polecane dla Ciebie",
+      upcoming: "Nadchodzące premiery"
     },
     movie: {
       action: "Akcja",
