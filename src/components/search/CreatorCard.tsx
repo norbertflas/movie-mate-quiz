@@ -34,7 +34,8 @@ export const CreatorCard = ({ person, index, onClick }: CreatorCardProps) => {
         transition={{ delay: index * 0.1 }}
         className="flex flex-col md:flex-row gap-6"
       >
-        <div className="relative w-32 h-32 md:w-40 md:h-40 rounded-lg overflow-hidden border-2 border-purple-500/20 flex-shrink-0 mx-auto md:mx-0">
+        {/* Left side - Image */}
+        <div className="relative w-32 h-32 md:w-48 md:h-48 rounded-lg overflow-hidden border-2 border-purple-500/20 flex-shrink-0 mx-auto md:mx-0">
           <img
             src={person.profile_path ? `https://image.tmdb.org/t/p/w185${person.profile_path}` : '/placeholder.svg'}
             alt={person.name}
@@ -42,40 +43,43 @@ export const CreatorCard = ({ person, index, onClick }: CreatorCardProps) => {
           />
         </div>
         
-        <div className="flex-1 text-center md:text-left space-y-3">
-          <div>
+        {/* Right side - Content */}
+        <div className="flex-1 flex flex-col">
+          {/* Header section */}
+          <div className="mb-4">
             <h3 className="text-2xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-blue-500">
               {person.name}
             </h3>
-            
             <p className="text-lg font-medium text-muted-foreground">
               {person.known_for_department && t(`creator.department.${person.known_for_department}`)}
             </p>
           </div>
 
-          <div className="space-y-2">
+          {/* General information section */}
+          <div className="space-y-3 mb-4">
             {person.birthday && (
-              <p className="text-sm text-muted-foreground">
-                <span className="font-medium">{t("creator.birthDate")}:</span>{" "}
-                {formatDate(person.birthday)}
-                {person.place_of_birth && (
-                  <>
-                    <span className="mx-2">•</span>
-                    <span>{person.place_of_birth}</span>
-                  </>
-                )}
+              <p className="text-sm">
+                <span className="font-medium text-muted-foreground">{t("creator.birthDate")}:</span>{" "}
+                <span className="text-muted-foreground">{formatDate(person.birthday)}</span>
               </p>
             )}
-
-            {person.biography && (
-              <p className="text-sm text-muted-foreground line-clamp-2">
-                {person.biography}
+            {person.place_of_birth && (
+              <p className="text-sm">
+                <span className="font-medium text-muted-foreground">{t("creator.placeOfBirth")}:</span>{" "}
+                <span className="text-muted-foreground">{person.place_of_birth}</span>
               </p>
+            )}
+            {person.biography && (
+              <div className="text-sm">
+                <span className="font-medium text-muted-foreground">{t("creator.biography")}:</span>{" "}
+                <p className="text-muted-foreground mt-1 line-clamp-2">{person.biography}</p>
+              </div>
             )}
           </div>
 
+          {/* Known for section */}
           {person.known_for && person.known_for.length > 0 && (
-            <div className="pt-2">
+            <div className="mt-auto">
               <p className="text-sm font-medium text-muted-foreground mb-2">
                 {t("creator.knownFor")}:
               </p>
