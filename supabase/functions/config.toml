@@ -6,3 +6,6 @@ verify_jwt = false
 
 [functions.streaming-availability-gemini]
 verify_jwt = false
+
+[functions.get-ai-recommendations]
+verify_jwt = false
