@@ -71,7 +71,8 @@ export default {
       mystery: "Tajemnica",
       tvMovie: "Film TV",
       war: "Wojenny",
-      western: "Western"
+      western: "Western",
+      genre: "Gatunek"
     },
     filters: {
       platform: "Platforma",
@@ -126,7 +127,8 @@ export default {
       searchError: "Błąd wyszukiwania",
       tryAgain: "Spróbuj ponownie później",
       generic: "Wystąpił błąd. Spróbuj ponownie później.",
-      logout: "Błąd podczas wylogowywania"
+      logout: "Błąd podczas wylogowywania",
+      recommendationError: "Błąd podczas generowania rekomendacji"
     },
     welcome: {
       title: "Odkryj magię kina",
@@ -151,7 +153,18 @@ export default {
       prompt: "Powiedz nam, czego szukasz",
       promptPlaceholder: "Przykład: Szukam wzruszającej komedii o relacjach rodzinnych, podobnej do Little Miss Sunshine",
       success: "Rekomendacje gotowe!",
-      aiGenerated: "Oto Twoje rekomendacje oparte na AI"
+      aiGenerated: "Oto Twoje rekomendacje oparte na AI",
+      submit: "Kliknij by otrzymać rekomendacje"
+    },
+    streaming: {
+      availableOn: "Dostępne na",
+      lastChecked: "Ostatnio sprawdzono: {{time}}",
+      notAvailable: "Niedostępne w serwisach streamingowych",
+      dataStale: "Dane mogą być nieaktualne",
+      errorChecking: "Błąd podczas sprawdzania dostępności",
+      watchOn: "Oglądaj na {{service}}",
+      clickToWatch: "Kliknij, aby obejrzeć",
+      availabilityMayChange: "Dostępność może ulec zmianie"
     }
   }
 };
