@@ -16,6 +16,7 @@ import type { TMDBMovie } from "@/services/tmdb";
 import { useTranslation } from "react-i18next";
 import type { StreamingPlatformData } from "@/types/streaming";
 import { useStreamingAvailability } from "@/hooks/use-streaming-availability";
+import { MovieRating } from "@/components/movie/MovieRating";
 
 export const MovieCard = ({
   title,
@@ -42,17 +43,11 @@ export const MovieCard = ({
   const { userRating, handleRating } = useMovieRating(title);
   const { data: availabilityData, isLoading, isError } = useStreamingAvailability(tmdbId, title, year);
 
-  // Transform streaming services to the expected format
-  const availableServices = availabilityData?.services.map(service => ({
-    service: service.service,
-    link: service.link || `https://${service.service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch/${tmdbId}`,
-    logo: service.logo
-  })) || streamingServices.map(service => {
+  const availableServices = availabilityData?.services || streamingServices.map(service => {
     if (typeof service === 'string') {
       return {
-        service: service,
+        service,
         link: `https://${service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch/${tmdbId}`,
-        logo: undefined
       };
     }
     return service;
@@ -70,21 +65,6 @@ export const MovieCard = ({
     if (onClose) {
       onClose();
     }
-  };
-
-  // Create a TMDBMovie object from the props
-  const movieData: TMDBMovie = {
-    id: tmdbId || 0,
-    title,
-    release_date: year,
-    overview: description,
-    poster_path: imageUrl?.replace('https://image.tmdb.org/t/p/w500', '') || '',
-    vote_average: rating / 10,
-    vote_count: 0,
-    popularity: 0,
-    backdrop_path: null,
-    genre_ids: [],
-    explanations: explanations
   };
 
   return (
@@ -117,18 +97,36 @@ export const MovieCard = ({
           </CardHeader>
 
           <CardContent className="space-y-4 flex-grow p-4">
-            <p className="text-sm text-muted-foreground line-clamp-2">
-              {description}
-            </p>
-            {explanations && explanations.length > 0 && (
-              <div className="mt-2">
-                {explanations.map((explanation, index) => (
-                  <Badge key={index} variant="secondary" className="mr-2 mb-2">
-                    {explanation}
-                  </Badge>
-                ))}
-              </div>
-            )}
+            <div className="space-y-2">
+              <MovieRating rating={rating} />
+              
+              <p className="text-sm text-muted-foreground line-clamp-2">
+                {description}
+              </p>
+
+              {explanations && explanations.length > 0 && (
+                <div className="mt-2">
+                  {explanations.map((explanation, index) => (
+                    <Badge key={index} variant="secondary" className="mr-2 mb-2">
+                      {explanation}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+
+              {availableServices.length > 0 && (
+                <div className="mt-2">
+                  <p className="text-sm font-medium mb-1">{t("streaming.availableOn")}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {availableServices.map((service, index) => (
+                      <Badge key={index} variant="outline">
+                        {typeof service === 'string' ? service : service.service}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </CardContent>
         </MovieCardContainer>
       </MovieCardWrapper>
@@ -137,7 +135,19 @@ export const MovieCard = ({
         <UnifiedMovieDetails
           isOpen={isDetailsOpen}
           onClose={handleCloseDetails}
-          movie={movieData}
+          movie={{
+            id: tmdbId || 0,
+            title,
+            release_date: year,
+            overview: description,
+            poster_path: imageUrl?.replace('https://image.tmdb.org/t/p/w500', '') || '',
+            vote_average: rating / 10,
+            vote_count: 0,
+            popularity: 0,
+            backdrop_path: null,
+            genre_ids: [],
+            explanations
+          }}
           explanations={explanations}
           streamingServices={availableServices}
         />
