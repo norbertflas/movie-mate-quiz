@@ -1,3 +1,4 @@
+
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import type { MovieImageProps } from "@/types/movie";
@@ -25,6 +26,10 @@ export const MovieImage = ({
       loading={loading}
       width={width}
       height={height}
+      onError={(e) => {
+        const img = e.target as HTMLImageElement;
+        img.src = "/placeholder.svg";
+      }}
     />
   );
 };

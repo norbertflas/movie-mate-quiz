@@ -1,28 +1,20 @@
-
 import { useState } from "react";
-import { Card, CardContent, CardHeader } from "../ui/card";
-import { MovieStreamingServices } from "./MovieStreamingServices";
-import { MovieCardHeader } from "./MovieCardHeader";
+import { CardHeader, CardContent } from "./ui/card";
+import { MovieCardContainer } from "./movie/MovieCardContainer";
+import { MovieCardHeader } from "./movie/MovieCardHeader";
+import { MovieCardMedia } from "./movie/MovieCardMedia";
+import { MovieExpandedContent } from "./movie/MovieExpandedContent";
+import { useMovieRating } from "./movie/MovieRatingLogic";
 import { motion } from "framer-motion";
-import { MovieFavoriteHandler } from "./MovieFavoriteHandler";
-import { MovieMediaSection } from "./MovieMediaSection";
-import { MovieExpandedContent } from "./MovieExpandedContent";
-import { useMovieRating } from "./MovieRatingLogic";
-import { useToast } from "../ui/use-toast";
-
-interface MovieCardProps {
-  title: string;
-  year: string;
-  platform: string;
-  genre: string;
-  imageUrl: string;
-  description: string;
-  trailerUrl: string;
-  rating: number;
-  tags?: string[];
-  streamingServices?: string[];
-  tmdbId?: number;
-}
+import { Badge } from "./ui/badge";
+import { MovieTrailerSection } from "./movie/MovieTrailerSection";
+import { MovieCardWrapper } from "./movie/MovieCardWrapper";
+import type { MovieInsights, MovieCardProps } from "@/types/movie";
+import { UnifiedMovieDetails } from "./movie/UnifiedMovieDetails";
+import type { TMDBMovie } from "@/services/tmdb";
+import { useTranslation } from "react-i18next";
+import type { StreamingPlatformData } from "@/types/streaming";
+import { useStreamingAvailability } from "@/hooks/use-streaming-availability";
 
 export const MovieCard = ({
   title,
@@ -31,91 +23,136 @@ export const MovieCard = ({
   genre,
   imageUrl,
   description,
-  trailerUrl,
+  trailerUrl: initialTrailerUrl,
   rating,
-  tags,
+  tags = [],
   streamingServices = [],
   tmdbId,
+  explanations = [],
+  onClose,
 }: MovieCardProps) => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [isLoadingServices, setIsLoadingServices] = useState(false);
-  const { toast } = useToast();
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [trailerUrl, setTrailerUrl] = useState(initialTrailerUrl);
+  const [insights, setInsights] = useState<MovieInsights | null>(null);
+  const { t } = useTranslation();
   
   const { userRating, handleRating } = useMovieRating(title);
+  const { data: availabilityData, isLoading, isError } = useStreamingAvailability(tmdbId, title, year);
 
-  const { handleToggleFavorite } = MovieFavoriteHandler({ 
-    isFavorite, 
-    setIsFavorite, 
-    title 
+  // Transform streaming services to the expected format
+  const availableServices = availabilityData?.services.map(service => ({
+    service: service.service,
+    link: service.link || `https://${service.service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch/${tmdbId}`,
+    logo: service.logo
+  })) || streamingServices.map(service => {
+    if (typeof service === 'string') {
+      return {
+        service: service,
+        link: `https://${service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch/${tmdbId}`,
+        logo: undefined
+      };
+    }
+    return service;
   });
 
-  const handleTrailerToggle = () => {
-    setShowTrailer(!showTrailer);
+  const handleCardClick = () => {
+    setIsDetailsOpen(true);
   };
 
-  const handleStreamingError = () => {
-    toast({
-      title: "Streaming Services Unavailable",
-      description: "We're having trouble loading streaming services. Please try again later.",
-      variant: "destructive",
-    });
+  const handleCloseDetails = (e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    setIsDetailsOpen(false);
+    if (onClose) {
+      onClose();
+    }
+  };
+
+  // Create a TMDBMovie object from the props
+  const movieData: TMDBMovie = {
+    id: tmdbId || 0,
+    title,
+    release_date: year,
+    overview: description,
+    poster_path: imageUrl.replace('https://image.tmdb.org/t/p/w500', ''),
+    vote_average: rating / 10,
+    vote_count: 0,
+    popularity: 0,
+    backdrop_path: null,
+    genre_ids: [],
+    explanations: explanations
   };
 
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ duration: 0.3 }}
-      className="h-full"
-    >
-      <Card 
-        className="group relative overflow-hidden h-full flex flex-col bg-gradient-to-br from-background/80 via-background/50 to-purple-500/5 dark:from-background/80 dark:via-background/50 dark:to-purple-500/10 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-accent/20 hover:shadow-xl transition-all duration-300 cursor-pointer" 
-        onClick={() => setIsExpanded(!isExpanded)}
-      >
-        <MovieMediaSection
-          showTrailer={showTrailer}
-          trailerUrl={trailerUrl}
-          imageUrl={imageUrl}
-          title={title}
+    <>
+      <MovieCardWrapper onClick={handleCardClick}>
+        <MovieCardContainer isExpanded={false} onClick={handleCardClick}>
+          <div className="relative">
+            <MovieTrailerSection
+              showTrailer={showTrailer}
+              title={title}
+              year={year}
+              trailerUrl={trailerUrl}
+              setTrailerUrl={setTrailerUrl}
+            />
+
+            <MovieCardMedia
+              showTrailer={showTrailer}
+              trailerUrl={trailerUrl}
+              imageUrl={imageUrl || "/placeholder.svg"}
+              title={title}
+            />
+          </div>
+
+          <CardHeader className="space-y-1 p-4">
+            <MovieCardHeader
+              title={title}
+              isFavorite={isFavorite}
+              onToggleFavorite={() => setIsFavorite(!isFavorite)}
+            />
+          </CardHeader>
+
+          <CardContent className="space-y-4 flex-grow p-4">
+            <p className="text-sm text-muted-foreground line-clamp-2">
+              {description}
+            </p>
+            {explanations && explanations.length > 0 && (
+              <div className="mt-2">
+                {explanations.map((explanation, index) => (
+                  <Badge key={index} variant="secondary" className="mr-2 mb-2">
+                    {explanation}
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </MovieCardContainer>
+      </MovieCardWrapper>
+
+      {isDetailsOpen && (
+        <UnifiedMovieDetails
+          isOpen={isDetailsOpen}
+          onClose={handleCloseDetails}
+          movie={{
+            id: tmdbId || 0,
+            title,
+            release_date: year,
+            overview: description,
+            poster_path: imageUrl?.replace('https://image.tmdb.org/t/p/w500', '') || '',
+            vote_average: rating / 10,
+            vote_count: 0,
+            popularity: 0,
+            backdrop_path: null,
+            genre_ids: [],
+            explanations: explanations
+          }}
+          explanations={explanations}
+          streamingServices={availableServices}
         />
-
-        <CardHeader className="space-y-1 p-4">
-          <MovieCardHeader
-            title={title}
-            isFavorite={isFavorite}
-            onToggleFavorite={handleToggleFavorite}
-          />
-        </CardHeader>
-
-        <CardContent className="space-y-4 flex-grow p-4">
-          <MovieStreamingServices 
-            services={streamingServices} 
-            isLoading={isLoadingServices}
-            onError={handleStreamingError}
-          />
-          
-          <MovieExpandedContent
-            isExpanded={isExpanded}
-            title={title}
-            year={year}
-            description={description}
-            rating={rating}
-            genre={genre}
-            tags={tags}
-            showTrailer={showTrailer}
-            onWatchTrailer={handleTrailerToggle}
-            userRating={userRating}
-            onRate={handleRating}
-            tmdbId={tmdbId}
-          />
-        </CardContent>
-
-        <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-      </Card>
-    </motion.div>
+      )}
+    </>
   );
 };
