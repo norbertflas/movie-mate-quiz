@@ -7,6 +7,26 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+interface TMDBMovie {
+  id: number;
+  title: string;
+  overview: string;
+  poster_path: string;
+  release_date: string;
+  vote_average: number;
+}
+
+async function searchTMDBMovie(title: string, apiKey: string): Promise<TMDBMovie | null> {
+  const searchUrl = `https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&query=${encodeURIComponent(title)}`;
+  const response = await fetch(searchUrl);
+  const data = await response.json();
+  
+  if (data.results && data.results.length > 0) {
+    return data.results[0];
+  }
+  return null;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -14,18 +34,18 @@ serve(async (req) => {
 
   try {
     const { prompt, filters } = await req.json();
-    const apiKey = Deno.env.get('GEMINI_API_KEY');
+    const geminiKey = Deno.env.get('GEMINI_API_KEY');
+    const tmdbKey = Deno.env.get('TMDB_API_KEY');
     
-    if (!apiKey) {
-      console.error('Gemini API key is not configured');
-      throw new Error('Gemini API key not configured');
+    if (!geminiKey || !tmdbKey) {
+      throw new Error('API keys not configured');
     }
 
     console.log('Processing request with prompt:', prompt);
     console.log('Filters:', filters);
 
     // Format the system prompt
-    const systemPrompt = `Act as a movie recommendation expert. Based on the user's request: "${prompt}" and considering these filters: ${JSON.stringify(filters)}, recommend exactly 5 movies that best match their preferences.
+    const systemPrompt = `Act as a movie recommendation expert. Based on the user's request: "${prompt}" and considering these filters: ${JSON.stringify(filters)}, recommend exactly 6 movies that best match their preferences.
 
 For each movie, provide:
 1. The exact movie title
@@ -42,12 +62,13 @@ Structure your response as a valid JSON object like this:
 }
 
 Important:
-- Recommend exactly 5 movies
+- Recommend exactly 6 movies
 - Make sure the JSON is valid
 - Each movie must have both a title and reason
-- Keep the reasons concise but informative`;
+- Keep the reasons concise but informative
+- Use the exact official movie title for accurate matching`;
 
-    const requestUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${apiKey}`;
+    const requestUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${geminiKey}`;
     
     // Call Gemini API
     const response = await fetch(requestUrl, {
@@ -106,25 +127,50 @@ Important:
       const parsedRecommendations = JSON.parse(responseText);
       
       if (!Array.isArray(parsedRecommendations.recommendations) || 
-          parsedRecommendations.recommendations.length !== 5) {
+          parsedRecommendations.recommendations.length !== 6) {
         throw new Error('Invalid recommendations format');
       }
 
-      // Validate each recommendation
-      parsedRecommendations.recommendations.forEach((rec: any, index: number) => {
-        if (!rec.title || !rec.reason) {
-          throw new Error(`Missing title or reason in recommendation ${index + 1}`);
-        }
-      });
+      // Validate and enrich recommendations with TMDB data
+      const enrichedRecommendations = await Promise.all(
+        parsedRecommendations.recommendations.map(async (rec: any) => {
+          if (!rec.title || !rec.reason) {
+            throw new Error('Missing title or reason in recommendation');
+          }
+
+          const movieData = await searchTMDBMovie(rec.title, tmdbKey);
+          if (!movieData) {
+            console.warn(`No TMDB data found for movie: ${rec.title}`);
+            return {
+              ...rec,
+              poster_path: null,
+              overview: rec.reason,
+              release_date: null,
+              vote_average: null,
+              id: null
+            };
+          }
+
+          return {
+            title: movieData.title,
+            reason: rec.reason,
+            poster_path: movieData.poster_path ? `https://image.tmdb.org/t/p/w500${movieData.poster_path}` : null,
+            overview: movieData.overview,
+            release_date: movieData.release_date,
+            vote_average: movieData.vote_average,
+            id: movieData.id
+          };
+        })
+      );
 
       return new Response(
-        JSON.stringify(parsedRecommendations),
+        JSON.stringify({ recommendations: enrichedRecommendations }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     } catch (parseError) {
-      console.error('Error parsing Gemini response:', parseError);
+      console.error('Error processing recommendations:', parseError);
       console.error('Raw response text:', responseText);
-      throw new Error('Failed to parse movie recommendations');
+      throw new Error('Failed to process movie recommendations');
     }
   } catch (error) {
     console.error('Error in get-ai-recommendations:', error);
