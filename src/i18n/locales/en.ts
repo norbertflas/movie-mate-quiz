@@ -1,3 +1,4 @@
+
 export default {
   translation: {
     common: {
@@ -47,7 +48,7 @@ export default {
       title: "Title",
       year: "Year",
       genre: "Genre",
-      rating: "Minimum rating",
+      rating: "Rating",
       description: "Description",
       watchTrailer: "Watch Trailer",
       addToFavorites: "Add to Favorites",
@@ -71,7 +72,7 @@ export default {
       genre: "Genre",
       selectGenre: "Select Genre",
       year: "Year",
-      rating: "Rating",
+      rating: "Minimum rating",
       tags: "Tags",
       apply: "Apply",
       clear: "Clear",
@@ -98,15 +99,20 @@ export default {
       rateLimitExceeded: "Rate limit exceeded",
       rateLimitWithRetry: "Please try again in {{seconds}} seconds",
       streamingCheckFailed: "Failed to check streaming availability",
-      tryAgainIn: "Please try again in {{seconds}} seconds",
-      trailerNotFound: "No trailer found",
       tryAgain: "Please try again later",
-      trailerError: "Error loading trailer"
+      trailerNotFound: "No trailer found",
+      trailerError: "Error loading trailer",
+      recommendationError: "Error generating recommendations"
     },
     streaming: {
       availableOn: "Available on",
       watchOn: "Watch on {{service}}",
-      clickToWatch: "Click to watch now"
+      clickToWatch: "Click to watch now",
+      lastChecked: "Last checked: {{time}}",
+      notAvailable: "Not available on streaming services",
+      dataStale: "Data may be outdated",
+      errorChecking: "Error checking availability",
+      availabilityMayChange: "Availability may change"
     },
     navigation: {
       home: "Home",
@@ -127,7 +133,8 @@ export default {
       prompt: "Tell us what you're looking for",
       promptPlaceholder: "Example: I want a heartwarming comedy about family relationships, similar to Little Miss Sunshine",
       success: "Recommendations Ready!",
-      aiGenerated: "Here are your AI-powered recommendations"
+      aiGenerated: "Here are your AI-powered recommendations",
+      submit: "Get Recommendations"
     }
   }
 };
