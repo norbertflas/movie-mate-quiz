@@ -73,7 +73,7 @@ export const SearchResults = ({
                 imageUrl={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
                 description={movie.overview}
                 trailerUrl={`https://www.youtube.com/watch?v=${movie.video_id || ''}`}
-                rating={movie.vote_average}
+                rating={movie.vote_average * 10}
                 tmdbId={movie.id}
               />
             </motion.div>
@@ -90,9 +90,16 @@ export const SearchResults = ({
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
         >
           {creatorResults.map((person, index) => (
-            <div key={person.id} onClick={() => handleCreatorSelect(person)}>
+            <motion.div
+              key={person.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+              onClick={() => handleCreatorSelect(person)}
+              className="cursor-pointer transform hover:scale-105 transition-transform duration-200"
+            >
               <CreatorCard person={person} index={index} />
-            </div>
+            </motion.div>
           ))}
         </motion.div>
       )}
@@ -102,14 +109,14 @@ export const SearchResults = ({
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex justify-between items-center"
+            className="flex justify-between items-center mb-8"
           >
-            <h2 className="text-2xl font-bold">
-              {t("Popular works by")} {selectedCreator.name}
+            <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-blue-500">
+              {t("recommendations.popular")} - {selectedCreator.name}
             </h2>
             <button
               onClick={() => setSelectedCreator(null)}
-              className="text-blue-500 hover:text-blue-600"
+              className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors duration-200"
             >
               {t("common.back")}
             </button>
@@ -126,6 +133,7 @@ export const SearchResults = ({
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
+                className="transform hover:scale-105 transition-transform duration-200"
               >
                 <MovieCard
                   title={movie.title}
@@ -135,7 +143,7 @@ export const SearchResults = ({
                   imageUrl={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
                   description={movie.overview}
                   trailerUrl=""
-                  rating={movie.vote_average}
+                  rating={movie.vote_average * 10}
                   tmdbId={movie.id}
                 />
               </motion.div>
