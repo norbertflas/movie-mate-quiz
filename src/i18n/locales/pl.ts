@@ -96,7 +96,13 @@ export default {
       deathDate: "Data śmierci",
       placeOfBirth: "Miejsce urodzenia",
       biography: "Biografia",
-      age: "Wiek"
+      age: "Wiek",
+      careerHighlights: "Najważniejsze osiągnięcia",
+      awardWinningArtist: "Zdobywca/zdobywczyni nagród",
+      notableWorks: "Znaczące dzieła",
+      careerDefining: "Przełomowe osiągnięcia",
+      born: "Urodzony/a:",
+      from: "Pochodzenie:"
     },
     search: {
       movies: "Filmy",
@@ -107,7 +113,30 @@ export default {
       resultsFound: "Znalezione wyniki",
       noResults: "Brak wyników",
       searchResults: "Wyniki wyszukiwania",
-      totalResults: "Znaleziono {{count}} wyników"
+      totalResults: "Znaleziono {{count}} wyników",
+      clickCreatorInfo: "Kliknij, aby zobaczyć więcej informacji"
+    },
+    welcome: {
+      title: "Odkryj magię kina",
+      subtitle: "Twoja osobista podróż przez świat filmu zaczyna się tutaj",
+      personalizedRecommendations: "Spersonalizowane rekomendacje",
+      recommendationsDescription: "Filmy dobrane specjalnie dla Ciebie",
+      intelligentQuiz: "Inteligentny quiz",
+      quizDescription: "Odkryj swoje preferencje filmowe",
+      community: "Społeczność miłośników kina",
+      communityDescription: "Dziel się swoimi odkryciami",
+      description1: "MovieFinder to więcej niż wyszukiwarka filmów. To Twój osobisty przewodnik po świecie kina, który pomoże Ci odkryć filmy idealnie dopasowane do Twoich preferencji.",
+      description2: "Rozpocznij swoją przygodę już teraz i pozwól nam pomóc Ci znaleźć Twój następny ulubiony film.",
+      startJourney: "Rozpocznij swoją filmową podróż"
+    },
+    navigation: {
+      home: "Strona główna",
+      search: "Wyszukiwanie",
+      quiz: "Quiz",
+      favorites: "Ulubione",
+      ratings: "Oceny",
+      logout: "Wyloguj się",
+      streamingServices: "Serwisy streamingowe"
     }
   }
 };
