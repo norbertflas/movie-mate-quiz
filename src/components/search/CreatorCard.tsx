@@ -42,36 +42,46 @@ export const CreatorCard = ({ person, index, onClick }: CreatorCardProps) => {
           />
         </div>
         
-        <div className="flex-1 text-center md:text-left">
-          <h3 className="text-2xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-blue-500">
-            {person.name}
-          </h3>
-          
-          <p className="text-lg font-medium text-muted-foreground mb-3">
-            {person.known_for_department && t(`creator.department.${person.known_for_department}`)}
-          </p>
-
-          {person.birthday && (
-            <p className="text-sm text-muted-foreground mb-2">
-              {t("creator.birthDate")}: {formatDate(person.birthday)}
-              {person.place_of_birth && ` • ${person.place_of_birth}`}
+        <div className="flex-1 text-center md:text-left space-y-3">
+          <div>
+            <h3 className="text-2xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-blue-500">
+              {person.name}
+            </h3>
+            
+            <p className="text-lg font-medium text-muted-foreground">
+              {person.known_for_department && t(`creator.department.${person.known_for_department}`)}
             </p>
-          )}
+          </div>
 
-          {person.biography && (
-            <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
-              {person.biography}
-            </p>
-          )}
+          <div className="space-y-2">
+            {person.birthday && (
+              <p className="text-sm text-muted-foreground">
+                <span className="font-medium">{t("creator.birthDate")}:</span>{" "}
+                {formatDate(person.birthday)}
+                {person.place_of_birth && (
+                  <>
+                    <span className="mx-2">•</span>
+                    <span>{person.place_of_birth}</span>
+                  </>
+                )}
+              </p>
+            )}
+
+            {person.biography && (
+              <p className="text-sm text-muted-foreground line-clamp-2">
+                {person.biography}
+              </p>
+            )}
+          </div>
 
           {person.known_for && person.known_for.length > 0 && (
-            <div>
+            <div className="pt-2">
               <p className="text-sm font-medium text-muted-foreground mb-2">
                 {t("creator.knownFor")}:
               </p>
-              <ul className="text-sm text-muted-foreground">
+              <ul className="text-sm text-muted-foreground space-y-1">
                 {person.known_for.slice(0, 3).map((work: any) => (
-                  <li key={work.id} className="mb-1">
+                  <li key={work.id}>
                     {work.title || work.name}
                   </li>
                 ))}
