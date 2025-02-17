@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
 import { CalendarDays, MapPin, ScrollText } from "lucide-react";
+import { useLocation } from "react-router-dom";
 
 interface CreatorCardProps {
   person: TMDBPerson;
@@ -14,6 +15,8 @@ interface CreatorCardProps {
 
 export const CreatorCard = ({ person, index, onClick }: CreatorCardProps) => {
   const { t, i18n } = useTranslation();
+  const location = useLocation();
+  const isSearchPage = location.pathname === "/search";
   
   const formatDate = (dateString?: string) => {
     if (!dateString) return "";
@@ -81,7 +84,7 @@ export const CreatorCard = ({ person, index, onClick }: CreatorCardProps) => {
             {person.biography && (
               <div className="flex items-start gap-2">
                 <ScrollText className="h-4 w-4 text-purple-500 mt-0.5" />
-                <p className="text-sm text-muted-foreground line-clamp-2">
+                <p className={`text-sm text-muted-foreground ${isSearchPage ? '' : 'line-clamp-2'}`}>
                   {person.biography}
                 </p>
               </div>
@@ -102,9 +105,15 @@ export const CreatorCard = ({ person, index, onClick }: CreatorCardProps) => {
                   </li>
                 ))}
               </ul>
-              <p className="text-sm text-purple-500 mt-3 hover:text-purple-600 transition-colors">
-                {t("creator.clickToSeeWorks")}
-              </p>
+              {!isSearchPage ? (
+                <p className="text-sm text-purple-500 mt-3 hover:text-purple-600 transition-colors">
+                  {t("search.clickCreatorInfo")}
+                </p>
+              ) : (
+                <p className="text-sm text-purple-500 mt-3 hover:text-purple-600 transition-colors">
+                  {t("creator.clickToSeeWorks")}
+                </p>
+              )}
             </div>
           )}
         </div>
