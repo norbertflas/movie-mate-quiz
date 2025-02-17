@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { tmdbFetch } from "@/services/tmdb/utils";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 
 interface SearchResultsProps {
   searchResults: TMDBMovie[];
@@ -26,15 +27,24 @@ export const SearchResults = ({
     queryKey: ['creatorMovies', selectedCreator?.id],
     queryFn: async () => {
       if (!selectedCreator?.id) return [];
-      const response = await tmdbFetch(`/person/${selectedCreator.id}/combined_credits?`);
-      return response.cast
-        .filter((work: any) => (work.media_type === 'movie' || work.media_type === 'tv') && work.poster_path)
+      
+      // Fetch both cast and crew credits
+      const creditsResponse = await tmdbFetch(`/person/${selectedCreator.id}/combined_credits?`);
+      
+      // Combine and deduplicate movies from both acting and crew work
+      const allWorks = [...creditsResponse.cast, ...creditsResponse.crew];
+      const uniqueWorks = Array.from(new Map(allWorks.map(work => [work.id, work])).values());
+      
+      return uniqueWorks
+        .filter((work: any) => 
+          (work.media_type === 'movie' || work.media_type === 'tv') && 
+          work.poster_path
+        )
         .sort((a: any, b: any) => {
           const aScore = (a.vote_average * a.vote_count * a.popularity) || 0;
           const bScore = (b.vote_average * b.vote_count * b.popularity) || 0;
           return bScore - aScore;
         })
-        .slice(0, 6)
         .map((work: any) => ({
           id: work.id,
           title: work.title || work.name,
@@ -43,6 +53,9 @@ export const SearchResults = ({
           poster_path: work.poster_path,
           vote_average: work.vote_average,
           genre_ids: work.genre_ids || [],
+          character: work.character,
+          job: work.job,
+          department: work.department
         }));
     },
     enabled: !!selectedCreator?.id
@@ -86,30 +99,28 @@ export const SearchResults = ({
       )}
 
       {creatorResults.length > 0 && !selectedCreator && (
-        <>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.5 }}
-            className="grid grid-cols-1 gap-6"
-          >
-            {creatorResults.map((person, index) => (
-              <motion.div
-                key={person.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <CreatorCard 
-                  person={person} 
-                  index={index} 
-                  onClick={() => handleCreatorSelect(person)}
-                />
-              </motion.div>
-            ))}
-          </motion.div>
-        </>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.5 }}
+          className="grid grid-cols-1 gap-6"
+        >
+          {creatorResults.map((person, index) => (
+            <motion.div
+              key={person.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+            >
+              <CreatorCard 
+                person={person} 
+                index={index} 
+                onClick={() => handleCreatorSelect(person)}
+              />
+            </motion.div>
+          ))}
+        </motion.div>
       )}
 
       {selectedCreator && (
@@ -119,15 +130,21 @@ export const SearchResults = ({
             animate={{ opacity: 1 }}
             className="flex justify-between items-center mb-8"
           >
-            <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-blue-500">
-              {selectedCreator.name}'s Best Works
-            </h2>
-            <button
+            <div>
+              <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-blue-500">
+                {selectedCreator.name}'s Filmography
+              </h2>
+              <p className="text-muted-foreground mt-2">
+                {creatorMovies.length} movies and TV shows
+              </p>
+            </div>
+            <Button
               onClick={() => setSelectedCreator(null)}
-              className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors duration-200"
+              variant="outline"
+              className="hover:bg-primary/10"
             >
               {t("common.back")}
-            </button>
+            </Button>
           </motion.div>
 
           <motion.div
@@ -136,7 +153,7 @@ export const SearchResults = ({
             transition={{ duration: 0.5 }}
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
           >
-            {creatorMovies.map((movie: TMDBMovie, index: number) => (
+            {creatorMovies.map((movie: any, index: number) => (
               <motion.div
                 key={movie.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -150,7 +167,7 @@ export const SearchResults = ({
                   platform="TMDB"
                   genre={t(`movie.${getGenreTranslationKey(movie.genre_ids?.[0] || 0)}`)}
                   imageUrl={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
-                  description={movie.overview}
+                  description={`${movie.character ? `As ${movie.character}` : movie.job ? `${movie.job}` : movie.department} - ${movie.overview}`}
                   trailerUrl=""
                   rating={movie.vote_average * 10}
                   tmdbId={movie.id}
