@@ -124,6 +124,19 @@ export default {
       tryAgain: "Spróbuj ponownie później",
       generic: "Wystąpił błąd. Spróbuj ponownie później.",
       logout: "Błąd podczas wylogowywania"
+    },
+    welcome: {
+      title: "Odkryj magię kina",
+      subtitle: "Twoja osobista podróż przez świat filmu zaczyna się tutaj",
+      personalizedRecommendations: "Personalizowane rekomendacje",
+      recommendationsDescription: "Filmy dobrane specjalnie dla Ciebie",
+      intelligentQuiz: "Inteligentny quiz",
+      quizDescription: "Poznaj swoje filmowe preferencje",
+      community: "Społeczność kinomaniaków",
+      communityDescription: "Dziel się swoimi odkryciami",
+      description1: "MovieFinder to więcej niż tylko wyszukiwarka filmów. To Twój osobisty przewodnik po świecie kina, który pomoże Ci odkryć filmy idealnie dopasowane do Twoich upodobań.",
+      description2: "Rozpocznij swoją przygodę już teraz i pozwól nam pomóc Ci znaleźć Twój następny ulubiony film.",
+      startJourney: "Rozpocznij swoją filmową podróż"
     }
   }
 };

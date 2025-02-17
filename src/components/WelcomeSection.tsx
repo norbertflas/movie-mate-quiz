@@ -1,12 +1,16 @@
+
 import { Button } from "./ui/button";
 import { PlayCircle, Sparkles, Star, Film, Heart } from "lucide-react";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 
 interface WelcomeSectionProps {
   onStartQuiz: () => void;
 }
 
 export const WelcomeSection = ({ onStartQuiz }: WelcomeSectionProps) => {
+  const { t } = useTranslation();
+
   const container = {
     hidden: { opacity: 0 },
     show: {
@@ -34,40 +38,38 @@ export const WelcomeSection = ({ onStartQuiz }: WelcomeSectionProps) => {
           <motion.div variants={item} className="space-y-4">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight">
               <span className="bg-gradient-to-r from-blue-600 via-violet-600 to-purple-600 bg-clip-text text-transparent">
-                Odkryj magię kina
+                {t('welcome.title')}
               </span>
             </h1>
             <p className="text-xl sm:text-2xl text-muted-foreground">
-              Twoja osobista podróż przez świat filmu zaczyna się tutaj
+              {t('welcome.subtitle')}
             </p>
           </motion.div>
 
           <motion.div variants={item} className="grid gap-6 sm:grid-cols-3">
             <div className="flex flex-col items-center p-4 rounded-lg bg-card/50">
               <Film className="h-8 w-8 mb-2 text-blue-500" />
-              <h3 className="font-semibold">Personalizowane rekomendacje</h3>
-              <p className="text-sm text-muted-foreground">Filmy dobrane specjalnie dla Ciebie</p>
+              <h3 className="font-semibold">{t('welcome.personalizedRecommendations')}</h3>
+              <p className="text-sm text-muted-foreground">{t('welcome.recommendationsDescription')}</p>
             </div>
             <div className="flex flex-col items-center p-4 rounded-lg bg-card/50">
               <Star className="h-8 w-8 mb-2 text-violet-500" />
-              <h3 className="font-semibold">Inteligentny quiz</h3>
-              <p className="text-sm text-muted-foreground">Poznaj swoje filmowe preferencje</p>
+              <h3 className="font-semibold">{t('welcome.intelligentQuiz')}</h3>
+              <p className="text-sm text-muted-foreground">{t('welcome.quizDescription')}</p>
             </div>
             <div className="flex flex-col items-center p-4 rounded-lg bg-card/50">
               <Heart className="h-8 w-8 mb-2 text-purple-500" />
-              <h3 className="font-semibold">Społeczność kinomaniaków</h3>
-              <p className="text-sm text-muted-foreground">Dziel się swoimi odkryciami</p>
+              <h3 className="font-semibold">{t('welcome.community')}</h3>
+              <p className="text-sm text-muted-foreground">{t('welcome.communityDescription')}</p>
             </div>
           </motion.div>
 
           <motion.div variants={item} className="space-y-4 max-w-2xl mx-auto">
             <p className="text-lg text-muted-foreground">
-              MovieFinder to więcej niż tylko wyszukiwarka filmów. To Twój osobisty przewodnik 
-              po świecie kina, który pomoże Ci odkryć filmy idealnie dopasowane do Twoich upodobań.
+              {t('welcome.description1')}
             </p>
             <p className="text-lg text-muted-foreground">
-              Rozpocznij swoją przygodę już teraz i pozwól nam pomóc Ci znaleźć 
-              Twój następny ulubiony film.
+              {t('welcome.description2')}
             </p>
           </motion.div>
 
@@ -84,7 +86,7 @@ export const WelcomeSection = ({ onStartQuiz }: WelcomeSectionProps) => {
             >
               <span className="flex items-center gap-3">
                 <PlayCircle className="h-6 w-6 transition-transform group-hover:scale-110" />
-                <span className="font-semibold">Rozpocznij swoją filmową podróż</span>
+                <span className="font-semibold">{t('welcome.startJourney')}</span>
                 <Sparkles className="h-5 w-5 animate-pulse" />
               </span>
             </Button>

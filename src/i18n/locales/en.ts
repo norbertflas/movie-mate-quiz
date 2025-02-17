@@ -19,6 +19,19 @@ export default {
     popular: "Popular Movies",
     trending: "Trending This Week"
   },
+  welcome: {
+    title: "Discover the Magic of Cinema",
+    subtitle: "Your personal journey through the world of film starts here",
+    personalizedRecommendations: "Personalized recommendations",
+    recommendationsDescription: "Movies tailored just for you",
+    intelligentQuiz: "Intelligent quiz",
+    quizDescription: "Discover your movie preferences",
+    community: "Movie lovers community",
+    communityDescription: "Share your discoveries",
+    description1: "MovieFinder is more than just a movie search engine. It's your personal guide to the world of cinema that will help you discover movies perfectly matched to your preferences.",
+    description2: "Start your adventure now and let us help you find your next favorite movie.",
+    startJourney: "Start your movie journey",
+  },
   auth: {
     signIn: "Sign In",
     signOut: "Sign Out",
