@@ -1,4 +1,3 @@
-
 const translations = {
   translation: {
     common: {
@@ -138,6 +137,41 @@ const translations = {
       aiGenerated: "Here are your AI-powered recommendations",
       submit: "Get Recommendations",
       creatorWorks: "Most Popular Works by"
+    },
+    creator: {
+      filmography: "Filmography",
+      moviesAndShows: "movies and TV shows",
+      asActor: "As",
+      asRole: "Role:",
+      bestWorks: "Best Works",
+      viewAll: "View All Works",
+      clickToSeeWorks: "View filmography",
+      viewMoreFilms: "View More Films",
+      role: "Role",
+      job: "Job",
+      mainWorks: "Main Works",
+      knownFor: "Known For",
+      filmographyTitle: "Filmography - {{name}}",
+      bestMovies: "Best Movies",
+      allMovies: "All Movies",
+      department: {
+        acting: "Actor",
+        directing: "Director",
+        writing: "Writer",
+        production: "Producer",
+        sound: "Sound",
+        camera: "Camera",
+        editing: "Editor",
+        art: "Art",
+        "visual effects": "Visual Effects",
+        "costume & make-up": "Costume & Make-up",
+        crew: "Crew"
+      },
+      birthDate: "Date of Birth",
+      deathDate: "Date of Death",
+      placeOfBirth: "Place of Birth",
+      biography: "Biography",
+      age: "Age"
     }
   }
 };

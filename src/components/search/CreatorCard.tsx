@@ -12,12 +12,14 @@ interface CreatorCardProps {
 }
 
 export const CreatorCard = ({ person, index, onClick }: CreatorCardProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   
   const formatDate = (dateString?: string) => {
     if (!dateString) return "";
     try {
-      return format(new Date(dateString), "d MMMM yyyy", { locale: pl });
+      return format(new Date(dateString), "d MMMM yyyy", { 
+        locale: i18n.language === 'pl' ? pl : undefined 
+      });
     } catch {
       return "";
     }
@@ -44,50 +46,46 @@ export const CreatorCard = ({ person, index, onClick }: CreatorCardProps) => {
         </div>
         
         {/* Right side - Content */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1">
           {/* Header section */}
-          <div className="mb-4">
-            <h3 className="text-2xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-blue-500">
-              {person.name}
-            </h3>
-            <p className="text-lg font-medium text-muted-foreground">
-              {person.known_for_department && t(`creator.department.${person.known_for_department.toLowerCase()}`)}
-            </p>
-          </div>
+          <h3 className="text-2xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-blue-500">
+            {person.name}
+          </h3>
+          
+          <p className="text-lg font-medium text-muted-foreground mb-4">
+            {person.known_for_department && t(`creator.department.${person.known_for_department.toLowerCase()}`)}
+          </p>
 
           {/* General information section */}
-          <div className="space-y-3 mb-4">
+          <div className="space-y-3">
             {person.birthday && (
-              <p className="text-sm">
-                <span className="font-medium">{t("creator.birthDate")}</span>:{" "}
-                <span className="text-muted-foreground">{formatDate(person.birthday)}</span>
-              </p>
-            )}
-            {person.place_of_birth && (
-              <p className="text-sm">
-                <span className="font-medium">{t("creator.placeOfBirth")}</span>:{" "}
-                <span className="text-muted-foreground">{person.place_of_birth}</span>
-              </p>
-            )}
-            {person.biography && (
-              <div className="text-sm">
-                <span className="font-medium">{t("creator.biography")}</span>:{" "}
-                <p className="text-muted-foreground mt-1 line-clamp-2">{person.biography}</p>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>{formatDate(person.birthday)}</span>
+                {person.place_of_birth && (
+                  <>
+                    <span className="text-xs">•</span>
+                    <span>{person.place_of_birth}</span>
+                  </>
+                )}
               </div>
+            )}
+
+            {person.biography && (
+              <p className="text-sm text-muted-foreground line-clamp-2">
+                {person.biography}
+              </p>
             )}
           </div>
 
           {/* Known for section */}
           {person.known_for && person.known_for.length > 0 && (
-            <div className="mt-auto">
+            <div className="mt-4">
               <p className="text-sm font-medium mb-2">
                 {t("creator.knownFor")}:
               </p>
               <ul className="text-sm text-muted-foreground space-y-1">
                 {person.known_for.slice(0, 3).map((work: any) => (
-                  <li key={work.id}>
-                    {work.title || work.name}
-                  </li>
+                  <li key={work.id}>{work.title || work.name}</li>
                 ))}
               </ul>
               <p className="text-sm text-purple-500 mt-3 hover:text-purple-600 transition-colors">
