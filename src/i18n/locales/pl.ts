@@ -169,6 +169,19 @@ export default {
       bestWorks: "Najlepsze dzieła",
       viewAll: "Zobacz wszystkie dzieła",
       clickToSeeWorks: "Zobacz filmografię",
-    },
+      department: {
+        Acting: "Aktor",
+        Directing: "Reżyser",
+        Writing: "Scenarzysta",
+        Production: "Producent",
+        Sound: "Dźwięk",
+        Camera: "Operator",
+        Editing: "Montażysta",
+        Art: "Artysta",
+        "Visual Effects": "Efekty specjalne",
+        "Costume & Make-Up": "Kostiumy i charakteryzacja",
+        Crew: "Ekipa filmowa"
+      }
+    }
   }
 };

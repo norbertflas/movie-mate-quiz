@@ -59,6 +59,7 @@ export const SearchResults = ({
           department: work.department
         }));
 
+      // Return only 6 best works on main page, all works on search page
       return isMainPage ? sortedWorks.slice(0, 6) : sortedWorks;
     },
     enabled: !!selectedCreator?.id
@@ -66,6 +67,23 @@ export const SearchResults = ({
 
   const handleCreatorSelect = (person: TMDBPerson) => {
     setSelectedCreator(person);
+  };
+
+  const translateDepartment = (department: string, job?: string) => {
+    if (job) return job;
+    return t(`creator.department.${department}`) || department;
+  };
+
+  const getMovieDescription = (movie: any) => {
+    let roleDescription = "";
+    if (movie.character) {
+      roleDescription = `${t("creator.asRole")} ${movie.character}`;
+    } else if (movie.job) {
+      roleDescription = movie.job;
+    } else if (movie.department) {
+      roleDescription = translateDepartment(movie.department);
+    }
+    return `${roleDescription} - ${movie.overview}`;
   };
 
   return (
@@ -170,7 +188,7 @@ export const SearchResults = ({
                   platform="TMDB"
                   genre={t(`movie.${getGenreTranslationKey(movie.genre_ids?.[0] || 0)}`)}
                   imageUrl={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
-                  description={`${movie.character ? `${t("creator.asRole")} ${movie.character}` : movie.job ? `${movie.job}` : movie.department} - ${movie.overview}`}
+                  description={getMovieDescription(movie)}
                   trailerUrl=""
                   rating={movie.vote_average * 10}
                   tmdbId={movie.id}
