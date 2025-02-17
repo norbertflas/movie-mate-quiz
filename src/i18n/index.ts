@@ -1,26 +1,20 @@
 
-import i18n from 'i18next';
-import { initReactI18next } from 'react-i18next';
-import en from './locales/en';
-import pl from './locales/pl';
-import de from './locales/de';
-import es from './locales/es';
-import fr from './locales/fr';
-import it from './locales/it';
+import i18n from "i18next";
+import { initReactI18next } from "react-i18next";
+import en from "./locales/en";
+import pl from "./locales/pl";
+
+const savedLanguage = localStorage.getItem("language") || "en";
 
 i18n
   .use(initReactI18next)
   .init({
     resources: {
-      en,
-      pl,
-      de,
-      es,
-      fr,
-      it,
+      en: { translation: en.translation },
+      pl: { translation: pl.translation },
     },
-    lng: 'en', // default language
-    fallbackLng: 'en',
+    lng: savedLanguage,
+    fallbackLng: "en",
     interpolation: {
       escapeValue: false,
     },
@@ -28,5 +22,10 @@ i18n
       useSuspense: false,
     },
   });
+
+i18n.on("languageChanged", (lng) => {
+  localStorage.setItem("language", lng);
+  document.documentElement.lang = lng;
+});
 
 export default i18n;
