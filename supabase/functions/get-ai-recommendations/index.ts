@@ -20,20 +20,31 @@ serve(async (req) => {
       throw new Error('Gemini API key not configured');
     }
 
-    // Format the system prompt
-    const systemPrompt = `You are a movie recommendation expert. Given these preferences: "${prompt}" and filters: ${JSON.stringify(filters)}, suggest exactly 5 movies. Each recommendation should be well-reasoned and match the user's preferences.
-    
-    Provide your response in this exact JSON format:
-    {
-      "recommendations": [
-        {
-          "title": "Movie Title",
-          "reason": "Detailed explanation why this movie matches the user's preferences"
-        }
-      ]
-    }
+    console.log('Processing request with prompt:', prompt);
+    console.log('Filters:', filters);
 
-    Make sure to recommend exactly 5 movies and provide thoughtful explanations.`;
+    // Format the system prompt
+    const systemPrompt = `Act as a movie recommendation expert. Based on the user's request: "${prompt}" and considering these filters: ${JSON.stringify(filters)}, recommend exactly 5 movies that best match their preferences.
+
+For each movie, provide:
+1. The exact movie title
+2. A clear explanation of why it matches their preferences
+
+Structure your response as a valid JSON object like this:
+{
+  "recommendations": [
+    {
+      "title": "Exact Movie Title",
+      "reason": "Clear explanation of why this movie matches their preferences"
+    }
+  ]
+}
+
+Important:
+- Recommend exactly 5 movies
+- Make sure the JSON is valid
+- Each movie must have both a title and reason
+- Keep the reasons concise but informative`;
 
     // Call Gemini API
     const response = await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent', {
@@ -53,28 +64,63 @@ serve(async (req) => {
           topK: 40,
           topP: 0.95,
           maxOutputTokens: 1024,
-        }
+        },
+        safetySettings: [
+          {
+            category: "HARM_CATEGORY_DANGEROUS",
+            threshold: "BLOCK_MEDIUM_AND_ABOVE"
+          }
+        ]
       }),
     });
 
-    const data = await response.json();
-    console.log('Gemini API response:', data);
-
-    if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
-      throw new Error('Invalid response from Gemini API');
+    if (!response.ok) {
+      console.error('Gemini API error:', await response.text());
+      throw new Error(`Gemini API returned status ${response.status}`);
     }
 
-    // Parse the response text as JSON
-    const recommendations = JSON.parse(data.candidates[0].content.parts[0].text);
+    const data = await response.json();
+    console.log('Gemini API raw response:', JSON.stringify(data, null, 2));
 
-    return new Response(
-      JSON.stringify(recommendations),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
+      console.error('Unexpected Gemini API response structure:', data);
+      throw new Error('Invalid response structure from Gemini API');
+    }
+
+    const responseText = data.candidates[0].content.parts[0].text;
+    console.log('Extracted response text:', responseText);
+
+    try {
+      const parsedRecommendations = JSON.parse(responseText);
+      
+      if (!Array.isArray(parsedRecommendations.recommendations) || 
+          parsedRecommendations.recommendations.length !== 5) {
+        throw new Error('Invalid recommendations format');
+      }
+
+      // Validate each recommendation
+      parsedRecommendations.recommendations.forEach((rec: any, index: number) => {
+        if (!rec.title || !rec.reason) {
+          throw new Error(`Missing title or reason in recommendation ${index + 1}`);
+        }
+      });
+
+      return new Response(
+        JSON.stringify(parsedRecommendations),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } catch (parseError) {
+      console.error('Error parsing Gemini response:', parseError);
+      console.error('Raw response text:', responseText);
+      throw new Error('Failed to parse movie recommendations');
+    }
   } catch (error) {
     console.error('Error in get-ai-recommendations:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        details: 'Check function logs for more information'
+      }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
