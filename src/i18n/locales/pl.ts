@@ -1,4 +1,3 @@
-
 export default {
   translation: {
     common: {
@@ -91,7 +90,12 @@ export default {
         "Visual Effects": "Efekty specjalne",
         "Costume & Make-Up": "Kostiumy i charakteryzacja",
         Crew: "Ekipa filmowa"
-      }
+      },
+      birthDate: "Data urodzenia",
+      deathDate: "Data śmierci",
+      placeOfBirth: "Miejsce urodzenia",
+      biography: "Biografia",
+      age: "Wiek"
     },
     search: {
       movies: "Filmy",

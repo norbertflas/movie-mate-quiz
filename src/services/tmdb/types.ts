@@ -20,6 +20,10 @@ export interface TMDBPerson {
   name: string;
   profile_path: string | null;
   known_for_department: string;
+  birthday?: string;
+  deathday?: string;
+  place_of_birth?: string;
+  biography?: string;
   known_for: Array<{
     id: number;
     title?: string;
