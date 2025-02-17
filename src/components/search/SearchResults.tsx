@@ -28,8 +28,13 @@ export const SearchResults = ({
       if (!selectedCreator?.id) return [];
       const response = await tmdbFetch(`/person/${selectedCreator.id}/combined_credits?`);
       return response.cast
-        .filter((work: any) => work.media_type === 'movie' || work.media_type === 'tv')
-        .sort((a: any, b: any) => b.popularity - a.popularity)
+        .filter((work: any) => (work.media_type === 'movie' || work.media_type === 'tv') && work.poster_path)
+        .sort((a: any, b: any) => {
+          // Prioritize higher rated and more popular content
+          const aScore = (a.vote_average * a.vote_count * a.popularity) || 0;
+          const bScore = (b.vote_average * b.vote_count * b.popularity) || 0;
+          return bScore - aScore;
+        })
         .slice(0, 6)
         .map((work: any) => ({
           id: work.id,
