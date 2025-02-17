@@ -4,7 +4,7 @@ import type { TMDBPerson } from "@/services/tmdb";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
-import { CalendarDays, MapPin, ScrollText } from "lucide-react";
+import { CalendarDays, MapPin, ScrollText, Award, Film, Heart } from "lucide-react";
 import { useLocation } from "react-router-dom";
 
 interface CreatorCardProps {
@@ -29,6 +29,36 @@ export const CreatorCard = ({ person, index, onClick }: CreatorCardProps) => {
     }
   };
 
+  // Extract key achievements from biography if available
+  const highlightAchievements = (biography?: string) => {
+    if (!biography) return [];
+    const achievements = [];
+    
+    // Look for awards mentions
+    if (biography.toLowerCase().includes('oscar') || 
+        biography.toLowerCase().includes('academy award') ||
+        biography.toLowerCase().includes('golden globe') ||
+        biography.toLowerCase().includes('emmy')) {
+      achievements.push('Award-winning artist');
+    }
+    
+    // Look for notable works mentions
+    if (biography.toLowerCase().includes('best known for') || 
+        biography.toLowerCase().includes('famous for')) {
+      achievements.push('Notable works in the industry');
+    }
+    
+    // Look for career milestones
+    if (biography.toLowerCase().includes('breakthrough') || 
+        biography.toLowerCase().includes('milestone')) {
+      achievements.push('Career-defining achievements');
+    }
+    
+    return achievements;
+  };
+
+  const achievements = highlightAchievements(person.biography);
+
   return (
     <div 
       onClick={onClick}
@@ -52,20 +82,36 @@ export const CreatorCard = ({ person, index, onClick }: CreatorCardProps) => {
         {/* Right side - Content */}
         <div className="flex-1">
           {/* Header section */}
-          <div className="mb-6">
+          <div className="mb-4">
             <h3 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-blue-500">
               {person.name}
             </h3>
-            <p className="text-lg text-muted-foreground mt-1">
+            <p className="text-lg font-medium text-purple-500 mt-1">
               {person.known_for_department && t(`creator.department.${person.known_for_department.toLowerCase()}`)}
             </p>
           </div>
 
+          {/* Key Achievements section - Only shown on search page */}
+          {isSearchPage && achievements.length > 0 && (
+            <div className="mb-4 p-3 bg-purple-500/5 rounded-lg border border-purple-500/10">
+              <h4 className="text-sm font-medium text-purple-500 mb-2">Career Highlights</h4>
+              <ul className="space-y-2">
+                {achievements.map((achievement, idx) => (
+                  <li key={idx} className="flex items-center gap-2 text-sm">
+                    <Award className="h-4 w-4 text-purple-500" />
+                    <span className="text-muted-foreground">{achievement}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {/* General information section */}
-          <div className="space-y-4 mb-6">
+          <div className="space-y-3 mb-4">
             {person.birthday && (
               <div className="flex items-center gap-2">
                 <CalendarDays className="h-4 w-4 text-purple-500" />
+                <span className="text-sm font-medium text-purple-500">Born:</span>
                 <span className="text-sm text-muted-foreground">
                   {formatDate(person.birthday)}
                 </span>
@@ -75,42 +121,50 @@ export const CreatorCard = ({ person, index, onClick }: CreatorCardProps) => {
             {person.place_of_birth && (
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-purple-500" />
+                <span className="text-sm font-medium text-purple-500">From:</span>
                 <span className="text-sm text-muted-foreground">
                   {person.place_of_birth}
                 </span>
               </div>
             )}
-
-            {person.biography && (
-              <div className="flex items-start gap-2">
-                <ScrollText className="h-4 w-4 text-purple-500 mt-0.5" />
-                <p className={`text-sm text-muted-foreground ${isSearchPage ? '' : 'line-clamp-2'}`}>
-                  {person.biography}
-                </p>
-              </div>
-            )}
           </div>
+
+          {/* Biography section - Expanded in search page */}
+          {person.biography && (
+            <div className="mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <ScrollText className="h-4 w-4 text-purple-500" />
+                <h4 className="text-sm font-medium text-purple-500">Biography</h4>
+              </div>
+              <p className={`text-sm text-muted-foreground ${isSearchPage ? 'line-clamp-6' : 'line-clamp-2'}`}>
+                {person.biography}
+              </p>
+            </div>
+          )}
 
           {/* Known for section */}
           {person.known_for && person.known_for.length > 0 && (
             <div>
-              <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
-                {t("creator.knownFor")}
-              </h4>
-              <ul className="text-sm text-muted-foreground space-y-1">
+              <div className="flex items-center gap-2 mb-2">
+                <Film className="h-4 w-4 text-purple-500" />
+                <h4 className="text-sm font-medium text-purple-500">
+                  {t("creator.knownFor")}
+                </h4>
+              </div>
+              <ul className="text-sm text-muted-foreground space-y-1 mb-3">
                 {person.known_for.slice(0, 3).map((work: any) => (
                   <li key={work.id} className="flex items-center gap-2">
-                    <span className="w-1 h-1 rounded-full bg-purple-500"></span>
-                    {work.title || work.name}
+                    <Heart className="h-3 w-3 text-purple-500" />
+                    <span className="font-medium text-purple-500/90">{work.title || work.name}</span>
                   </li>
                 ))}
               </ul>
               {!isSearchPage ? (
-                <p className="text-sm text-purple-500 mt-3 hover:text-purple-600 transition-colors">
+                <p className="text-sm text-purple-500 hover:text-purple-600 transition-colors">
                   {t("search.clickCreatorInfo")}
                 </p>
               ) : (
-                <p className="text-sm text-purple-500 mt-3 hover:text-purple-600 transition-colors">
+                <p className="text-sm text-purple-500 hover:text-purple-600 transition-colors">
                   {t("creator.clickToSeeWorks")}
                 </p>
               )}
