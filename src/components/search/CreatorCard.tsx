@@ -25,6 +25,8 @@ export const CreatorCard = ({ person, index, onClick }: CreatorCardProps) => {
     }
   };
 
+  console.log("Person data:", person); // Debugging log to see what data we receive
+
   return (
     <div 
       onClick={onClick}
@@ -59,21 +61,26 @@ export const CreatorCard = ({ person, index, onClick }: CreatorCardProps) => {
           {/* General information section */}
           <div className="space-y-3">
             {person.birthday && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span>{formatDate(person.birthday)}</span>
-                {person.place_of_birth && (
-                  <>
-                    <span className="text-xs">•</span>
-                    <span>{person.place_of_birth}</span>
-                  </>
-                )}
+              <div className="text-sm">
+                <span className="font-medium">{t('creator.birthDate')}:</span>{' '}
+                <span className="text-muted-foreground">{formatDate(person.birthday)}</span>
+              </div>
+            )}
+            
+            {person.place_of_birth && (
+              <div className="text-sm">
+                <span className="font-medium">{t('creator.placeOfBirth')}:</span>{' '}
+                <span className="text-muted-foreground">{person.place_of_birth}</span>
               </div>
             )}
 
             {person.biography && (
-              <p className="text-sm text-muted-foreground line-clamp-2">
-                {person.biography}
-              </p>
+              <div className="text-sm">
+                <span className="font-medium">{t('creator.biography')}:</span>{' '}
+                <p className="text-muted-foreground mt-1 line-clamp-2">
+                  {person.biography}
+                </p>
+              </div>
             )}
           </div>
 
