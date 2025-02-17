@@ -1,3 +1,4 @@
+
 export interface TMDBMovie {
   id: number;
   title: string;
@@ -24,6 +25,7 @@ export interface TMDBPerson {
     title?: string;
     name?: string;
     media_type: string;
+    popularity?: number;
   }>;
 }
 

@@ -46,8 +46,8 @@ export const CreatorCard = ({ person, index }: CreatorCardProps) => {
           <div className="flex flex-wrap gap-2 justify-center">
             {person.known_for
               .slice(0, 3)
-              .sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
-              .map((work: any) => (
+              .sort((a, b) => ((b.popularity || 0) - (a.popularity || 0)))
+              .map((work) => (
                 <span
                   key={work.id}
                   className="text-xs bg-accent/50 px-3 py-1.5 rounded-full"
