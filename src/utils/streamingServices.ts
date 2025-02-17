@@ -1,10 +1,11 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export const getStreamingServicesByRegion = async (region: string) => {
   const { data: services, error } = await supabase
     .from('streaming_services')
     .select('*')
-    .contains('regions', [region.toLowerCase()]);
+    .filter('regions', 'cs', `{${region.toLowerCase()}}`);
 
   if (error) {
     console.error('Error fetching streaming services:', error);
@@ -17,4 +18,5 @@ export const getStreamingServicesByRegion = async (region: string) => {
 export const languageToRegion: { [key: string]: string } = {
   pl: 'pl',
   en: 'en',
+  // Add other language mappings as needed
 };
