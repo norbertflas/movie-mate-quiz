@@ -1,3 +1,4 @@
+
 export default {
   translation: {
     common: {
@@ -146,7 +147,11 @@ export default {
       basedOn: "Na podstawie Twoich preferencji",
       popular: "Popularne teraz",
       trending: "W trendach",
-      new: "Nowości"
+      new: "Nowości",
+      prompt: "Powiedz nam, czego szukasz",
+      promptPlaceholder: "Przykład: Szukam wzruszającej komedii o relacjach rodzinnych, podobnej do Little Miss Sunshine",
+      success: "Rekomendacje gotowe!",
+      aiGenerated: "Oto Twoje rekomendacje oparte na AI"
     }
   }
 };
