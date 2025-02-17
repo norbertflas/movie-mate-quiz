@@ -84,7 +84,7 @@ export const PersonalizedRecommendationsForm = () => {
           />
           
           <div className="space-y-2">
-            <h3 className="text-sm font-medium">{t("streaming.availableOn")}</h3>
+            <h3 className="text-sm font-medium">{t("streaming.availableOn", "Available on")}</h3>
             <div className="flex flex-wrap gap-2">
               {VOD_SERVICES.map((service) => (
                 <Badge key={service} variant="secondary">
@@ -106,7 +106,7 @@ export const PersonalizedRecommendationsForm = () => {
                 {t("common.loading")}
               </>
             ) : (
-              t("recommendations.submit")
+              t("recommendations.submit", "Get Recommendations")
             )}
           </Button>
         </form>
