@@ -7,25 +7,27 @@ export async function getStreamingProviders(title: string, year?: string) {
     
     const jw = new JustWatch({ locale: 'en_US' }); // Initialize with locale
     
-    // Search for the movie using searchItems method
-    const searchResult = await jw.searchItems({
-      query: title,
-      content_types: ['movie']
+    // Use get method to search for the movie
+    const searchResults = await jw.get('/search/titles', {
+      params: {
+        query: title,
+        content_types: ['movie']
+      }
     });
     
-    console.log('Search results:', searchResult);
+    console.log('Search results:', searchResults);
 
-    if (!searchResult.items?.length) {
+    if (!searchResults?.items?.length) {
       console.log('No results found for:', title);
       return [];
     }
 
     // Try to find exact match with title and year if provided
-    const exactMatch = searchResult.items.find(item => {
+    const exactMatch = searchResults.items.find(item => {
       const titleMatch = item.title.toLowerCase() === title.toLowerCase();
       if (!year) return titleMatch;
       return titleMatch && item.original_release_year.toString() === year;
-    }) || searchResult.items[0]; // Fallback to first result if no exact match
+    }) || searchResults.items[0]; // Fallback to first result if no exact match
 
     if (!exactMatch) {
       console.log('No match found for:', title);
@@ -34,11 +36,8 @@ export async function getStreamingProviders(title: string, year?: string) {
 
     console.log('Found match:', exactMatch);
 
-    // Get detailed offers using getTitle method with correct parameters
-    const details = await jw.getTitle({
-      id: exactMatch.id,
-      content_type: 'movie'
-    });
+    // Get detailed offers using the direct API endpoint
+    const details = await jw.get(`/titles/movie/${exactMatch.id}/locale/en_US`);
     
     console.log('Title details:', details);
 
