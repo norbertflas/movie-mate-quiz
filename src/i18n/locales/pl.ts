@@ -1,3 +1,4 @@
+
 export default {
   translation: {
     common: {
@@ -64,7 +65,19 @@ export default {
       becauseYouLiked: "Ponieważ lubisz:",
       becauseOfGenres: "Ze względu na gatunki:",
       becauseOfMood: "Ze względu na nastrój:",
-      becausePopular: "Popularne wśród podobnych użytkowników"
+      becausePopular: "Popularne wśród podobnych użytkowników",
+      prompt: "Powiedz nam, czego szukasz",
+      promptPlaceholder: "Przykład: Chcę obejrzeć wzruszającą komedię o relacjach rodzinnych, podobną do Little Miss Sunshine",
+      submit: "Otrzymaj rekomendacje",
+      forYou: "Dla Ciebie",
+      basedOn: "Na podstawie Twoich preferencji",
+      success: "Rekomendacje gotowe!",
+      aiGenerated: "Oto Twoje rekomendacje wygenerowane przez AI"
+    },
+    streaming: {
+      availableOn: "Dostępne na",
+      watchOn: "Obejrzyj na {{service}}",
+      clickToWatch: "Kliknij, aby obejrzeć"
     },
     errors: {
       recommendationError: "Nie udało się wygenerować rekomendacji",
