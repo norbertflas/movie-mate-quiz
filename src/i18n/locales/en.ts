@@ -1,5 +1,5 @@
 
-export default {
+const translations = {
   translation: {
     common: {
       search: "Search",
@@ -138,3 +138,5 @@ export default {
     }
   }
 };
+
+export default translations;
