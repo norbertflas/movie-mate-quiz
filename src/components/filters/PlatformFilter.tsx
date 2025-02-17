@@ -10,7 +10,10 @@ interface PlatformFilterProps {
   onPlatformChange: (selected: string[]) => void;
 }
 
-export const PlatformFilter = ({ selectedPlatforms, onPlatformChange }: PlatformFilterProps) => {
+export const PlatformFilter = ({ 
+  selectedPlatforms = [], 
+  onPlatformChange 
+}: PlatformFilterProps) => {
   const [streamingServices, setStreamingServices] = useState<StreamingService[]>([]);
   const { i18n, t } = useTranslation();
 

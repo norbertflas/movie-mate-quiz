@@ -7,7 +7,10 @@ interface GenreFilterProps {
   onGenreChange: (selected: string[]) => void;
 }
 
-export const GenreFilter = ({ selectedGenres, onGenreChange }: GenreFilterProps) => {
+export const GenreFilter = ({ 
+  selectedGenres = [], 
+  onGenreChange 
+}: GenreFilterProps) => {
   const { t } = useTranslation();
 
   const MOVIE_GENRES = [

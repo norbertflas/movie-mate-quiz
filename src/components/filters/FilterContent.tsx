@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { MovieFilters } from "../MovieFilters";
 import { PlatformFilter } from "./PlatformFilter";
@@ -46,12 +47,16 @@ export const FilterContent = ({
   return (
     <div className="space-y-6">
       <PlatformFilter
-        value={currentFilters.platform}
-        onChange={(platform) => onFilterChange({ ...currentFilters, platform })}
+        selectedPlatforms={currentFilters.platform ? [currentFilters.platform] : []}
+        onPlatformChange={(platforms) => 
+          onFilterChange({ ...currentFilters, platform: platforms[0] })
+        }
       />
       <GenreFilter
-        value={currentFilters.genre}
-        onChange={(genre) => onFilterChange({ ...currentFilters, genre })}
+        selectedGenres={currentFilters.genre ? [currentFilters.genre] : []}
+        onGenreChange={(genres) => 
+          onFilterChange({ ...currentFilters, genre: genres[0] })
+        }
       />
       <RangeFilter
         label={t("filters.year")}
