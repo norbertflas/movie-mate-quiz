@@ -1,6 +1,6 @@
 
 import { useQuery } from "@tanstack/react-query";
-import { getStreamingAvailability } from "@/services/streamingAvailability";
+import { getStreamingProviders } from "@/services/justwatch";
 import { useToast } from "./use-toast";
 import { useTranslation } from "react-i18next";
 import type { StreamingPlatformData, StreamingAvailabilityCache } from "@/types/streaming";
@@ -53,20 +53,6 @@ const getCachedStreamingData = (movieId: number): StreamingPlatformData[] | null
   }
 };
 
-const validateStreamingData = (services: StreamingPlatformData[]): StreamingPlatformData[] => {
-  const now = new Date();
-  return services.filter(service => {
-    const endDate = service.endDate ? new Date(service.endDate) : null;
-    const startDate = service.startDate ? new Date(service.startDate) : null;
-    
-    return (
-      service.available !== false &&
-      (!endDate || endDate > now) &&
-      (!startDate || startDate <= now)
-    );
-  });
-};
-
 export const useStreamingAvailability = (tmdbId: number | undefined, title?: string, year?: string) => {
   const { t } = useTranslation();
   const { toast } = useToast();
@@ -74,19 +60,21 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
   return useQuery({
     queryKey: ['streamingAvailability', tmdbId, title, year],
     queryFn: async () => {
-      if (!tmdbId) {
-        throw new Error('TMDB ID is required');
+      if (!title) {
+        throw new Error('Title is required');
       }
 
       // Check cache first
-      const cachedData = getCachedStreamingData(tmdbId);
-      if (cachedData) {
-        console.log('Using cached streaming data for movie:', tmdbId);
-        return {
-          services: validateStreamingData(cachedData),
-          timestamp: new Date().toISOString(),
-          isStale: false
-        };
+      if (tmdbId) {
+        const cachedData = getCachedStreamingData(tmdbId);
+        if (cachedData) {
+          console.log('Using cached streaming data for movie:', tmdbId);
+          return {
+            services: cachedData,
+            timestamp: new Date().toISOString(),
+            isStale: false
+          };
+        }
       }
 
       // Check if we need to wait before making the request
@@ -99,42 +87,26 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
       lastRequestTime = Date.now();
       
       try {
-        const services = await getStreamingAvailability(tmdbId, title, year);
-        const validatedServices = validateStreamingData(services);
+        const services = await getStreamingProviders(title, year);
         
-        // Cache the validated results
-        if (validatedServices.length > 0) {
-          cacheStreamingData(tmdbId, validatedServices);
+        // Cache the results if we have a tmdbId
+        if (tmdbId && services.length > 0) {
+          cacheStreamingData(tmdbId, services);
         }
 
         return {
-          services: validatedServices,
+          services,
           timestamp: new Date().toISOString(),
           isStale: false
         };
       } catch (error: any) {
         console.error('Streaming availability error:', error);
         
-        // Parse error body if it's a string
-        const errorBody = typeof error.body === 'string' ? JSON.parse(error.body) : error.body;
-        
-        if (error?.status === 429) {
-          const retryAfter = errorBody?.retryAfter || 60;
-          
-          toast({
-            title: t("errors.rateLimitExceeded"),
-            description: t("errors.tryAgainIn", { seconds: retryAfter }),
-            variant: "destructive",
-          });
-          
-          lastRequestTime = Date.now() + (retryAfter * 1000);
-          
-          return {
-            services: [],
-            timestamp: new Date().toISOString(),
-            isStale: true
-          };
-        }
+        toast({
+          title: t("errors.streamingAvailability"),
+          description: t("errors.tryAgain"),
+          variant: "destructive",
+        });
         
         return {
           services: [],
@@ -145,7 +117,7 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
         activeRequests--;
       }
     },
-    enabled: !!tmdbId,
+    enabled: !!title,
     staleTime: CACHE_DURATION,
     gcTime: CACHE_DURATION * 2,
     retry: false,

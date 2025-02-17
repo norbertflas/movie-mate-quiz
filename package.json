@@ -52,6 +52,7 @@
     "framer-motion": "^11.18.0",
     "i18next": "^24.2.1",
     "input-otp": "^1.2.4",
+    "justwatch": "^1.0.3",
     "lucide-react": "^0.462.0",
     "next-themes": "^0.3.0",
     "react": "^18.3.1",
