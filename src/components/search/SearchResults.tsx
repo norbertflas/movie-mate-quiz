@@ -1,4 +1,3 @@
-
 import { motion, AnimatePresence } from "framer-motion";
 import { MovieCard } from "@/components/MovieCard";
 import { CreatorCard } from "./CreatorCard";
@@ -31,19 +30,17 @@ export const SearchResults = ({
     queryFn: async () => {
       if (!selectedCreator?.id) return [];
       
-      const creditsResponse = await tmdbFetch(`/person/${selectedCreator.id}/combined_credits?`);
+      const creditsResponse = await tmdbFetch(`/person/${selectedCreator.id}/combined_credits?language=pl`);
       
       const allWorks = [...creditsResponse.cast, ...creditsResponse.crew];
       const uniqueWorks = Array.from(new Map(allWorks.map(work => [work.id, work])).values());
       
-      // First, sort all works by score
       const sortedWorks = uniqueWorks
         .filter((work: any) => 
           (work.media_type === 'movie' || work.media_type === 'tv') && 
           work.poster_path
         )
         .sort((a: any, b: any) => {
-          // Calculate a comprehensive score based on vote average, vote count, and popularity
           const aScore = ((a.vote_average || 0) * Math.log(a.vote_count || 1) * (a.popularity || 0));
           const bScore = ((b.vote_average || 0) * Math.log(b.vote_count || 1) * (b.popularity || 0));
           return bScore - aScore;
@@ -61,11 +58,7 @@ export const SearchResults = ({
           department: work.department
         }));
 
-      console.log(`Is main page: ${isMainPage}, Total works: ${sortedWorks.length}`);
-      // Return only 6 best works on main page, all works on search page
-      const finalResults = isMainPage ? sortedWorks.slice(0, 6) : sortedWorks;
-      console.log(`Final results length: ${finalResults.length}`);
-      return finalResults;
+      return isMainPage ? sortedWorks.slice(0, 6) : sortedWorks;
     },
     enabled: !!selectedCreator?.id
   });
@@ -84,17 +77,12 @@ export const SearchResults = ({
     if (movie.character) {
       roleDescription = `${t("creator.asRole")} ${movie.character}`;
     } else if (movie.job) {
-      roleDescription = movie.job;
+      roleDescription = `${t("creator.job")}: ${movie.job}`;
     } else if (movie.department) {
       roleDescription = translateDepartment(movie.department);
     }
     return `${roleDescription} - ${movie.overview}`;
   };
-
-  // Add debug logs for current state
-  console.log(`Current location: ${location.pathname}`);
-  console.log(`Is main page: ${isMainPage}`);
-  console.log(`Number of movies shown: ${creatorMovies.length}`);
 
   return (
     <AnimatePresence mode="wait">
@@ -104,28 +92,36 @@ export const SearchResults = ({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.5 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          className="space-y-4"
         >
-          {searchResults.map((movie, index) => (
-            <motion.div
-              key={movie.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <MovieCard
-                title={movie.title}
-                year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "N/A"}
-                platform="TMDB"
-                genre={t(`movie.${getGenreTranslationKey(movie.genre_ids?.[0] || 0)}`)}
-                imageUrl={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
-                description={movie.overview}
-                trailerUrl={`https://www.youtube.com/watch?v=${movie.video_id || ''}`}
-                rating={movie.vote_average * 10}
-                tmdbId={movie.id}
-              />
-            </motion.div>
-          ))}
+          <h2 className="text-2xl font-bold">
+            {t("search.searchResults")}
+            <span className="text-muted-foreground text-lg font-normal ml-2">
+              ({t("search.totalResults", { count: searchResults.length })})
+            </span>
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {searchResults.map((movie, index) => (
+              <motion.div
+                key={movie.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <MovieCard
+                  title={movie.title}
+                  year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "N/A"}
+                  platform="TMDB"
+                  genre={t(`movie.${getGenreTranslationKey(movie.genre_ids?.[0] || 0)}`)}
+                  imageUrl={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+                  description={movie.overview}
+                  trailerUrl={`https://www.youtube.com/watch?v=${movie.video_id || ''}`}
+                  rating={movie.vote_average * 10}
+                  tmdbId={movie.id}
+                />
+              </motion.div>
+            ))}
+          </div>
         </motion.div>
       )}
 
@@ -163,10 +159,11 @@ export const SearchResults = ({
           >
             <div>
               <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-blue-500">
-                {isMainPage ? t("creator.bestWorks") : t("creator.filmography")}
+                {t("creator.filmographyTitle", { name: selectedCreator.name })}
               </h2>
               <p className="text-muted-foreground mt-2">
-                {creatorMovies.length} {t("creator.moviesAndShows")}
+                {isMainPage ? t("creator.bestMovies") : t("creator.allMovies")} 
+                ({creatorMovies.length} {t("creator.moviesAndShows")})
               </p>
             </div>
             <Button
