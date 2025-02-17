@@ -105,4 +105,21 @@ export default {
     watchOn: "Watch on {{service}}",
     clickToWatch: "Click to watch now"
   },
+  navigation: {
+    home: "Home",
+    search: "Search",
+    quiz: "Quiz",
+    favorites: "Favorites",
+    ratings: "Ratings",
+    logout: "Log Out",
+    streamingServices: "Streaming Services"
+  },
+  recommendations: {
+    personalized: "Personalized Recommendations",
+    forYou: "For You",
+    basedOn: "Based on your preferences",
+    popular: "Popular Now",
+    trending: "Trending",
+    new: "New Releases"
+  }
 };

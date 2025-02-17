@@ -137,6 +137,14 @@ export default {
       description1: "MovieFinder to więcej niż tylko wyszukiwarka filmów. To Twój osobisty przewodnik po świecie kina, który pomoże Ci odkryć filmy idealnie dopasowane do Twoich upodobań.",
       description2: "Rozpocznij swoją przygodę już teraz i pozwól nam pomóc Ci znaleźć Twój następny ulubiony film.",
       startJourney: "Rozpocznij swoją filmową podróż"
+    },
+    recommendations: {
+      personalized: "Spersonalizowane rekomendacje",
+      forYou: "Dla Ciebie",
+      basedOn: "Na podstawie Twoich preferencji",
+      popular: "Popularne teraz",
+      trending: "W trendach",
+      new: "Nowości"
     }
   }
 };

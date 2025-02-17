@@ -1,3 +1,4 @@
+
 import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router-dom";
 import { Home, Search, PlayCircle, Heart, Star } from "lucide-react";
@@ -20,7 +21,7 @@ export const NavLinks = ({ onNavigate }: NavLinksProps) => {
         className={({ isActive }) => `flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary ${isActive ? 'text-primary' : 'text-muted-foreground'}`}
       >
         <Home className="h-4 w-4" />
-        <span>Home</span>
+        <span>{t("navigation.home")}</span>
       </NavLink>
       <NavLink 
         to="/quiz" 
@@ -28,7 +29,7 @@ export const NavLinks = ({ onNavigate }: NavLinksProps) => {
         className={({ isActive }) => `flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary ${isActive ? 'text-primary' : 'text-muted-foreground'}`}
       >
         <PlayCircle className="h-4 w-4" />
-        <span>Quiz</span>
+        <span>{t("navigation.quiz")}</span>
       </NavLink>
       <NavLink 
         to="/search" 
@@ -36,7 +37,7 @@ export const NavLinks = ({ onNavigate }: NavLinksProps) => {
         className={({ isActive }) => `flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary ${isActive ? 'text-primary' : 'text-muted-foreground'}`}
       >
         <Search className="h-4 w-4" />
-        <span>Search</span>
+        <span>{t("navigation.search")}</span>
       </NavLink>
       <NavLink 
         to="/favorites" 
@@ -44,7 +45,7 @@ export const NavLinks = ({ onNavigate }: NavLinksProps) => {
         className={({ isActive }) => `flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary ${isActive ? 'text-primary' : 'text-muted-foreground'}`}
       >
         <Heart className="h-4 w-4" />
-        <span>Favorites</span>
+        <span>{t("navigation.favorites")}</span>
       </NavLink>
       <NavLink 
         to="/ratings" 
@@ -52,7 +53,7 @@ export const NavLinks = ({ onNavigate }: NavLinksProps) => {
         className={({ isActive }) => `flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary ${isActive ? 'text-primary' : 'text-muted-foreground'}`}
       >
         <Star className="h-4 w-4" />
-        <span>Ratings</span>
+        <span>{t("navigation.ratings")}</span>
       </NavLink>
     </nav>
   );
