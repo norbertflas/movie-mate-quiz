@@ -1,16 +1,17 @@
+
 import { useState } from "react";
-import { CardHeader, CardContent } from "./ui/card";
-import { MovieCardContainer } from "./movie/MovieCardContainer";
-import { MovieCardHeader } from "./movie/MovieCardHeader";
-import { MovieCardMedia } from "./movie/MovieCardMedia";
-import { MovieExpandedContent } from "./movie/MovieExpandedContent";
-import { useMovieRating } from "./movie/MovieRatingLogic";
+import { CardHeader, CardContent } from "@/components/ui/card";
+import { MovieCardContainer } from "@/components/movie/MovieCardContainer";
+import { MovieCardHeader } from "@/components/movie/MovieCardHeader";
+import { MovieCardMedia } from "@/components/movie/MovieCardMedia";
+import { MovieExpandedContent } from "@/components/movie/MovieExpandedContent";
+import { useMovieRating } from "@/components/movie/MovieRatingLogic";
 import { motion } from "framer-motion";
-import { Badge } from "./ui/badge";
-import { MovieTrailerSection } from "./movie/MovieTrailerSection";
-import { MovieCardWrapper } from "./movie/MovieCardWrapper";
+import { Badge } from "@/components/ui/badge";
+import { MovieTrailerSection } from "@/components/movie/MovieTrailerSection";
+import { MovieCardWrapper } from "@/components/movie/MovieCardWrapper";
 import type { MovieInsights, MovieCardProps } from "@/types/movie";
-import { UnifiedMovieDetails } from "./movie/UnifiedMovieDetails";
+import { UnifiedMovieDetails } from "@/components/movie/UnifiedMovieDetails";
 import type { TMDBMovie } from "@/services/tmdb";
 import { useTranslation } from "react-i18next";
 import type { StreamingPlatformData } from "@/types/streaming";
@@ -77,7 +78,7 @@ export const MovieCard = ({
     title,
     release_date: year,
     overview: description,
-    poster_path: imageUrl.replace('https://image.tmdb.org/t/p/w500', ''),
+    poster_path: imageUrl?.replace('https://image.tmdb.org/t/p/w500', '') || '',
     vote_average: rating / 10,
     vote_count: 0,
     popularity: 0,
@@ -102,7 +103,7 @@ export const MovieCard = ({
             <MovieCardMedia
               showTrailer={showTrailer}
               trailerUrl={trailerUrl}
-              imageUrl={imageUrl || "/placeholder.svg"}
+              imageUrl={imageUrl}
               title={title}
             />
           </div>
@@ -136,19 +137,7 @@ export const MovieCard = ({
         <UnifiedMovieDetails
           isOpen={isDetailsOpen}
           onClose={handleCloseDetails}
-          movie={{
-            id: tmdbId || 0,
-            title,
-            release_date: year,
-            overview: description,
-            poster_path: imageUrl?.replace('https://image.tmdb.org/t/p/w500', '') || '',
-            vote_average: rating / 10,
-            vote_count: 0,
-            popularity: 0,
-            backdrop_path: null,
-            genre_ids: [],
-            explanations: explanations
-          }}
+          movie={movieData}
           explanations={explanations}
           streamingServices={availableServices}
         />
