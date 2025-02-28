@@ -1,6 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { getStreamingProviders } from "@/services/justwatch";
+import { getWatchmodeStreamingAvailability } from "@/services/watchmode";
 import { useToast } from "./use-toast";
 import { useTranslation } from "react-i18next";
 import type { StreamingPlatformData, StreamingAvailabilityCache } from "@/types/streaming";
@@ -53,6 +54,23 @@ const getCachedStreamingData = (movieId: number): StreamingPlatformData[] | null
   }
 };
 
+// Function to merge streaming results with deduplication
+const mergeStreamingResults = (results: StreamingPlatformData[][]): StreamingPlatformData[] => {
+  const serviceMap = new Map<string, StreamingPlatformData>();
+  
+  results.forEach(sources => {
+    sources.forEach(source => {
+      const lowerCaseName = source.service.toLowerCase();
+      // Only add if not already exists, or if the current one has a logo and the existing one doesn't
+      if (!serviceMap.has(lowerCaseName) || (!serviceMap.get(lowerCaseName)?.logo && source.logo)) {
+        serviceMap.set(lowerCaseName, source);
+      }
+    });
+  });
+  
+  return Array.from(serviceMap.values());
+};
+
 export const useStreamingAvailability = (tmdbId: number | undefined, title?: string, year?: string) => {
   const { t } = useTranslation();
   const { toast } = useToast();
@@ -87,15 +105,31 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
       lastRequestTime = Date.now();
       
       try {
-        const services = await getStreamingProviders(title, year);
+        // Fetch from multiple sources in parallel
+        const results = await Promise.allSettled([
+          // JustWatch API
+          getStreamingProviders(title, year),
+          // Watchmode API (if tmdbId is available)
+          ...(tmdbId ? [getWatchmodeStreamingAvailability(tmdbId)] : [])
+        ]);
+        
+        // Process results, filtering out rejected promises
+        const availableServices = results
+          .filter((result): result is PromiseFulfilledResult<StreamingPlatformData[]> => 
+            result.status === 'fulfilled'
+          )
+          .map(result => result.value);
+        
+        // Merge results from different sources
+        const mergedServices = mergeStreamingResults(availableServices);
         
         // Cache the results if we have a tmdbId
-        if (tmdbId && services.length > 0) {
-          cacheStreamingData(tmdbId, services);
+        if (tmdbId && mergedServices.length > 0) {
+          cacheStreamingData(tmdbId, mergedServices);
         }
 
         return {
-          services,
+          services: mergedServices,
           timestamp: new Date().toISOString(),
           isStale: false
         };

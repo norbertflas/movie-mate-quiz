@@ -77,14 +77,23 @@ export default {
     streaming: {
       availableOn: "Dostępne na",
       watchOn: "Obejrzyj na {{service}}",
-      clickToWatch: "Kliknij, aby obejrzeć"
+      clickToWatch: "Kliknij, aby obejrzeć",
+      lastChecked: "Ostatnio sprawdzono: {{time}}",
+      notAvailable: "Nie znaleziono dostępnych serwisów streamingowych",
+      errorChecking: "Błąd podczas sprawdzania dostępności streamingu",
+      dataStale: "Dane mogą być nieaktualne",
+      availabilityMayChange: "Dostępność mogła się zmienić"
     },
     errors: {
       recommendationError: "Nie udało się wygenerować rekomendacji",
       tryAgain: "Spróbuj ponownie później",
       searchError: "Błąd wyszukiwania",
       searchTooShort: "Zbyt krótkie zapytanie",
-      searchMinLength: "Wpisz co najmniej jeden znak"
+      searchMinLength: "Wpisz co najmniej jeden znak",
+      streamingAvailability: "Błąd sprawdzania dostępności streamingu",
+      trailerNotFound: "Nie znaleziono zwiastunu",
+      trailerError: "Błąd podczas ładowania zwiastunu",
+      loadingServices: "Błąd podczas ładowania serwisów streamingowych"
     },
     movie: {
       action: "Akcja",
