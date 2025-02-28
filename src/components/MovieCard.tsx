@@ -42,7 +42,7 @@ export const MovieCard = ({
   const { userRating, handleRating } = useMovieRating(title);
   const { data: availabilityData, isLoading, isError } = useStreamingAvailability(tmdbId, title, year);
 
-  // Transform streaming services to the expected format
+  // Transform streaming services to the expected format with required link property
   const availableServices = availabilityData?.services.map(service => ({
     service: service.service,
     link: service.link || `https://${service.service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch/${tmdbId}`,
@@ -55,10 +55,13 @@ export const MovieCard = ({
         logo: undefined
       };
     }
+    // Handle object type services
     return {
-      service: service.service,
-      link: service.link || `https://${service.service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch/${tmdbId}`,
-      logo: service.logo
+      service: typeof service === 'object' && service !== null ? service.service : String(service),
+      link: typeof service === 'object' && service !== null && service.link ? 
+        service.link : 
+        `https://${(typeof service === 'object' && service !== null ? service.service : String(service)).toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch/${tmdbId}`,
+      logo: typeof service === 'object' && service !== null ? service.logo : undefined
     };
   });
 

@@ -1,3 +1,4 @@
+
 export interface MovieInsights {
   themes: string[];
   contentWarnings: string[];
@@ -16,7 +17,7 @@ export interface MovieCardProps {
   trailerUrl: string;
   rating: number;
   tags?: string[];
-  streamingServices?: string[];
+  streamingServices?: Array<string | { service: string; link?: string; logo?: string }>;
   tmdbId?: number;
   explanations?: string[];
   onClose?: () => void;
