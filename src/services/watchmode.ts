@@ -67,6 +67,8 @@ export async function getWatchmodeStreamingAvailability(
   region: string = 'US'
 ): Promise<StreamingPlatformData[]> {
   try {
+    console.log(`Fetching Watchmode streaming availability for movie ${tmdbId} in region ${region}`);
+    
     // Call Supabase Edge Function to get Watchmode data
     const { data, error } = await supabase.functions.invoke('watchmode-availability', {
       body: { tmdbId, region },
@@ -79,8 +81,11 @@ export async function getWatchmodeStreamingAvailability(
     }
 
     if (!data?.sources || !Array.isArray(data.sources)) {
+      console.log('No streaming sources found from Watchmode');
       return [];
     }
+
+    console.log(`Found ${data.sources.length} Watchmode streaming sources`);
 
     // Transform Watchmode sources to StreamingPlatformData format
     return data.sources
