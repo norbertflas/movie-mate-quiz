@@ -60,7 +60,108 @@ async function retryWithBackoff<T>(
 }
 
 /**
- * Get streaming availability from Watchmode API
+ * Search for a movie title using Watchmode API
+ */
+export async function searchWatchmodeTitle(
+  title: string,
+  year?: string
+): Promise<{ id: number; name: string; type: string; year: number } | null> {
+  try {
+    console.log(`Searching Watchmode for title: ${title} ${year ? `(${year})` : ''}`);
+    
+    // Construct the search query
+    const searchQuery = year ? `${title} ${year}` : title;
+    
+    // Call Supabase Edge Function to search for the title
+    const { data, error } = await supabase.functions.invoke('watchmode-title-search', {
+      body: JSON.stringify({ 
+        searchQuery, 
+        searchField: 'name',
+        types: 'movie,tv_series'
+      }),
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    if (error) {
+      console.error('Error searching Watchmode title:', error);
+      return null;
+    }
+
+    if (!data?.results?.length) {
+      console.log('No Watchmode results found for:', title);
+      return null;
+    }
+
+    console.log(`Found ${data.results.length} Watchmode results for: ${title}`);
+    
+    // If we have a year, try to find an exact match
+    if (year && data.results.length > 1) {
+      const yearNum = parseInt(year);
+      const exactMatch = data.results.find((result: any) => result.year === yearNum);
+      if (exactMatch) {
+        console.log(`Found exact year match for ${title} (${year}):`, exactMatch);
+        return exactMatch;
+      }
+    }
+    
+    // Return the first result
+    return data.results[0];
+  } catch (error) {
+    console.error('Error in searchWatchmodeTitle:', error);
+    return null;
+  }
+}
+
+/**
+ * Get streaming availability from Watchmode API using title ID
+ */
+export async function getWatchmodeTitleDetails(
+  titleId: number,
+  region: string = 'US'
+): Promise<StreamingPlatformData[]> {
+  try {
+    console.log(`Fetching Watchmode details for title ID ${titleId} in region ${region}`);
+    
+    // Call Supabase Edge Function to get title details
+    const { data, error } = await supabase.functions.invoke('watchmode-title-details', {
+      body: JSON.stringify({ 
+        titleId, 
+        region,
+        includeSources: true
+      }),
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    if (error) {
+      console.error('Error fetching Watchmode title details:', error);
+      return [];
+    }
+
+    if (!data?.sources || !Array.isArray(data.sources)) {
+      console.log('No streaming sources found from Watchmode for ID:', titleId);
+      return [];
+    }
+
+    console.log(`Found ${data.sources.length} Watchmode streaming sources for ID: ${titleId}`);
+
+    // Transform Watchmode sources to StreamingPlatformData format
+    return data.sources
+      .filter((source: WatchmodeSource) => source.type === 'sub' || source.type === 'free')
+      .map((source: WatchmodeSource) => ({
+        service: source.name,
+        link: source.web_url || `https://${source.name.toLowerCase().replace(/\s/g, '')}.com`,
+        logo: `https://cdn.watchmode.com/provider_logos/${source.source_id}_100px.png`,
+        available: true,
+        startDate: new Date().toISOString()
+      }));
+  } catch (error) {
+    console.error('Error in getWatchmodeTitleDetails:', error);
+    return [];
+  }
+}
+
+/**
+ * Get streaming availability from Watchmode API using TMDB ID
  */
 export async function getWatchmodeStreamingAvailability(
   tmdbId: number,
@@ -71,7 +172,7 @@ export async function getWatchmodeStreamingAvailability(
     
     // Call Supabase Edge Function to get Watchmode data
     const { data, error } = await supabase.functions.invoke('watchmode-availability', {
-      body: JSON.stringify({ tmdbId, region }), // Explicitly stringify the body
+      body: JSON.stringify({ tmdbId, region }),
       headers: { 'Content-Type': 'application/json' }
     });
 

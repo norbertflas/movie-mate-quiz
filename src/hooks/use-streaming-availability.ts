@@ -1,7 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { getStreamingProviders } from "@/services/justwatch";
-import { getWatchmodeStreamingAvailability } from "@/services/watchmode";
+import { getWatchmodeStreamingAvailability, searchWatchmodeTitle, getWatchmodeTitleDetails } from "@/services/watchmode";
 import { useToast } from "./use-toast";
 import { useTranslation } from "react-i18next";
 import type { StreamingPlatformData, StreamingAvailabilityCache } from "@/types/streaming";
@@ -82,7 +82,7 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
         throw new Error('Title is required');
       }
 
-      // Check cache first
+      // Check cache first if tmdbId is available
       if (tmdbId) {
         const cachedData = getCachedStreamingData(tmdbId);
         if (cachedData) {
@@ -107,13 +107,30 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
       try {
         console.log('Fetching streaming availability for:', title, tmdbId);
         
+        // Array to collect streaming data from different sources
+        const availableServicesPromises = [];
+        
+        // 1. Try JustWatch API
+        availableServicesPromises.push(getStreamingProviders(title, year));
+        
+        // 2. If tmdbId is available, try Watchmode API via tmdbId
+        if (tmdbId) {
+          availableServicesPromises.push(getWatchmodeStreamingAvailability(tmdbId));
+        }
+        // 3. If tmdbId is not available, try Watchmode API via title search
+        else {
+          const watchmodeTitlePromise = async () => {
+            const titleResult = await searchWatchmodeTitle(title, year);
+            if (titleResult) {
+              return getWatchmodeTitleDetails(titleResult.id);
+            }
+            return [];
+          };
+          availableServicesPromises.push(watchmodeTitlePromise());
+        }
+        
         // Fetch from multiple sources in parallel
-        const results = await Promise.allSettled([
-          // JustWatch API
-          getStreamingProviders(title, year),
-          // Watchmode API (if tmdbId is available)
-          ...(tmdbId ? [getWatchmodeStreamingAvailability(tmdbId)] : [])
-        ]);
+        const results = await Promise.allSettled(availableServicesPromises);
         
         // Process results, filtering out rejected promises
         const availableServices = results

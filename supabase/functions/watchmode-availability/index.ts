@@ -1,181 +1,122 @@
 
-// Follow this setup guide to integrate the Deno language server with your editor:
-// https://deno.land/manual/getting_started/setup_your_environment
-// This enables autocomplete, go to definition, etc.
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 
+const WATCHMODE_API_BASE = 'https://api.watchmode.com/v1';
+
+// CORS headers for the response
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-Deno.serve(async (req) => {
+serve(async (req: Request) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Parse the request body carefully with error handling
-    let reqBody;
+    // Get the Watchmode API key from environment
+    const watchmodeApiKey = Deno.env.get('WATCHMODE_API_KEY');
+    if (!watchmodeApiKey) {
+      throw new Error('WATCHMODE_API_KEY environment variable is not set');
+    }
+
+    // Parse the JSON request body
+    let requestData;
     try {
-      const text = await req.text();
-      console.log("Request body text:", text);
-      
-      if (!text) {
-        throw new Error("Empty request body");
-      }
-      
-      reqBody = JSON.parse(text);
-    } catch (e) {
-      console.error('Failed to parse request body:', e);
+      requestData = await req.json();
+    } catch (error) {
+      console.error('Error parsing request body:', error);
       return new Response(
-        JSON.stringify({ error: 'Invalid request body: ' + e.message }),
-        { 
-          status: 400,
-          headers: { 
-            ...corsHeaders,
-            'Content-Type': 'application/json'
-          } 
-        }
+        JSON.stringify({ error: 'Invalid request body' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const { tmdbId, region = 'US' } = reqBody;
+    const { tmdbId, region = 'US' } = requestData;
 
     if (!tmdbId) {
       return new Response(
-        JSON.stringify({ error: 'TMDB ID is required' }),
-        { 
-          status: 400,
-          headers: { 
-            ...corsHeaders,
-            'Content-Type': 'application/json'
-          } 
-        }
+        JSON.stringify({ error: 'Missing tmdbId parameter' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const watchmodeApiKey = Deno.env.get('WATCHMODE_API_KEY');
+    console.log(`Processing Watchmode request for TMDB ID: ${tmdbId}, region: ${region}`);
+
+    // 1. First, get the Watchmode ID for the TMDB ID
+    const idMappingUrl = new URL(`${WATCHMODE_API_BASE}/lookup/`);
+    idMappingUrl.searchParams.append('apiKey', watchmodeApiKey);
+    idMappingUrl.searchParams.append('source_id', tmdbId.toString());
+    idMappingUrl.searchParams.append('source', 'tmdb');
+
+    console.log(`Looking up Watchmode ID for TMDB ID: ${tmdbId}`);
     
-    if (!watchmodeApiKey) {
-      console.error('WATCHMODE_API_KEY not configured');
+    const mappingResponse = await fetch(idMappingUrl.toString());
+    const mappingData = await mappingResponse.json();
+    
+    if (!mappingResponse.ok) {
+      console.error('Watchmode ID mapping error:', mappingData);
       return new Response(
-        JSON.stringify({ error: 'API key not configured' }),
-        { 
-          status: 500,
-          headers: { 
-            ...corsHeaders,
-            'Content-Type': 'application/json'
-          } 
-        }
+        JSON.stringify({ 
+          error: 'Failed to find Watchmode ID',
+          details: mappingData,
+          sources: []
+        }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`Fetching Watchmode availability for movie: ${tmdbId}, region: ${region}`);
+    const watchmodeId = mappingData.id;
+    if (!watchmodeId) {
+      console.log(`No Watchmode ID found for TMDB ID: ${tmdbId}`);
+      return new Response(
+        JSON.stringify({ sources: [] }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
-    // First, get the Watchmode title ID from TMDB ID
-    const titleIdUrl = `https://api.watchmode.com/v1/title/tmdb_${tmdbId}/details/?apiKey=${watchmodeApiKey}&append_to_response=sources`;
+    // 2. Now, get the title details and sources
+    const detailsUrl = new URL(`${WATCHMODE_API_BASE}/title/${watchmodeId}/details/`);
+    detailsUrl.searchParams.append('apiKey', watchmodeApiKey);
+    detailsUrl.searchParams.append('append_to_response', 'sources');
+    if (region) {
+      detailsUrl.searchParams.append('regions', region);
+    }
+
+    console.log(`Fetching details for Watchmode ID: ${watchmodeId}`);
     
-    console.log('Requesting Watchmode title ID');
-    const titleResponse = await fetch(titleIdUrl);
-    
-    if (!titleResponse.ok) {
-      const errorText = await titleResponse.text();
-      console.error('Watchmode API error response:', errorText);
-      
+    const detailsResponse = await fetch(detailsUrl.toString());
+    const detailsData = await detailsResponse.json();
+
+    if (!detailsResponse.ok) {
+      console.error('Watchmode details error:', detailsData);
       return new Response(
         JSON.stringify({ 
-          error: `Watchmode API error: ${titleResponse.status} ${titleResponse.statusText}`,
-          details: errorText
+          error: 'Failed to retrieve details',
+          details: detailsData,
+          sources: []
         }),
-        { 
-          status: titleResponse.status,
-          headers: { 
-            ...corsHeaders,
-            'Content-Type': 'application/json'
-          } 
-        }
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-    
-    const titleData = await titleResponse.json();
-    console.log('Watchmode title data received:', { id: titleData.id, title: titleData.title });
-    
-    // Return sources directly if they were included in the response
-    if (titleData.sources && Array.isArray(titleData.sources)) {
-      const filteredSources = titleData.sources.filter(source => 
-        source.region === region || source.region === region.toUpperCase()
-      );
-      
-      console.log(`Found ${filteredSources.length} sources for region ${region}`);
-      
-      return new Response(
-        JSON.stringify({ 
-          sources: filteredSources,
-          title: titleData.title,
-          id: titleData.id
-        }),
-        { 
-          headers: { 
-            ...corsHeaders,
-            'Content-Type': 'application/json'
-          } 
-        }
-      );
-    }
-    
-    // If sources weren't included, fetch them separately
-    const sourcesUrl = `https://api.watchmode.com/v1/title/${titleData.id}/sources/?apiKey=${watchmodeApiKey}&regions=${region}`;
-    
-    console.log('Requesting sources for Watchmode title ID:', titleData.id);
-    const sourcesResponse = await fetch(sourcesUrl);
-    
-    if (!sourcesResponse.ok) {
-      const errorText = await sourcesResponse.text();
-      console.error('Watchmode sources API error response:', errorText);
-      
-      return new Response(
-        JSON.stringify({ 
-          error: `Watchmode API error: ${sourcesResponse.status} ${sourcesResponse.statusText}`,
-          details: errorText
-        }),
-        { 
-          status: sourcesResponse.status,
-          headers: { 
-            ...corsHeaders,
-            'Content-Type': 'application/json'
-          } 
-        }
-      );
-    }
-    
-    const sources = await sourcesResponse.json();
-    console.log(`Found ${sources.length} sources for region ${region}`);
-    
+
+    // Return the formatted response
     return new Response(
-      JSON.stringify({ 
-        sources,
-        title: titleData.title,
-        id: titleData.id
+      JSON.stringify({
+        id: detailsData.id,
+        title: detailsData.title,
+        type: detailsData.type,
+        sources: detailsData.sources || []
       }),
-      { 
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        } 
-      }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     console.error('Error in watchmode-availability function:', error);
     return new Response(
-      JSON.stringify({ error: error.message, stack: error.stack }),
-      { 
-        status: 500,
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        } 
-      }
+      JSON.stringify({ error: error.message, sources: [] }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
