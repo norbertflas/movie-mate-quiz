@@ -43,14 +43,24 @@ export const MovieCard = ({
   const { userRating, handleRating } = useMovieRating(title);
   const { data: availabilityData, isLoading, isError } = useStreamingAvailability(tmdbId, title, year);
 
-  const availableServices = availabilityData?.services || streamingServices.map(service => {
+  // Ensure all streaming services have a link property (no longer optional)
+  const availableServices = availabilityData?.services.map(service => ({
+    service: service.service,
+    link: service.link || `https://${service.service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch/${tmdbId}`,
+    logo: service.logo
+  })) || streamingServices.map(service => {
     if (typeof service === 'string') {
       return {
         service,
         link: `https://${service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch/${tmdbId}`,
       };
     }
-    return service;
+    return {
+      service: service.service,
+      // Ensure link is not optional by providing a fallback
+      link: service.link || `https://${service.service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch/${tmdbId}`,
+      logo: service.logo
+    };
   });
 
   const handleCardClick = () => {
@@ -120,7 +130,7 @@ export const MovieCard = ({
                   <div className="flex flex-wrap gap-2">
                     {availableServices.map((service, index) => (
                       <Badge key={index} variant="outline">
-                        {typeof service === 'string' ? service : service.service}
+                        {service.service}
                       </Badge>
                     ))}
                   </div>

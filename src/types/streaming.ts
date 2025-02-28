@@ -10,7 +10,7 @@ export interface StreamingPlatformData {
   available: boolean;
   startDate?: string;
   endDate?: string;
-  link?: string;
+  link: string; // Changed from optional to required
   logo?: string;
 }
 

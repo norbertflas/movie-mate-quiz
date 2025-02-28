@@ -123,13 +123,19 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
         // Merge results from different sources
         const mergedServices = mergeStreamingResults(availableServices);
         
+        // Ensure all services have a link property
+        const servicesWithLinks = mergedServices.map(service => ({
+          ...service,
+          link: service.link || `https://${service.service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch/${tmdbId || ''}`,
+        }));
+        
         // Cache the results if we have a tmdbId
-        if (tmdbId && mergedServices.length > 0) {
-          cacheStreamingData(tmdbId, mergedServices);
+        if (tmdbId && servicesWithLinks.length > 0) {
+          cacheStreamingData(tmdbId, servicesWithLinks);
         }
 
         return {
-          services: mergedServices,
+          services: servicesWithLinks,
           timestamp: new Date().toISOString(),
           isStale: false
         };
