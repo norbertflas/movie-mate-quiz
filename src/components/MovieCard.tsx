@@ -55,7 +55,11 @@ export const MovieCard = ({
         logo: undefined
       };
     }
-    return service;
+    return {
+      service: service.service,
+      link: service.link || `https://${service.service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch/${tmdbId}`,
+      logo: service.logo
+    };
   });
 
   const handleCardClick = () => {

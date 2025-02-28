@@ -6,11 +6,11 @@ export interface StreamingService {
 }
 
 export interface StreamingPlatformData {
+  service: string;
   available: boolean;
   startDate?: string;
   endDate?: string;
   link?: string;
-  service: string;
   logo?: string;
 }
 
