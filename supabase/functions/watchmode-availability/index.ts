@@ -1,38 +1,74 @@
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+// Follow this setup guide to integrate the Deno language server with your editor:
+// https://deno.land/manual/getting_started/setup_your_environment
+// This enables autocomplete, go to definition, etc.
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Parse the request body
+    // Parse the request body carefully with error handling
     let reqBody;
     try {
-      reqBody = await req.json();
+      const text = await req.text();
+      console.log("Request body text:", text);
+      
+      if (!text) {
+        throw new Error("Empty request body");
+      }
+      
+      reqBody = JSON.parse(text);
     } catch (e) {
       console.error('Failed to parse request body:', e);
-      throw new Error('Invalid request body');
+      return new Response(
+        JSON.stringify({ error: 'Invalid request body: ' + e.message }),
+        { 
+          status: 400,
+          headers: { 
+            ...corsHeaders,
+            'Content-Type': 'application/json'
+          } 
+        }
+      );
     }
 
     const { tmdbId, region = 'US' } = reqBody;
 
     if (!tmdbId) {
-      throw new Error('TMDB ID is required');
+      return new Response(
+        JSON.stringify({ error: 'TMDB ID is required' }),
+        { 
+          status: 400,
+          headers: { 
+            ...corsHeaders,
+            'Content-Type': 'application/json'
+          } 
+        }
+      );
     }
 
     const watchmodeApiKey = Deno.env.get('WATCHMODE_API_KEY');
     
     if (!watchmodeApiKey) {
       console.error('WATCHMODE_API_KEY not configured');
-      throw new Error('WATCHMODE_API_KEY not configured');
+      return new Response(
+        JSON.stringify({ error: 'API key not configured' }),
+        { 
+          status: 500,
+          headers: { 
+            ...corsHeaders,
+            'Content-Type': 'application/json'
+          } 
+        }
+      );
     }
 
     console.log(`Fetching Watchmode availability for movie: ${tmdbId}, region: ${region}`);
@@ -44,7 +80,22 @@ serve(async (req) => {
     const titleResponse = await fetch(titleIdUrl);
     
     if (!titleResponse.ok) {
-      throw new Error(`Watchmode API error: ${titleResponse.status} ${titleResponse.statusText}`);
+      const errorText = await titleResponse.text();
+      console.error('Watchmode API error response:', errorText);
+      
+      return new Response(
+        JSON.stringify({ 
+          error: `Watchmode API error: ${titleResponse.status} ${titleResponse.statusText}`,
+          details: errorText
+        }),
+        { 
+          status: titleResponse.status,
+          headers: { 
+            ...corsHeaders,
+            'Content-Type': 'application/json'
+          } 
+        }
+      );
     }
     
     const titleData = await titleResponse.json();
@@ -60,9 +111,9 @@ serve(async (req) => {
       
       return new Response(
         JSON.stringify({ 
-          id: titleData.id, 
+          sources: filteredSources,
           title: titleData.title,
-          sources: filteredSources 
+          id: titleData.id
         }),
         { 
           headers: { 
@@ -80,7 +131,22 @@ serve(async (req) => {
     const sourcesResponse = await fetch(sourcesUrl);
     
     if (!sourcesResponse.ok) {
-      throw new Error(`Watchmode API error: ${sourcesResponse.status} ${sourcesResponse.statusText}`);
+      const errorText = await sourcesResponse.text();
+      console.error('Watchmode sources API error response:', errorText);
+      
+      return new Response(
+        JSON.stringify({ 
+          error: `Watchmode API error: ${sourcesResponse.status} ${sourcesResponse.statusText}`,
+          details: errorText
+        }),
+        { 
+          status: sourcesResponse.status,
+          headers: { 
+            ...corsHeaders,
+            'Content-Type': 'application/json'
+          } 
+        }
+      );
     }
     
     const sources = await sourcesResponse.json();
@@ -88,9 +154,9 @@ serve(async (req) => {
     
     return new Response(
       JSON.stringify({ 
-        id: titleData.id,
+        sources,
         title: titleData.title,
-        sources 
+        id: titleData.id
       }),
       { 
         headers: { 
@@ -102,9 +168,9 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in watchmode-availability function:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message, stack: error.stack }),
       { 
-        status: 400,
+        status: 500,
         headers: { 
           ...corsHeaders,
           'Content-Type': 'application/json'

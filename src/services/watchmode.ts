@@ -71,7 +71,7 @@ export async function getWatchmodeStreamingAvailability(
     
     // Call Supabase Edge Function to get Watchmode data
     const { data, error } = await supabase.functions.invoke('watchmode-availability', {
-      body: { tmdbId, region },
+      body: JSON.stringify({ tmdbId, region }), // Explicitly stringify the body
       headers: { 'Content-Type': 'application/json' }
     });
 

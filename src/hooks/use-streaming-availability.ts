@@ -105,6 +105,8 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
       lastRequestTime = Date.now();
       
       try {
+        console.log('Fetching streaming availability for:', title, tmdbId);
+        
         // Fetch from multiple sources in parallel
         const results = await Promise.allSettled([
           // JustWatch API
@@ -119,6 +121,8 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
             result.status === 'fulfilled'
           )
           .map(result => result.value);
+        
+        console.log('Streaming results:', availableServices);
         
         // Merge results from different sources
         const mergedServices = mergeStreamingResults(availableServices);
