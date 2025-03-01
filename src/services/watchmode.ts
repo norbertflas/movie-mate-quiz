@@ -78,8 +78,7 @@ export async function searchWatchmodeTitle(
         searchQuery, 
         searchField: 'name',
         types: 'movie,tv_series'
-      },
-      headers: { 'Content-Type': 'application/json' }
+      }
     });
 
     if (error) {
@@ -128,8 +127,7 @@ export async function getWatchmodeTitleDetails(
         titleId, 
         region,
         includeSources: true
-      },
-      headers: { 'Content-Type': 'application/json' }
+      }
     });
 
     if (error) {
@@ -172,8 +170,7 @@ export async function getWatchmodeStreamingAvailability(
     
     // Call Supabase Edge Function to get Watchmode data
     const { data, error } = await supabase.functions.invoke('watchmode-availability', {
-      body: { tmdbId, region },
-      headers: { 'Content-Type': 'application/json' }
+      body: { tmdbId, region }
     });
 
     if (error) {

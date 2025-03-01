@@ -1,78 +1,118 @@
 
-import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// Define CORS headers for browser compatibility
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+};
 
-serve(async (req) => {
+const WATCHMODE_API_KEY = Deno.env.get("WATCHMODE_API_KEY");
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+const supabase = createClient(
+  SUPABASE_URL!,
+  SUPABASE_SERVICE_ROLE_KEY!
+);
+
+Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response(null, { 
+      headers: corsHeaders,
+      status: 204,
+    });
   }
 
   try {
-    // Get the Watchmode API key from environment variables
-    const apiKey = Deno.env.get('WATCHMODE_API_KEY')
-    if (!apiKey) {
-      throw new Error('WATCHMODE_API_KEY not found')
+    // Check if API key is configured
+    if (!WATCHMODE_API_KEY) {
+      console.error("WATCHMODE_API_KEY environment variable is not set");
+      return new Response(
+        JSON.stringify({ 
+          error: "Watchmode API key not configured",
+          status: 500 
+        }),
+        { 
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500 
+        }
+      );
     }
 
-    // Parse the request body
-    const requestData = await req.json()
-    const { searchQuery, searchField = 'name', types = 'movie' } = requestData
-    
+    // Parse request body
+    const { searchQuery, searchField = 'name', types = 'movie,tv_series' } = await req.json();
+
     if (!searchQuery) {
-      throw new Error('searchQuery is required')
+      return new Response(
+        JSON.stringify({ error: "Missing searchQuery parameter" }),
+        { 
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400 
+        }
+      );
     }
 
-    console.log(`Searching Watchmode for: ${searchQuery}, field: ${searchField}, types: ${types}`)
+    console.log(`Searching Watchmode titles with query: ${searchQuery}`);
 
-    // Build the search URL
-    const params = new URLSearchParams({
-      apiKey,
-      search_value: searchQuery,
-      search_field: searchField,
-      types
-    })
+    // Build search URL
+    const searchUrl = `https://api.watchmode.com/v1/search/?apiKey=${WATCHMODE_API_KEY}&search_field=${searchField}&search_value=${encodeURIComponent(searchQuery)}&types=${types}`;
     
-    const url = `https://api.watchmode.com/v1/search/?${params.toString()}`
+    console.log(`Making request to: ${searchUrl.replace(WATCHMODE_API_KEY, "[REDACTED]")}`);
     
-    // Fetch search results from Watchmode API
-    const response = await fetch(url)
-    const responseData = await response.json()
-    
+    const response = await fetch(searchUrl);
+
     if (!response.ok) {
-      console.error('Watchmode API error:', responseData)
-      throw new Error(`Watchmode API error: ${JSON.stringify(responseData)}`)
+      console.error(`Watchmode API error: ${response.status} ${response.statusText}`);
+      
+      // Check for specific error types
+      if (response.status === 429) {
+        return new Response(
+          JSON.stringify({ 
+            error: "Rate limit exceeded", 
+            status: 429,
+            retryAfter: parseInt(response.headers.get("retry-after") || "60")
+          }),
+          { 
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 429 
+          }
+        );
+      }
+      
+      return new Response(
+        JSON.stringify({ 
+          error: `Watchmode API error: ${response.status}`,
+          status: response.status 
+        }),
+        { 
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500 
+        }
+      );
     }
-    
-    console.log(`Retrieved ${responseData.title_results?.length || 0} title results from Watchmode`)
-    
-    // Return the data with CORS headers
+
+    const data = await response.json();
+    console.log(`Received ${data.title_results?.length || 0} results from Watchmode`);
+
     return new Response(
-      JSON.stringify({ results: responseData.title_results || [] }),
+      JSON.stringify({ results: data.title_results || [] }),
       { 
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        } 
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200 
       }
-    )
+    );
   } catch (error) {
-    console.error('Error in watchmode-title-search function:', error)
-    
+    console.error("Error in watchmode-title-search function:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message || "Unknown error",
+        status: 500 
+      }),
       { 
-        status: 500,
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        } 
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500 
       }
-    )
+    );
   }
-})
+});
