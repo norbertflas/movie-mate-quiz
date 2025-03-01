@@ -78,7 +78,7 @@ export async function searchWatchmodeTitle(
         searchQuery, 
         searchField: 'name',
         types: 'movie,tv_series'
-      }),
+      },
       headers: { 'Content-Type': 'application/json' }
     });
 
@@ -128,7 +128,7 @@ export async function getWatchmodeTitleDetails(
         titleId, 
         region,
         includeSources: true
-      }),
+      },
       headers: { 'Content-Type': 'application/json' }
     });
 
