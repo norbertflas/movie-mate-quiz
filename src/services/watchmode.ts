@@ -130,12 +130,12 @@ export async function getWatchmodeTitleDetails(
     });
 
     if (error) {
-      console.error('Error fetching Watchmode title details:', error);
+      console.error(`Error fetching Watchmode title details for title ID ${titleId}:`, error.message || error);
       return [];
     }
 
-    if (!data || !Array.isArray(data.sources)) {
-      console.warn(`Unexpected response structure from Watchmode API for title ID ${titleId}`);
+    if (!data || typeof data !== 'object' || !Array.isArray(data.sources)) {
+      console.warn(`Unexpected response structure from Watchmode API for title ID ${titleId}:`, data);
       return [];
     }
 
@@ -158,7 +158,7 @@ export async function getWatchmodeTitleDetails(
           startDate: new Date().toISOString()
         }));
     } catch (transformationError) {
-      console.error('Error transforming Watchmode sources:', transformationError);
+      console.error(`Error transforming Watchmode sources for title ID ${titleId}:`, transformationError.message || transformationError);
       return [];
     }
   } catch (error) {
@@ -183,12 +183,12 @@ export async function getWatchmodeStreamingAvailability(
     });
 
     if (error) {
-      console.error('Error fetching Watchmode data:', error);
+      console.error(`Error fetching Watchmode data for TMDB ID ${tmdbId}:`, error.message || error);
       return [];
     }
 
-    if (!data || !Array.isArray(data.sources)) {
-      console.warn(`Unexpected response structure from Watchmode API for TMDB ID ${tmdbId}`);
+    if (!data || typeof data !== 'object' || !Array.isArray(data.sources)) {
+      console.warn(`Unexpected response structure from Watchmode API for TMDB ID ${tmdbId}:`, data);
       return [];
     }
 
@@ -211,7 +211,7 @@ export async function getWatchmodeStreamingAvailability(
           startDate: new Date().toISOString()
         }));
     } catch (transformationError) {
-      console.error('Error transforming Watchmode sources:', transformationError);
+      console.error(`Error transforming Watchmode sources for TMDB ID ${tmdbId}:`, transformationError.message || transformationError);
       return [];
     }
   } catch (error) {

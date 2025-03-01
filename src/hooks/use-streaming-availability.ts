@@ -66,7 +66,6 @@ const mergeStreamingResults = (results: StreamingPlatformData[][]): StreamingPla
       if (!source || !source.service) return;
       
       const lowerCaseName = source.service.toLowerCase();
-      // Only add if not already exists, or if the current one has a logo and the existing one doesn't
       if (!serviceMap.has(lowerCaseName)) {
         serviceMap.set(lowerCaseName, {
           ...source,
