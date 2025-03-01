@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MovieDetailsSection } from "./MovieDetailsSection";
 import { MovieActions } from "./MovieActions";
@@ -97,10 +96,17 @@ export const UnifiedMovieDetails = ({
 
   // Get platform icon from name or use fallback
   const getPlatformIcon = (service: string): string => {
-    const normalizedName = service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '');
+    const normalizedName = service.toLowerCase()
+      .replace(/\+/g, 'plus')
+      .replace(/\s/g, '')
+      .replace('amazon', 'prime')
+      .replace('hbomax', 'max')
+      .replace('appletv', 'apple');
     
     // Try to get the icon from public/streaming-icons folder
-    return `/streaming-icons/${normalizedName}.svg`;
+    const iconPath = `/streaming-icons/${normalizedName}.svg`;
+    
+    return iconPath;
   };
 
   if (!movie) return null;
@@ -232,6 +238,11 @@ export const UnifiedMovieDetails = ({
                                             onError={(e) => {
                                               const target = e.target as HTMLImageElement;
                                               target.src = getPlatformIcon(service.service);
+                                              target.onerror = (e2) => {
+                                                const target2 = e2.target as HTMLImageElement;
+                                                target2.onerror = null;
+                                                target2.src = "/streaming-icons/default.svg";
+                                              };
                                             }}
                                           />
                                         ) : (

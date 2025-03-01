@@ -55,16 +55,24 @@ const getCachedStreamingData = (movieId: number): StreamingPlatformData[] | null
   }
 };
 
-// Function to merge streaming results with deduplication
+// Function to merge streaming results with deduplication and error handling
 const mergeStreamingResults = (results: StreamingPlatformData[][]): StreamingPlatformData[] => {
   const serviceMap = new Map<string, StreamingPlatformData>();
   
   results.forEach(sources => {
+    if (!sources || !Array.isArray(sources)) return;
+    
     sources.forEach(source => {
+      if (!source || !source.service) return;
+      
       const lowerCaseName = source.service.toLowerCase();
       // Only add if not already exists, or if the current one has a logo and the existing one doesn't
       if (!serviceMap.has(lowerCaseName) || (!serviceMap.get(lowerCaseName)?.logo && source.logo)) {
-        serviceMap.set(lowerCaseName, source);
+        serviceMap.set(lowerCaseName, {
+          ...source,
+          // Ensure link is always present
+          link: source.link || `https://${lowerCaseName.replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch`
+        });
       }
     });
   });
@@ -86,7 +94,7 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
       // Check cache first if tmdbId is available
       if (tmdbId) {
         const cachedData = getCachedStreamingData(tmdbId);
-        if (cachedData) {
+        if (cachedData && cachedData.length > 0) {
           console.log('Using cached streaming data for movie:', tmdbId);
           return {
             services: cachedData,
@@ -112,27 +120,47 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
         const availableServicesPromises = [];
         
         // 1. Try JustWatch API
-        availableServicesPromises.push(getStreamingProviders(title, year));
+        availableServicesPromises.push(
+          getStreamingProviders(title, year).catch(err => {
+            console.error('JustWatch API error:', err);
+            return [];
+          })
+        );
         
         // 2. If tmdbId is available, try Watchmode API via tmdbId
         if (tmdbId) {
-          availableServicesPromises.push(getWatchmodeStreamingAvailability(tmdbId));
+          availableServicesPromises.push(
+            getWatchmodeStreamingAvailability(tmdbId).catch(err => {
+              console.error('Watchmode API error (tmdbId):', err);
+              return [];
+            })
+          );
         }
         // 3. If tmdbId is not available, try Watchmode API via title search
         else {
           const watchmodeTitlePromise = async () => {
-            const titleResult = await searchWatchmodeTitle(title, year);
-            if (titleResult) {
-              return getWatchmodeTitleDetails(titleResult.id);
+            try {
+              const titleResult = await searchWatchmodeTitle(title, year);
+              if (titleResult) {
+                return getWatchmodeTitleDetails(titleResult.id);
+              }
+              return [];
+            } catch (err) {
+              console.error('Watchmode title search error:', err);
+              return [];
             }
-            return [];
           };
           availableServicesPromises.push(watchmodeTitlePromise());
         }
         
         // 4. Try our own streaming availability service as a fallback
         if (tmdbId) {
-          availableServicesPromises.push(getStreamingAvailability(tmdbId, title, year));
+          availableServicesPromises.push(
+            getStreamingAvailability(tmdbId, title, year).catch(err => {
+              console.error('Custom streaming API error:', err);
+              return [];
+            })
+          );
         }
         
         // Fetch from multiple sources in parallel
@@ -141,7 +169,7 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
         // Process results, filtering out rejected promises
         const availableServices = results
           .filter((result): result is PromiseFulfilledResult<StreamingPlatformData[]> => 
-            result.status === 'fulfilled'
+            result.status === 'fulfilled' && Array.isArray(result.value)
           )
           .map(result => result.value);
         
@@ -150,19 +178,32 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
         // Merge results from different sources
         const mergedServices = mergeStreamingResults(availableServices);
         
-        // Ensure all services have a link property
-        const servicesWithLinks = mergedServices.map(service => ({
-          ...service,
-          link: service.link || `https://${service.service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch/${tmdbId || ''}`,
-        }));
+        // Add some mock data if nothing was found (during development)
+        if (mergedServices.length === 0 && process.env.NODE_ENV === 'development') {
+          console.log('No streaming services found, adding mock data for development');
+          mergedServices.push(
+            {
+              service: 'Netflix',
+              available: true,
+              link: 'https://netflix.com/watch',
+              logo: '/streaming-icons/netflix.svg'
+            },
+            {
+              service: 'Disney+',
+              available: true,
+              link: 'https://disneyplus.com/watch',
+              logo: '/streaming-icons/disney.svg'
+            }
+          );
+        }
         
         // Cache the results if we have a tmdbId
-        if (tmdbId && servicesWithLinks.length > 0) {
-          cacheStreamingData(tmdbId, servicesWithLinks);
+        if (tmdbId && mergedServices.length > 0) {
+          cacheStreamingData(tmdbId, mergedServices);
         }
 
         return {
-          services: servicesWithLinks,
+          services: mergedServices,
           timestamp: new Date().toISOString(),
           isStale: false
         };
@@ -187,7 +228,7 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
     enabled: !!title,
     staleTime: CACHE_DURATION,
     gcTime: CACHE_DURATION * 2,
-    retry: false,
+    retry: 1,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false
   });
