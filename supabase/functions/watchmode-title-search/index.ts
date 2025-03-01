@@ -1,4 +1,3 @@
-
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -60,30 +59,57 @@ Deno.serve(async (req) => {
     
     console.log(`Making request to: ${searchUrl.replace(WATCHMODE_API_KEY, "[REDACTED]")}`);
     
-    const response = await fetch(searchUrl);
+    try {
+      const response = await fetch(searchUrl);
 
-    if (!response.ok) {
-      console.error(`Watchmode API error: ${response.status} ${response.statusText}`);
-      
-      // Check for specific error types
-      if (response.status === 429) {
+      if (!response.ok) {
+        console.error(`Watchmode API error: ${response.status} ${response.statusText}`);
+        
+        // Check for specific error types
+        if (response.status === 429) {
+          return new Response(
+            JSON.stringify({ 
+              error: "Rate limit exceeded", 
+              status: 429,
+              retryAfter: parseInt(response.headers.get("retry-after") || "60")
+            }),
+            { 
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: 429 
+            }
+          );
+        }
+        
         return new Response(
           JSON.stringify({ 
-            error: "Rate limit exceeded", 
-            status: 429,
-            retryAfter: parseInt(response.headers.get("retry-after") || "60")
+            error: `Watchmode API error: ${response.status}`,
+            status: response.status,
+            message: response.statusText
           }),
           { 
             headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 429 
+            status: response.status 
           }
         );
       }
-      
+
+      const data = await response.json();
+      console.log(`Received ${data.title_results?.length || 0} results from Watchmode`);
+
+      return new Response(
+        JSON.stringify({ results: data.title_results || [] }),
+        { 
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200 
+        }
+      );
+    } catch (apiError) {
+      console.error("Error while calling Watchmode API:", apiError);
       return new Response(
         JSON.stringify({ 
-          error: `Watchmode API error: ${response.status}`,
-          status: response.status 
+          error: "Failed to fetch data from Watchmode API",
+          status: 500,
+          details: apiError.message || "Unknown error"
         }),
         { 
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -91,23 +117,13 @@ Deno.serve(async (req) => {
         }
       );
     }
-
-    const data = await response.json();
-    console.log(`Received ${data.title_results?.length || 0} results from Watchmode`);
-
-    return new Response(
-      JSON.stringify({ results: data.title_results || [] }),
-      { 
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200 
-      }
-    );
   } catch (error) {
     console.error("Error in watchmode-title-search function:", error);
     return new Response(
       JSON.stringify({ 
-        error: error.message || "Unknown error",
-        status: 500 
+        error: "Internal server error",
+        status: 500,
+        details: error.message || "Unknown error"
       }),
       { 
         headers: { ...corsHeaders, "Content-Type": "application/json" },
