@@ -1,3 +1,4 @@
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MovieDetailsSection } from "./MovieDetailsSection";
 import { MovieActions } from "./MovieActions";
@@ -94,6 +95,14 @@ export const UnifiedMovieDetails = ({
     onClose();
   };
 
+  // Get platform icon from name or use fallback
+  const getPlatformIcon = (service: string): string => {
+    const normalizedName = service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '');
+    
+    // Try to get the icon from public/streaming-icons folder
+    return `/streaming-icons/${normalizedName}.svg`;
+  };
+
   if (!movie) return null;
 
   return (
@@ -176,7 +185,7 @@ export const UnifiedMovieDetails = ({
                       {isLoadingServices ? (
                         <div className="flex gap-2">
                           {[1, 2, 3].map((i) => (
-                            <Skeleton key={i} className="h-8 w-24" />
+                            <Skeleton key={i} className="h-12 w-16 rounded-md" />
                           ))}
                         </div>
                       ) : isError ? (
@@ -203,7 +212,7 @@ export const UnifiedMovieDetails = ({
                               </AlertDescription>
                             </Alert>
                           )}
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex flex-wrap gap-4 mt-4">
                             {services.map((service, index) => (
                               <HoverCard key={`${service.service}-${index}`}>
                                 <HoverCardTrigger asChild>
@@ -211,31 +220,35 @@ export const UnifiedMovieDetails = ({
                                     href={service.link}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center"
+                                    className="block"
                                   >
-                                    <Badge 
-                                      variant="secondary" 
-                                      className="flex items-center gap-2 hover:bg-accent cursor-pointer"
-                                    >
-                                      {service.logo ? (
-                                        <img 
-                                          src={service.logo}
-                                          alt={service.service}
-                                          className="w-4 h-4 object-contain"
-                                          onError={(e) => {
-                                            const target = e.target as HTMLImageElement;
-                                            target.src = `/streaming-icons/${service.service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.svg`;
-                                          }}
-                                        />
-                                      ) : (
-                                        <img 
-                                          src={`/streaming-icons/${service.service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.svg`}
-                                          alt={service.service}
-                                          className="w-4 h-4 object-contain"
-                                        />
-                                      )}
-                                      {service.service}
-                                    </Badge>
+                                    <div className="flex flex-col items-center gap-1 hover:scale-110 transition-transform p-2 rounded-lg hover:bg-accent/30">
+                                      <div className="w-12 h-12 rounded-md overflow-hidden bg-accent/10 flex items-center justify-center">
+                                        {service.logo ? (
+                                          <img 
+                                            src={service.logo}
+                                            alt={service.service}
+                                            className="w-10 h-10 object-contain"
+                                            onError={(e) => {
+                                              const target = e.target as HTMLImageElement;
+                                              target.src = getPlatformIcon(service.service);
+                                            }}
+                                          />
+                                        ) : (
+                                          <img 
+                                            src={getPlatformIcon(service.service)}
+                                            alt={service.service}
+                                            className="w-10 h-10 object-contain"
+                                            onError={(e) => {
+                                              const target = e.target as HTMLImageElement;
+                                              target.onerror = null;
+                                              target.src = "/streaming-icons/default.svg";
+                                            }}
+                                          />
+                                        )}
+                                      </div>
+                                      <span className="text-xs text-center font-medium">{service.service}</span>
+                                    </div>
                                   </a>
                                 </HoverCardTrigger>
                                 <HoverCardContent className="w-80">
