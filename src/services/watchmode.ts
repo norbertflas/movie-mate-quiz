@@ -201,5 +201,5 @@ export async function getWatchmodeStreamingAvailability(
   } catch (error) {
     console.error('Error in getWatchmodeStreamingAvailability:', error);
     return [];
-    }
+  }
 }
