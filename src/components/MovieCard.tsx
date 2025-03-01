@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { CardHeader, CardContent } from "./ui/card";
 import { MovieCardContainer } from "./movie/MovieCardContainer";
@@ -128,6 +127,30 @@ export const MovieCard = ({
               {description}
             </p>
           </CardContent>
+
+          {/* Streaming Availability Section */}
+          <div className="p-4">
+            {isLoading ? (
+              <p className="text-sm text-muted-foreground">Loading streaming availability...</p>
+            ) : isError ? (
+              <p className="text-sm text-destructive">Failed to load streaming availability.</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {availableServices.map((service) => (
+                  <Badge key={service.service} className="flex items-center gap-2">
+                    {service.logo && (
+                      <img
+                        src={service.logo}
+                        alt={`${service.service} logo`}
+                        className="h-4 w-4"
+                      />
+                    )}
+                    {service.service}
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </div>
         </MovieCardContainer>
       </MovieCardWrapper>
 

@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { getStreamingProviders } from "@/services/justwatch";
 import { getWatchmodeStreamingAvailability, searchWatchmodeTitle, getWatchmodeTitleDetails } from "@/services/watchmode";
@@ -44,13 +43,14 @@ const getCachedStreamingData = (movieId: number): StreamingPlatformData[] | null
 
     const { data, timestamp } = JSON.parse(cached) as StreamingAvailabilityCache;
     if (Date.now() - timestamp > CACHE_DURATION) {
+      console.warn(`Cache expired for movie ID: ${movieId}`);
       localStorage.removeItem(`${CACHE_PREFIX}${movieId}`);
       return null;
     }
 
     return data;
   } catch (error) {
-    console.error('Error reading cache:', error);
+    console.error('Error reading cache for movie ID:', movieId, error.message || error);
     return null;
   }
 };
@@ -67,12 +67,19 @@ const mergeStreamingResults = (results: StreamingPlatformData[][]): StreamingPla
       
       const lowerCaseName = source.service.toLowerCase();
       // Only add if not already exists, or if the current one has a logo and the existing one doesn't
-      if (!serviceMap.has(lowerCaseName) || (!serviceMap.get(lowerCaseName)?.logo && source.logo)) {
+      if (!serviceMap.has(lowerCaseName)) {
         serviceMap.set(lowerCaseName, {
           ...source,
-          // Ensure link is always present
           link: source.link || `https://${lowerCaseName.replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch`
         });
+      } else {
+        const existingService = serviceMap.get(lowerCaseName);
+        if (!existingService.logo && source.logo) {
+          serviceMap.set(lowerCaseName, {
+            ...source,
+            link: source.link || `https://${lowerCaseName.replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch`
+          });
+        }
       }
     });
   });
@@ -122,7 +129,7 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
         // 1. Try JustWatch API
         availableServicesPromises.push(
           getStreamingProviders(title, year).catch(err => {
-            console.error('JustWatch API error:', err);
+            console.error('Error fetching data from JustWatch API:', err.message || err);
             return [];
           })
         );
@@ -131,7 +138,7 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
         if (tmdbId) {
           availableServicesPromises.push(
             getWatchmodeStreamingAvailability(tmdbId).catch(err => {
-              console.error('Watchmode API error (tmdbId):', err);
+              console.error('Error fetching Watchmode data using TMDB ID:', err.message || err);
               return [];
             })
           );
@@ -146,7 +153,7 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
               }
               return [];
             } catch (err) {
-              console.error('Watchmode title search error:', err);
+              console.error('Error during Watchmode title search:', err.message || err);
               return [];
             }
           };
@@ -157,7 +164,7 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
         if (tmdbId) {
           availableServicesPromises.push(
             getStreamingAvailability(tmdbId, title, year).catch(err => {
-              console.error('Custom streaming API error:', err);
+              console.error('Error fetching data from custom streaming API:', err.message || err);
               return [];
             })
           );
@@ -173,10 +180,17 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
           )
           .map(result => result.value);
         
-        console.log('Streaming results:', availableServices);
+        console.log('Streaming results fetched from APIs:', availableServices);
+        if (!Array.isArray(availableServices)) {
+          console.error('Unexpected structure in streaming results:', availableServices);
+          throw new Error('Invalid streaming results structure');
+        }
         
         // Merge results from different sources
         const mergedServices = mergeStreamingResults(availableServices);
+        if (mergedServices.length === 0) {
+          console.warn('No streaming services found. Returning empty results.');
+        }
         
         // Add some mock data if nothing was found (during development)
         if (mergedServices.length === 0 && process.env.NODE_ENV === 'development') {
@@ -219,7 +233,8 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
         return {
           services: [],
           timestamp: new Date().toISOString(),
-          isStale: true
+          isStale: true,
+          error: error.message || 'Unknown error occurred while fetching streaming availability'
         };
       } finally {
         activeRequests--;

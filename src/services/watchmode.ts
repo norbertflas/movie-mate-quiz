@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import type { StreamingPlatformData } from "@/types/streaming";
 
@@ -135,25 +134,35 @@ export async function getWatchmodeTitleDetails(
       return [];
     }
 
-    if (!data?.sources || !Array.isArray(data.sources)) {
-      console.log('No streaming sources found from Watchmode for ID:', titleId);
+    if (!data || !Array.isArray(data.sources)) {
+      console.warn(`Unexpected response structure from Watchmode API for title ID ${titleId}`);
       return [];
     }
 
-    console.log(`Found ${data.sources.length} Watchmode streaming sources for ID: ${titleId}`);
+    if (!data.sources.length) {
+      console.log(`No streaming sources found from Watchmode for title ID ${titleId}`);
+      return [];
+    }
 
-    // Transform Watchmode sources to StreamingPlatformData format
-    return data.sources
-      .filter((source: WatchmodeSource) => source.type === 'sub' || source.type === 'free')
-      .map((source: WatchmodeSource) => ({
-        service: source.name,
-        link: source.web_url || `https://${source.name.toLowerCase().replace(/\s/g, '')}.com`,
-        logo: `https://cdn.watchmode.com/provider_logos/${source.source_id}_100px.png`,
-        available: true,
-        startDate: new Date().toISOString()
-      }));
+    console.log(`Found ${data.sources.length} Watchmode streaming sources for title ID ${titleId}`);
+
+    try {
+      // Transform Watchmode sources to StreamingPlatformData format
+      return data.sources
+        .filter((source: WatchmodeSource) => source.type === 'sub' || source.type === 'free')
+        .map((source: WatchmodeSource) => ({
+          service: source.name,
+          link: source.web_url || `https://${source.name.toLowerCase().replace(/\s/g, '')}.com`,
+          logo: `https://cdn.watchmode.com/provider_logos/${source.source_id}_100px.png`,
+          available: true,
+          startDate: new Date().toISOString()
+        }));
+    } catch (transformationError) {
+      console.error('Error transforming Watchmode sources:', transformationError);
+      return [];
+    }
   } catch (error) {
-    console.error('Error in getWatchmodeTitleDetails:', error);
+    console.error(`Error in getWatchmodeTitleDetails for title ID ${titleId}:`, error);
     return [];
   }
 }
@@ -178,25 +187,35 @@ export async function getWatchmodeStreamingAvailability(
       return [];
     }
 
-    if (!data?.sources || !Array.isArray(data.sources)) {
-      console.log('No streaming sources found from Watchmode');
+    if (!data || !Array.isArray(data.sources)) {
+      console.warn(`Unexpected response structure from Watchmode API for TMDB ID ${tmdbId}`);
       return [];
     }
 
-    console.log(`Found ${data.sources.length} Watchmode streaming sources`);
+    if (!data.sources.length) {
+      console.log(`No streaming sources found from Watchmode for TMDB ID ${tmdbId}`);
+      return [];
+    }
 
-    // Transform Watchmode sources to StreamingPlatformData format
-    return data.sources
-      .filter(source => source.type === 'sub' || source.type === 'free')
-      .map(source => ({
-        service: source.name,
-        link: source.web_url || `https://${source.name.toLowerCase().replace(/\s/g, '')}.com`,
-        logo: `https://cdn.watchmode.com/provider_logos/${source.source_id}_100px.png`,
-        available: true,
-        startDate: new Date().toISOString()
-      }));
+    console.log(`Found ${data.sources.length} Watchmode streaming sources for TMDB ID ${tmdbId}`);
+
+    try {
+      // Transform Watchmode sources to StreamingPlatformData format
+      return data.sources
+        .filter(source => source.type === 'sub' || source.type === 'free')
+        .map(source => ({
+          service: source.name,
+          link: source.web_url || `https://${source.name.toLowerCase().replace(/\s/g, '')}.com`,
+          logo: `https://cdn.watchmode.com/provider_logos/${source.source_id}_100px.png`,
+          available: true,
+          startDate: new Date().toISOString()
+        }));
+    } catch (transformationError) {
+      console.error('Error transforming Watchmode sources:', transformationError);
+      return [];
+    }
   } catch (error) {
-    console.error('Error in getWatchmodeStreamingAvailability:', error);
+    console.error(`Error in getWatchmodeStreamingAvailability for TMDB ID ${tmdbId}:`, error);
     return [];
   }
 }

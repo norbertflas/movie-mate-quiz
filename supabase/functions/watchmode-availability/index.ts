@@ -1,4 +1,3 @@
-
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -60,18 +59,35 @@ Deno.serve(async (req) => {
     
     console.log(`Making request to: ${titleSearchUrl.replace(WATCHMODE_API_KEY, "[REDACTED]")}`);
     
-    const response = await fetch(titleSearchUrl);
+    let response;
+    let retries = 3;
 
-    if (!response.ok) {
-      console.error(`Watchmode API error: ${response.status} ${response.statusText}`);
-      
-      // Check for specific error types
-      if (response.status === 429) {
+    // Retry logic for transient errors
+    while (retries > 0) {
+      try {
+        response = await fetch(titleSearchUrl);
+        if (response.ok) break; // Exit loop if request is successful
+        console.error(`Watchmode API error: ${response.status} ${response.statusText}`);
+      } catch (fetchError) {
+        console.error(`Network error while fetching Watchmode data: ${fetchError.message}`);
+      }
+      retries--;
+      console.log(`Retrying... (${3 - retries} attempts left)`);
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Wait before retrying
+    }
+
+    if (!response || !response.ok) {
+      const status = response?.status || 500;
+      const statusText = response?.statusText || "Unknown error";
+      console.error(`Failed to fetch Watchmode data after retries. Status: ${status} ${statusText}`);
+
+      // Handle specific error types
+      if (status === 429) {
         return new Response(
           JSON.stringify({ 
             error: "Rate limit exceeded", 
             status: 429,
-            retryAfter: parseInt(response.headers.get("retry-after") || "60")
+            retryAfter: parseInt(response?.headers?.get("retry-after") || "60")
           }),
           { 
             headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -79,8 +95,8 @@ Deno.serve(async (req) => {
           }
         );
       }
-      
-      if (response.status === 404) {
+
+      if (status === 404) {
         console.log(`No Watchmode data found for TMDB ID: ${tmdbId}`);
         return new Response(
           JSON.stringify({ sources: [] }),
@@ -90,11 +106,11 @@ Deno.serve(async (req) => {
           }
         );
       }
-      
+
       return new Response(
         JSON.stringify({ 
-          error: `Watchmode API error: ${response.status}`,
-          status: response.status 
+          error: `Watchmode API error: ${status} ${statusText}`,
+          status 
         }),
         { 
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -103,8 +119,26 @@ Deno.serve(async (req) => {
       );
     }
 
-    const data = await response.json();
-    console.log(`Received ${data.length || 0} sources from Watchmode`);
+    let data;
+    try {
+      data = await response.json();
+      if (!Array.isArray(data)) {
+        throw new Error("Invalid response format: expected an array of sources");
+      }
+      console.log(`Received ${data.length || 0} sources from Watchmode`);
+    } catch (parseError) {
+      console.error(`Error parsing Watchmode API response: ${parseError.message}`);
+      return new Response(
+        JSON.stringify({ 
+          error: "Failed to parse Watchmode API response",
+          status: 500 
+        }),
+        { 
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500 
+        }
+      );
+    }
 
     return new Response(
       JSON.stringify(data.length ? { sources: data } : { sources: [] }),
