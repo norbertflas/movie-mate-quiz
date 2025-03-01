@@ -2,6 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { getStreamingProviders } from "@/services/justwatch";
 import { getWatchmodeStreamingAvailability, searchWatchmodeTitle, getWatchmodeTitleDetails } from "@/services/watchmode";
+import { getStreamingAvailability } from "@/services/streamingAvailability";
 import { useToast } from "./use-toast";
 import { useTranslation } from "react-i18next";
 import type { StreamingPlatformData, StreamingAvailabilityCache } from "@/types/streaming";
@@ -127,6 +128,11 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
             return [];
           };
           availableServicesPromises.push(watchmodeTitlePromise());
+        }
+        
+        // 4. Try our own streaming availability service as a fallback
+        if (tmdbId) {
+          availableServicesPromises.push(getStreamingAvailability(tmdbId, title, year));
         }
         
         // Fetch from multiple sources in parallel

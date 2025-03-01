@@ -74,7 +74,7 @@ export async function searchWatchmodeTitle(
     
     // Call Supabase Edge Function to search for the title
     const { data, error } = await supabase.functions.invoke('watchmode-title-search', {
-      body: JSON.stringify({ 
+      body: { 
         searchQuery, 
         searchField: 'name',
         types: 'movie,tv_series'
@@ -124,7 +124,7 @@ export async function getWatchmodeTitleDetails(
     
     // Call Supabase Edge Function to get title details
     const { data, error } = await supabase.functions.invoke('watchmode-title-details', {
-      body: JSON.stringify({ 
+      body: { 
         titleId, 
         region,
         includeSources: true
@@ -172,7 +172,7 @@ export async function getWatchmodeStreamingAvailability(
     
     // Call Supabase Edge Function to get Watchmode data
     const { data, error } = await supabase.functions.invoke('watchmode-availability', {
-      body: JSON.stringify({ tmdbId, region }),
+      body: { tmdbId, region },
       headers: { 'Content-Type': 'application/json' }
     });
 
