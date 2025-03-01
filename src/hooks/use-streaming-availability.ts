@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { getStreamingProviders } from "@/services/justwatch";
 import { getWatchmodeStreamingAvailability, searchWatchmodeTitle, getWatchmodeTitleDetails } from "@/services/watchmode";
@@ -130,7 +129,7 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
         // 2. If tmdbId is available, try Watchmode API via tmdbId
         if (tmdbId) {
           availableServicesPromises.push(
-            getWatchmodeStreamingAvailability(tmdbId).catch(err => {
+            retryWithBackoff(() => getWatchmodeStreamingAvailability(tmdbId)).catch(err => {
               console.error('Watchmode API error (tmdbId):', err);
               return [];
             })
@@ -140,9 +139,9 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
         else {
           const watchmodeTitlePromise = async () => {
             try {
-              const titleResult = await searchWatchmodeTitle(title, year);
+              const titleResult = await retryWithBackoff(() => searchWatchmodeTitle(title, year));
               if (titleResult) {
-                return getWatchmodeTitleDetails(titleResult.id);
+                return retryWithBackoff(() => getWatchmodeTitleDetails(titleResult.id));
               }
               return [];
             } catch (err) {

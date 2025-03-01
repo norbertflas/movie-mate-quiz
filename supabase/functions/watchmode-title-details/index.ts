@@ -1,4 +1,3 @@
-
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -56,7 +55,7 @@ Deno.serve(async (req) => {
     console.log(`Fetching Watchmode title details for ID ${titleId} in region ${region}`);
 
     // Build URL for title details
-    const titleUrl = `https://api.watchmode.com/v1/title/${titleId}/details/?apiKey=${WATCHMODE_API_KEY}&append_to_response=${includeSources ? 'sources' : ''}`;
+    const titleUrl = `https://api.watchmode.com/v1/title/${titleId}/details/?apiKey=${WATCHMODE_API_KEY}&append_to_response=${includeSources ? 'sources' : ''}&region=${region}`;
     
     console.log(`Making request to: ${titleUrl.replace(WATCHMODE_API_KEY, "[REDACTED]")}`);
     
