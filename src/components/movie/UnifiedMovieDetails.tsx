@@ -1,3 +1,4 @@
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MovieDetailsSection } from "./MovieDetailsSection";
 import { MovieActions } from "./MovieActions";
@@ -236,10 +237,12 @@ export const UnifiedMovieDetails = ({
                                             alt={service.service}
                                             className="w-10 h-10 object-contain"
                                             onError={(e) => {
-                                              const target = e.target as HTMLImageElement;
+                                              // Fix the type error by asserting e as React.SyntheticEvent
+                                              const target = (e as React.SyntheticEvent<HTMLImageElement>).currentTarget;
                                               target.src = getPlatformIcon(service.service);
                                               target.onerror = (e2) => {
-                                                const target2 = e2.target as HTMLImageElement;
+                                                // Same fix for the nested handler
+                                                const target2 = (e2 as React.SyntheticEvent<HTMLImageElement>).currentTarget;
                                                 target2.onerror = null;
                                                 target2.src = "/streaming-icons/default.svg";
                                               };
@@ -251,7 +254,8 @@ export const UnifiedMovieDetails = ({
                                             alt={service.service}
                                             className="w-10 h-10 object-contain"
                                             onError={(e) => {
-                                              const target = e.target as HTMLImageElement;
+                                              // Fix the type error again
+                                              const target = (e as React.SyntheticEvent<HTMLImageElement>).currentTarget;
                                               target.onerror = null;
                                               target.src = "/streaming-icons/default.svg";
                                             }}
