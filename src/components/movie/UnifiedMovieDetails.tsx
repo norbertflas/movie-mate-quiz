@@ -236,13 +236,11 @@ export const UnifiedMovieDetails = ({
                                             src={service.logo}
                                             alt={service.service}
                                             className="w-10 h-10 object-contain"
-                                            onError={(e) => {
-                                              // Fix the type error by asserting e as React.SyntheticEvent
-                                              const target = (e as React.SyntheticEvent<HTMLImageElement>).currentTarget;
+                                            onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                                              const target = e.currentTarget;
                                               target.src = getPlatformIcon(service.service);
-                                              target.onerror = (e2) => {
-                                                // Same fix for the nested handler
-                                                const target2 = (e2 as React.SyntheticEvent<HTMLImageElement>).currentTarget;
+                                              target.onerror = (e2: React.SyntheticEvent<HTMLImageElement>) => {
+                                                const target2 = e2.currentTarget;
                                                 target2.onerror = null;
                                                 target2.src = "/streaming-icons/default.svg";
                                               };
@@ -253,16 +251,24 @@ export const UnifiedMovieDetails = ({
                                             src={getPlatformIcon(service.service)}
                                             alt={service.service}
                                             className="w-10 h-10 object-contain"
-                                            onError={(e) => {
-                                              // Fix the type error again
-                                              const target = (e as React.SyntheticEvent<HTMLImageElement>).currentTarget;
+                                            onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                                              const target = e.currentTarget;
                                               target.onerror = null;
                                               target.src = "/streaming-icons/default.svg";
                                             }}
                                           />
                                         )}
                                       </div>
-                                      <span className="text-xs text-center font-medium">{service.service}</span>
+                                      <span className="text-xs text-center font-medium">
+                                        {service.service}
+                                        {service.type && service.type !== 'sub' && service.type !== 'free' && (
+                                          <Badge variant="outline" className="ml-1 text-[10px] px-1 py-0">
+                                            {service.type === 'tvod' ? 'Rent' : 
+                                             service.type === 'addon' ? 'Add-on' : 
+                                             service.type}
+                                          </Badge>
+                                        )}
+                                      </span>
                                     </div>
                                   </a>
                                 </HoverCardTrigger>
@@ -270,6 +276,15 @@ export const UnifiedMovieDetails = ({
                                   <div className="space-y-1">
                                     <h4 className="text-sm font-semibold">
                                       {t("streaming.watchOn", { service: service.service })}
+                                      {service.type && (
+                                        <span className="ml-1 text-xs text-muted-foreground">
+                                          ({service.type === 'sub' ? 'Subscription' : 
+                                            service.type === 'free' ? 'Free' :
+                                            service.type === 'tvod' ? 'Rent/Buy' :
+                                            service.type === 'addon' ? 'Add-on package' :
+                                            service.type})
+                                        </span>
+                                      )}
                                     </h4>
                                     <p className="text-sm text-muted-foreground">
                                       {t("streaming.clickToWatch")}

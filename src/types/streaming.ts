@@ -10,8 +10,9 @@ export interface StreamingPlatformData {
   available: boolean;
   startDate?: string;
   endDate?: string;
-  link: string; // Changed from optional to required
+  link: string;
   logo?: string;
+  type?: string; // Added new type field
 }
 
 export interface StreamingAvailabilityCache {

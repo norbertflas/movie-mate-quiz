@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
     }
 
     // Parse request body
-    const { searchQuery, searchField = 'name', types = 'movie,tv_series' } = await req.json();
+    const { searchQuery, searchField = 'name', types = 'movie,tv_series', region = 'US' } = await req.json();
 
     if (!searchQuery) {
       return new Response(
@@ -53,10 +53,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`Searching Watchmode titles with query: ${searchQuery}`);
+    console.log(`Searching Watchmode titles with query: ${searchQuery} in region: ${region}`);
 
     // Build search URL
-    const searchUrl = `https://api.watchmode.com/v1/search/?apiKey=${WATCHMODE_API_KEY}&search_field=${searchField}&search_value=${encodeURIComponent(searchQuery)}&types=${types}`;
+    const searchUrl = `https://api.watchmode.com/v1/search/?apiKey=${WATCHMODE_API_KEY}&search_field=${searchField}&search_value=${encodeURIComponent(searchQuery)}&types=${types}&regions=${region}`;
     
     console.log(`Making request to: ${searchUrl.replace(WATCHMODE_API_KEY, "[REDACTED]")}`);
     
@@ -93,7 +93,7 @@ Deno.serve(async (req) => {
     }
 
     const data = await response.json();
-    console.log(`Received ${data.title_results?.length || 0} results from Watchmode`);
+    console.log(`Received ${data.title_results?.length || 0} results from Watchmode for region ${region}`);
 
     return new Response(
       JSON.stringify({ results: data.title_results || [] }),

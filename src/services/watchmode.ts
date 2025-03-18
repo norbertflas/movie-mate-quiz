@@ -45,16 +45,29 @@ async function retryWithBackoff<T>(
       throw error;
     }
 
-    const errorBody = typeof error.body === 'string' ? JSON.parse(error.body) : error.body;
+    let retryAfter = delay;
     
-    if (error?.status === 429 || error?.message?.includes('429')) {
-      const retryAfter = (errorBody?.retryAfter || 60) * 1000;
-      console.log(`Rate limit hit, waiting ${retryAfter}ms before retry`);
-      await sleep(retryAfter);
-      return retryWithBackoff(fn, retries - 1, delay * 2);
+    // Bezpieczne parsowanie error.body
+    try {
+      const errorBody = error.body ? 
+        (typeof error.body === 'string' ? JSON.parse(error.body) : error.body) : 
+        {};
+      
+      // Sprawdzenie statusu błędu z różnych możliwych lokalizacji
+      const isRateLimitError = 
+        error?.status === 429 || 
+        error?.message?.includes('429') || 
+        errorBody?.status === 429;
+      
+      if (isRateLimitError) {
+        retryAfter = (errorBody?.retryAfter || 60) * 1000;
+        console.log(`Rate limit hit, waiting ${retryAfter}ms before retry`);
+      }
+    } catch (parseError) {
+      console.error('Error parsing error body:', parseError);
     }
 
-    await sleep(delay);
+    await sleep(retryAfter);
     return retryWithBackoff(fn, retries - 1, delay * 2);
   }
 }
@@ -64,10 +77,11 @@ async function retryWithBackoff<T>(
  */
 export async function searchWatchmodeTitle(
   title: string,
-  year?: string
+  year?: string,
+  region: string = 'US'
 ): Promise<{ id: number; name: string; type: string; year: number } | null> {
   try {
-    console.log(`Searching Watchmode for title: ${title} ${year ? `(${year})` : ''}`);
+    console.log(`Searching Watchmode for title: ${title} ${year ? `(${year})` : ''} in region ${region}`);
     
     // Construct the search query
     const searchQuery = year ? `${title} ${year}` : title;
@@ -77,7 +91,8 @@ export async function searchWatchmodeTitle(
       body: { 
         searchQuery, 
         searchField: 'name',
-        types: 'movie,tv_series'
+        types: 'movie,tv_series',
+        region // Dodanie parametru region
       }
     });
 
@@ -122,12 +137,14 @@ export async function getWatchmodeTitleDetails(
     console.log(`Fetching Watchmode details for title ID ${titleId} in region ${region}`);
     
     // Call Supabase Edge Function to get title details
-    const { data, error } = await supabase.functions.invoke('watchmode-title-details', {
-      body: { 
-        titleId, 
-        region,
-        includeSources: true
-      }
+    const { data, error } = await retryWithBackoff(async () => {
+      return await supabase.functions.invoke('watchmode-title-details', {
+        body: { 
+          titleId, 
+          region,
+          includeSources: true
+        }
+      });
     });
 
     if (error) {
@@ -142,15 +159,19 @@ export async function getWatchmodeTitleDetails(
 
     console.log(`Found ${data.sources.length} Watchmode streaming sources for ID: ${titleId}`);
 
+    // Expanded filter to include more relevant source types
+    const relevantSources = ['sub', 'free', 'tvod', 'addon'];
+    
     // Transform Watchmode sources to StreamingPlatformData format
     return data.sources
-      .filter((source: WatchmodeSource) => source.type === 'sub' || source.type === 'free')
+      .filter((source: WatchmodeSource) => relevantSources.includes(source.type))
       .map((source: WatchmodeSource) => ({
         service: source.name,
         link: source.web_url || `https://${source.name.toLowerCase().replace(/\s/g, '')}.com`,
         logo: `https://cdn.watchmode.com/provider_logos/${source.source_id}_100px.png`,
         available: true,
-        startDate: new Date().toISOString()
+        startDate: new Date().toISOString(),
+        type: source.type // Dodanie typu źródła dla lepszej identyfikacji
       }));
   } catch (error) {
     console.error('Error in getWatchmodeTitleDetails:', error);
@@ -168,9 +189,11 @@ export async function getWatchmodeStreamingAvailability(
   try {
     console.log(`Fetching Watchmode streaming availability for movie ${tmdbId} in region ${region}`);
     
-    // Call Supabase Edge Function to get Watchmode data
-    const { data, error } = await supabase.functions.invoke('watchmode-availability', {
-      body: { tmdbId, region }
+    // Call Supabase Edge Function to get Watchmode data with retry
+    const { data, error } = await retryWithBackoff(async () => {
+      return await supabase.functions.invoke('watchmode-availability', {
+        body: { tmdbId, region }
+      });
     });
 
     if (error) {
@@ -185,15 +208,19 @@ export async function getWatchmodeStreamingAvailability(
 
     console.log(`Found ${data.sources.length} Watchmode streaming sources`);
 
+    // Expanded filter to include more relevant source types
+    const relevantSources = ['sub', 'free', 'tvod', 'addon'];
+    
     // Transform Watchmode sources to StreamingPlatformData format
     return data.sources
-      .filter(source => source.type === 'sub' || source.type === 'free')
+      .filter(source => relevantSources.includes(source.type))
       .map(source => ({
         service: source.name,
         link: source.web_url || `https://${source.name.toLowerCase().replace(/\s/g, '')}.com`,
         logo: `https://cdn.watchmode.com/provider_logos/${source.source_id}_100px.png`,
         available: true,
-        startDate: new Date().toISOString()
+        startDate: new Date().toISOString(),
+        type: source.type // Dodanie typu źródła dla lepszej identyfikacji
       }));
   } catch (error) {
     console.error('Error in getWatchmodeStreamingAvailability:', error);
