@@ -115,7 +115,7 @@ const mergeStreamingResults = (results: StreamingPlatformData[][]): StreamingPla
     if (!sources || !Array.isArray(sources)) return;
     
     sources.forEach(source => {
-      if (!source || !source.service) return;
+      if (!source || typeof source !== 'object' || !source.service) return;
       
       // Only if the service is actually marked as available
       if (source.available !== false) {
@@ -126,11 +126,17 @@ const mergeStreamingResults = (results: StreamingPlatformData[][]): StreamingPla
         if (!existingSource || 
             (!existingSource.logo && source.logo) || 
             (source.sourceConfidence && (!existingSource.sourceConfidence || source.sourceConfidence > existingSource.sourceConfidence))) {
-          serviceMap.set(lowerCaseName, {
-            ...source,
-            // Ensure link is properly formatted
-            link: formatServiceLink(source.service, source.link, undefined)
-          });
+          
+          const formattedService: StreamingPlatformData = {
+            service: source.service,
+            available: true,
+            link: formatServiceLink(source.service, source.link, undefined),
+            logo: source.logo,
+            type: source.type,
+            sourceConfidence: source.sourceConfidence
+          };
+          
+          serviceMap.set(lowerCaseName, formattedService);
         }
       }
     });
@@ -281,20 +287,23 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
         // Merge results from different sources
         const mergedServices = mergeStreamingResults(availableServices);
         
-        // Format the links properly
+        // Format the links properly - ensure each service is a valid object
         const formattedServices = mergedServices.map(service => {
-          // Make sure service is a valid object before spreading
           if (typeof service === 'object' && service !== null) {
             return {
-              ...service,
-              link: formatServiceLink(service.service, service.link, tmdbId)
+              service: service.service,
+              available: service.available !== false,
+              link: formatServiceLink(service.service, service.link, tmdbId),
+              logo: service.logo,
+              type: service.type,
+              sourceConfidence: service.sourceConfidence
             };
           }
-          // Fallback for non-object services (shouldn't happen, but prevents TS errors)
+          // Fallback for non-object services
           return {
             service: String(service),
             available: true,
-            link: ''
+            link: '',
           };
         });
         
