@@ -127,13 +127,16 @@ const mergeStreamingResults = (results: StreamingPlatformData[][]): StreamingPla
             (!existingSource.logo && source.logo) || 
             (source.sourceConfidence && (!existingSource.sourceConfidence || source.sourceConfidence > existingSource.sourceConfidence))) {
           
+          // Create a properly typed StreamingPlatformData object instead of using spread
           const formattedService: StreamingPlatformData = {
             service: source.service,
             available: true,
             link: formatServiceLink(source.service, source.link, undefined),
             logo: source.logo,
             type: source.type,
-            sourceConfidence: source.sourceConfidence
+            sourceConfidence: source.sourceConfidence,
+            startDate: source.startDate,
+            endDate: source.endDate
           };
           
           serviceMap.set(lowerCaseName, formattedService);
@@ -290,13 +293,16 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
         // Format the links properly - ensure each service is a valid object
         const formattedServices = mergedServices.map(service => {
           if (typeof service === 'object' && service !== null) {
+            // Create a new object with explicitly specified properties instead of using spread
             return {
               service: service.service,
               available: service.available !== false,
               link: formatServiceLink(service.service, service.link, tmdbId),
               logo: service.logo,
               type: service.type,
-              sourceConfidence: service.sourceConfidence
+              sourceConfidence: service.sourceConfidence,
+              startDate: service.startDate,
+              endDate: service.endDate
             };
           }
           // Fallback for non-object services
