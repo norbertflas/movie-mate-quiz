@@ -6,9 +6,9 @@ export async function getStreamingProviders(title: string, year?: string, region
     console.log('Searching for streaming providers:', { title, year, region });
     
     const locale = region.toLowerCase() === 'pl' ? 'pl_PL' : 'en_US';
-    const jw = new JustWatch({ locale }); // Initialize with proper locale based on region
+    const jw = new JustWatch({ locale }); // Inicjalizacja z odpowiednim językiem na podstawie regionu
 
-    // Search for the movie
+    // Wyszukaj film
     const searchResults = await jw.search({ query: title });
     
     console.log('Search results:', searchResults);
@@ -18,12 +18,12 @@ export async function getStreamingProviders(title: string, year?: string, region
       return [];
     }
 
-    // Try to find exact match with title and year if provided
+    // Próbuj znaleźć dokładne dopasowanie z tytułem i rokiem jeśli podany
     const exactMatch = searchResults.items.find(item => {
       const titleMatch = item.title.toLowerCase() === title.toLowerCase();
       if (!year) return titleMatch;
       return titleMatch && item.original_release_year.toString() === year;
-    }) || searchResults.items[0]; // Fallback to first result if no exact match
+    }) || searchResults.items[0]; // Fallback do pierwszego wyniku jeśli nie ma dokładnego dopasowania
 
     if (!exactMatch) {
       console.log('No match found for:', title);
@@ -32,12 +32,12 @@ export async function getStreamingProviders(title: string, year?: string, region
 
     console.log('Found match:', exactMatch);
 
-    // Get offers for the movie
+    // Pobierz oferty dla filmu
     const details = await jw.getProviders(exactMatch.id);
     
     console.log('Title details:', details);
 
-    // Transform offers to our format
+    // Przekształć oferty do naszego formatu
     const availableServices = details?.flatMap(provider => 
       provider.offers?.map(offer => ({
         service: provider.clear_name || provider.provider_id.toString(),
@@ -45,12 +45,18 @@ export async function getStreamingProviders(title: string, year?: string, region
         logo: provider.icon_url ? `https://images.justwatch.com${provider.icon_url}` : undefined,
         available: true,
         startDate: offer.valid_from,
-        endDate: offer.valid_to
+        endDate: offer.valid_to,
+        type: offer.monetization_type || 'sub' // Dodanie informacji o typie (subskrypcja, wypożyczenie, etc.)
       })) || []
     ) || [];
 
-    console.log('Available services:', availableServices);
-    return availableServices;
+    // Filtrowanie duplikatów i sprawdzanie poprawności danych
+    const uniqueServices = Array.from(
+      new Map(availableServices.map(item => [item.service.toLowerCase(), item])).values()
+    );
+
+    console.log('Available services:', uniqueServices);
+    return uniqueServices;
   } catch (error) {
     console.error('Error fetching streaming providers:', error);
     return [];

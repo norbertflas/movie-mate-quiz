@@ -12,8 +12,8 @@ export interface StreamingPlatformData {
   endDate?: string;
   link: string;
   logo?: string;
-  type?: string;
-  sourceConfidence?: number; // Added for source reliability tracking
+  type?: string; // Dodane pole typu (subskrypcja, wypożyczenie, etc.)
+  sourceConfidence?: number; // Dodane dla śledzenia wiarygodności źródła
 }
 
 export interface StreamingAvailabilityCache {

@@ -42,7 +42,7 @@ export async function getStreamingAvailability(
   country: string = 'us'
 ): Promise<StreamingPlatformData[]> {
   try {
-    // Check cache first with proper handling of expired data
+    // Sprawdź najpierw cache z odpowiednią obsługą wygaśniętych danych
     const { data: cachedServices, error: cacheError } = await supabase
       .from('movie_streaming_availability')
       .select(`
@@ -68,7 +68,7 @@ export async function getStreamingAvailability(
 
     console.log('Fetching fresh streaming data for movie:', tmdbId);
     
-    // Try DeepSeek first
+    // Spróbuj najpierw DeepSeek
     try {
       const deepseekResponse = await retryWithBackoff(async () => {
         const response = await supabase.functions.invoke('streaming-availability-deepseek', {
@@ -91,7 +91,7 @@ export async function getStreamingAvailability(
       console.error('DeepSeek API error:', error);
     }
 
-    // Try Gemini as fallback
+    // Spróbuj Gemini jako zapasowy
     await sleep(1000);
 
     try {
