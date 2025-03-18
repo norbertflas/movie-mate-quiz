@@ -1,11 +1,12 @@
 
 import JustWatch from 'justwatch';
 
-export async function getStreamingProviders(title: string, year?: string) {
+export async function getStreamingProviders(title: string, year?: string, region: string = 'US') {
   try {
-    console.log('Searching for streaming providers:', { title, year });
+    console.log('Searching for streaming providers:', { title, year, region });
     
-    const jw = new JustWatch({ locale: 'en_US' }); // Initialize with locale
+    const locale = region.toLowerCase() === 'pl' ? 'pl_PL' : 'en_US';
+    const jw = new JustWatch({ locale }); // Initialize with proper locale based on region
 
     // Search for the movie
     const searchResults = await jw.search({ query: title });

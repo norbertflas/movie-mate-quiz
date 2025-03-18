@@ -7,7 +7,7 @@ import { useToast } from "./use-toast";
 import { useTranslation } from "react-i18next";
 import type { StreamingPlatformData, StreamingAvailabilityCache } from "@/types/streaming";
 
-const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+const CACHE_DURATION = 12 * 60 * 60 * 1000; // 12 hours - shortened to refresh data more often
 const CACHE_PREFIX = 'streaming_';
 
 // Global request queue management
@@ -56,7 +56,12 @@ const getCachedStreamingData = (movieId: number): StreamingPlatformData[] | null
 };
 
 // Function to properly format streaming service links
-const formatServiceLink = (service: string, tmdbId?: number): string => {
+const formatServiceLink = (service: string, link?: string, tmdbId?: number): string => {
+  // If link is already available and is a valid URL, use it
+  if (link && (link.startsWith('http://') || link.startsWith('https://'))) {
+    return link;
+  }
+  
   const serviceName = service.toLowerCase().trim();
   
   // Map of known streaming services to their domain format
@@ -76,7 +81,18 @@ const formatServiceLink = (service: string, tmdbId?: number): string => {
     'apple tv+': 'tv.apple.com',
     'apple tv': 'tv.apple.com',
     'appletv+': 'tv.apple.com',
-    'peacock': 'peacocktv.com/watch'
+    'peacock': 'peacocktv.com/watch',
+    'canal+': 'canalplus.com',
+    'canal plus': 'canalplus.com',
+    'hbo': 'hbomax.com',
+    'player': 'player.pl',
+    'ncplus': 'ncplus.pl',
+    'viaplay': 'viaplay.pl',
+    'polsat box go': 'polsatboxgo.pl',
+    'tvp vod': 'vod.tvp.pl',
+    'tvp': 'vod.tvp.pl',
+    'cda premium': 'premium.cda.pl',
+    'cda': 'premium.cda.pl'
   };
   
   // Find the matching domain or use a generic fallback
@@ -86,7 +102,7 @@ const formatServiceLink = (service: string, tmdbId?: number): string => {
   
   const baseUrl = domain 
     ? `https://${serviceDomains[domain]}` 
-    : `https://${serviceName.replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch`;
+    : `https://${serviceName.replace(/\+/g, 'plus').replace(/\s/g, '')}.com`;
   
   return tmdbId ? `${baseUrl}/${tmdbId}` : baseUrl;
 };
@@ -101,14 +117,21 @@ const mergeStreamingResults = (results: StreamingPlatformData[][]): StreamingPla
     sources.forEach(source => {
       if (!source || !source.service) return;
       
-      const lowerCaseName = source.service.toLowerCase();
-      // Only add if not already exists, or if the current one has a logo and the existing one doesn't
-      if (!serviceMap.has(lowerCaseName) || (!serviceMap.get(lowerCaseName)?.logo && source.logo)) {
-        serviceMap.set(lowerCaseName, {
-          ...source,
-          // Ensure link is always present and properly formatted
-          link: source.link || formatServiceLink(source.service, undefined)
-        });
+      // Only if the service is actually marked as available
+      if (source.available !== false) {
+        const lowerCaseName = source.service.toLowerCase();
+        // Add the service or update existing with better data source
+        const existingSource = serviceMap.get(lowerCaseName);
+        
+        if (!existingSource || 
+            (!existingSource.logo && source.logo) || 
+            (source.sourceConfidence && (!existingSource.sourceConfidence || source.sourceConfidence > existingSource.sourceConfidence))) {
+          serviceMap.set(lowerCaseName, {
+            ...source,
+            // Ensure link is properly formatted
+            link: formatServiceLink(source.service, source.link, undefined)
+          });
+        }
       }
     });
   });
@@ -116,12 +139,37 @@ const mergeStreamingResults = (results: StreamingPlatformData[][]): StreamingPla
   return Array.from(serviceMap.values());
 };
 
-export const useStreamingAvailability = (tmdbId: number | undefined, title?: string, year?: string) => {
+// Function to verify and validate results - filters only truly available services
+const validateStreamingResults = (results: StreamingPlatformData[]): StreamingPlatformData[] => {
+  return results.filter(service => {
+    // Check if service has required fields
+    const hasRequiredFields = !!service.service && service.available !== false;
+    
+    // Make sure link is a valid URL
+    const hasValidLink = !!service.link && 
+      (service.link.startsWith('http://') || service.link.startsWith('https://'));
+    
+    return hasRequiredFields && hasValidLink;
+  });
+};
+
+// Function to determine confidence level for a given data source
+const getSourceConfidence = (sourceName: string): number => {
+  const confidenceMap: Record<string, number> = {
+    'justwatch': 0.9,  // JustWatch returns fairly reliable results
+    'watchmode': 0.8,  // Watchmode has accurate data but may have region issues
+    'custom': 0.6      // Custom service as less reliable
+  };
+  
+  return confidenceMap[sourceName] || 0.5;
+};
+
+export const useStreamingAvailability = (tmdbId: number | undefined, title?: string, year?: string, region: string = 'PL') => {
   const { t } = useTranslation();
   const { toast } = useToast();
 
   return useQuery({
-    queryKey: ['streamingAvailability', tmdbId, title, year],
+    queryKey: ['streamingAvailability', tmdbId, title, year, region],
     queryFn: async () => {
       if (!title) {
         throw new Error('Title is required');
@@ -150,14 +198,19 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
       lastRequestTime = Date.now();
       
       try {
-        console.log('Fetching streaming availability for:', title, tmdbId);
+        console.log('Fetching streaming availability for:', title, tmdbId, 'region:', region);
         
         // Array to collect streaming data from different sources
         const availableServicesPromises = [];
         
-        // 1. Try JustWatch API
+        // 1. Try JustWatch API with source confidence
         availableServicesPromises.push(
-          getStreamingProviders(title, year).catch(err => {
+          getStreamingProviders(title, year, region).then(results => 
+            results.map(item => ({
+              ...item,
+              sourceConfidence: getSourceConfidence('justwatch')
+            }))
+          ).catch(err => {
             console.error('JustWatch API error:', err);
             return [];
           })
@@ -166,19 +219,28 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
         // 2. If tmdbId is available, try Watchmode API via tmdbId
         if (tmdbId) {
           availableServicesPromises.push(
-            getWatchmodeStreamingAvailability(tmdbId).catch(err => {
+            getWatchmodeStreamingAvailability(tmdbId, region).then(results => 
+              results.map(item => ({
+                ...item,
+                sourceConfidence: getSourceConfidence('watchmode')
+              }))
+            ).catch(err => {
               console.error('Watchmode API error (tmdbId):', err);
               return [];
             })
           );
         }
         // 3. If tmdbId is not available, try Watchmode API via title search
-        else {
+        else if (title) {
           const watchmodeTitlePromise = async () => {
             try {
-              const titleResult = await searchWatchmodeTitle(title, year);
+              const titleResult = await searchWatchmodeTitle(title, year, region);
               if (titleResult) {
-                return getWatchmodeTitleDetails(titleResult.id);
+                const results = await getWatchmodeTitleDetails(titleResult.id, region);
+                return results.map(item => ({
+                  ...item,
+                  sourceConfidence: getSourceConfidence('watchmode')
+                }));
               }
               return [];
             } catch (err) {
@@ -192,7 +254,12 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
         // 4. Try our own streaming availability service as a fallback
         if (tmdbId) {
           availableServicesPromises.push(
-            getStreamingAvailability(tmdbId, title, year).catch(err => {
+            getStreamingAvailability(tmdbId, title, year, region).then(results => 
+              results.map(item => ({
+                ...item,
+                sourceConfidence: getSourceConfidence('custom')
+              }))
+            ).catch(err => {
               console.error('Custom streaming API error:', err);
               return [];
             })
@@ -209,7 +276,7 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
           )
           .map(result => result.value);
         
-        console.log('Streaming results:', availableServices);
+        console.log('Streaming results before merging:', availableServices);
         
         // Merge results from different sources
         const mergedServices = mergeStreamingResults(availableServices);
@@ -217,16 +284,21 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
         // Format the links properly
         const formattedServices = mergedServices.map(service => ({
           ...service,
-          link: formatServiceLink(service.service, tmdbId)
+          link: formatServiceLink(service.service, service.link, tmdbId)
         }));
         
+        // Additional result validation
+        const validatedServices = validateStreamingResults(formattedServices);
+        
+        console.log('Final streaming results:', validatedServices);
+        
         // Cache the results if we have a tmdbId
-        if (tmdbId && formattedServices.length > 0) {
-          cacheStreamingData(tmdbId, formattedServices);
+        if (tmdbId && validatedServices.length > 0) {
+          cacheStreamingData(tmdbId, validatedServices);
         }
 
         return {
-          services: formattedServices,
+          services: validatedServices,
           timestamp: new Date().toISOString(),
           isStale: false
         };

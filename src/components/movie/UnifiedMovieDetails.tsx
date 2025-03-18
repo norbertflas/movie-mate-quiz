@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MovieDetailsSection } from "./MovieDetailsSection";
 import { MovieActions } from "./MovieActions";
@@ -27,7 +26,7 @@ interface UnifiedMovieDetailsProps {
     service: string;
     link: string;
     logo?: string;
-    type?: string; // Added type property to match the interface
+    type?: string;
   }>;
 }
 
@@ -48,7 +47,8 @@ export const UnifiedMovieDetails = ({
   const { data: availabilityData, isLoading: isLoadingServices, isError } = useStreamingAvailability(
     movie?.id,
     movie?.title,
-    movie?.release_date ? new Date(movie.release_date).getFullYear().toString() : undefined
+    movie?.release_date ? new Date(movie.release_date).getFullYear().toString() : undefined,
+    'PL'
   );
 
   const services = availabilityData?.services || initialStreamingServices;
@@ -96,7 +96,6 @@ export const UnifiedMovieDetails = ({
     onClose();
   };
 
-  // Get platform icon from name or use fallback
   const getPlatformIcon = (service: string): string => {
     const normalizedName = service.toLowerCase()
       .replace(/\+/g, 'plus')
@@ -105,13 +104,11 @@ export const UnifiedMovieDetails = ({
       .replace('hbomax', 'max')
       .replace('appletv', 'apple');
     
-    // Try to get the icon from public/streaming-icons folder
     const iconPath = `/streaming-icons/${normalizedName}.svg`;
     
     return iconPath;
   };
 
-  // Function to open streaming service in a new tab
   const openStreamingService = (link: string, service: string) => {
     if (!link) {
       toast({
@@ -249,8 +246,8 @@ export const UnifiedMovieDetails = ({
                                           src={service.logo}
                                           alt={service.service}
                                           className="w-10 h-10 object-contain"
-                                          onError={(e) => {
-                                            const target = e.target as HTMLImageElement;
+                                          onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                                            const target = e.currentTarget;
                                             target.src = getPlatformIcon(service.service);
                                             target.onerror = () => {
                                               target.onerror = null;
@@ -263,8 +260,8 @@ export const UnifiedMovieDetails = ({
                                           src={getPlatformIcon(service.service)}
                                           alt={service.service}
                                           className="w-10 h-10 object-contain"
-                                          onError={(e) => {
-                                            const target = e.target as HTMLImageElement;
+                                          onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                                            const target = e.currentTarget;
                                             target.onerror = null;
                                             target.src = "/streaming-icons/default.svg";
                                           }}
