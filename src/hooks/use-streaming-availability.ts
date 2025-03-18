@@ -282,10 +282,21 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
         const mergedServices = mergeStreamingResults(availableServices);
         
         // Format the links properly
-        const formattedServices = mergedServices.map(service => ({
-          ...service,
-          link: formatServiceLink(service.service, service.link, tmdbId)
-        }));
+        const formattedServices = mergedServices.map(service => {
+          // Make sure service is a valid object before spreading
+          if (typeof service === 'object' && service !== null) {
+            return {
+              ...service,
+              link: formatServiceLink(service.service, service.link, tmdbId)
+            };
+          }
+          // Fallback for non-object services (shouldn't happen, but prevents TS errors)
+          return {
+            service: String(service),
+            available: true,
+            link: ''
+          };
+        });
         
         // Additional result validation
         const validatedServices = validateStreamingResults(formattedServices);
