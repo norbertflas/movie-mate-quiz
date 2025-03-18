@@ -55,6 +55,42 @@ const getCachedStreamingData = (movieId: number): StreamingPlatformData[] | null
   }
 };
 
+// Function to properly format streaming service links
+const formatServiceLink = (service: string, tmdbId?: number): string => {
+  const serviceName = service.toLowerCase().trim();
+  
+  // Map of known streaming services to their domain format
+  const serviceDomains: Record<string, string> = {
+    'netflix': 'netflix.com/title',
+    'disney+': 'disneyplus.com/movies',
+    'disney plus': 'disneyplus.com/movies',
+    'hulu': 'hulu.com/movie',
+    'amazon prime': 'amazon.com/gp/video',
+    'amazon prime video': 'amazon.com/gp/video',
+    'prime video': 'amazon.com/gp/video',
+    'max': 'max.com/movies',
+    'hbomax': 'max.com/movies',
+    'hbo max': 'max.com/movies',
+    'paramount+': 'paramountplus.com/movies',
+    'paramount plus': 'paramountplus.com/movies',
+    'apple tv+': 'tv.apple.com',
+    'apple tv': 'tv.apple.com',
+    'appletv+': 'tv.apple.com',
+    'peacock': 'peacocktv.com/watch'
+  };
+  
+  // Find the matching domain or use a generic fallback
+  const domain = Object.keys(serviceDomains).find(key => 
+    serviceName.includes(key.toLowerCase())
+  );
+  
+  const baseUrl = domain 
+    ? `https://${serviceDomains[domain]}` 
+    : `https://${serviceName.replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch`;
+  
+  return tmdbId ? `${baseUrl}/${tmdbId}` : baseUrl;
+};
+
 // Function to merge streaming results with deduplication and error handling
 const mergeStreamingResults = (results: StreamingPlatformData[][]): StreamingPlatformData[] => {
   const serviceMap = new Map<string, StreamingPlatformData>();
@@ -70,8 +106,8 @@ const mergeStreamingResults = (results: StreamingPlatformData[][]): StreamingPla
       if (!serviceMap.has(lowerCaseName) || (!serviceMap.get(lowerCaseName)?.logo && source.logo)) {
         serviceMap.set(lowerCaseName, {
           ...source,
-          // Ensure link is always present
-          link: source.link || `https://${lowerCaseName.replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch`
+          // Ensure link is always present and properly formatted
+          link: source.link || formatServiceLink(source.service, undefined)
         });
       }
     });
@@ -178,32 +214,19 @@ export const useStreamingAvailability = (tmdbId: number | undefined, title?: str
         // Merge results from different sources
         const mergedServices = mergeStreamingResults(availableServices);
         
-        // Add some mock data if nothing was found (during development)
-        if (mergedServices.length === 0 && process.env.NODE_ENV === 'development') {
-          console.log('No streaming services found, adding mock data for development');
-          mergedServices.push(
-            {
-              service: 'Netflix',
-              available: true,
-              link: 'https://netflix.com/watch',
-              logo: '/streaming-icons/netflix.svg'
-            },
-            {
-              service: 'Disney+',
-              available: true,
-              link: 'https://disneyplus.com/watch',
-              logo: '/streaming-icons/disney.svg'
-            }
-          );
-        }
+        // Format the links properly
+        const formattedServices = mergedServices.map(service => ({
+          ...service,
+          link: formatServiceLink(service.service, tmdbId)
+        }));
         
         // Cache the results if we have a tmdbId
-        if (tmdbId && mergedServices.length > 0) {
-          cacheStreamingData(tmdbId, mergedServices);
+        if (tmdbId && formattedServices.length > 0) {
+          cacheStreamingData(tmdbId, formattedServices);
         }
 
         return {
-          services: mergedServices,
+          services: formattedServices,
           timestamp: new Date().toISOString(),
           isStale: false
         };

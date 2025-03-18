@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, X } from "lucide-react";
+import { AlertCircle, X, ExternalLink } from "lucide-react";
 import { useStreamingAvailability } from "@/hooks/use-streaming-availability";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -109,6 +109,20 @@ export const UnifiedMovieDetails = ({
     const iconPath = `/streaming-icons/${normalizedName}.svg`;
     
     return iconPath;
+  };
+
+  // Function to open streaming service in a new tab
+  const openStreamingService = (link: string, service: string) => {
+    if (!link) {
+      toast({
+        title: t("streaming.linkError"),
+        description: t("streaming.noLinkAvailable", { service }),
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    window.open(link, '_blank', 'noopener,noreferrer');
   };
 
   if (!movie) return null;
@@ -224,53 +238,52 @@ export const UnifiedMovieDetails = ({
                             {services.map((service, index) => (
                               <HoverCard key={`${service.service}-${index}`}>
                                 <HoverCardTrigger asChild>
-                                  <a
-                                    href={service.link}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="block"
+                                  <Button
+                                    variant="outline"
+                                    className="flex flex-col items-center gap-1 p-2 h-auto"
+                                    onClick={() => openStreamingService(service.link, service.service)}
                                   >
-                                    <div className="flex flex-col items-center gap-1 hover:scale-110 transition-transform p-2 rounded-lg hover:bg-accent/30">
-                                      <div className="w-12 h-12 rounded-md overflow-hidden bg-accent/10 flex items-center justify-center">
-                                        {service.logo ? (
-                                          <img 
-                                            src={service.logo}
-                                            alt={service.service}
-                                            className="w-10 h-10 object-contain"
-                                            onError={(e) => {
-                                              const target = e.target as HTMLImageElement;
-                                              target.src = getPlatformIcon(service.service);
-                                              target.onerror = () => {
-                                                target.onerror = null;
-                                                target.src = "/streaming-icons/default.svg";
-                                              };
-                                            }}
-                                          />
-                                        ) : (
-                                          <img 
-                                            src={getPlatformIcon(service.service)}
-                                            alt={service.service}
-                                            className="w-10 h-10 object-contain"
-                                            onError={(e) => {
-                                              const target = e.target as HTMLImageElement;
+                                    <div className="w-12 h-12 rounded-md overflow-hidden bg-accent/10 flex items-center justify-center">
+                                      {service.logo ? (
+                                        <img 
+                                          src={service.logo}
+                                          alt={service.service}
+                                          className="w-10 h-10 object-contain"
+                                          onError={(e) => {
+                                            const target = e.target as HTMLImageElement;
+                                            target.src = getPlatformIcon(service.service);
+                                            target.onerror = () => {
                                               target.onerror = null;
                                               target.src = "/streaming-icons/default.svg";
-                                            }}
-                                          />
-                                        )}
-                                      </div>
+                                            };
+                                          }}
+                                        />
+                                      ) : (
+                                        <img 
+                                          src={getPlatformIcon(service.service)}
+                                          alt={service.service}
+                                          className="w-10 h-10 object-contain"
+                                          onError={(e) => {
+                                            const target = e.target as HTMLImageElement;
+                                            target.onerror = null;
+                                            target.src = "/streaming-icons/default.svg";
+                                          }}
+                                        />
+                                      )}
+                                    </div>
+                                    <div className="flex flex-col items-center">
                                       <span className="text-xs text-center font-medium">
                                         {service.service}
-                                        {service.type && service.type !== 'sub' && service.type !== 'free' && (
-                                          <Badge variant="outline" className="ml-1 text-[10px] px-1 py-0">
-                                            {service.type === 'tvod' ? 'Rent' : 
-                                             service.type === 'addon' ? 'Add-on' : 
-                                             service.type}
-                                          </Badge>
-                                        )}
                                       </span>
+                                      {service.type && service.type !== 'sub' && service.type !== 'free' && (
+                                        <Badge variant="outline" className="text-[10px] px-1 py-0">
+                                          {service.type === 'tvod' ? 'Rent' : 
+                                           service.type === 'addon' ? 'Add-on' : 
+                                           service.type}
+                                        </Badge>
+                                      )}
                                     </div>
-                                  </a>
+                                  </Button>
                                 </HoverCardTrigger>
                                 <HoverCardContent className="w-80">
                                   <div className="space-y-1">
@@ -286,8 +299,8 @@ export const UnifiedMovieDetails = ({
                                         </span>
                                       )}
                                     </h4>
-                                    <p className="text-sm text-muted-foreground">
-                                      {t("streaming.clickToWatch")}
+                                    <p className="text-sm text-muted-foreground flex items-center gap-1">
+                                      {t("streaming.clickToWatch")} <ExternalLink className="h-3 w-3" />
                                     </p>
                                     {isDataStale && (
                                       <p className="text-sm text-yellow-500">
