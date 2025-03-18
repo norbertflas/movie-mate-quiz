@@ -12,7 +12,7 @@ export interface StreamingPlatformData {
   endDate?: string;
   link: string;
   logo?: string;
-  type?: string; // Added new type field
+  type?: string; // Added type field
 }
 
 export interface StreamingAvailabilityCache {

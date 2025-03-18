@@ -27,6 +27,7 @@ interface UnifiedMovieDetailsProps {
     service: string;
     link: string;
     logo?: string;
+    type?: string; // Added type property to match the interface
   }>;
 }
 
@@ -236,13 +237,12 @@ export const UnifiedMovieDetails = ({
                                             src={service.logo}
                                             alt={service.service}
                                             className="w-10 h-10 object-contain"
-                                            onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
-                                              const target = e.currentTarget;
+                                            onError={(e) => {
+                                              const target = e.target as HTMLImageElement;
                                               target.src = getPlatformIcon(service.service);
-                                              target.onerror = (e2: React.SyntheticEvent<HTMLImageElement>) => {
-                                                const target2 = e2.currentTarget;
-                                                target2.onerror = null;
-                                                target2.src = "/streaming-icons/default.svg";
+                                              target.onerror = () => {
+                                                target.onerror = null;
+                                                target.src = "/streaming-icons/default.svg";
                                               };
                                             }}
                                           />
@@ -251,8 +251,8 @@ export const UnifiedMovieDetails = ({
                                             src={getPlatformIcon(service.service)}
                                             alt={service.service}
                                             className="w-10 h-10 object-contain"
-                                            onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
-                                              const target = e.currentTarget;
+                                            onError={(e) => {
+                                              const target = e.target as HTMLImageElement;
                                               target.onerror = null;
                                               target.src = "/streaming-icons/default.svg";
                                             }}
