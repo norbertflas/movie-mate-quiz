@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { getStreamingProviders } from "@/services/justwatch";
 import { getWatchmodeStreamingAvailability, searchWatchmodeTitle, getWatchmodeTitleDetails } from "@/services/watchmode";

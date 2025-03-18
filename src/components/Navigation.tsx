@@ -1,9 +1,11 @@
+
 import { NavLinks } from "./navigation/NavLinks";
 import { UserActions } from "./navigation/UserActions";
 import { MobileNav } from "./navigation/MobileNav";
 import { motion } from "framer-motion";
 import { useLocation } from "react-router-dom";
 import { Breadcrumbs } from "./navigation/Breadcrumbs";
+import { Logo } from "./Logo";
 
 export const Navigation = () => {
   const location = useLocation();
@@ -17,8 +19,12 @@ export const Navigation = () => {
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
+          <div className="flex items-center">
+            <Logo animated />
+          </div>
+          
           <motion.div 
-            className="hidden md:flex md:flex-1"
+            className="hidden md:flex md:flex-1 justify-center"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
