@@ -12,9 +12,11 @@ interface TrendingMovieCardProps {
 export const TrendingMovieCard = ({ movie, onClick }: TrendingMovieCardProps) => {
   const isMobile = useIsMobile();
   
+  if (!movie) return null;
+  
   return (
     <motion.div
-      className={`flex-none ${isMobile ? "w-[160px]" : "w-[200px]"}`}
+      className={`flex-none ${isMobile ? "w-[140px]" : "w-[220px]"}`}
       whileHover={{ scale: 1.05 }}
       onClick={() => onClick(movie)}
       transition={{ duration: 0.2 }}

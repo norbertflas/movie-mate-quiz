@@ -17,19 +17,20 @@ export const TrendingMoviesContainer = ({
 }: TrendingMoviesContainerProps) => {
   const isMobile = useIsMobile();
   
+  if (!movies || movies.length === 0) {
+    return (
+      <div className="py-8 text-center text-muted-foreground">
+        Brak filmów do wyświetlenia
+      </div>
+    );
+  }
+  
   return (
     <motion.div 
-      className="flex space-x-6 py-4 overflow-x-auto scrollbar-hide group no-select"
-      initial={{ x: 0 }}
-      animate={{ 
-        x: isMobile ? 0 : (isHovered ? 0 : [-1000, 0])
-      }}
-      transition={{ 
-        duration: 30,
-        repeat: Infinity,
-        ease: "linear",
-        repeatType: "loop"
-      }}
+      className="flex space-x-4 py-4 overflow-x-auto scrollbar-hide group no-select"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4 }}
     >
       {movies.slice(0, 10).map((movie) => (
         <TrendingMovieCard

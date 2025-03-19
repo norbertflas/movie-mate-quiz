@@ -12,7 +12,7 @@ export const Navigation = () => {
 
   return (
     <motion.nav 
-      className="sticky top-0 z-50 w-full border-b glass-panel"
+      className="sticky top-0 z-50 w-full border-b glass-panel backdrop-blur-lg"
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.5, type: "spring", stiffness: 100 }}
