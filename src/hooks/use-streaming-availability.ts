@@ -1,355 +1,302 @@
+
 import { useQuery } from "@tanstack/react-query";
-import { getStreamingProviders } from "@/services/justwatch";
-import { getWatchmodeStreamingAvailability, searchWatchmodeTitle, getWatchmodeTitleDetails } from "@/services/watchmode";
-import { getStreamingAvailability } from "@/services/streamingAvailability";
-import { useToast } from "./use-toast";
-import { useTranslation } from "react-i18next";
-import type { StreamingPlatformData, StreamingAvailabilityCache } from "@/types/streaming";
+import { StreamingPlatformData, StreamingAvailabilityCache } from "@/types/streaming";
+import { formatServiceLinks } from "@/utils/streamingServices";
 
-const CACHE_DURATION = 12 * 60 * 60 * 1000; // 12 hours - shortened to refresh data more often
-const CACHE_PREFIX = 'streaming_';
+// Cache for streaming availability data
+const availabilityCache: Record<string, StreamingAvailabilityCache> = {};
+const CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
 
-// Global request queue management
-let lastRequestTime = 0;
-const MIN_REQUEST_INTERVAL = 2000; // 2 seconds between requests
-const MAX_CONCURRENT_REQUESTS = 3;
-let activeRequests = 0;
-
-const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-const getNextRequestDelay = () => {
-  const now = Date.now();
-  const timeSinceLastRequest = now - lastRequestTime;
-  
-  if (timeSinceLastRequest < MIN_REQUEST_INTERVAL || activeRequests >= MAX_CONCURRENT_REQUESTS) {
-    return Math.max(MIN_REQUEST_INTERVAL - timeSinceLastRequest, 0);
-  }
-  
-  return 0;
+// Service mapping for consistent naming
+const serviceMap: Record<string, string> = {
+  netflix: "Netflix",
+  prime: "Amazon Prime",
+  disney: "Disney+",
+  hbo: "HBO Max",
+  hulu: "Hulu",
+  peacock: "Peacock",
+  paramount: "Paramount+",
+  apple: "Apple TV+",
+  mubi: "MUBI",
+  stan: "Stan",
+  now: "NOW",
+  crave: "Crave",
+  iplayer: "BBC iPlayer",
+  all4: "All 4",
+  britbox: "BritBox",
+  hotstar: "Hotstar",
+  zee5: "ZEE5",
+  curiosity: "Curiosity Stream",
+  crunchyroll: "Crunchyroll",
+  showtime: "Showtime",
+  starz: "Starz",
+  max: "Max",
 };
 
-const cacheStreamingData = (movieId: number, data: StreamingPlatformData[]) => {
-  const cacheItem: StreamingAvailabilityCache = {
-    data,
-    timestamp: Date.now()
-  };
-  localStorage.setItem(`${CACHE_PREFIX}${movieId}`, JSON.stringify(cacheItem));
+// Create a deep copy of an object
+const deepCopy = <T>(obj: T): T => {
+  return JSON.parse(JSON.stringify(obj));
 };
 
-const getCachedStreamingData = (movieId: number): StreamingPlatformData[] | null => {
+// Format streaming service name
+const formatServiceName = (service: string): string => {
+  const formattedName = serviceMap[service.toLowerCase()] || service;
+  return formattedName.charAt(0).toUpperCase() + formattedName.slice(1);
+};
+
+// Fetch streaming availability from the API
+const fetchStreamingAvailability = async (
+  movieId: number
+): Promise<StreamingPlatformData[]> => {
   try {
-    const cached = localStorage.getItem(`${CACHE_PREFIX}${movieId}`);
-    if (!cached) return null;
+    // First, try to fetch from Watchmode API
+    const response = await fetch(
+      `/api/watchmode-title-details?tmdb_id=${movieId}`
+    );
+    const data = await response.json();
 
-    const { data, timestamp } = JSON.parse(cached) as StreamingAvailabilityCache;
-    if (Date.now() - timestamp > CACHE_DURATION) {
-      localStorage.removeItem(`${CACHE_PREFIX}${movieId}`);
-      return null;
+    if (response.ok && data.sources && data.sources.length > 0) {
+      return formatWatchmodeData(data.sources);
     }
 
-    return data;
-  } catch (error) {
-    console.error('Error reading cache:', error);
-    return null;
-  }
-};
-
-// Function to properly format streaming service links
-const formatServiceLink = (service: string, link?: string, tmdbId?: number): string => {
-  // If link is already available and is a valid URL, use it
-  if (link && (link.startsWith('http://') || link.startsWith('https://'))) {
-    return link;
-  }
-  
-  const serviceName = service.toLowerCase().trim();
-  
-  // Map of known streaming services to their domain format
-  const serviceDomains: Record<string, string> = {
-    'netflix': 'netflix.com/title',
-    'disney+': 'disneyplus.com/movies',
-    'disney plus': 'disneyplus.com/movies',
-    'hulu': 'hulu.com/movie',
-    'amazon prime': 'amazon.com/gp/video',
-    'amazon prime video': 'amazon.com/gp/video',
-    'prime video': 'amazon.com/gp/video',
-    'max': 'max.com/movies',
-    'hbomax': 'max.com/movies',
-    'hbo max': 'max.com/movies',
-    'paramount+': 'paramountplus.com/movies',
-    'paramount plus': 'paramountplus.com/movies',
-    'apple tv+': 'tv.apple.com',
-    'apple tv': 'tv.apple.com',
-    'appletv+': 'tv.apple.com',
-    'peacock': 'peacocktv.com/watch',
-    'canal+': 'canalplus.com',
-    'canal plus': 'canalplus.com',
-    'hbo': 'hbomax.com',
-    'player': 'player.pl',
-    'ncplus': 'ncplus.pl',
-    'viaplay': 'viaplay.pl',
-    'polsat box go': 'polsatboxgo.pl',
-    'tvp vod': 'vod.tvp.pl',
-    'tvp': 'vod.tvp.pl',
-    'cda premium': 'premium.cda.pl',
-    'cda': 'premium.cda.pl'
-  };
-  
-  // Find the matching domain or use a generic fallback
-  const domain = Object.keys(serviceDomains).find(key => 
-    serviceName.includes(key.toLowerCase())
-  );
-  
-  const baseUrl = domain 
-    ? `https://${serviceDomains[domain]}` 
-    : `https://${serviceName.replace(/\+/g, 'plus').replace(/\s/g, '')}.com`;
-  
-  return tmdbId ? `${baseUrl}/${tmdbId}` : baseUrl;
-};
-
-// Function to merge streaming results with deduplication and error handling
-const mergeStreamingResults = (results: StreamingPlatformData[][]): StreamingPlatformData[] => {
-  const serviceMap = new Map<string, StreamingPlatformData>();
-  
-  results.forEach(sources => {
-    if (!sources || !Array.isArray(sources)) return;
+    // If Watchmode fails, try custom streaming availability endpoint
+    const backupResponse = await fetch(
+      `/api/streaming-availability?movie_id=${movieId}`
+    );
     
-    sources.forEach(source => {
-      if (!source || typeof source !== 'object' || !source.service) return;
+    if (!backupResponse.ok) {
+      throw new Error("Failed to fetch streaming data");
+    }
+    
+    const backupData = await backupResponse.json();
+    
+    if (backupData && backupData.results) {
+      return formatCustomApiData(backupData.results);
+    }
+    
+    return [];
+  } catch (error) {
+    console.error("Error fetching streaming availability:", error);
+    return [];
+  }
+};
+
+// Format data from Watchmode API
+const formatWatchmodeData = (
+  sources: any[]
+): StreamingPlatformData[] => {
+  const uniqueServices = new Map<string, StreamingPlatformData>();
+
+  sources.forEach((source) => {
+    if (!source || typeof source !== 'object') return;
+    
+    const serviceName = source.name || "";
+    const formattedName = formatServiceName(serviceName);
+    
+    // Create a new object with all required properties
+    const serviceData: StreamingPlatformData = {
+      service: formattedName,
+      available: true,
+      link: source.web_url || "",
+      logo: getServiceLogo(serviceName.toLowerCase()),
+      type: source.type || "subscription",
+      sourceConfidence: 0.9
+    };
+    
+    // Use Map to handle duplicates - prefer subscription over rental
+    if (!uniqueServices.has(formattedName) || 
+        (uniqueServices.get(formattedName)?.type !== "subscription" && 
+         serviceData.type === "subscription")) {
+      uniqueServices.set(formattedName, serviceData);
+    }
+  });
+
+  return Array.from(uniqueServices.values());
+};
+
+// Format data from custom API
+const formatCustomApiData = (
+  results: any
+): StreamingPlatformData[] => {
+  const services: StreamingPlatformData[] = [];
+
+  if (!results || typeof results !== 'object') {
+    return services;
+  }
+
+  // Process different streaming platforms from the results
+  Object.entries(results).forEach(([key, value]) => {
+    if (!value || typeof value !== 'object') return;
+    
+    // Skip non-service objects
+    if (key === "meta" || key === "id" || key === "tmdbId") {
+      return;
+    }
+
+    const countryData = value as Record<string, any>;
+    
+    // Process each country's data
+    Object.entries(countryData).forEach(([country, countryServices]) => {
+      if (!countryServices || typeof countryServices !== 'object') return;
       
-      // Only if the service is actually marked as available
-      if (source.available !== false) {
-        const lowerCaseName = source.service.toLowerCase();
-        // Add the service or update existing with better data source
-        const existingSource = serviceMap.get(lowerCaseName);
+      // Process each service in the country
+      Object.entries(countryServices as Record<string, any>).forEach(([service, serviceData]) => {
+        if (!serviceData || typeof serviceData !== 'object') return;
         
-        if (!existingSource || 
-            (!existingSource.logo && source.logo) || 
-            (source.sourceConfidence && (!existingSource.sourceConfidence || source.sourceConfidence > existingSource.sourceConfidence))) {
+        const formattedName = formatServiceName(service);
+        const link = (serviceData as any).link || "";
+        
+        services.push({
+          service: formattedName,
+          available: true,
+          link: link,
+          logo: getServiceLogo(service.toLowerCase()),
+          type: "subscription",
+          sourceConfidence: 0.7
+        });
+      });
+    });
+  });
+
+  return services;
+};
+
+// Get logo URL for a streaming service
+const getServiceLogo = (service: string): string => {
+  const knownServices = [
+    "netflix", "prime", "disney", "hbo", "hulu", 
+    "max", "apple", "paramount", "amazon", "disneyplus"
+  ];
+  
+  const normalizedService = service.toLowerCase().replace(/\s+/g, "");
+  
+  // Check if we have a specific logo for this service
+  if (knownServices.includes(normalizedService)) {
+    return `/streaming-icons/${normalizedService}.svg`;
+  }
+  
+  return "/streaming-icons/default.svg";
+};
+
+// Merge results from different sources
+const mergeStreamingResults = (
+  sources: Array<StreamingPlatformData[]>
+): StreamingPlatformData[] => {
+  const mergedServices = new Map<string, StreamingPlatformData>();
+  
+  sources.forEach((sourceArray) => {
+    if (!Array.isArray(sourceArray)) return;
+    
+    sourceArray.forEach((source) => {
+      if (!source || typeof source !== 'object') return;
+      
+      const serviceName = source.service;
+      
+      if (!serviceName) return;
+      
+      // If service already exists, use the one with higher confidence or more complete data
+      if (mergedServices.has(serviceName)) {
+        const existing = mergedServices.get(serviceName);
+        
+        if (existing && 
+            ((source.sourceConfidence || 0) > (existing.sourceConfidence || 0) || 
+             (!existing.link && source.link))) {
           
-          // Create a properly typed StreamingPlatformData object instead of using spread
-          const formattedService: StreamingPlatformData = {
-            service: source.service,
-            available: true,
-            link: formatServiceLink(source.service, source.link, undefined),
-            logo: source.logo,
-            type: source.type,
-            sourceConfidence: source.sourceConfidence,
-            startDate: source.startDate,
-            endDate: source.endDate
+          // Create a new object with all required properties
+          const updatedService: StreamingPlatformData = {
+            service: serviceName,
+            available: source.available !== undefined ? source.available : existing.available,
+            link: source.link || existing.link || "",
+            logo: source.logo || existing.logo || getServiceLogo(serviceName.toLowerCase()),
+            type: source.type || existing.type || "subscription",
+            sourceConfidence: source.sourceConfidence || existing.sourceConfidence || 0
           };
           
-          serviceMap.set(lowerCaseName, formattedService);
+          mergedServices.set(serviceName, updatedService);
         }
+      } else {
+        // Create a new entry with all required properties
+        const newService: StreamingPlatformData = {
+          service: serviceName,
+          available: source.available !== undefined ? source.available : true,
+          link: source.link || "",
+          logo: source.logo || getServiceLogo(serviceName.toLowerCase()),
+          type: source.type || "subscription",
+          sourceConfidence: source.sourceConfidence || 0
+        };
+        
+        mergedServices.set(serviceName, newService);
       }
     });
   });
   
-  return Array.from(serviceMap.values());
+  // Convert map to array and format links
+  const result = Array.from(mergedServices.values());
+  return formatServiceLinks(result);
 };
 
-// Function to verify and validate results - filters only truly available services
-const validateStreamingResults = (results: StreamingPlatformData[]): StreamingPlatformData[] => {
-  return results.filter(service => {
-    // Check if service has required fields
-    const hasRequiredFields = !!service.service && service.available !== false;
-    
-    // Make sure link is a valid URL
-    const hasValidLink = !!service.link && 
-      (service.link.startsWith('http://') || service.link.startsWith('https://'));
-    
-    return hasRequiredFields && hasValidLink;
-  });
-};
-
-// Function to determine confidence level for a given data source
-const getSourceConfidence = (sourceName: string): number => {
-  const confidenceMap: Record<string, number> = {
-    'justwatch': 0.9,  // JustWatch returns fairly reliable results
-    'watchmode': 0.8,  // Watchmode has accurate data but may have region issues
-    'custom': 0.6      // Custom service as less reliable
-  };
-  
-  return confidenceMap[sourceName] || 0.5;
-};
-
-export const useStreamingAvailability = (tmdbId: number | undefined, title?: string, year?: string, region: string = 'PL') => {
-  const { t } = useTranslation();
-  const { toast } = useToast();
-
+// Custom hook for fetching streaming availability
+export const useStreamingAvailability = (movieId: number) => {
   return useQuery({
-    queryKey: ['streamingAvailability', tmdbId, title, year, region],
+    queryKey: ["streamingAvailability", movieId],
     queryFn: async () => {
-      if (!title) {
-        throw new Error('Title is required');
-      }
-
-      // Check cache first if tmdbId is available
-      if (tmdbId) {
-        const cachedData = getCachedStreamingData(tmdbId);
-        if (cachedData && cachedData.length > 0) {
-          console.log('Using cached streaming data for movie:', tmdbId);
-          return {
-            services: cachedData,
-            timestamp: new Date().toISOString(),
-            isStale: false
-          };
-        }
-      }
-
-      // Check if we need to wait before making the request
-      const delay = getNextRequestDelay();
-      if (delay > 0) {
-        await wait(delay);
-      }
+      // Check cache first
+      const cachedData = availabilityCache[movieId];
+      const now = Date.now();
       
-      activeRequests++;
-      lastRequestTime = Date.now();
-      
-      try {
-        console.log('Fetching streaming availability for:', title, tmdbId, 'region:', region);
-        
-        // Array to collect streaming data from different sources
-        const availableServicesPromises = [];
-        
-        // 1. Try JustWatch API with source confidence
-        availableServicesPromises.push(
-          getStreamingProviders(title, year, region).then(results => 
-            results.map(item => ({
-              ...item,
-              sourceConfidence: getSourceConfidence('justwatch')
-            }))
-          ).catch(err => {
-            console.error('JustWatch API error:', err);
-            return [];
-          })
-        );
-        
-        // 2. If tmdbId is available, try Watchmode API via tmdbId
-        if (tmdbId) {
-          availableServicesPromises.push(
-            getWatchmodeStreamingAvailability(tmdbId, region).then(results => 
-              results.map(item => ({
-                ...item,
-                sourceConfidence: getSourceConfidence('watchmode')
-              }))
-            ).catch(err => {
-              console.error('Watchmode API error (tmdbId):', err);
-              return [];
-            })
-          );
-        }
-        // 3. If tmdbId is not available, try Watchmode API via title search
-        else if (title) {
-          const watchmodeTitlePromise = async () => {
-            try {
-              const titleResult = await searchWatchmodeTitle(title, year, region);
-              if (titleResult) {
-                const results = await getWatchmodeTitleDetails(titleResult.id, region);
-                return results.map(item => ({
-                  ...item,
-                  sourceConfidence: getSourceConfidence('watchmode')
-                }));
-              }
-              return [];
-            } catch (err) {
-              console.error('Watchmode title search error:', err);
-              return [];
-            }
-          };
-          availableServicesPromises.push(watchmodeTitlePromise());
-        }
-        
-        // 4. Try our own streaming availability service as a fallback
-        if (tmdbId) {
-          availableServicesPromises.push(
-            getStreamingAvailability(tmdbId, title, year, region).then(results => 
-              results.map(item => ({
-                ...item,
-                sourceConfidence: getSourceConfidence('custom')
-              }))
-            ).catch(err => {
-              console.error('Custom streaming API error:', err);
-              return [];
-            })
-          );
-        }
-        
-        // Fetch from multiple sources in parallel
-        const results = await Promise.allSettled(availableServicesPromises);
-        
-        // Process results, filtering out rejected promises
-        const availableServices = results
-          .filter((result): result is PromiseFulfilledResult<StreamingPlatformData[]> => 
-            result.status === 'fulfilled' && Array.isArray(result.value)
-          )
-          .map(result => result.value);
-        
-        console.log('Streaming results before merging:', availableServices);
-        
-        // Merge results from different sources
-        const mergedServices = mergeStreamingResults(availableServices);
-        
-        // Format the links properly - ensure each service is a valid object
-        const formattedServices = mergedServices.map(service => {
-          if (typeof service === 'object' && service !== null) {
-            // Create a new object with explicitly specified properties instead of using spread
-            return {
-              service: service.service,
-              available: service.available !== false,
-              link: formatServiceLink(service.service, service.link, tmdbId),
-              logo: service.logo,
-              type: service.type,
-              sourceConfidence: service.sourceConfidence,
-              startDate: service.startDate,
-              endDate: service.endDate
-            };
-          }
-          // Fallback for non-object services
-          return {
-            service: String(service),
-            available: true,
-            link: '',
-          };
-        });
-        
-        // Additional result validation
-        const validatedServices = validateStreamingResults(formattedServices);
-        
-        console.log('Final streaming results:', validatedServices);
-        
-        // Cache the results if we have a tmdbId
-        if (tmdbId && validatedServices.length > 0) {
-          cacheStreamingData(tmdbId, validatedServices);
-        }
-
+      if (cachedData && (now - cachedData.timestamp) < CACHE_EXPIRY) {
         return {
-          services: validatedServices,
+          services: cachedData.data,
           timestamp: new Date().toISOString(),
           isStale: false
         };
-      } catch (error: any) {
-        console.error('Streaming availability error:', error);
+      }
+      
+      try {
+        // If not in cache or expired, fetch new data
+        const streamingData = await fetchStreamingAvailability(movieId);
         
-        toast({
-          title: t("errors.streamingAvailability"),
-          description: t("errors.tryAgain"),
-          variant: "destructive",
-        });
+        // Fetch backup data from another endpoint for merging
+        let backupData: StreamingPlatformData[] = [];
+        try {
+          const geminiResponse = await fetch(
+            `/api/streaming-availability-gemini?movie_id=${movieId}`
+          );
+          if (geminiResponse.ok) {
+            const geminiData = await geminiResponse.json();
+            if (geminiData && geminiData.results) {
+              backupData = formatCustomApiData(geminiData.results);
+            }
+          }
+        } catch (error) {
+          console.warn("Failed to fetch backup streaming data:", error);
+        }
         
+        // Merge results from different sources
+        const mergedData = mergeStreamingResults([streamingData, backupData]);
+        
+        // Update cache
+        availabilityCache[movieId] = {
+          data: mergedData,
+          timestamp: now
+        };
+        
+        return {
+          services: mergedData,
+          timestamp: new Date().toISOString(),
+          isStale: false
+        };
+      } catch (error) {
+        console.error("Error in streaming availability hook:", error);
         return {
           services: [],
           timestamp: new Date().toISOString(),
           isStale: true
         };
-      } finally {
-        activeRequests--;
       }
     },
-    enabled: !!title,
-    staleTime: CACHE_DURATION,
-    gcTime: CACHE_DURATION * 2,
     retry: 1,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false
+    staleTime: 1000 * 60 * 60, // 1 hour
+    gcTime: 1000 * 60 * 60 * 24, // 24 hours
   });
 };
