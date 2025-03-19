@@ -1,3 +1,4 @@
+
 import { Button } from "../ui/button";
 import { Heart } from "lucide-react";
 import { motion } from "framer-motion";
@@ -15,12 +16,9 @@ export const MovieCardHeader = ({
 }: MovieCardHeaderProps) => {
   return (
     <div className="flex justify-between items-start">
-      <motion.h3
-        className="text-xl font-semibold line-clamp-1 bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text"
-        whileHover={{ scale: 1.02 }}
-      >
+      <h3 className="text-lg font-bold line-clamp-1">
         {title}
-      </motion.h3>
+      </h3>
       <motion.div
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
@@ -36,7 +34,7 @@ export const MovieCardHeader = ({
         >
           <Heart
             className={`h-5 w-5 transition-colors duration-300 ${
-              isFavorite ? "fill-red-500 text-red-500" : "text-gray-500"
+              isFavorite ? "fill-primary text-primary" : "text-muted-foreground"
             }`}
           />
         </Button>
