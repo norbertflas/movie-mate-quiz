@@ -45,10 +45,7 @@ export const UnifiedMovieDetails = ({
   const isMobile = useIsMobile();
   
   const { data: availabilityData, isLoading: isLoadingServices, isError } = useStreamingAvailability(
-    movie?.id,
-    movie?.title,
-    movie?.release_date ? new Date(movie.release_date).getFullYear().toString() : undefined,
-    'PL'
+    movie?.id || 0
   );
 
   const services = availabilityData?.services || initialStreamingServices;

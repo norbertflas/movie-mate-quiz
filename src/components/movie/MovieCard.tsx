@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { CardHeader, CardContent } from "@/components/ui/card";
 import { MovieCardContainer } from "@/components/movie/MovieCardContainer";
@@ -41,7 +40,7 @@ export const MovieCard = ({
   const { t } = useTranslation();
   
   const { userRating, handleRating } = useMovieRating(title);
-  const { data: availabilityData, isLoading, isError } = useStreamingAvailability(tmdbId, title, year);
+  const { data: availabilityData, isLoading, isError } = useStreamingAvailability(tmdbId || 0);
 
   // Ensure all streaming services have a link property (no longer optional)
   const availableServices = availabilityData?.services.map(service => ({

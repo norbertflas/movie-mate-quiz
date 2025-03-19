@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { StreamingPlatformData, StreamingAvailabilityCache } from "@/types/streaming";
 import { formatServiceLinks } from "@/utils/streamingServices";
@@ -235,7 +234,7 @@ const mergeStreamingResults = (
   return formatServiceLinks(result);
 };
 
-// Custom hook for fetching streaming availability
+// Custom hook for fetching streaming availability - only accepts movieId parameter
 export const useStreamingAvailability = (movieId: number) => {
   return useQuery({
     queryKey: ["streamingAvailability", movieId],
