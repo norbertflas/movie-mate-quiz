@@ -2,6 +2,7 @@
 import { motion } from "framer-motion";
 import { MovieCard } from "../MovieCard";
 import type { TMDBMovie } from "@/services/tmdb";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface TrendingMovieCardProps {
   movie: TMDBMovie;
@@ -9,9 +10,11 @@ interface TrendingMovieCardProps {
 }
 
 export const TrendingMovieCard = ({ movie, onClick }: TrendingMovieCardProps) => {
+  const isMobile = useIsMobile();
+  
   return (
     <motion.div
-      className="flex-none w-[200px]"
+      className={`flex-none ${isMobile ? "w-[160px]" : "w-[200px]"}`}
       whileHover={{ scale: 1.05 }}
       onClick={() => onClick(movie)}
       transition={{ duration: 0.2 }}

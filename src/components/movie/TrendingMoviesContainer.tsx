@@ -1,7 +1,8 @@
+
 import { motion } from "framer-motion";
-import { useState } from "react";
 import type { TMDBMovie } from "@/services/tmdb";
 import { TrendingMovieCard } from "./TrendingMovieCard";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface TrendingMoviesContainerProps {
   movies: TMDBMovie[];
@@ -14,12 +15,14 @@ export const TrendingMoviesContainer = ({
   onMovieClick,
   isHovered 
 }: TrendingMoviesContainerProps) => {
+  const isMobile = useIsMobile();
+  
   return (
     <motion.div 
       className="flex space-x-6 py-4 overflow-x-auto scrollbar-hide group no-select"
       initial={{ x: 0 }}
       animate={{ 
-        x: isHovered ? 0 : [-1000, 0]
+        x: isMobile ? 0 : (isHovered ? 0 : [-1000, 0])
       }}
       transition={{ 
         duration: 30,
