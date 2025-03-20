@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import type { QuizAnswer, MovieRecommendation, QuizLogicHook } from "./QuizTypes";
 import { useToast } from "@/hooks/use-toast";
@@ -36,20 +37,31 @@ export const useQuizLogic = (): QuizLogicHook => {
         }
       }
 
+      // Convert answers array to a structured format for easier processing
+      const answerMap = quizAnswers.reduce((map, answer) => {
+        map[answer.questionId] = answer.answer;
+        return map;
+      }, {} as Record<string, string>);
+
+      console.log('Answer map for processing:', answerMap);
+
       // Get recommendations from Edge Function
       const { data, error } = await supabase.functions.invoke('get-personalized-recommendations', {
         body: { 
           answers: quizAnswers,
           userId: user?.id,
-          includeExplanations: true
+          includeExplanations: true,
+          answerMap: answerMap // Send structured answers for easier processing
         }
       });
 
       if (error) {
+        console.error('Error invoking edge function:', error);
         throw error;
       }
 
       if (!data || !Array.isArray(data)) {
+        console.error('Invalid response from recommendations service:', data);
         throw new Error('Invalid response from recommendations service');
       }
 

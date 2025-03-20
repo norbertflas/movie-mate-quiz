@@ -1,3 +1,4 @@
+
 import { SurveyStep } from "@/components/SurveyStep";
 import type { QuizQuestionsProps } from "./QuizTypes";
 import { useTranslation } from "react-i18next";
@@ -12,11 +13,17 @@ export const QuizQuestions = ({ questions, currentStep, onAnswer, answers }: Qui
   }
 
   // Get the current answer if it exists
-  const currentAnswer = answers[currentStep]?.answer;
-  console.log('Current answer for step', currentStep, ':', currentAnswer);
+  const currentAnswer = answers.find(a => a.questionId === currentQuestion.id)?.answer;
+  console.log('Current answer for question', currentQuestion.id, ':', currentAnswer);
 
   // Translate options before passing them to SurveyStep
-  const translatedOptions = currentQuestion.options.map(option => t(option));
+  const translatedOptions = currentQuestion.options.map(option => {
+    // For platform names which shouldn't be translated
+    if (currentQuestion.id === "vod") {
+      return option;
+    }
+    return t(option);
+  });
 
   return (
     <div className="space-y-8">

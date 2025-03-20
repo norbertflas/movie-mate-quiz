@@ -1,3 +1,4 @@
+
 export type SurveyStepType = {
   id: string;
   question: string;
@@ -9,7 +10,7 @@ export type SurveyStepType = {
 
 export interface MovieRecommendation {
   id: number;
-  tmdbId?: number;  // Added this property
+  tmdbId?: number;
   title: string;
   overview: string;
   poster_path: string;
