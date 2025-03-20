@@ -1,10 +1,11 @@
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+
+import { motion } from "framer-motion";
+import { Check } from "lucide-react";
 
 interface QuestionOptionProps {
   option: string;
   isSelected: boolean;
-  onSelect: (option: string) => void;
+  onSelect: () => void;
   type: "single" | "multiple";
 }
 
@@ -14,39 +15,30 @@ export const QuestionOption = ({
   onSelect,
   type,
 }: QuestionOptionProps) => {
-  if (type === "multiple") {
-    return (
-      <div
-        className={`flex items-center space-x-3 p-4 rounded-lg border transition-all duration-200 ${
-          isSelected 
-            ? 'border-blue-500 bg-blue-500/20 hover:bg-blue-500/30' 
-            : 'border-gray-800 hover:bg-gray-800/50'
-        } cursor-pointer`}
-        onClick={() => onSelect(option)}
-      >
-        <Checkbox
-          checked={isSelected}
-          onCheckedChange={() => onSelect(option)}
-          className="h-5 w-5 border-2 data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500"
-        />
-        <label className="text-base text-gray-200 cursor-pointer select-none flex-grow">
-          {option}
-        </label>
-      </div>
-    );
-  }
-
   return (
-    <Button
-      variant="outline"
-      className={`h-auto w-full py-4 px-6 text-left justify-start transition-all duration-200 ${
-        isSelected 
-          ? 'bg-blue-500 hover:bg-blue-600 border-blue-500' 
-          : 'bg-black/20 hover:bg-gray-800/50 border-gray-800'
-      }`}
-      onClick={() => onSelect(option)}
+    <motion.div
+      whileHover={{ scale: 1.01 }}
+      whileTap={{ scale: 0.98 }}
+      className={`
+        relative w-full p-4 rounded-xl border transition-colors duration-200 cursor-pointer
+        ${isSelected 
+          ? 'bg-gray-900/90 border-blue-500' 
+          : 'bg-gray-900/50 border-gray-800 hover:bg-gray-900/70'}
+      `}
+      onClick={onSelect}
     >
-      {option}
-    </Button>
+      <div className="flex items-center justify-between">
+        <span className="text-lg font-medium">{option}</span>
+        {isSelected && (
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className="flex-shrink-0 flex items-center justify-center w-6 h-6 bg-blue-600 rounded-full"
+          >
+            <Check className="h-4 w-4 text-white" />
+          </motion.div>
+        )}
+      </div>
+    </motion.div>
   );
 };

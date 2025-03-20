@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import type { TMDBMovie } from "@/services/tmdb";
 import { TrendingMovieCard } from "./TrendingMovieCard";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useTranslation } from "react-i18next";
 
 interface TrendingMoviesContainerProps {
   movies: TMDBMovie[];
@@ -16,11 +17,12 @@ export const TrendingMoviesContainer = ({
   isHovered 
 }: TrendingMoviesContainerProps) => {
   const isMobile = useIsMobile();
+  const { t } = useTranslation();
   
   if (!movies || movies.length === 0) {
     return (
       <div className="py-8 text-center text-muted-foreground">
-        Brak filmów do wyświetlenia
+        {t("discover.noMoviesFound")}
       </div>
     );
   }

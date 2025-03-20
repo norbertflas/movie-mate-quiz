@@ -8,4 +8,5 @@ export const VOD_SERVICES = [
   "Canal+",
   "SkyShowtime",
   "Player",
+  "I don't have any subscriptions"
 ];

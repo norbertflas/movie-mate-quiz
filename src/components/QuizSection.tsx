@@ -1,184 +1,236 @@
+
 import { useState, useEffect } from "react";
 import { QuizResults } from "./quiz/QuizResults";
-import { useQuizState } from "./quiz/hooks/useQuizState";
+import { QuizQuestions } from "./quiz/QuizQuestions";
+import { QuizProgressBar } from "./quiz/QuizProgressBar";
+import { useQuizLogic } from "./quiz/QuizLogic";
 import { useSurveySteps } from "./quiz/constants/surveySteps";
-import { useQuizSubmission } from "./quiz/hooks/useQuizSubmission";
-import { QuizForm } from "./quiz/QuizForm";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, ArrowRight, Check, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { motion } from "framer-motion";
 import type { QuizAnswer } from "./quiz/QuizTypes";
 
 export const QuizSection = () => {
   const { toast } = useToast();
+  const { t } = useTranslation();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [answerMap, setAnswerMap] = useState<Record<string, string>>({});
+  const [answers, setAnswers] = useState<QuizAnswer[]>([]);
   const steps = useSurveySteps();
-  const [showResults, setShowResults] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
   
-  const {
-    currentStep,
-    answers,
+  const { 
+    showResults,
     recommendations,
-    handleAnswer,
-    handleNext,
-    handlePrevious,
-    isComplete,
-    handleFinish
-  } = useQuizState(steps);
+    handleQuizComplete 
+  } = useQuizLogic();
 
-  const { isSubmitting, submitQuiz } = useQuizSubmission(steps, handleFinish);
+  // Get visible steps based on current answers
+  const visibleSteps = steps.filter(step => !step.shouldShow || step.shouldShow(answerMap));
+  const totalSteps = visibleSteps.length;
 
-  // Log state changes
+  // Update answer map whenever answers change
   useEffect(() => {
-    console.log('Quiz state updated:', {
-      currentStep,
-      answersCount: answers?.length,
-      hasRecommendations: recommendations?.length > 0,
-      isComplete,
-      showResults
-    });
-  }, [currentStep, answers, recommendations, isComplete, showResults]);
-
-  const validateAnswers = (answers: QuizAnswer[]): boolean => {
-    console.log('Validating answers:', answers);
+    const newAnswerMap = answers.reduce((map, answer) => {
+      map[answer.questionId] = answer.answer;
+      return map;
+    }, {} as Record<string, string>);
     
-    if (!answers || answers.length === 0) {
-      console.error('No answers provided');
-      return false;
-    }
+    setAnswerMap(newAnswerMap);
+  }, [answers]);
 
-    if (answers.length !== steps.length) {
-      console.error(`Incomplete answers: ${answers.length}/${steps.length}`);
-      return false;
-    }
+  const handleAnswer = (answer: string) => {
+    const currentQuestion = steps[currentStep];
+    if (!currentQuestion) return;
 
-    const hasInvalidAnswer = answers.some((answer, index) => {
-      if (!answer || !answer.answer) {
-        console.error(`Invalid answer at step ${index + 1}:`, answer);
-        return true;
+    const newAnswer: QuizAnswer = {
+      questionId: currentQuestion.id,
+      answer
+    };
+    
+    // Update answers
+    setAnswers(prev => {
+      const newAnswers = [...prev];
+      const existingIndex = newAnswers.findIndex(a => a.questionId === currentQuestion.id);
+      
+      if (existingIndex >= 0) {
+        newAnswers[existingIndex] = newAnswer;
+      } else {
+        newAnswers.push(newAnswer);
       }
-      return false;
+      
+      return newAnswers;
     });
-
-    return !hasInvalidAnswer;
   };
 
-  const saveQuizHistory = async (answers: QuizAnswer[]) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.log('No user logged in, skipping quiz history save');
-        return;
+  // Get the next visible step index
+  const getNextVisibleStep = (startIndex: number): number => {
+    let nextIndex = startIndex + 1;
+    
+    while (nextIndex < steps.length) {
+      const step = steps[nextIndex];
+      if (!step.shouldShow || step.shouldShow(answerMap)) {
+        return nextIndex;
       }
+      nextIndex++;
+    }
+    
+    return startIndex; // If no next visible step, return current
+  };
 
-      const { error } = await supabase
-        .from('quiz_history')
-        .insert([{
-          user_id: user.id,
-          answers: answers
-        }]);
-
-      if (error) {
-        console.error('Error saving quiz history:', error);
-        throw error;
+  // Get the previous visible step index
+  const getPreviousVisibleStep = (startIndex: number): number => {
+    let prevIndex = startIndex - 1;
+    
+    while (prevIndex >= 0) {
+      const step = steps[prevIndex];
+      if (!step.shouldShow || step.shouldShow(answerMap)) {
+        return prevIndex;
       }
+      prevIndex--;
+    }
+    
+    return startIndex; // If no previous visible step, return current
+  };
 
-      console.log('Quiz history saved successfully');
-    } catch (error) {
-      console.error('Failed to save quiz history:', error);
+  const handleNext = async () => {
+    const currentQuestion = steps[currentStep];
+    if (!currentQuestion) return;
+    
+    // Check if we have an answer for the current step
+    const hasCurrentAnswer = answers.some(a => a.questionId === currentQuestion.id);
+    
+    if (!hasCurrentAnswer) {
       toast({
-        title: "Warning",
-        description: "Your quiz answers were processed but couldn't be saved to history.",
+        title: t("errors.missingAnswer"),
+        description: t("errors.pleaseSelectOption"),
         variant: "destructive",
       });
+      return;
+    }
+
+    const isLastStep = !steps.some((step, index) => 
+      index > currentStep && (!step.shouldShow || step.shouldShow(answerMap))
+    );
+    
+    if (isLastStep) {
+      await handleFinish();
+    } else {
+      const nextStep = getNextVisibleStep(currentStep);
+      setCurrentStep(nextStep);
     }
   };
 
-  const onFinish = async () => {
-    console.log('Starting quiz submission process');
-    setIsProcessing(true);
+  const handlePrevious = () => {
+    const prevStep = getPreviousVisibleStep(currentStep);
+    setCurrentStep(prevStep);
+  };
 
+  const handleFinish = async () => {
     try {
-      if (!validateAnswers(answers)) {
-        toast({
-          title: "Error",
-          description: "Please answer all questions before submitting",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Format answers properly before submission
-      const formattedAnswers = steps.map((step, index) => {
-        const answer = answers[index];
-        if (!answer || !answer.answer) {
-          console.error('Missing answer for step:', step.id);
-          return null;
-        }
-        
-        return {
-          questionId: step.id,
-          answer: answer.answer
-        };
-      }).filter((answer): answer is QuizAnswer => answer !== null);
-
-      console.log('Submitting formatted answers:', formattedAnswers);
-
-      const results = await submitQuiz(formattedAnswers);
+      setIsSubmitting(true);
+      await handleQuizComplete(answers);
       
-      if (results && Array.isArray(results) && results.length > 0) {
-        console.log('Received recommendations:', results);
-        await saveQuizHistory(formattedAnswers);
-        handleFinish(results);
-        setShowResults(true);
-        toast({
-          title: "Success",
-          description: `Found ${results.length} movie recommendations for you!`,
-        });
-      } else {
-        console.error('No valid recommendations received');
-        toast({
-          title: "Error",
-          description: "No recommendations found. Please try again.",
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: t("quiz.completed"),
+        description: t("quiz.recommendations.ready"),
+      });
     } catch (error) {
       console.error('Error submitting quiz:', error);
       toast({
-        title: "Error",
-        description: "There was an error submitting your quiz. Please try again.",
+        title: t("errors.quizError"),
+        description: t("errors.tryAgain"),
         variant: "destructive",
       });
     } finally {
-      setIsProcessing(false);
+      setIsSubmitting(false);
     }
   };
 
-  // Additional state logging
-  useEffect(() => {
-    if (recommendations?.length > 0) {
-      console.log('Recommendations updated:', {
-        count: recommendations.length,
-        firstRecommendation: recommendations[0]
-      });
+  // Get the current visible step index (for progress calculation)
+  const getCurrentVisibleStepIndex = (): number => {
+    let visibleIndex = 0;
+    
+    for (let i = 0; i < currentStep; i++) {
+      const step = steps[i];
+      if (!step.shouldShow || step.shouldShow(answerMap)) {
+        visibleIndex++;
+      }
     }
-  }, [recommendations]);
+    
+    return visibleIndex;
+  };
+
+  const visibleStepIndex = getCurrentVisibleStepIndex();
+  const isLastStep = visibleStepIndex >= totalSteps - 1;
 
   if (showResults && recommendations && recommendations.length > 0) {
-    console.log('Rendering quiz results with recommendations:', recommendations);
     return <QuizResults recommendations={recommendations} isGroupQuiz={false} />;
   }
 
   return (
-    <QuizForm
-      steps={steps}
-      currentStep={currentStep}
-      answers={answers}
-      isSubmitting={isSubmitting || isProcessing}
-      onAnswer={handleAnswer}
-      onNext={handleNext}
-      onPrevious={handlePrevious}
-      onFinish={onFinish}
-    />
+    <div className="w-full max-w-4xl mx-auto">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="bg-black text-white rounded-xl overflow-hidden"
+      >
+        <div className="p-6">
+          <QuizQuestions
+            questions={steps}
+            currentStep={currentStep}
+            onAnswer={handleAnswer}
+            answers={answers}
+            answerMap={answerMap}
+          />
+          
+          <div className="mt-12">
+            <QuizProgressBar 
+              currentStep={visibleStepIndex + 1} 
+              totalSteps={totalSteps} 
+            />
+          </div>
+          
+          <div className="flex justify-between mt-6">
+            {currentStep > 0 && (
+              <Button
+                variant="outline"
+                onClick={handlePrevious}
+                disabled={isSubmitting}
+                className="text-white bg-gray-800 border-gray-700 hover:bg-gray-700 flex items-center gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                {t("quiz.previous")}
+              </Button>
+            )}
+
+            <Button
+              onClick={handleNext}
+              disabled={!answers.some(a => a.questionId === steps[currentStep]?.id) || isSubmitting}
+              className={`ml-auto flex items-center gap-2 ${currentStep === 0 ? 'mx-auto' : ''} bg-blue-600 hover:bg-blue-700`}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {t("quiz.processing")}
+                </>
+              ) : isLastStep ? (
+                <>
+                  {t("quiz.finish")}
+                  <Check className="h-4 w-4" />
+                </>
+              ) : (
+                <>
+                  {t("quiz.next")}
+                  <ArrowRight className="h-4 w-4" />
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </motion.div>
+    </div>
   );
 };
