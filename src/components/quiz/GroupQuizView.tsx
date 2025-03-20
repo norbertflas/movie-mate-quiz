@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { QuizQuestions } from "./QuizQuestions";
 import { QuizResults } from "./QuizResults";
 import { QuizProgressBar } from "./QuizProgressBar";
@@ -8,10 +9,21 @@ import { useSurveySteps } from "./constants/surveySteps";
 
 export const GroupQuizView = () => {
   const [answers, setAnswers] = useState<QuizAnswer[]>([]);
+  const [answerMap, setAnswerMap] = useState<Record<string, string>>({});
   const [showResults, setShowResults] = useState(false);
   const { processAnswers } = useQuizLogic();
   const questions = useSurveySteps();
   const [currentStep, setCurrentStep] = useState(0);
+
+  // Update answerMap whenever answers change
+  useEffect(() => {
+    const newAnswerMap = answers.reduce((map, answer) => {
+      map[answer.questionId] = answer.answer;
+      return map;
+    }, {} as Record<string, string>);
+    
+    setAnswerMap(newAnswerMap);
+  }, [answers]);
 
   const handleAnswer = (answer: string) => {
     const newAnswers = [...answers];
@@ -48,6 +60,7 @@ export const GroupQuizView = () => {
         currentStep={currentStep}
         onAnswer={handleAnswer}
         answers={answers}
+        answerMap={answerMap}
       />
     </div>
   );

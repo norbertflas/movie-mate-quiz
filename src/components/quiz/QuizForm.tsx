@@ -1,7 +1,9 @@
+
 import { Button } from "../ui/button";
 import { Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { QuizQuestions } from "./QuizQuestions";
+import { useEffect, useState } from "react";
 import type { SurveyStepType, QuizAnswer } from "./QuizTypes";
 
 interface QuizFormProps {
@@ -26,6 +28,17 @@ export const QuizForm = ({
   onFinish
 }: QuizFormProps) => {
   const { t } = useTranslation();
+  const [answerMap, setAnswerMap] = useState<Record<string, string>>({});
+
+  // Update answerMap whenever answers change
+  useEffect(() => {
+    const newAnswerMap = answers.reduce((map, answer) => {
+      map[answer.questionId] = answer.answer;
+      return map;
+    }, {} as Record<string, string>);
+    
+    setAnswerMap(newAnswerMap);
+  }, [answers]);
 
   // Check if current step has an answer
   const hasCurrentAnswer = answers[currentStep]?.answer !== undefined;
@@ -37,6 +50,7 @@ export const QuizForm = ({
         currentStep={currentStep}
         onAnswer={onAnswer}
         answers={answers}
+        answerMap={answerMap}
       />
       
       <div className="flex justify-between mt-4">
