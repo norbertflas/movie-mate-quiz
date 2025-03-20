@@ -2,8 +2,8 @@
 export const translations = {
   en: {
     site: {
-      findYourMovie: "Discover Your Perfect Movie Match",
-      exploreCollections: "Take our interactive quiz and find films tailored to your taste"
+      findYourMovie: "Find Your Perfect Movie Match",
+      exploreCollections: "Take our quick and fun quiz to discover movies and shows tailored just for you"
     },
     discover: {
       trending: "Trending This Week",
@@ -22,8 +22,8 @@ export const translations = {
       documentary: "Documentary"
     },
     quiz: {
-      title: "Discover Your Perfect Movie Match",
-      subtitle: "Take our interactive quiz and find films tailored to your taste",
+      title: "Find Your Perfect Movie Match",
+      subtitle: "Take our quick and fun quiz to discover movies and shows tailored just for you",
       start: "Start the Quiz",
       next: "Next",
       previous: "Back",
@@ -40,20 +40,20 @@ export const translations = {
       step: "Step {{current}} of {{total}}",
       complete: "{{percent}}% Complete",
       questions: {
-        platforms: "Which streaming platforms do you use?",
-        platformsSubtitle: "Select all the platforms you currently have access to",
-        contentType: "What type of content do you prefer?",
-        contentTypeSubtitle: "Select one or both options",
-        movieLength: "How long should the movie be?",
-        movieLengthSubtitle: "Select your preferred movie duration",
-        seasonCount: "How many seasons should the TV show have?",
+        platforms: "Which streaming services do you use?",
+        platformsSubtitle: "Select all the services you currently subscribe to",
+        contentType: "What would you like to watch?",
+        contentTypeSubtitle: "Choose what type of content you're in the mood for",
+        movieLength: "How long of a movie are you looking for?",
+        movieLengthSubtitle: "Select your preferred movie length",
+        seasonCount: "How many seasons would you prefer?",
         seasonCountSubtitle: "Select your preferred number of seasons",
         episodesPerSeason: "How many episodes per season?",
-        episodesPerSeasonSubtitle: "Select your preferred number of episodes",
-        episodeLength: "How long should the episodes be?",
-        episodeLengthSubtitle: "Select your preferred episode duration",
-        mood: "What's your mood today?",
-        moodSubtitle: "Select the feeling you're in the mood for"
+        episodesPerSeasonSubtitle: "Select your preferred episode count per season",
+        episodeLength: "How long should each episode be?",
+        episodeLengthSubtitle: "Select your preferred episode length",
+        mood: "What mood are you in today?",
+        moodSubtitle: "Select the type of experience you're looking for"
       },
       options: {
         movie: "Movies",
@@ -85,9 +85,9 @@ export const translations = {
         },
         mood: {
           laugh: "I want to laugh",
-          touching: "I'm looking for something touching",
-          adrenaline: "I need some adrenaline",
-          relax: "I want to relax",
+          touching: "Something heartfelt",
+          adrenaline: "Something exciting",
+          relax: "Something relaxing",
           notSure: "I'm not sure"
         },
         noSubscriptions: "I don't have any subscriptions"

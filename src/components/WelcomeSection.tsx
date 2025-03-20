@@ -1,6 +1,6 @@
 
 import { Button } from "./ui/button";
-import { PlayCircle, Check, Film, Tv } from "lucide-react";
+import { PlayCircle, Film, Tv } from "lucide-react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 
@@ -33,7 +33,7 @@ export const WelcomeSection = ({ onStartQuiz }: WelcomeSectionProps) => {
           transition={{ delay: 0.2, duration: 0.5 }}
           className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-center text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 mb-4"
         >
-          {t("quiz.title")}
+          Find Your Perfect Movie Match
         </motion.h1>
         
         {/* Subtitle */}
@@ -43,7 +43,7 @@ export const WelcomeSection = ({ onStartQuiz }: WelcomeSectionProps) => {
           transition={{ delay: 0.3, duration: 0.5 }}
           className="text-lg sm:text-xl text-gray-300 text-center max-w-3xl mb-16"
         >
-          {t("quiz.subtitle")}
+          Take our quick and fun quiz to discover movies and shows tailored just for you
         </motion.p>
         
         {/* Quiz steps */}
@@ -59,8 +59,8 @@ export const WelcomeSection = ({ onStartQuiz }: WelcomeSectionProps) => {
               <span className="text-xl font-bold">1</span>
             </div>
             <div>
-              <h3 className="text-xl font-semibold text-white">Select your streaming platforms</h3>
-              <p className="text-gray-400">Tell us where you watch your content</p>
+              <h3 className="text-xl font-semibold text-white">Select your streaming services</h3>
+              <p className="text-gray-400">Tell us which platforms you subscribe to</p>
             </div>
           </div>
           
@@ -70,8 +70,8 @@ export const WelcomeSection = ({ onStartQuiz }: WelcomeSectionProps) => {
               <span className="text-xl font-bold">2</span>
             </div>
             <div>
-              <h3 className="text-xl font-semibold text-white">Choose your preferences</h3>
-              <p className="text-gray-400">Movies, genres, mood, and era</p>
+              <h3 className="text-xl font-semibold text-white">Tell us what you like</h3>
+              <p className="text-gray-400">Movies or shows, genres, length, and mood</p>
             </div>
           </div>
           
@@ -82,7 +82,7 @@ export const WelcomeSection = ({ onStartQuiz }: WelcomeSectionProps) => {
             </div>
             <div>
               <h3 className="text-xl font-semibold text-white">Get personalized recommendations</h3>
-              <p className="text-gray-400">Discover movies perfectly matched to your taste</p>
+              <p className="text-gray-400">Discover content perfectly matched to your taste</p>
             </div>
           </div>
         </motion.div>
@@ -99,7 +99,7 @@ export const WelcomeSection = ({ onStartQuiz }: WelcomeSectionProps) => {
             onClick={onStartQuiz}
             className="px-8 py-6 text-lg font-medium bg-blue-600 hover:bg-blue-700 rounded-lg"
           >
-            {t("quiz.start")}
+            Start the Quiz
           </Button>
         </motion.div>
       </div>
