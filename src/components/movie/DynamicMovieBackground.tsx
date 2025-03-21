@@ -1,9 +1,17 @@
 
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { useQuery } from "@tanstack/react-query";
 import { getPopularMovies } from "@/services/tmdb/trending";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useQuery } from "@tanstack/react-query";
+
+interface Movie {
+  id: number;
+  title: string;
+  image: string;
+  posterImage: string;
+  year: number;
+  rating: number;
+}
 
 interface DynamicMovieBackgroundProps {
   className?: string;
@@ -17,42 +25,52 @@ interface DynamicMovieBackgroundProps {
 export const DynamicMovieBackground = ({
   className = "",
   children,
-  overlayOpacity = 0.75,
+  overlayOpacity = 0.8,
   variant = "default",
-  rowCount = 4,
+  rowCount = 6,
   speed = "medium",
 }: DynamicMovieBackgroundProps) => {
-  const isMobile = useIsMobile();
-  const [rows, setRows] = useState<any[][]>([]);
+  const [rows, setRows] = useState<Movie[][]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [posterDimensions, setPosterDimensions] = useState({ width: 130, height: 195 });
+  const [posterDimensions, setPosterDimensions] = useState({ width: 140, height: 210 });
 
-  // Get popular movies for the background
-  const { data: popularMovies = [] } = useQuery({
-    queryKey: ['popularMovies', 'US', '1'],
-    queryFn: getPopularMovies,
+  // Fetch trending movies from TMDB
+  const { data: trendingMovies = [] } = useQuery({
+    queryKey: ['backgroundMovies'],
+    queryFn: async () => {
+      const movies = await getPopularMovies();
+      return movies.map(movie => ({
+        id: movie.id,
+        title: movie.title,
+        image: movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : "/placeholder.svg",
+        posterImage: movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : "/placeholder.svg",
+        year: movie.release_date ? new Date(movie.release_date).getFullYear() : 2024,
+        rating: movie.vote_average || 5.0,
+      }));
+    },
+    staleTime: 1000 * 60 * 60, // 1 hour
   });
 
   // Create rows of movies for the scrolling background
   useEffect(() => {
-    if (popularMovies.length === 0) return;
-
     const createRows = () => {
-      // Sort movies by rating (highest first)
-      const sortedMovies = [...popularMovies].sort((a, b) => b.vote_average - a.vote_average);
+      if (trendingMovies.length === 0) return;
       
+      // Shuffle the movies array to randomize the order
+      const shuffled = [...trendingMovies].sort(() => 0.5 - Math.random());
+
       // Create rows with different movies
       const newRows = [];
       const moviesPerRow = 8; // We'll duplicate these to create an infinite scroll effect
 
       for (let i = 0; i < rowCount; i++) {
         // Get a slice of movies for this row, with wrapping if we run out
-        const startIndex = (i * moviesPerRow) % sortedMovies.length;
-        let rowMovies = sortedMovies.slice(startIndex, startIndex + moviesPerRow);
+        const startIndex = (i * moviesPerRow) % shuffled.length;
+        let rowMovies = shuffled.slice(startIndex, startIndex + moviesPerRow);
 
         // If we don't have enough movies, wrap around to the beginning
         if (rowMovies.length < moviesPerRow) {
-          rowMovies = [...rowMovies, ...sortedMovies.slice(0, moviesPerRow - rowMovies.length)];
+          rowMovies = [...rowMovies, ...shuffled.slice(0, moviesPerRow - rowMovies.length)];
         }
 
         // Duplicate the movies to create a seamless loop
@@ -63,7 +81,12 @@ export const DynamicMovieBackground = ({
     };
 
     createRows();
-  }, [popularMovies, rowCount]);
+
+    // Refresh the rows every 2 hours to simulate updating trending movies
+    const interval = setInterval(createRows, 2 * 60 * 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, [trendingMovies, rowCount]);
 
   // Calculate poster dimensions based on container size
   useEffect(() => {
@@ -71,15 +94,15 @@ export const DynamicMovieBackground = ({
       if (containerRef.current) {
         const containerWidth = containerRef.current.offsetWidth;
         // Adjust poster size based on screen width
-        if (containerWidth < 640 || isMobile) {
+        if (containerWidth < 640) {
           // Mobile
           setPosterDimensions({ width: 100, height: 150 });
         } else if (containerWidth < 1024) {
           // Tablet
-          setPosterDimensions({ width: 115, height: 172 });
+          setPosterDimensions({ width: 120, height: 180 });
         } else {
           // Desktop
-          setPosterDimensions({ width: 130, height: 195 });
+          setPosterDimensions({ width: 140, height: 210 });
         }
       }
     };
@@ -88,7 +111,7 @@ export const DynamicMovieBackground = ({
     window.addEventListener("resize", updateDimensions);
 
     return () => window.removeEventListener("resize", updateDimensions);
-  }, [isMobile]);
+  }, []);
 
   // Calculate animation duration based on speed prop
   const getAnimationDuration = (rowIndex: number) => {
@@ -156,25 +179,8 @@ export const DynamicMovieBackground = ({
     return variant === "light" ? 0.5 : 0.7;
   };
 
-  if (popularMovies.length === 0) {
-    return (
-      <div 
-        ref={containerRef} 
-        className={`relative w-full overflow-hidden ${className}`} 
-        style={getBackgroundStyles()}
-      >
-        <div className={`absolute inset-0 z-10 bg-gradient-to-b ${getOverlayStyles()}`} style={{ opacity: overlayOpacity }} />
-        <div className="relative z-20">{children}</div>
-      </div>
-    );
-  }
-
   return (
-    <div 
-      ref={containerRef} 
-      className={`relative w-full overflow-hidden ${className}`} 
-      style={getBackgroundStyles()}
-    >
+    <div ref={containerRef} className={`relative w-full overflow-hidden ${className}`} style={getBackgroundStyles()}>
       {/* Scrolling movie posters background */}
       <div className="absolute inset-0 z-0">
         {rows.map((row, rowIndex) => (
@@ -221,7 +227,7 @@ export const DynamicMovieBackground = ({
                 }}
               >
                 <img
-                  src={movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : '/placeholder.svg'}
+                  src={movie.posterImage}
                   alt={movie.title}
                   className="w-full h-full object-cover rounded-md"
                 />

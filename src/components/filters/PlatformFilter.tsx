@@ -53,7 +53,6 @@ export const PlatformFilter = ({
         id: service.id,
         name: t(`services.${service.name.toLowerCase()}`, service.name)
       }))}
-      // Removed the disabled prop as it doesn't exist in MovieFilterSection
     />
   );
 };

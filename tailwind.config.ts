@@ -1,13 +1,13 @@
 
 import type { Config } from "tailwindcss";
 
-export default {
+const config = {
   darkMode: ["class"],
   content: [
-    "./pages/**/*.{ts,tsx}",
-    "./components/**/*.{ts,tsx}",
-    "./app/**/*.{ts,tsx}",
-    "./src/**/*.{ts,tsx}",
+    './pages/**/*.{ts,tsx}',
+    './components/**/*.{ts,tsx}',
+    './app/**/*.{ts,tsx}',
+    './src/**/*.{ts,tsx}',
   ],
   prefix: "",
   theme: {
@@ -53,32 +53,6 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        movie: {
-          50: "#f5f3ff",
-          100: "#ede9fe",
-          200: "#ddd6fe",
-          300: "#c4b5fd",
-          400: "#a78bfa",
-          500: "#8b5cf6",
-          600: "#7c3aed",
-          700: "#6d28d9",
-          800: "#5b21b6",
-          900: "#4c1d95",
-          950: "#2e1065",
-        },
-        purple: {
-          50: "#faf5ff",
-          100: "#f3e8ff",
-          200: "#e9d5ff",
-          300: "#d8b4fe",
-          400: "#c084fc",
-          500: "#a855f7",
-          600: "#9333ea",
-          700: "#7e22ce",
-          800: "#6b21a8",
-          900: "#581c87",
-          950: "#3b0764",
-        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -87,94 +61,42 @@ export default {
       },
       keyframes: {
         "accordion-down": {
-          from: { height: "0", opacity: "0" },
-          to: { height: "var(--radix-accordion-content-height)", opacity: "1" }
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
-          from: { height: "var(--radix-accordion-content-height)", opacity: "1" },
-          to: { height: "0", opacity: "0" }
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
         },
-        "fade-in": {
-          "0%": { opacity: "0", transform: "translateY(10px)" },
-          "100%": { opacity: "1", transform: "translateY(0)" },
-        },
-        "fade-out": {
-          "0%": { opacity: "1", transform: "translateY(0)" },
-          "100%": { opacity: "0", transform: "translateY(-10px)" },
-        },
-        "slide-in": {
-          "0%": { transform: "translateX(100%)" },
-          "100%": { transform: "translateX(0)" },
-        },
-        "slide-out": {
-          "0%": { transform: "translateX(0)" },
-          "100%": { transform: "translateX(-100%)" },
-        },
-        "scale-in": {
-          "0%": { transform: "scale(0.95)", opacity: "0" },
-          "100%": { transform: "scale(1)", opacity: "1" },
-        },
-        "scale-out": {
-          "0%": { transform: "scale(1)", opacity: "1" },
-          "100%": { transform: "scale(0.95)", opacity: "0" },
-        },
-        "rotate-180": {
-          "0%": { transform: "rotate(0deg)" },
-          "100%": { transform: "rotate(180deg)" },
-        },
-        "rotate-360": {
-          "0%": { transform: "rotate(0deg)" },
-          "100%": { transform: "rotate(360deg)" },
-        },
-        shimmer: {
-          "100%": {
-            transform: "translateX(100%)",
-          },
-        },
-        float: {
+        "float": {
           "0%, 100%": { transform: "translateY(0)" },
           "50%": { transform: "translateY(-10px)" },
         },
-        pulse: {
-          "0%, 100%": { opacity: "1" },
-          "50%": { opacity: "0.5" },
+        "pulse-glow": {
+          "0%, 100%": { 
+            opacity: "1",
+            boxShadow: "0 0 15px rgba(124, 58, 237, 0.5)",
+          },
+          "50%": { 
+            opacity: "0.8",
+            boxShadow: "0 0 30px rgba(124, 58, 237, 0.8)",
+          },
         },
-        glow: {
-          "0%, 100%": { boxShadow: "0 0 5px rgba(124, 58, 237, 0.5)" },
-          "50%": { boxShadow: "0 0 20px rgba(124, 58, 237, 0.8)" },
+        "scroll-x": {
+          from: { transform: "translateX(0)" },
+          to: { transform: "translateX(-100%)" },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "fade-in": "fade-in 0.3s ease-out",
-        "fade-out": "fade-out 0.3s ease-out",
-        "slide-in": "slide-in 0.3s ease-out",
-        "slide-out": "slide-out 0.3s ease-out",
-        "scale-in": "scale-in 0.3s ease-out",
-        "scale-out": "scale-out 0.3s ease-out",
-        "rotate-180": "rotate-180 0.3s ease-out",
-        "rotate-360": "rotate-360 0.6s linear infinite",
-        shimmer: "shimmer 2s linear infinite",
-        float: "float 6s ease-in-out infinite",
-        pulse: "pulse 2s ease-in-out infinite",
-        glow: "glow 2s ease-in-out infinite",
-      },
-      fontFamily: {
-        sans: ["Inter", "sans-serif"],
-        heading: ["Montserrat", "sans-serif"],
-      },
-      boxShadow: {
-        'glow': '0 0 15px rgba(124, 58, 237, 0.5)',
-        'card': '0 10px 30px -5px rgba(0, 0, 0, 0.3)',
-        'card-hover': '0 20px 40px -5px rgba(0, 0, 0, 0.4)',
-      },
-      backgroundImage: {
-        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
-        'hero-pattern': 'url("/hero-pattern.svg")',
+        "float": "float 4s ease-in-out infinite",
+        "pulse-glow": "pulse-glow 2s ease-in-out infinite",
+        "scroll-x": "scroll-x 60s linear infinite",
       },
     },
   },
   plugins: [require("tailwindcss-animate")],
 } satisfies Config;
+
+export default config;
