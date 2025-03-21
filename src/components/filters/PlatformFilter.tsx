@@ -16,13 +16,16 @@ export const PlatformFilter = ({
   onPlatformChange 
 }: PlatformFilterProps) => {
   const [streamingServices, setStreamingServices] = useState<StreamingService[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const { i18n, t } = useTranslation();
   const { toast } = useToast();
 
   useEffect(() => {
     const fetchStreamingServices = async () => {
+      setIsLoading(true);
       try {
-        const region = languageToRegion[i18n.language] || 'en';
+        const region = languageToRegion[i18n.language] || 'us';
+        console.log(`Fetching streaming services for region: ${region}`);
         const services = await getStreamingServicesByRegion(region);
         setStreamingServices(services);
       } catch (error) {
@@ -32,6 +35,8 @@ export const PlatformFilter = ({
           description: t("errors.tryAgain"),
           variant: "destructive",
         });
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -43,11 +48,12 @@ export const PlatformFilter = ({
       label={t("filters.platform")}
       value={selectedPlatforms.join(',')}
       onValueChange={(value) => onPlatformChange(value ? value.split(',') : [])}
-      placeholder={t("filters.selectPlatform")}
+      placeholder={isLoading ? t("common.loading") : t("filters.selectPlatform")}
       options={streamingServices.map(service => ({
         id: service.id,
         name: t(`services.${service.name.toLowerCase()}`, service.name)
       }))}
+      disabled={isLoading}
     />
   );
 };
