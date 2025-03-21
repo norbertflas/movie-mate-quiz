@@ -1,4 +1,3 @@
-
 export default {
   translation: {
     common: {
@@ -39,14 +38,17 @@ export default {
     site: {
       description: "Znajdź swój następny ulubiony film",
       author: "Stworzono z pasją do kina",
-      copyright: "Wszystkie prawa zastrzeżone"
+      copyright: "Wszystkie prawa zastrzeżone",
+      findYourMovie: "Znajdź swój idealny film",
+      exploreCollections: "Weź udział w krótkim i przyjemnym quizie, aby odkryć filmy i seriale dopasowane specjalnie dla Ciebie"
     },
     discover: {
       popular: "Popularne filmy",
       trending: "Popularne w tym tygodniu",
       newest: "Najnowsze",
       recommended: "Polecane dla Ciebie",
-      upcoming: "Nadchodzące premiery"
+      upcoming: "Nadchodzące premiery",
+      noMoviesFound: "Nie znaleziono filmów"
     },
     recommendations: {
       personalized: "Spersonalizowane rekomendacje",
@@ -93,7 +95,12 @@ export default {
       streamingAvailability: "Błąd sprawdzania dostępności streamingu",
       trailerNotFound: "Nie znaleziono zwiastunu",
       trailerError: "Błąd podczas ładowania zwiastunu",
-      loadingServices: "Błąd podczas ładowania serwisów streamingowych"
+      loadingServices: "Błąd podczas ładowania serwisów streamingowych",
+      missingAnswer: "Brak odpowiedzi",
+      pleaseSelectOption: "Wybierz przynajmniej jedną opcję przed kontynuowaniem",
+      quizError: "Błąd quizu",
+      tryAgain: "Spróbuj ponownie później",
+      recommendationError: "Błąd podczas generowania rekomendacji"
     },
     movie: {
       action: "Akcja",
@@ -196,6 +203,78 @@ export default {
       ratings: "Oceny",
       logout: "Wyloguj się",
       streamingServices: "Serwisy streamingowe"
+    },
+    quiz: {
+      title: "Znajdź swój idealny film",
+      subtitle: "Weź udział w krótkim i przyjemnym quizie, aby odkryć filmy i seriale dopasowane specjalnie dla Ciebie",
+      start: "Rozpocznij quiz",
+      next: "Dalej",
+      previous: "Wróć",
+      finish: "Zobacz rekomendacje",
+      processing: "Przetwarzanie...",
+      completed: "Quiz ukończony",
+      recommendations: {
+        ready: "Twoje rekomendacje są gotowe!",
+        title: "Twoje spersonalizowane rekomendacje",
+        subtitle: "Na podstawie Twoich preferencji, myślimy, że te tytuły Ci się spodobają",
+        explore: "Chcesz zobaczyć więcej opcji?",
+        tryAgain: "Spróbuj quizu ponownie"
+      },
+      step: "Krok {{current}} z {{total}}",
+      complete: "{{percent}}% ukończone",
+      questions: {
+        platforms: "Z jakich serwisów streamingowych korzystasz?",
+        platformsSubtitle: "Wybierz wszystkie serwisy, których obecnie używasz",
+        contentType: "Co chciałbyś obejrzeć?",
+        contentTypeSubtitle: "Wybierz rodzaj treści, na którą masz ochotę",
+        movieLength: "Jak długiego filmu szukasz?",
+        movieLengthSubtitle: "Wybierz preferowaną długość filmu",
+        seasonCount: "Ile sezonów preferujesz?",
+        seasonCountSubtitle: "Wybierz preferowaną liczbę sezonów",
+        episodesPerSeason: "Ile odcinków na sezon?",
+        episodesPerSeasonSubtitle: "Wybierz preferowaną liczbę odcinków na sezon",
+        episodeLength: "Jak długie powinny być odcinki?",
+        episodeLengthSubtitle: "Wybierz preferowaną długość odcinka",
+        mood: "W jakim jesteś dziś nastroju?",
+        moodSubtitle: "Wybierz rodzaj doświadczenia, którego szukasz"
+      },
+      options: {
+        movie: "Filmy",
+        series: "Seriale",
+        notSure: "Nie jestem pewien/pewna",
+        movieLength: {
+          short: "Krótki (do 90 minut)",
+          standard: "Standardowy (90-120 minut)",
+          long: "Długi (ponad 120 minut)",
+          noPreference: "Bez preferencji"
+        },
+        seasonCount: {
+          short: "Krótki (1-2 sezony)",
+          medium: "Średni (3-5 sezonów)",
+          long: "Długi (6+ sezonów)",
+          noPreference: "Bez preferencji"
+        },
+        episodesPerSeason: {
+          few: "Do 10",
+          medium: "10-20",
+          many: "20+",
+          noPreference: "Bez preferencji"
+        },
+        episodeLength: {
+          short: "Krótkie (do 30 minut)",
+          standard: "Standardowe (30-60 minut)",
+          long: "Długie (ponad 60 minut)",
+          noPreference: "Bez preferencji"
+        },
+        mood: {
+          laugh: "Chcę się śmiać",
+          touching: "Coś wzruszającego",
+          adrenaline: "Coś ekscytującego",
+          relax: "Coś relaksującego",
+          notSure: "Nie jestem pewien/pewna"
+        },
+        noSubscriptions: "Nie mam żadnych subskrypcji"
+      }
     }
   }
 };
