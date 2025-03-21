@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { getPopularMovies } from "@/services/tmdb/trending";
+import { DynamicMovieBackground } from "./movie/DynamicMovieBackground";
 
 interface WelcomeSectionProps {
   onStartQuiz: () => void;
@@ -13,47 +14,46 @@ interface WelcomeSectionProps {
 
 export const WelcomeSection = ({ onStartQuiz }: WelcomeSectionProps) => {
   const { t } = useTranslation();
-  const [backgroundOpacity, setBackgroundOpacity] = useState(0);
+  const [currentStep, setCurrentStep] = useState(0);
 
-  // Get top-rated movies for the background
-  const { data: popularMovies = [] } = useQuery({
-    queryKey: ['popularMovies', 'US', '1'],
-    queryFn: getPopularMovies,
-  });
-
-  // Limit to 6 movies for the background grid
-  const backgroundMovies = popularMovies.slice(0, 6);
-
+  // Auto-rotate featured steps
   useEffect(() => {
-    // Fade in the background after component mounts
-    const timer = setTimeout(() => {
-      setBackgroundOpacity(0.15);
-    }, 300);
-    
-    return () => clearTimeout(timer);
+    const interval = setInterval(() => {
+      setCurrentStep((prev) => (prev + 1) % 3);
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
+  const steps = [
+    {
+      title: t("quiz.questions.platforms"),
+      subtitle: t("quiz.questions.platformsSubtitle"),
+      step: 1,
+      color: "bg-primary/80"
+    },
+    {
+      title: t("quiz.questions.mood"),
+      subtitle: t("quiz.questions.moodSubtitle"),
+      step: 2,
+      color: "bg-purple-700/80"
+    },
+    {
+      title: t("recommendations.personalized"),
+      subtitle: t("recommendations.personalizedDescription"),
+      step: 3,
+      color: "bg-pink-700/80"
+    }
+  ];
+
   return (
-    <div className="relative overflow-hidden rounded-xl bg-black/90 text-white min-h-[600px]">
-      {/* Background movie posters grid */}
-      <div 
-        className="absolute inset-0 grid grid-cols-2 md:grid-cols-3 gap-1 transition-opacity duration-1000"
-        style={{ opacity: backgroundOpacity }}
-      >
-        {backgroundMovies.map((movie, index) => (
-          <div key={index} className="relative overflow-hidden">
-            <img
-              src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
-              alt={movie.title}
-              className="w-full h-full object-cover"
-            />
-          </div>
-        ))}
-      </div>
-      
-      {/* Dark overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/80 to-black/95 z-10" />
-      
+    <DynamicMovieBackground 
+      className="rounded-xl min-h-[600px]" 
+      overlayOpacity={0.85} 
+      variant="gradient" 
+      rowCount={4} 
+      speed="slow"
+    >
       {/* Content */}
       <div className="relative z-20 py-16 px-6 md:px-8 lg:px-12 flex flex-col items-center max-w-4xl mx-auto">
         {/* Animated play icon */}
@@ -93,38 +93,32 @@ export const WelcomeSection = ({ onStartQuiz }: WelcomeSectionProps) => {
           transition={{ delay: 0.4, duration: 0.6 }}
           className="bg-gray-900/80 backdrop-blur-md rounded-xl p-8 max-w-3xl w-full mb-8 border border-gray-800"
         >
-          {/* Step 1 */}
-          <div className="flex items-start mb-8">
-            <div className="bg-primary/80 rounded-full h-12 w-12 flex items-center justify-center flex-shrink-0 mr-5">
-              <span className="text-xl font-bold">1</span>
-            </div>
-            <div>
-              <h3 className="text-xl font-semibold text-white">{t("quiz.questions.platforms")}</h3>
-              <p className="text-gray-400">{t("quiz.questions.platformsSubtitle")}</p>
-            </div>
-          </div>
-          
-          {/* Step 2 */}
-          <div className="flex items-start mb-8">
-            <div className="bg-purple-700/80 rounded-full h-12 w-12 flex items-center justify-center flex-shrink-0 mr-5">
-              <span className="text-xl font-bold">2</span>
-            </div>
-            <div>
-              <h3 className="text-xl font-semibold text-white">{t("quiz.questions.mood")}</h3>
-              <p className="text-gray-400">{t("quiz.questions.moodSubtitle")}</p>
-            </div>
-          </div>
-          
-          {/* Step 3 */}
-          <div className="flex items-start">
-            <div className="bg-pink-700/80 rounded-full h-12 w-12 flex items-center justify-center flex-shrink-0 mr-5">
-              <span className="text-xl font-bold">3</span>
-            </div>
-            <div>
-              <h3 className="text-xl font-semibold text-white">{t("recommendations.personalized")}</h3>
-              <p className="text-gray-400">{t("recommendations.personalizedDescription")}</p>
-            </div>
-          </div>
+          {steps.map((step, index) => (
+            <motion.div 
+              key={index}
+              className="flex items-start mb-8 last:mb-0"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ 
+                opacity: 1, 
+                x: 0,
+                scale: currentStep === index ? 1.03 : 1,
+                boxShadow: currentStep === index ? "0 0 15px rgba(124, 58, 237, 0.3)" : "none"
+              }}
+              transition={{ 
+                delay: 0.5 + (index * 0.2), 
+                duration: 0.5,
+                scale: { duration: 0.3 }
+              }}
+            >
+              <div className={`${step.color} rounded-full h-12 w-12 flex items-center justify-center flex-shrink-0 mr-5`}>
+                <span className="text-xl font-bold">{step.step}</span>
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold text-white">{step.title}</h3>
+                <p className="text-gray-400">{step.subtitle}</p>
+              </div>
+            </motion.div>
+          ))}
         </motion.div>
         
         {/* Start Quiz Button */}
@@ -133,6 +127,8 @@ export const WelcomeSection = ({ onStartQuiz }: WelcomeSectionProps) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6, duration: 0.5 }}
           className="mt-4"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
         >
           <Button 
             size="lg" 
@@ -144,6 +140,6 @@ export const WelcomeSection = ({ onStartQuiz }: WelcomeSectionProps) => {
           </Button>
         </motion.div>
       </div>
-    </div>
+    </DynamicMovieBackground>
   );
 };

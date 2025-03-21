@@ -32,6 +32,7 @@ export const StreamingServices = ({ services }: StreamingServicesProps) => {
           services.some(s => s.toLowerCase() === service.name.toLowerCase())
         );
         
+        console.log('Streaming services found:', filteredServices.map(s => s.name).join(', '));
         setAvailableServices(filteredServices);
       } catch (error) {
         console.error('Error fetching streaming services:', error);
