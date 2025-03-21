@@ -1,3 +1,4 @@
+
 export default {
   translation: {
     common: {
@@ -88,7 +89,6 @@ export default {
     },
     errors: {
       recommendationError: "Nie udało się wygenerować rekomendacji",
-      tryAgain: "Spróbuj ponownie później",
       searchError: "Błąd wyszukiwania",
       searchTooShort: "Zbyt krótkie zapytanie",
       searchMinLength: "Wpisz co najmniej jeden znak",
@@ -99,8 +99,7 @@ export default {
       missingAnswer: "Brak odpowiedzi",
       pleaseSelectOption: "Wybierz przynajmniej jedną opcję przed kontynuowaniem",
       quizError: "Błąd quizu",
-      tryAgain: "Spróbuj ponownie później",
-      recommendationError: "Błąd podczas generowania rekomendacji"
+      tryAgain: "Spróbuj ponownie później"
     },
     movie: {
       action: "Akcja",
