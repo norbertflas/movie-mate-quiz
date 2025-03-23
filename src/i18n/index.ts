@@ -21,6 +21,9 @@ i18n
     react: {
       useSuspense: false,
     },
+    // Add this to ensure proper handling of nested paths with dots
+    keySeparator: ".",
+    nsSeparator: ":",
   });
 
 i18n.on("languageChanged", (lng) => {

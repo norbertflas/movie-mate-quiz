@@ -38,7 +38,7 @@ export const DynamicMovieBackground = ({
   const { data: trendingMovies = [] } = useQuery({
     queryKey: ['backgroundMovies'],
     queryFn: async () => {
-      const movies = await getPopularMovies(1); // Pass page number parameter
+      const movies = await getPopularMovies({ page: 1 }); // Pass page as an object property
       return movies.map(movie => ({
         id: movie.id,
         title: movie.title,
