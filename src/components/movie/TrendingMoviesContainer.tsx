@@ -22,7 +22,7 @@ export const TrendingMoviesContainer = ({
   if (!movies || movies.length === 0) {
     return (
       <div className="py-8 text-center text-muted-foreground">
-        {t("discover.noMoviesFound") || "No movies found"}
+        {t("discover.noMoviesFound")}
       </div>
     );
   }

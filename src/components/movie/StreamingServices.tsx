@@ -12,30 +12,48 @@ interface StreamingServicesProps {
 export const StreamingServices = ({ services }: StreamingServicesProps) => {
   const [availableServices, setAvailableServices] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { i18n, t } = useTranslation();
 
   useEffect(() => {
     const fetchStreamingServices = async () => {
       setIsLoading(true);
+      setError(null);
+      
       try {
-        if (services.length === 0) {
+        if (!services || services.length === 0) {
           setAvailableServices([]);
           return;
         }
         
         const region = languageToRegion[i18n.language] || 'us';
+        console.log(`Fetching streaming services for region ${region} and services:`, services);
+        
         const allServices = await getStreamingServicesByRegion(region);
         
+        if (!allServices || allServices.length === 0) {
+          console.log('No streaming services found for region:', region);
+          setAvailableServices([]);
+          return;
+        }
+        
         // Filter services that are available based on the services prop
+        // Use more flexible matching to handle slight name variations
         const filteredServices = allServices.filter(service => 
-          services.includes(service.name) || 
-          services.some(s => s.toLowerCase() === service.name.toLowerCase())
+          services.some(s => {
+            const serviceName = s.toLowerCase().trim();
+            const dbServiceName = service.name.toLowerCase().trim();
+            return serviceName === dbServiceName || 
+                   dbServiceName.includes(serviceName) || 
+                   serviceName.includes(dbServiceName);
+          })
         );
         
         console.log('Streaming services found:', filteredServices.map(s => s.name).join(', '));
         setAvailableServices(filteredServices);
       } catch (error) {
         console.error('Error fetching streaming services:', error);
+        setError('Failed to fetch streaming services');
         setAvailableServices([]);
       } finally {
         setIsLoading(false);
@@ -57,11 +75,19 @@ export const StreamingServices = ({ services }: StreamingServicesProps) => {
     );
   }
 
-  if (!availableServices.length) return null;
+  if (error) {
+    console.log("Streaming services error:", error);
+    return null; // Hide errors from UI to improve user experience
+  }
+
+  if (!availableServices.length) {
+    // Don't show anything if no streaming services are available
+    return null;
+  }
 
   return (
     <div className="space-y-2">
-      <span className="text-sm font-semibold">{t("streaming.availableOn")}</span>
+      <span className="text-sm font-semibold">{t("streaming.availableOn") || "Available on"}</span>
       <div className="flex flex-wrap gap-2">
         {availableServices.map((service) => (
           <Badge key={service.id} variant="secondary">

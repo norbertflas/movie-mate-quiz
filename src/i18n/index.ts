@@ -21,7 +21,7 @@ i18n
     react: {
       useSuspense: false,
     },
-    // Updated these settings to properly handle nested paths
+    // Fix for nested keys with dots by disabling key separators
     keySeparator: false,
     nsSeparator: false,
   });

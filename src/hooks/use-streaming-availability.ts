@@ -30,17 +30,24 @@ export const useStreamingAvailability = (movieId: number) => {
           console.log(`Watchmode returned ${services.length} streaming services`);
         } catch (watchmodeError) {
           console.error("Error fetching from Watchmode:", watchmodeError);
+          // Don't throw here, just try the next service
         }
         
         // If Watchmode fails or returns no results, try our custom service
-        if (services.length === 0) {
+        if (!services || services.length === 0) {
           console.log("Falling back to custom streaming availability service...");
-          services = await getStreamingAvailability(movieId);
-          console.log(`Custom service returned ${services.length} streaming services`);
+          try {
+            services = await getStreamingAvailability(movieId);
+            console.log(`Custom service returned ${services.length} streaming services`);
+          } catch (customError) {
+            console.error("Error fetching from custom service:", customError);
+            // Don't throw here either, just return empty results
+          }
         }
 
-        // Ensure all services have proper links
-        const formattedServices = formatServiceLinks(services);
+        // Ensure all services have proper links and remove any undefined services
+        const validServices = services.filter(service => !!service);
+        const formattedServices = formatServiceLinks(validServices);
         
         return {
           services: formattedServices,
@@ -49,6 +56,7 @@ export const useStreamingAvailability = (movieId: number) => {
         };
       } catch (error) {
         console.error("Error in streaming availability hook:", error);
+        // Return empty results instead of throwing to prevent UI issues
         return {
           services: [],
           timestamp: new Date().toISOString(),
@@ -59,5 +67,13 @@ export const useStreamingAvailability = (movieId: number) => {
     retry: 1,
     staleTime: CACHE_EXPIRY,
     gcTime: CACHE_EXPIRY * 24, // Keep in cache for 24 hours
+    // Add better error handling
+    meta: {
+      onSettled: (data, error) => {
+        if (error) {
+          console.error("Streaming availability query settled with error:", error);
+        }
+      }
+    }
   });
 };
