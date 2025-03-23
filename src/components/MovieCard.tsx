@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { CardHeader, CardContent } from "./ui/card";
 import { MovieCardContainer } from "./movie/MovieCardContainer";
@@ -43,7 +42,6 @@ export const MovieCard = ({
   const { userRating, handleRating } = useMovieRating(title);
   const { data: availabilityData, isLoading, isError } = useStreamingAvailability(tmdbId || 0);
 
-  // Transform streaming services to the expected format with required link property
   const availableServices = availabilityData?.services.map(service => ({
     service: service.service,
     link: service.link || `https://${service.service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch/${tmdbId}`,
@@ -56,7 +54,6 @@ export const MovieCard = ({
         logo: undefined
       };
     }
-    // Handle object type services
     return {
       service: typeof service === 'object' && service !== null ? service.service : String(service),
       link: typeof service === 'object' && service !== null && service.link ? 
@@ -80,7 +77,6 @@ export const MovieCard = ({
     }
   };
 
-  // Create a TMDBMovie object from the props
   const movieData: TMDBMovie = {
     id: tmdbId || 0,
     title,
@@ -156,7 +152,7 @@ export const MovieCard = ({
           
           {availableServices.length > 0 && (
             <div className="mt-auto pt-2">
-              <p className="text-xs font-medium text-muted-foreground mb-2">{t("streaming.availableOn")}</p>
+              <p className="text-xs font-medium text-muted-foreground mb-2">{t("streaming.availableOn") || "Available on"}</p>
               <div className="flex flex-wrap gap-1.5">
                 {availableServices.slice(0, 3).map((service, index) => (
                   <Badge key={index} variant="outline" className="text-xs px-2 py-0.5">

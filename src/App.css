@@ -1,4 +1,3 @@
-
 #root {
   margin: 0 auto;
   width: 100%;
@@ -166,5 +165,88 @@ body.dialog-open {
   }
   50% {
     transform: translateY(-10px);
+  }
+}
+
+/* Enhanced mobile responsive styles */
+@media (max-width: 640px) {
+  .movie-card {
+    max-width: 100%;
+  }
+  
+  .dialog-content {
+    padding: 1rem;
+  }
+}
+
+/* Mobile navigation fixes */
+@media (max-width: 768px) {
+  .mobile-menu {
+    bottom: 0;
+    left: 0;
+    right: 0;
+    position: fixed;
+    z-index: 50;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+  }
+  
+  .mobile-scroll-snap {
+    scroll-snap-type: x mandatory;
+  }
+  
+  .mobile-scroll-snap > * {
+    scroll-snap-align: start;
+  }
+}
+
+/* Add proper safe areas for mobile devices */
+@supports (padding: max(0px)) {
+  .mobile-safe-padding {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+  
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Improved responsiveness for movie grid */
+.movie-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  gap: 1rem;
+}
+
+/* Optimized movie card for mobile */
+@media (max-width: 480px) {
+  .movie-image-container {
+    height: 160px;
+  }
+  
+  .movie-card h3 {
+    font-size: 1rem;
+  }
+  
+  .movie-card p {
+    font-size: 0.75rem;
+  }
+}
+
+/* Improved animation for trending movies section */
+.trending-scroll {
+  animation: scroll-x 60s linear infinite;
+}
+
+@media (prefers-reduced-motion) {
+  .trending-scroll {
+    animation: none;
+  }
+  
+  .animate-float, 
+  .animate-pulse-glow {
+    animation: none !important;
   }
 }

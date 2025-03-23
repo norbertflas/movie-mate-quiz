@@ -94,15 +94,24 @@ export const DynamicMovieBackground = ({
     const updateDimensions = () => {
       if (containerRef.current) {
         const containerWidth = containerRef.current.offsetWidth;
-        // Adjust poster size based on screen width
-        if (containerWidth < 640) {
-          // Mobile
+        // Enhanced responsive design with more granular breakpoints
+        if (containerWidth < 480) {
+          // Extra small (mobile phones)
+          setPosterDimensions({ width: 90, height: 135 });
+        } else if (containerWidth < 640) {
+          // Small mobile
           setPosterDimensions({ width: 100, height: 150 });
+        } else if (containerWidth < 768) {
+          // Medium mobile/small tablet
+          setPosterDimensions({ width: 110, height: 165 });
         } else if (containerWidth < 1024) {
           // Tablet
           setPosterDimensions({ width: 120, height: 180 });
+        } else if (containerWidth < 1280) {
+          // Small desktop
+          setPosterDimensions({ width: 130, height: 195 });
         } else {
-          // Desktop
+          // Large desktop
           setPosterDimensions({ width: 140, height: 210 });
         }
       }

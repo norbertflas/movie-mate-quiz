@@ -55,13 +55,13 @@ export const TrendingMoviesSection = ({ movies }: TrendingMoviesSectionProps) =>
     >
       <div className="flex items-center space-x-2">
         <motion.h2 
-          className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-blue-500"
+          className="text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-blue-500"
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
           variants={titleVariants}
         >
-          {t("discover.trending")}
+          {t("discover.trending") || "Trending This Week"}
         </motion.h2>
         <motion.div
           initial={{ opacity: 0, scale: 0 }}
@@ -94,7 +94,7 @@ export const TrendingMoviesSection = ({ movies }: TrendingMoviesSectionProps) =>
           />
         ) : (
           <div className="py-4 text-center text-muted-foreground">
-            {t("discover.noMoviesFound")}
+            {t("discover.noMoviesFound") || "No movies found"}
           </div>
         )}
       </motion.div>
