@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import type { StreamingPlatformData } from "@/types/streaming";
 
@@ -136,12 +135,11 @@ export async function getWatchmodeTitleDetails(
   try {
     console.log(`Fetching Watchmode details for title ID ${titleId} in region ${region}`);
     
-    // Call Supabase Edge Function to get title details
     const { data, error } = await retryWithBackoff(async () => {
       return await supabase.functions.invoke('watchmode-title-details', {
         body: { 
           titleId, 
-          region,
+          region: 'US', // Force US region for reliable data
           includeSources: true
         }
       });
@@ -159,19 +157,24 @@ export async function getWatchmodeTitleDetails(
 
     console.log(`Found ${data.sources.length} Watchmode streaming sources for ID: ${titleId}`);
 
-    // Expanded filter to include more relevant source types
-    const relevantSources = ['sub', 'free', 'tvod', 'addon'];
+    // Include all relevant streaming types
+    const relevantSources = ['sub', 'free', 'tvod', 'addon', 'purchase', 'live'];
     
-    // Transform Watchmode sources to StreamingPlatformData format
     return data.sources
-      .filter((source: WatchmodeSource) => relevantSources.includes(source.type))
+      .filter((source: WatchmodeSource) => {
+        // Filter out non-relevant sources and ensure proper formatting
+        return relevantSources.includes(source.type.toLowerCase()) &&
+               source.name && // ensure name exists
+               source.source_id; // ensure source_id exists
+      })
       .map((source: WatchmodeSource) => ({
-        service: source.name,
-        link: source.web_url || `https://${source.name.toLowerCase().replace(/\s/g, '')}.com`,
+        service: normalizeServiceName(source.name),
+        link: source.web_url || generateServiceUrl(source.name),
         logo: `https://cdn.watchmode.com/provider_logos/${source.source_id}_100px.png`,
         available: true,
         startDate: new Date().toISOString(),
-        type: source.type // Dodanie typu źródła dla lepszej identyfikacji
+        type: source.type,
+        price: source.price || undefined
       }));
   } catch (error) {
     console.error('Error in getWatchmodeTitleDetails:', error);
@@ -189,10 +192,12 @@ export async function getWatchmodeStreamingAvailability(
   try {
     console.log(`Fetching Watchmode streaming availability for movie ${tmdbId} in region ${region}`);
     
-    // Call Supabase Edge Function to get Watchmode data with retry
     const { data, error } = await retryWithBackoff(async () => {
       return await supabase.functions.invoke('watchmode-availability', {
-        body: { tmdbId, region }
+        body: { 
+          tmdbId, 
+          region: 'US' // Force US region for reliable data
+        }
       });
     });
 
@@ -208,22 +213,46 @@ export async function getWatchmodeStreamingAvailability(
 
     console.log(`Found ${data.sources.length} Watchmode streaming sources`);
 
-    // Expanded filter to include more relevant source types
-    const relevantSources = ['sub', 'free', 'tvod', 'addon'];
+    // Include all relevant streaming types
+    const relevantSources = ['sub', 'free', 'tvod', 'addon', 'purchase', 'live'];
     
-    // Transform Watchmode sources to StreamingPlatformData format
     return data.sources
-      .filter(source => relevantSources.includes(source.type))
+      .filter(source => {
+        return relevantSources.includes(source.type.toLowerCase()) &&
+               source.name &&
+               source.source_id;
+      })
       .map(source => ({
-        service: source.name,
-        link: source.web_url || `https://${source.name.toLowerCase().replace(/\s/g, '')}.com`,
+        service: normalizeServiceName(source.name),
+        link: source.web_url || generateServiceUrl(source.name),
         logo: `https://cdn.watchmode.com/provider_logos/${source.source_id}_100px.png`,
         available: true,
         startDate: new Date().toISOString(),
-        type: source.type // Dodanie typu źródła dla lepszej identyfikacji
+        type: source.type,
+        price: source.price || undefined
       }));
   } catch (error) {
     console.error('Error in getWatchmodeStreamingAvailability:', error);
     return [];
   }
+}
+
+// Helper functions for service normalization
+function normalizeServiceName(name: string): string {
+  const serviceMap: Record<string, string> = {
+    'Amazon Prime Video': 'Prime Video',
+    'Amazon': 'Prime Video',
+    'Disney Plus': 'Disney+',
+    'HBO Max': 'Max',
+    // Add more mappings as needed
+  };
+  return serviceMap[name] || name;
+}
+
+function generateServiceUrl(serviceName: string): string {
+  const baseUrl = serviceName.toLowerCase()
+    .replace(/\s+/g, '')
+    .replace('plus', '+')
+    .replace('amazon', 'primevideo');
+  return `https://www.${baseUrl}.com`;
 }
