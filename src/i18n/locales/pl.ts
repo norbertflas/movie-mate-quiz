@@ -1,4 +1,3 @@
-
 export default {
   translation: {
     common: {
@@ -83,6 +82,7 @@ export default {
       clickToWatch: "Kliknij, aby obejrzeć",
       lastChecked: "Ostatnio sprawdzono: {{time}}",
       notAvailable: "Nie znaleziono dostępnych serwisów streamingowych",
+      notavailable: "Niedostępne w serwisach streamingowych",
       errorChecking: "Błąd podczas sprawdzania dostępności streamingu",
       dataStale: "Dane mogą być nieaktualne",
       availabilityMayChange: "Dostępność mogła się zmienić"

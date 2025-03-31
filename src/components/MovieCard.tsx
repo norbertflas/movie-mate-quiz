@@ -15,201 +15,204 @@ import type { TMDBMovie } from "@/services/tmdb";
 import { useTranslation } from "react-i18next";
 import type { StreamingPlatformData } from "@/types/streaming";
 import { useStreamingAvailability } from "@/hooks/use-streaming-availability";
-import { MovieRating } from "./movie/MovieRating";
 
 export const MovieCard = ({
+  tmdbId,
   title,
   year,
   platform,
   genre,
   imageUrl,
   description,
-  trailerUrl: initialTrailerUrl,
+  trailerUrl: initialTrailerUrl = "",
   rating,
-  tags = [],
-  streamingServices = [],
-  tmdbId,
-  explanations = [],
-  onClose,
+  onClick,
+  insights,
+  explanations,
+  onDetailsClick
 }: MovieCardProps) => {
-  const [isFavorite, setIsFavorite] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [trailerUrl, setTrailerUrl] = useState(initialTrailerUrl);
-  const [insights, setInsights] = useState<MovieInsights | null>(null);
   const { t } = useTranslation();
-  
-  const { userRating, handleRating } = useMovieRating(title);
-  const { data: availabilityData, isLoading, isError } = useStreamingAvailability(tmdbId || 0);
-
-  const availableServices = availabilityData?.services.map(service => ({
-    service: service.service,
-    link: service.link || `https://${service.service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch/${tmdbId}`,
-    logo: service.logo
-  })) || streamingServices.map(service => {
-    if (typeof service === 'string') {
-      return {
-        service: service,
-        link: `https://${service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch/${tmdbId}`,
-        logo: undefined
-      };
-    }
-    return {
-      service: typeof service === 'object' && service !== null ? service.service : String(service),
-      link: typeof service === 'object' && service !== null && service.link ? 
-        service.link : 
-        `https://${(typeof service === 'object' && service !== null ? service.service : String(service)).toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch/${tmdbId}`,
-      logo: typeof service === 'object' && service !== null ? service.logo : undefined
-    };
-  });
+  const { userRating, handleRate } = useMovieRating(tmdbId);
 
   const handleCardClick = () => {
-    setIsDetailsOpen(true);
+    setIsExpanded(!isExpanded);
+    if (onClick) onClick();
   };
 
-  const handleCloseDetails = (e?: React.MouseEvent) => {
-    if (e) {
-      e.stopPropagation();
-    }
-    setIsDetailsOpen(false);
-    if (onClose) {
-      onClose();
-    }
+  const handleDetailsClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onDetailsClick) onDetailsClick();
   };
 
-  const movieData: TMDBMovie = {
-    id: tmdbId || 0,
-    title,
-    release_date: year,
-    overview: description,
-    poster_path: imageUrl.replace('https://image.tmdb.org/t/p/w500', ''),
-    vote_average: rating / 10,
-    vote_count: 0,
-    popularity: 0,
-    backdrop_path: null,
-    genre_ids: [],
-    explanations: explanations
+  const handleWatchTrailer = () => {
+    setShowTrailer(!showTrailer);
+  };
+
+  // Fetch streaming availability
+  const { data: streamingData, isLoading } = useStreamingAvailability(tmdbId);
+  const availableServices = streamingData?.services || [];
+
+  // Safe translation function that defaults to English if translation is missing
+  const safeTranslate = (key: string, defaultValue: string): string => {
+    const translated = t(key);
+    // Check if the translation was successful (not returning the key itself)
+    return translated !== key ? translated : defaultValue;
   };
 
   return (
-    <>
-      <div 
-        className="movie-card group cursor-pointer h-full flex flex-col"
-        onClick={handleCardClick}
-      >
-        <div className="relative aspect-[2/3] overflow-hidden rounded-t-xl">
-          <img 
-            src={imageUrl} 
-            alt={title}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-            loading="lazy"
-          />
-          <div className="movie-gradient"></div>
-          
-          <div className="absolute top-2 right-2 z-10">
-            <button 
-              className="p-2 rounded-full bg-black/30 backdrop-blur-sm text-white hover:bg-primary/80 transition-colors"
+    <MovieCardContainer onClick={handleCardClick}>
+      <CardHeader className="relative p-0">
+        <MovieCardHeader
+          imageUrl={imageUrl}
+          title={title}
+          onDetailsClick={onDetailsClick ? handleDetailsClick : undefined}
+        />
+      </CardHeader>
+      <CardContent className="p-4 flex flex-col flex-1">
+        <div className="flex flex-col flex-grow">
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <h3 className="font-bold text-lg line-clamp-1">{title}</h3>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>{year}</span>
+                {genre && (
+                  <>
+                    <span>•</span>
+                    <span>{genre}</span>
+                  </>
+                )}
+              </div>
+            </div>
+            <button
+              className="text-muted-foreground hover:text-primary transition-colors"
               onClick={(e) => {
                 e.stopPropagation();
-                setIsFavorite(!isFavorite);
+                // Add to favorites functionality would go here
               }}
             >
-              <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                width="18" 
-                height="18" 
-                viewBox="0 0 24 24" 
-                fill={isFavorite ? "currentColor" : "none"} 
-                stroke="currentColor" 
-                strokeWidth="2" 
-                strokeLinecap="round" 
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
                 strokeLinejoin="round"
+                className="h-5 w-5"
               >
                 <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
               </svg>
             </button>
           </div>
-        </div>
 
-        <div className="flex flex-col flex-grow p-4">
-          <h3 className="font-bold text-lg line-clamp-1 mb-1">{title}</h3>
-          
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-            <span>{year}</span>
-            {genre && (
-              <>
-                <span>•</span>
-                <span>{genre}</span>
-              </>
-            )}
-          </div>
-          
-          <MovieRating rating={rating} />
-          
-          <p className="text-sm text-muted-foreground line-clamp-2 mt-3 mb-3">
-            {description}
-          </p>
-          
-          <div className="mt-auto pt-2">
-            {!isLoading && availableServices.length > 0 ? (
-              <>
-                <p className="text-xs font-medium text-muted-foreground mb-2">{t("streaming.availableOn") || "Available on"}</p>
+          <div className="flex flex-col flex-grow p-0">
+            <h3 className="sr-only">{title}</h3>
+            
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+              <span>{year}</span>
+              {genre && (
+                <>
+                  <span>•</span>
+                  <span>{genre}</span>
+                </>
+              )}
+            </div>
+            
+            <MovieRating rating={rating} />
+            
+            <p className="text-sm text-muted-foreground line-clamp-2 mt-3 mb-3">
+              {description}
+            </p>
+            
+            <div className="mt-auto pt-2">
+              {!isLoading && availableServices.length > 0 ? (
+                <>
+                  <p className="text-xs font-medium text-muted-foreground mb-2">
+                    {safeTranslate("streaming.availableOn", "Available on")}
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {availableServices.slice(0, 3).map((service, index) => (
+                      <Badge key={index} variant="outline" className="text-xs px-2 py-0.5">
+                        {service.service}
+                      </Badge>
+                    ))}
+                    {availableServices.length > 3 && (
+                      <Badge variant="outline" className="text-xs px-2 py-0.5">
+                        +{availableServices.length - 3}
+                      </Badge>
+                    )}
+                  </div>
+                </>
+              ) : !isLoading ? (
+                <div className="streaming-not-available">
+                  <p className="text-xs font-medium text-muted-foreground mb-2">
+                    {safeTranslate("streaming.notavailable", "Not available for streaming")}
+                  </p>
+                </div>
+              ) : (
+                <div className="streaming-loading">
+                  <p className="text-xs font-medium text-muted-foreground mb-2">
+                    {safeTranslate("streaming.loading", "Loading streaming info...")}
+                  </p>
+                </div>
+              )}
+            </div>
+            
+            {explanations && explanations.length > 0 && (
+              <div className="mt-2 pt-2 border-t border-border">
                 <div className="flex flex-wrap gap-1.5">
-                  {availableServices.slice(0, 3).map((service, index) => (
-                    <Badge key={index} variant="outline" className="text-xs px-2 py-0.5">
-                      {service.service}
+                  {explanations.slice(0, 2).map((explanation, index) => (
+                    <Badge key={index} variant="secondary" className="text-xs whitespace-nowrap">
+                      {explanation}
                     </Badge>
                   ))}
-                  {availableServices.length > 3 && (
-                    <Badge variant="outline" className="text-xs px-2 py-0.5">
-                      +{availableServices.length - 3}
+                  {explanations.length > 2 && (
+                    <Badge variant="secondary" className="text-xs whitespace-nowrap">
+                      +{explanations.length - 2}
                     </Badge>
                   )}
                 </div>
-              </>
-            ) : !isLoading ? (
-              <div className="streaming-notavailible">
-                <p className="text-xs font-medium text-muted-foreground mb-2">
-                  {t("streaming.notavailible") || "Not available for streaming"}
-                </p>
-              </div>
-            ) : (
-              <div className="streaming-loading">
-                <p className="text-xs font-medium text-muted-foreground mb-2">
-                  {t("streaming.loading") || "Loading streaming info..."}
-                </p>
               </div>
             )}
           </div>
-          
-          {explanations && explanations.length > 0 && (
-            <div className="mt-2 pt-2 border-t border-border">
-              <div className="flex flex-wrap gap-1.5">
-                {explanations.slice(0, 2).map((explanation, index) => (
-                  <Badge key={index} variant="secondary" className="text-xs whitespace-nowrap">
-                    {explanation}
-                  </Badge>
-                ))}
-                {explanations.length > 2 && (
-                  <Badge variant="secondary" className="text-xs">
-                    +{explanations.length - 2}
-                  </Badge>
-                )}
-              </div>
-            </div>
-          )}
         </div>
-      </div>
 
-      {isDetailsOpen && (
-        <UnifiedMovieDetails
-          isOpen={isDetailsOpen}
-          onClose={handleCloseDetails}
-          movie={movieData}
-          explanations={explanations}
-          streamingServices={availableServices}
+        <MovieTrailerSection
+          showTrailer={showTrailer}
+          title={title}
+          year={year}
+          trailerUrl={trailerUrl}
+          setTrailerUrl={setTrailerUrl}
         />
-      )}
-    </>
+      </CardContent>
+    </MovieCardContainer>
   );
 };
+
+interface MovieRatingProps {
+  rating: number;
+}
+
+function MovieRating({ rating }: MovieRatingProps) {
+  // Convert rating to percentage if it's on a 10-point scale
+  const normalizedRating = rating > 10 ? rating : rating * 10;
+  
+  // Determine color based on rating
+  let ratingColor;
+  if (normalizedRating >= 70) ratingColor = "text-green-500";
+  else if (normalizedRating >= 50) ratingColor = "text-yellow-500";
+  else ratingColor = "text-red-500";
+
+  return (
+    <div className="inline-flex items-center">
+      <div className={`text-sm font-semibold ${ratingColor}`}>
+        {Math.round(normalizedRating)}%
+      </div>
+    </div>
+  );
+}
