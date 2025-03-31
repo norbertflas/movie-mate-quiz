@@ -150,23 +150,37 @@ export const MovieCard = ({
             {description}
           </p>
           
-          {availableServices.length > 0 && (
-            <div className="mt-auto pt-2">
-              <p className="text-xs font-medium text-muted-foreground mb-2">{t("streaming.availableOn") || "Available on"}</p>
-              <div className="flex flex-wrap gap-1.5">
-                {availableServices.slice(0, 3).map((service, index) => (
-                  <Badge key={index} variant="outline" className="text-xs px-2 py-0.5">
-                    {service.service}
-                  </Badge>
-                ))}
-                {availableServices.length > 3 && (
-                  <Badge variant="outline" className="text-xs px-2 py-0.5">
-                    +{availableServices.length - 3}
-                  </Badge>
-                )}
+          <div className="mt-auto pt-2">
+            {!isLoading && availableServices.length > 0 ? (
+              <>
+                <p className="text-xs font-medium text-muted-foreground mb-2">{t("streaming.availableOn") || "Available on"}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {availableServices.slice(0, 3).map((service, index) => (
+                    <Badge key={index} variant="outline" className="text-xs px-2 py-0.5">
+                      {service.service}
+                    </Badge>
+                  ))}
+                  {availableServices.length > 3 && (
+                    <Badge variant="outline" className="text-xs px-2 py-0.5">
+                      +{availableServices.length - 3}
+                    </Badge>
+                  )}
+                </div>
+              </>
+            ) : !isLoading ? (
+              <div className="streaming-notavailible">
+                <p className="text-xs font-medium text-muted-foreground mb-2">
+                  {t("streaming.notavailible") || "Not available for streaming"}
+                </p>
               </div>
-            </div>
-          )}
+            ) : (
+              <div className="streaming-loading">
+                <p className="text-xs font-medium text-muted-foreground mb-2">
+                  {t("streaming.loading") || "Loading streaming info..."}
+                </p>
+              </div>
+            )}
+          </div>
           
           {explanations && explanations.length > 0 && (
             <div className="mt-2 pt-2 border-t border-border">
