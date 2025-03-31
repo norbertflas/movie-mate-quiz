@@ -40,7 +40,7 @@ async function retryWithBackoff<T>(
   }
 }
 
-// Nowa implementacja korzystająca bezpośrednio z Streaming Availability API
+// Updated implementation using the streaming-availability API correctly
 async function fetchStreamingAvailabilityAPI(
   tmdbId: number,
   mediaType: 'movie' | 'series' = 'movie',
@@ -59,43 +59,50 @@ async function fetchStreamingAvailabilityAPI(
     
     const options = {
       method: 'GET',
-      url: `https://streaming-availability.p.rapidapi.com/shows/${mediaType}/${tmdbId}`,
+      url: `https://streaming-availability.p.rapidapi.com/shows/get`,
       params: { 
-        countryId: country
+        id: `tmdb:${tmdbId}`,
+        country: country
       },
       headers: {
-        'x-rapidapi-key': rapidApiKey,
-        'x-rapidapi-host': 'streaming-availability.p.rapidapi.com'
+        'X-RapidAPI-Key': rapidApiKey,
+        'X-RapidAPI-Host': 'streaming-availability.p.rapidapi.com'
       }
     };
 
+    console.log(`Fetching streaming availability for TMDB ID: ${tmdbId} in country: ${country}`);
     const response = await axios.request(options);
+    console.log('Got response from Streaming Availability API', { status: response.status });
+    
     const data = response.data;
     
-    if (!data) {
-      throw new Error('Empty response from Streaming Availability API');
+    if (!data || !data.result) {
+      console.log('Empty or invalid response from Streaming Availability API');
+      throw new Error('Empty or invalid response from Streaming Availability API');
     }
     
     // Konwersja odpowiedzi API do formatu StreamingPlatformData
     const streamingPlatforms: StreamingPlatformData[] = [];
     
-    // Sprawdź, czy dane są dostępne i mają strukturę, jakiej oczekujemy
-    if (data.streamingInfo && Object.keys(data.streamingInfo).length > 0) {
-      for (const [serviceName, serviceData] of Object.entries(data.streamingInfo[country] || {})) {
-        if (Array.isArray(serviceData)) {
-          const service = serviceData[0]; // Bierzemy pierwsze źródło
-          
-          streamingPlatforms.push({
-            service: serviceName,
-            available: true,
-            link: service.link || `https://${serviceName.toLowerCase()}.com`,
-            startDate: service.availableSince,
-            endDate: service.leavingSoon ? service.availableUntil : undefined,
-            logo: getStreamingServiceLogo(serviceName),
-            type: service.type // Subscription, rent, buy
-          });
-        }
+    // Nowa struktura API ma streamingOptions zamiast streamingInfo
+    if (data.result && data.result.streamingOptions && data.result.streamingOptions[country]) {
+      const streamingOptions = data.result.streamingOptions[country];
+      
+      for (const streamingOption of streamingOptions) {
+        streamingPlatforms.push({
+          service: streamingOption.service,
+          available: true,
+          link: streamingOption.link || `https://${streamingOption.service.toLowerCase()}.com`,
+          startDate: streamingOption.availableSince || new Date().toISOString(),
+          endDate: streamingOption.leavingSoon ? streamingOption.availableUntil : undefined,
+          logo: getStreamingServiceLogo(streamingOption.service),
+          type: streamingOption.type // Subscription, rent, buy
+        });
       }
+      
+      console.log(`Found ${streamingPlatforms.length} streaming platforms for movie ID ${tmdbId}`);
+    } else {
+      console.log(`No streaming options found for movie ID ${tmdbId} in country ${country}`);
     }
 
     // Zapisz do lokalnego cache'a
@@ -110,24 +117,30 @@ async function fetchStreamingAvailabilityAPI(
     return streamingPlatforms;
   } catch (error) {
     console.error('Error fetching from Streaming Availability API:', error);
-    return [];
+    // Rethrow, by pozwolić wywołującemu zdecydować jak obsłużyć błąd
+    throw error;
   }
 }
 
 // Helper do pobierania logo serwisu streamingowego
 function getStreamingServiceLogo(serviceName: string): string {
   const serviceMap: Record<string, string> = {
-    'netflix': '/public/streaming-icons/netflix.svg',
-    'prime': '/public/streaming-icons/prime.svg',
-    'disney': '/public/streaming-icons/disney.svg',
-    'hbo': '/public/streaming-icons/max.svg',
-    'hulu': '/public/streaming-icons/hulu.svg',
-    'apple': '/public/streaming-icons/apple.svg',
-    'paramount': '/public/streaming-icons/paramount.svg',
+    'netflix': '/streaming-icons/netflix.svg',
+    'prime': '/streaming-icons/prime.svg',
+    'disney': '/streaming-icons/disney.svg',
+    'max': '/streaming-icons/max.svg',
+    'hbo': '/streaming-icons/hbomax.svg',
+    'hulu': '/streaming-icons/hulu.svg',
+    'apple': '/streaming-icons/apple.svg',
+    'appletv': '/streaming-icons/appletv.svg',
+    'paramount': '/streaming-icons/paramount.svg',
+    'amazonprime': '/streaming-icons/prime.svg',
+    'disneyplus': '/streaming-icons/disneyplus.svg',
     // Dodaj więcej serwisów według potrzeb
   };
 
-  return serviceMap[serviceName.toLowerCase()] || '/public/streaming-icons/default.svg';
+  const normalizedName = serviceName.toLowerCase().replace(/\s+/g, '');
+  return serviceMap[normalizedName] || '/streaming-icons/default.svg';
 }
 
 export async function getStreamingAvailability(
@@ -168,10 +181,15 @@ export async function getStreamingAvailability(
     console.log('Fetching fresh streaming data for movie:', tmdbId);
     
     // Użyj bezpośredniego API Streaming Availability
-    const streamingResults = await fetchStreamingAvailabilityAPI(tmdbId, 'movie', streamingCountry);
-    
-    if (streamingResults.length > 0) {
-      return streamingResults;
+    try {
+      const streamingResults = await fetchStreamingAvailabilityAPI(tmdbId, 'movie', streamingCountry);
+      
+      if (streamingResults.length > 0) {
+        return streamingResults;
+      }
+    } catch (error) {
+      console.error('Error with primary Streaming Availability API, trying fallbacks:', error);
+      // Kontynuuj do zapasowych metod
     }
     
     // Jeśli bezpośrednie API nie zwróciło wyników, spróbuj zapasowych metod
