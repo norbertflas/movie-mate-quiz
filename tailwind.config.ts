@@ -89,6 +89,11 @@ const config = {
           from: { transform: "translateX(0)" },
           to: { transform: "translateX(-100%)" },
         },
+        "shimmer": {
+          "100%": {
+            transform: "translateX(100%)",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -96,6 +101,11 @@ const config = {
         "float": "float 4s ease-in-out infinite",
         "pulse-glow": "pulse-glow 2s ease-in-out infinite",
         "scroll-x": "scroll-x 60s linear infinite",
+        "shimmer": "shimmer 2s infinite",
+      },
+      backgroundImage: {
+        "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
+        "hero-pattern": "url('/hero-pattern.png')",
       },
     },
   },
