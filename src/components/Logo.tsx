@@ -27,7 +27,9 @@ export const Logo = ({ size = "md", animated = true }: LogoProps) => {
           className="h-full w-auto object-contain"
         />
       </motion.div>
-      <span className="font-bold text-lg md:text-xl text-gradient hidden sm:block">MovieFinder</span>
+      <span className="font-bold text-lg md:text-xl bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-500 whitespace-nowrap hidden sm:block">
+        MovieFinder
+      </span>
     </div>
   );
 

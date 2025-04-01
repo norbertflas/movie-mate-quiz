@@ -20,7 +20,7 @@ export const MovieCardContainer = ({ children, isExpanded, onClick }: MovieCardC
       className="h-full"
     >
       <Card 
-        className="movie-card h-full flex flex-col cursor-pointer overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300"
+        className="movie-card h-full flex flex-col overflow-hidden transition-all duration-300 shadow-md hover:shadow-xl bg-background"
         onClick={onClick}
       >
         {children}

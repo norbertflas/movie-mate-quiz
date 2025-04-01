@@ -4,14 +4,16 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Loader2 } from "lucide-react";
+import { Search, Loader2, User, Film } from "lucide-react";
 import { motion } from "framer-motion";
+import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
 
 export const SearchBar = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
+  const [searchType, setSearchType] = useState<"movies" | "creators">("movies");
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,17 +22,30 @@ export const SearchBar = () => {
     setIsSearching(true);
     // Simulate search delay
     setTimeout(() => {
-      navigate(`/search?q=${encodeURIComponent(query)}`);
+      navigate(`/search?q=${encodeURIComponent(query)}&type=${searchType}`);
       setIsSearching(false);
     }, 500);
   };
 
   return (
-    <form onSubmit={handleSearch} className="relative w-full">
+    <form onSubmit={handleSearch} className="relative w-full max-w-4xl mx-auto">
+      <Tabs defaultValue="movies" onValueChange={(value) => setSearchType(value as "movies" | "creators")} className="mb-4">
+        <TabsList className="grid w-full max-w-md mx-auto grid-cols-2">
+          <TabsTrigger value="movies" className="flex items-center gap-2">
+            <Film className="h-4 w-4" />
+            {t("search.movies")}
+          </TabsTrigger>
+          <TabsTrigger value="creators" className="flex items-center gap-2">
+            <User className="h-4 w-4" />
+            {t("search.creators")}
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+      
       <div className="relative flex items-center">
         <Input 
           type="text"
-          placeholder={t("search.placeholder")}
+          placeholder={searchType === "movies" ? t("search.placeholder") : t("search.creatorPlaceholder")}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className="search-input w-full py-6 pl-12 pr-4 text-base md:text-lg rounded-full shadow-lg focus:ring-2 focus:ring-primary/20 transition-all duration-300"
@@ -59,18 +74,32 @@ export const SearchBar = () => {
 
       <div className="mt-4 flex flex-wrap justify-center gap-2 text-sm text-muted-foreground">
         <span>{t("search.trySearching")}:</span>
-        {["Action", "Comedy", "Drama", "Sci-Fi"].map((genre) => (
-          <motion.button
-            key={genre}
-            type="button"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setQuery(genre)}
-            className="px-3 py-1 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors"
-          >
-            {genre}
-          </motion.button>
-        ))}
+        {searchType === "movies" ? 
+          ["Action", "Comedy", "Drama", "Sci-Fi"].map((genre) => (
+            <motion.button
+              key={genre}
+              type="button"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setQuery(genre)}
+              className="px-3 py-1 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors"
+            >
+              {genre}
+            </motion.button>
+          )) :
+          ["Spielberg", "Nolan", "Tarantino", "Villeneuve"].map((creator) => (
+            <motion.button
+              key={creator}
+              type="button"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setQuery(creator)}
+              className="px-3 py-1 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors"
+            >
+              {creator}
+            </motion.button>
+          ))
+        }
       </div>
     </form>
   );

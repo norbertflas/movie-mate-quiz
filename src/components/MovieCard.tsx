@@ -37,7 +37,23 @@ export const MovieCard = ({
   const { userRating, handleRating } = useMovieRating(title);
   const { data: availabilityData, isLoading } = useStreamingAvailability(tmdbId || 0);
 
-  const availableServices = availabilityData?.services || streamingServices;
+  // Process streaming services to ensure they have the correct format
+  const processedServices = streamingServices.map(service => {
+    if (typeof service === 'string') {
+      return {
+        service,
+        link: `https://${service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch/${tmdbId}`,
+        logo: `/streaming-icons/${service.toLowerCase().replace(/\s/g, '')}.svg`
+      };
+    }
+    return {
+      ...service,
+      link: service.link || `https://${service.service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch/${tmdbId}`,
+      logo: service.logo || `/streaming-icons/${service.service.toLowerCase().replace(/\s/g, '')}.svg`
+    };
+  });
+
+  const availableServices = availabilityData?.services || processedServices;
 
   // Safe translation function
   const safeTranslate = (key: string, defaultValue: string): string => {
@@ -96,7 +112,9 @@ export const MovieCard = ({
         <CardContent className="flex flex-col flex-grow p-4 space-y-3">
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1">
-              <h3 className="font-bold text-lg truncate" title={title}>{title}</h3>
+              <h3 className="font-bold text-lg" title={title}>
+                <span className="line-clamp-1">{title}</span>
+              </h3>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <span>{year}</span>
                 {genre && (
@@ -112,13 +130,13 @@ export const MovieCard = ({
           </div>
 
           {description && (
-            <p className="text-sm text-muted-foreground line-clamp-2" title={description}>
+            <p className="text-sm text-muted-foreground line-clamp-3" title={description}>
               {description}
             </p>
           )}
           
           <div className="mt-auto pt-2">
-            {!isLoading && availableServices.length > 0 ? (
+            {!isLoading && availableServices && availableServices.length > 0 ? (
               <>
                 <p className="text-xs font-medium text-muted-foreground mb-2">
                   {safeTranslate("streaming.availableOn", "Available on")}
@@ -126,7 +144,7 @@ export const MovieCard = ({
                 <div className="flex flex-wrap gap-1.5">
                   {availableServices.slice(0, 3).map((service, index) => (
                     <Badge key={index} variant="outline" className="text-xs px-2 py-0.5">
-                      {service.service}
+                      {typeof service === 'string' ? service : service.service}
                     </Badge>
                   ))}
                   {availableServices.length > 3 && (
@@ -167,7 +185,7 @@ export const MovieCard = ({
             explanations
           }}
           explanations={explanations}
-          streamingServices={availableServices}
+          streamingServices={processedServices}
         />
       )}
     </>

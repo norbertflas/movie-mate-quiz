@@ -9,10 +9,16 @@ import { Logo } from "./Logo";
 import { ThemeSwitcher } from "./ThemeSwitcher";
 import { cn } from "@/lib/utils";
 import { Search } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export const Navigation = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const isHomePage = location.pathname === "/";
+
+  const handleSearchClick = () => {
+    navigate("/search");
+  };
 
   return (
     <motion.nav 
@@ -31,7 +37,7 @@ export const Navigation = () => {
           </div>
           
           <motion.div 
-            className="hidden md:flex md:flex-1 justify-center space-x-1"
+            className="hidden md:flex md:flex-1 justify-center space-x-4"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
@@ -52,6 +58,7 @@ export const Navigation = () => {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              onClick={handleSearchClick}
               className="p-2 rounded-full bg-muted/50 hover:bg-muted/80 transition-colors"
             >
               <Search className="h-5 w-5 text-muted-foreground" />

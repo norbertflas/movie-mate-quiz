@@ -1,4 +1,3 @@
-
 const translations = {
   translation: {
     common: {
@@ -84,6 +83,7 @@ const translations = {
     search: {
       title: "Search",
       placeholder: "Search for a movie",
+      creatorPlaceholder: "Search for directors, actors, etc.",
       button: "Search",
       movies: "Movies",
       creators: "Creators",
@@ -95,7 +95,13 @@ const translations = {
       filteredResults: "Found {{count}} movies matching your filters",
       tryDifferentFilters: "Try adjusting your filters to find more movies",
       clickCreatorInfo: "Click on a creator to see their most popular works",
-      knownFor: "Known For"
+      knownFor: "Known For",
+      creatorSearch: "Creator Search",
+      searchCreators: "Search for directors, actors, writers",
+      searchResults: "Search Results",
+      totalResults: "{{count}} Results",
+      trySearching: "Try searching",
+      creatorPlaceholder: "Search for directors, actors, writers"
     },
     errors: {
       rateLimitExceeded: "Rate limit exceeded",
@@ -176,7 +182,9 @@ const translations = {
       deathDate: "Date of Death",
       placeOfBirth: "Place of Birth",
       biography: "Biography",
-      age: "Age"
+      age: "Age",
+      searchByCreator: "Search by Creator",
+      creatorDescription: "Find movies from your favorite directors, actors, and writers"
     },
     services: {
       netflix: "Netflix",

@@ -32,15 +32,15 @@ export const SearchInput = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <Tabs defaultValue="movies" onValueChange={(value) => setSearchType(value as "movies" | "creators")}>
+      <Tabs defaultValue={searchType} onValueChange={(value) => setSearchType(value as "movies" | "creators")}>
         <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto mb-6 bg-secondary/50 backdrop-blur-sm">
           <TabsTrigger value="movies" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-white">
             <Film className="h-4 w-4" />
-            {t("search.movies")}
+            <span className="whitespace-nowrap">{t("search.movies")}</span>
           </TabsTrigger>
           <TabsTrigger value="creators" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-white">
             <User className="h-4 w-4" />
-            {t("search.creators")}
+            <span className="whitespace-nowrap">{t("search.creators")}</span>
           </TabsTrigger>
         </TabsList>
 
@@ -65,7 +65,7 @@ export const SearchInput = ({
             ) : (
               <>
                 <Search className="mr-2 h-5 w-5" />
-                {t("search.button")}
+                <span className="whitespace-nowrap">{t("search.button")}</span>
               </>
             )}
           </Button>

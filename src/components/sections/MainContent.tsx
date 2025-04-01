@@ -56,8 +56,10 @@ export const MainContent = () => {
       <motion.div variants={itemVariants} className="relative">
         <Card className="hero-section p-8 shadow-xl">
           <motion.div variants={itemVariants} className="flex items-center gap-3 mb-8">
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-gradient">
-              {t("site.findYourMovie")}
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight whitespace-normal">
+              <span className="bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">
+                Find your perfect movie
+              </span>
             </h1>
             <motion.div
               initial={{ rotate: 0 }}
