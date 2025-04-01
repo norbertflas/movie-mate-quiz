@@ -3,6 +3,7 @@ import type { StreamingPlatformData } from "@/types/streaming";
 import { getStreamingAvailability } from "@/services/streamingAvailability";
 import { getWatchmodeStreamingAvailability } from "@/services/watchmode";
 import { formatServiceLinks } from "@/utils/streamingServices";
+import { getTsStreamingAvailability } from "@/services/tsStreamingAvailability";
 
 // Cache expiry in milliseconds - 1 hour
 const CACHE_EXPIRY = 60 * 60 * 1000;
@@ -21,18 +22,30 @@ export const useStreamingAvailability = (movieId: number) => {
           return { services: [], timestamp: new Date().toISOString(), isStale: false };
         }
         
-        // Priorytetowo używamy Streaming Availability API
+        // First try the new ts-streaming-availability implementation
         let services: StreamingPlatformData[] = [];
         try {
-          console.log("Fetching from Streaming Availability API...");
-          services = await getStreamingAvailability(movieId);
-          console.log(`Streaming Availability API returned ${services.length} streaming services`);
-        } catch (streamingAvailabilityError) {
-          console.error("Error fetching from Streaming Availability API:", streamingAvailabilityError);
+          console.log("Fetching from ts-streaming-availability API...");
+          services = await getTsStreamingAvailability(movieId);
+          console.log(`ts-streaming-availability API returned ${services.length} streaming services`);
+        } catch (tsStreamingError) {
+          console.error("Error fetching from ts-streaming-availability API:", tsStreamingError);
           // Don't throw here, just try the next service
         }
         
-        // Jeśli Streaming Availability API nie zwróci wyników, spróbuj Watchmode jako zapasowy
+        // If ts-streaming-availability API doesn't return results, try the original Streaming Availability API
+        if (!services || services.length === 0) {
+          try {
+            console.log("Fallback to original Streaming Availability API...");
+            services = await getStreamingAvailability(movieId);
+            console.log(`Original Streaming Availability API returned ${services.length} streaming services`);
+          } catch (streamingAvailabilityError) {
+            console.error("Error fetching from Streaming Availability API:", streamingAvailabilityError);
+            // Don't throw here, just try the next service
+          }
+        }
+        
+        // If neither of the above methods worked, try Watchmode as a last resort
         if (!services || services.length === 0) {
           console.log("Falling back to Watchmode API...");
           try {
