@@ -1,3 +1,4 @@
+
 const translations = {
   translation: {
     common: {
@@ -119,7 +120,7 @@ const translations = {
       clickToWatch: "Click to watch now",
       lastChecked: "Last checked: {{time}}",
       notAvailable: "Not available on streaming services",
-      notavailable: "Not available for streaming",
+      notAvailable: "Not available for streaming",
       loading: "Loading streaming info...",
       dataStale: "Data may be outdated",
       errorChecking: "Error checking availability",

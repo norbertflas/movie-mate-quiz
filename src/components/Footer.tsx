@@ -57,7 +57,7 @@ export const Footer = () => {
 
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">{t("footer.language")}</h3>
-            <LanguageSwitcher variant="minimal" />
+            <LanguageSwitcher />
             
             <div className="flex items-center space-x-4 mt-6">
               <a
