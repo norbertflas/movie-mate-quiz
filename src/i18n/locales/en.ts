@@ -1,3 +1,4 @@
+
 const translations = {
   translation: {
     common: {
@@ -103,7 +104,8 @@ const translations = {
       tryAgain: "Please try again later",
       trailerNotFound: "No trailer found",
       trailerError: "Error loading trailer",
-      recommendationError: "Error generating recommendations"
+      recommendationError: "Error generating recommendations",
+      loadingServices: "Error loading streaming services"
     },
     streaming: {
       availableOn: "Available on",
@@ -115,7 +117,8 @@ const translations = {
       loading: "Loading streaming info...",
       dataStale: "Data may be outdated",
       errorChecking: "Error checking availability",
-      availabilityMayChange: "Availability may change"
+      availabilityMayChange: "Availability may change",
+      watchNow: "Watch Now"
     },
     navigation: {
       home: "Home",
@@ -174,6 +177,15 @@ const translations = {
       placeOfBirth: "Place of Birth",
       biography: "Biography",
       age: "Age"
+    },
+    services: {
+      netflix: "Netflix",
+      "prime video": "Prime Video",
+      hulu: "Hulu",
+      "disney+": "Disney+",
+      max: "Max",
+      "apple tv+": "Apple TV+",
+      "paramount+": "Paramount+"
     }
   }
 };

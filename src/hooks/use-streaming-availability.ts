@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import type { StreamingPlatformData } from "@/types/streaming";
 import { getStreamingAvailability } from "@/services/streamingAvailability";
@@ -21,32 +22,34 @@ export const useStreamingAvailability = (movieId: number) => {
           return { services: [], timestamp: new Date().toISOString(), isStale: false };
         }
         
-        // Priorytetowo używamy Streaming Availability API
+        // Try Watchmode API first as it's more reliable
         let services: StreamingPlatformData[] = [];
         try {
-          console.log("Fetching from Streaming Availability API...");
-          services = await getStreamingAvailability(movieId);
-          console.log(`Streaming Availability API returned ${services.length} streaming services`);
-        } catch (streamingAvailabilityError) {
-          console.error("Error fetching from Streaming Availability API:", streamingAvailabilityError);
-          // Don't throw here, just try the next service
+          console.log("Fetching from Watchmode API...");
+          services = await getWatchmodeStreamingAvailability(movieId);
+          console.log(`Watchmode API returned ${services.length} streaming services`);
+        } catch (watchmodeError) {
+          console.error("Error fetching from Watchmode API:", watchmodeError);
+          // Don't throw here, try the next service
         }
         
-        // Jeśli Streaming Availability API nie zwróci wyników, spróbuj Watchmode jako zapasowy
+        // If Watchmode doesn't return results, try Streaming Availability API as backup
         if (!services || services.length === 0) {
-          console.log("Falling back to Watchmode API...");
+          console.log("Falling back to custom streaming availability service...");
           try {
-            services = await getWatchmodeStreamingAvailability(movieId);
-            console.log(`Watchmode returned ${services.length} streaming services`);
-          } catch (watchmodeError) {
-            console.error("Error fetching from Watchmode:", watchmodeError);
-            // Don't throw here either, just return empty results
+            services = await getStreamingAvailability(movieId);
+            console.log(`Custom service returned ${services.length} streaming services`);
+          } catch (streamingError) {
+            console.error("Error fetching from custom streaming service:", streamingError);
+            // Return empty results instead of throwing
           }
         }
 
         // Ensure all services have proper links and remove any undefined services
-        const validServices = services.filter(service => !!service);
+        const validServices = services.filter(service => !!service && !!service.service);
         const formattedServices = formatServiceLinks(validServices);
+        
+        console.log("Final streaming services:", formattedServices.map(s => s.service).join(', '));
         
         return {
           services: formattedServices,
@@ -63,7 +66,7 @@ export const useStreamingAvailability = (movieId: number) => {
         };
       }
     },
-    retry: 1,
+    retry: 2,
     staleTime: CACHE_EXPIRY,
     gcTime: CACHE_EXPIRY * 24, // Keep in cache for 24 hours
     // Add better error handling

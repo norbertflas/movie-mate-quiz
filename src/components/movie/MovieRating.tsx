@@ -1,32 +1,25 @@
 
-import { Star } from "lucide-react";
-import { Progress } from "../ui/progress";
-import { motion } from "framer-motion";
+import React from "react";
 
 interface MovieRatingProps {
   rating: number;
 }
 
 export const MovieRating = ({ rating }: MovieRatingProps) => {
-  const starRating = Math.round(rating / 20);
+  // Convert rating to percentage if it's on a 10-point scale
+  const normalizedRating = rating > 10 ? rating : rating * 10;
   
+  // Determine color based on rating
+  let ratingColor;
+  if (normalizedRating >= 70) ratingColor = "text-green-500";
+  else if (normalizedRating >= 50) ratingColor = "text-yellow-500";
+  else ratingColor = "text-red-500";
+
   return (
-    <div className="flex items-center gap-2">
-      <div className="flex">
-        {[...Array(5)].map((_, i) => (
-          <Star 
-            key={i} 
-            size={14} 
-            className={i < starRating 
-              ? "text-yellow-400 fill-yellow-400" 
-              : "text-gray-300 dark:text-gray-600"
-            } 
-          />
-        ))}
+    <div className="inline-flex items-center">
+      <div className={`text-sm font-semibold ${ratingColor}`}>
+        {Math.round(normalizedRating)}%
       </div>
-      <span className="text-xs font-medium">
-        {rating.toFixed(0)}%
-      </span>
     </div>
   );
 };

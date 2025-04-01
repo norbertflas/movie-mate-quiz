@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { CardHeader, CardContent } from "./ui/card";
 import { MovieCardContainer } from "./movie/MovieCardContainer";
@@ -15,6 +16,7 @@ import type { TMDBMovie } from "@/services/tmdb";
 import { useTranslation } from "react-i18next";
 import type { StreamingPlatformData } from "@/types/streaming";
 import { useStreamingAvailability } from "@/hooks/use-streaming-availability";
+import { MovieRating } from "./movie/MovieRating";
 
 export const MovieCard = ({
   tmdbId,
@@ -51,8 +53,10 @@ export const MovieCard = ({
     setShowTrailer(!showTrailer);
   };
 
-  // Fetch streaming availability
-  const { data: streamingData, isLoading } = useStreamingAvailability(tmdbId);
+  // Fetch streaming availability with improved error handling
+  const { data: streamingData, isLoading, isError } = useStreamingAvailability(tmdbId);
+  
+  // Get available streaming services with fallback
   const availableServices = streamingData?.services || [];
 
   // Safe translation function that defaults to English if translation is missing
@@ -111,18 +115,6 @@ export const MovieCard = ({
           </div>
 
           <div className="flex flex-col flex-grow p-0">
-            <h3 className="sr-only">{title}</h3>
-            
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-              <span>{year}</span>
-              {genre && (
-                <>
-                  <span>•</span>
-                  <span>{genre}</span>
-                </>
-              )}
-            </div>
-            
             <MovieRating rating={rating} />
             
             <p className="text-sm text-muted-foreground line-clamp-2 mt-3 mb-3">
@@ -193,26 +185,3 @@ export const MovieCard = ({
     </MovieCardContainer>
   );
 };
-
-interface MovieRatingProps {
-  rating: number;
-}
-
-function MovieRating({ rating }: MovieRatingProps) {
-  // Convert rating to percentage if it's on a 10-point scale
-  const normalizedRating = rating > 10 ? rating : rating * 10;
-  
-  // Determine color based on rating
-  let ratingColor;
-  if (normalizedRating >= 70) ratingColor = "text-green-500";
-  else if (normalizedRating >= 50) ratingColor = "text-yellow-500";
-  else ratingColor = "text-red-500";
-
-  return (
-    <div className="inline-flex items-center">
-      <div className={`text-sm font-semibold ${ratingColor}`}>
-        {Math.round(normalizedRating)}%
-      </div>
-    </div>
-  );
-}
