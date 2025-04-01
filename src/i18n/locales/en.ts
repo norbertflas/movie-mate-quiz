@@ -119,7 +119,6 @@ const translations = {
       watchOn: "Watch on {{service}}",
       clickToWatch: "Click to watch now",
       lastChecked: "Last checked: {{time}}",
-      notAvailable: "Not available on streaming services",
       notAvailable: "Not available for streaming",
       loading: "Loading streaming info...",
       dataStale: "Data may be outdated",
@@ -195,7 +194,17 @@ const translations = {
       max: "Max",
       "apple tv+": "Apple TV+",
       "paramount+": "Paramount+"
-    }
+    },
+    footer: {
+      description: "Your personal guide to the world of cinema",
+      quickLinks: "Quick Links",
+      language: "Language",
+      allRightsReserved: "All Rights Reserved",
+      madeWith: "Made with",
+      by: "by"
+    },
+    languageChanged: "Language Changed",
+    changeLanguage: "Change Language"
   }
 };
 
