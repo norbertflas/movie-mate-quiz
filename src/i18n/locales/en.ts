@@ -1,3 +1,4 @@
+
 const translations = {
   translation: {
     common: {
@@ -83,6 +84,7 @@ const translations = {
     search: {
       title: "Search",
       placeholder: "Search for a movie",
+      creatorPlaceholder: "Search for directors, actors, etc.",
       button: "Search",
       movies: "Movies",
       creators: "Creators",
@@ -94,7 +96,13 @@ const translations = {
       filteredResults: "Found {{count}} movies matching your filters",
       tryDifferentFilters: "Try adjusting your filters to find more movies",
       clickCreatorInfo: "Click on a creator to see their most popular works",
-      knownFor: "Known For"
+      knownFor: "Known For",
+      creatorSearch: "Creator Search",
+      searchCreators: "Search for directors, actors, writers",
+      searchResults: "Search Results",
+      totalResults: "{{count}} Results",
+      trySearching: "Try searching",
+      creatorPlaceholder: "Search for directors, actors, writers"
     },
     errors: {
       rateLimitExceeded: "Rate limit exceeded",
@@ -103,19 +111,20 @@ const translations = {
       tryAgain: "Please try again later",
       trailerNotFound: "No trailer found",
       trailerError: "Error loading trailer",
-      recommendationError: "Error generating recommendations"
+      recommendationError: "Error generating recommendations",
+      loadingServices: "Error loading streaming services"
     },
     streaming: {
       availableOn: "Available on",
       watchOn: "Watch on {{service}}",
       clickToWatch: "Click to watch now",
       lastChecked: "Last checked: {{time}}",
-      notAvailable: "Not available on streaming services",
-      notavailable: "Not available for streaming",
+      notAvailable: "Not available for streaming",
       loading: "Loading streaming info...",
       dataStale: "Data may be outdated",
       errorChecking: "Error checking availability",
-      availabilityMayChange: "Availability may change"
+      availabilityMayChange: "Availability may change",
+      watchNow: "Watch Now"
     },
     navigation: {
       home: "Home",
@@ -173,8 +182,29 @@ const translations = {
       deathDate: "Date of Death",
       placeOfBirth: "Place of Birth",
       biography: "Biography",
-      age: "Age"
-    }
+      age: "Age",
+      searchByCreator: "Search by Creator",
+      creatorDescription: "Find movies from your favorite directors, actors, and writers"
+    },
+    services: {
+      netflix: "Netflix",
+      "prime video": "Prime Video",
+      hulu: "Hulu",
+      "disney+": "Disney+",
+      max: "Max",
+      "apple tv+": "Apple TV+",
+      "paramount+": "Paramount+"
+    },
+    footer: {
+      description: "Your personal guide to the world of cinema",
+      quickLinks: "Quick Links",
+      language: "Language",
+      allRightsReserved: "All Rights Reserved",
+      madeWith: "Made with",
+      by: "by"
+    },
+    languageChanged: "Language Changed",
+    changeLanguage: "Change Language"
   }
 };
 

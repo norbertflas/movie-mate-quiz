@@ -9,18 +9,27 @@ interface LogoProps {
 
 export const Logo = ({ size = "md", animated = true }: LogoProps) => {
   const sizeClasses = {
-    sm: "h-8 w-8",
-    md: "h-10 w-10",
-    lg: "h-12 w-12"
+    sm: "h-8",
+    md: "h-10",
+    lg: "h-12"
   };
 
   const logoContent = (
-    <div className={`relative ${sizeClasses[size]}`}>
-      <img 
-        src="/lovable-uploads/872064e5-afe2-48dd-9ec9-ab23765bbfba.png" 
-        alt="MovieFinder Logo" 
-        className="w-full h-full object-contain"
-      />
+    <div className={`relative ${sizeClasses[size]} flex items-center`}>
+      <motion.div
+        className="mr-2"
+        whileHover={{ rotate: 10 }}
+        transition={{ duration: 0.2 }}
+      >
+        <img 
+          src="/lovable-uploads/872064e5-afe2-48dd-9ec9-ab23765bbfba.png" 
+          alt="MovieFinder Logo" 
+          className="h-full w-auto object-contain"
+        />
+      </motion.div>
+      <span className="font-bold text-lg md:text-xl bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-500 whitespace-nowrap hidden sm:block">
+        MovieFinder
+      </span>
     </div>
   );
 
@@ -33,14 +42,6 @@ export const Logo = ({ size = "md", animated = true }: LogoProps) => {
       >
         <Link to="/" className="flex items-center gap-2">
           {logoContent}
-          <motion.span 
-            className="font-bold text-lg md:text-xl hidden sm:block"
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            MovieFinder
-          </motion.span>
         </Link>
       </motion.div>
     );
@@ -49,9 +50,6 @@ export const Logo = ({ size = "md", animated = true }: LogoProps) => {
   return (
     <Link to="/" className="flex items-center gap-2">
       {logoContent}
-      <span className="font-bold text-lg md:text-xl hidden sm:block">
-        MovieFinder
-      </span>
     </Link>
   );
 };

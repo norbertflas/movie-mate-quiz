@@ -61,7 +61,7 @@ export const PopularMoviesSection = ({ movies }: PopularMoviesSectionProps) => {
   };
 
   return (
-    <section className="space-y-4 overflow-hidden py-8" ref={ref}>
+    <section className="space-y-6 overflow-hidden py-8" ref={ref}>
       <div className="flex items-center space-x-2">
         <motion.h2 
           className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-500"
@@ -87,17 +87,17 @@ export const PopularMoviesSection = ({ movies }: PopularMoviesSectionProps) => {
       
       {movies && movies.length > 0 ? (
         <motion.div 
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 auto-rows-fr"
           variants={containerVariants}
           initial="hidden"
           animate={isInView ? "visible" : "hidden"}
         >
           {movies.map((movie, index) => (
             <motion.div
-              key={movie.id}
+              key={`movie-${movie.id}-${index}`}
               variants={cardVariants}
               custom={index}
-              className="transform-gpu"
+              className="transform-gpu h-full"
             >
               <motion.div
                 whileHover={{ 
@@ -105,24 +105,27 @@ export const PopularMoviesSection = ({ movies }: PopularMoviesSectionProps) => {
                   transition: { duration: 0.2 },
                   boxShadow: "0 10px 30px -15px rgba(0, 0, 0, 0.3)" 
                 }}
+                className="h-full flex"
               >
                 <MovieCard
                   title={movie.title}
                   year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "N/A"}
                   platform="TMDB"
                   genre={t("movie.genre")}
-                  imageUrl={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+                  imageUrl={movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : '/placeholder.svg'}
                   description={movie.overview}
                   trailerUrl=""
                   rating={movie.vote_average * 10}
                   tmdbId={movie.id}
+                  streamingServices={[]}
+                  tags={[]}
                 />
               </motion.div>
             </motion.div>
           ))}
         </motion.div>
       ) : (
-        <div className="py-4 text-center text-muted-foreground">
+        <div className="py-6 text-center text-muted-foreground rounded-lg bg-muted/30 border border-muted">
           {t("discover.noMoviesFound")}
         </div>
       )}

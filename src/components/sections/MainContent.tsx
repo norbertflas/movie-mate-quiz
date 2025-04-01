@@ -8,7 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getTrendingMovies, getPopularMovies } from "@/services/tmdb/trending";
 import { PopularMoviesSection } from "./PopularMoviesSection";
 import { LoadingState } from "@/components/LoadingState";
-import { Film } from "lucide-react";
+import { Film, Sparkles } from "lucide-react";
 
 export const MainContent = () => {
   const { t } = useTranslation();
@@ -53,21 +53,30 @@ export const MainContent = () => {
       initial="hidden"
       animate="visible"
     >
-      <motion.div variants={itemVariants}>
-        <Card className="p-6 shadow-xl bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-blue-200/20 dark:border-blue-800/20 hover:shadow-2xl transition-all duration-300">
-          <motion.div variants={itemVariants} className="flex items-center space-x-2 mb-6">
-            <h1 className="text-3xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-purple-500 via-blue-500 to-indigo-500">
-              {t("site.findYourMovie")}
+      <motion.div variants={itemVariants} className="relative">
+        <Card className="hero-section p-8 shadow-xl">
+          <motion.div variants={itemVariants} className="flex items-center gap-3 mb-8">
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight whitespace-normal">
+              <span className="bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">
+                Find your perfect movie
+              </span>
             </h1>
             <motion.div
               initial={{ rotate: 0 }}
               animate={{ rotate: 360 }}
               transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
             >
-              <Film className="h-6 w-6 text-primary/80" />
+              <Sparkles className="h-6 w-6 text-primary/80" />
             </motion.div>
           </motion.div>
-          <SearchBar />
+          
+          <div className="relative z-10 max-w-2xl mx-auto">
+            <SearchBar />
+          </div>
+          
+          <div className="absolute top-0 right-0 opacity-20 pointer-events-none">
+            <Film className="w-72 h-72 text-primary/20" />
+          </div>
         </Card>
       </motion.div>
 

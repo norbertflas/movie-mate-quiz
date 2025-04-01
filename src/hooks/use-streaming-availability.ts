@@ -33,33 +33,35 @@ export const useStreamingAvailability = (movieId: number) => {
           // Don't throw here, just try the next service
         }
         
-        // If ts-streaming-availability API doesn't return results, try the original Streaming Availability API
+        // If ts-streaming API doesn't return results, try Watchmode API as it's considered reliable
         if (!services || services.length === 0) {
           try {
-            console.log("Fallback to original Streaming Availability API...");
-            services = await getStreamingAvailability(movieId);
-            console.log(`Original Streaming Availability API returned ${services.length} streaming services`);
-          } catch (streamingAvailabilityError) {
-            console.error("Error fetching from Streaming Availability API:", streamingAvailabilityError);
-            // Don't throw here, just try the next service
+            console.log("Falling back to Watchmode API...");
+            services = await getWatchmodeStreamingAvailability(movieId);
+            console.log(`Watchmode API returned ${services.length} streaming services`);
+          } catch (watchmodeError) {
+            console.error("Error fetching from Watchmode API:", watchmodeError);
+            // Don't throw here, try the next service
           }
         }
         
-        // If neither of the above methods worked, try Watchmode as a last resort
+        // If both ts-streaming and Watchmode don't have results, try original custom service as last resort
         if (!services || services.length === 0) {
-          console.log("Falling back to Watchmode API...");
+          console.log("Falling back to custom streaming availability service...");
           try {
-            services = await getWatchmodeStreamingAvailability(movieId);
-            console.log(`Watchmode returned ${services.length} streaming services`);
-          } catch (watchmodeError) {
-            console.error("Error fetching from Watchmode:", watchmodeError);
-            // Don't throw here either, just return empty results
+            services = await getStreamingAvailability(movieId);
+            console.log(`Custom service returned ${services.length} streaming services`);
+          } catch (streamingError) {
+            console.error("Error fetching from custom streaming service:", streamingError);
+            // Return empty results instead of throwing
           }
         }
 
         // Ensure all services have proper links and remove any undefined services
-        const validServices = services.filter(service => !!service);
+        const validServices = services.filter(service => !!service && !!service.service);
         const formattedServices = formatServiceLinks(validServices);
+        
+        console.log("Final streaming services:", formattedServices.map(s => s.service).join(', '));
         
         return {
           services: formattedServices,
@@ -76,7 +78,7 @@ export const useStreamingAvailability = (movieId: number) => {
         };
       }
     },
-    retry: 1,
+    retry: 2,
     staleTime: CACHE_EXPIRY,
     gcTime: CACHE_EXPIRY * 24, // Keep in cache for 24 hours
     // Add better error handling

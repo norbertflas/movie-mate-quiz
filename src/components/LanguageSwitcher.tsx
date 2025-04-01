@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -14,7 +15,11 @@ const languages = [
   { code: "pl", label: "Polski" },
 ];
 
-export const LanguageSwitcher = () => {
+interface LanguageSwitcherProps {
+  variant?: "default" | "minimal";
+}
+
+export const LanguageSwitcher = ({ variant = "default" }: LanguageSwitcherProps) => {
   const { t, i18n } = useTranslation();
   const { toast } = useToast();
 
@@ -45,13 +50,29 @@ export const LanguageSwitcher = () => {
     }
   };
 
+  // Render different button styles based on variant
+  const renderButton = () => {
+    if (variant === "minimal") {
+      return (
+        <Button variant="ghost" size="sm" className="flex items-center gap-2">
+          <Languages className="h-4 w-4" />
+          <span>{i18n.language.toUpperCase()}</span>
+        </Button>
+      );
+    }
+    
+    return (
+      <Button variant="ghost" size="icon">
+        <Languages className="h-4 w-4" />
+        <span className="sr-only">{t("changeLanguage")}</span>
+      </Button>
+    );
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon">
-          <Languages className="h-4 w-4" />
-          <span className="sr-only">{t("changeLanguage")}</span>
-        </Button>
+        {renderButton()}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         {languages.map((lang) => (

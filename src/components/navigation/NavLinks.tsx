@@ -18,42 +18,42 @@ export const NavLinks = ({ onNavigate }: NavLinksProps) => {
       <NavLink 
         to="/" 
         onClick={handleClick}
-        className={({ isActive }) => `flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary ${isActive ? 'text-primary' : 'text-muted-foreground'}`}
+        className={({ isActive }) => `flex items-center gap-2 text-sm md:text-base font-medium transition-colors hover:text-primary ${isActive ? 'text-primary' : 'text-muted-foreground'}`}
       >
         <Home className="h-4 w-4" />
-        <span>{t("navigation.home")}</span>
+        <span className="whitespace-nowrap">{t("navigation.home")}</span>
       </NavLink>
       <NavLink 
         to="/quiz" 
         onClick={handleClick}
-        className={({ isActive }) => `flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary ${isActive ? 'text-primary' : 'text-muted-foreground'}`}
+        className={({ isActive }) => `flex items-center gap-2 text-sm md:text-base font-medium transition-colors hover:text-primary ${isActive ? 'text-primary' : 'text-muted-foreground'}`}
       >
         <PlayCircle className="h-4 w-4" />
-        <span>{t("navigation.quiz")}</span>
+        <span className="whitespace-nowrap">{t("navigation.quiz")}</span>
       </NavLink>
       <NavLink 
         to="/search" 
         onClick={handleClick}
-        className={({ isActive }) => `flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary ${isActive ? 'text-primary' : 'text-muted-foreground'}`}
+        className={({ isActive }) => `flex items-center gap-2 text-sm md:text-base font-medium transition-colors hover:text-primary ${isActive ? 'text-primary' : 'text-muted-foreground'}`}
       >
         <Search className="h-4 w-4" />
-        <span>{t("navigation.search")}</span>
+        <span className="whitespace-nowrap">{t("navigation.search")}</span>
       </NavLink>
       <NavLink 
         to="/favorites" 
         onClick={handleClick}
-        className={({ isActive }) => `flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary ${isActive ? 'text-primary' : 'text-muted-foreground'}`}
+        className={({ isActive }) => `flex items-center gap-2 text-sm md:text-base font-medium transition-colors hover:text-primary ${isActive ? 'text-primary' : 'text-muted-foreground'}`}
       >
         <Heart className="h-4 w-4" />
-        <span>{t("navigation.favorites")}</span>
+        <span className="whitespace-nowrap">{t("navigation.favorites")}</span>
       </NavLink>
       <NavLink 
         to="/ratings" 
         onClick={handleClick}
-        className={({ isActive }) => `flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary ${isActive ? 'text-primary' : 'text-muted-foreground'}`}
+        className={({ isActive }) => `flex items-center gap-2 text-sm md:text-base font-medium transition-colors hover:text-primary ${isActive ? 'text-primary' : 'text-muted-foreground'}`}
       >
         <Star className="h-4 w-4" />
-        <span>{t("navigation.ratings")}</span>
+        <span className="whitespace-nowrap">{t("navigation.ratings")}</span>
       </NavLink>
     </nav>
   );

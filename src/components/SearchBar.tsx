@@ -1,107 +1,106 @@
 
 import { useState } from "react";
-import { useToast } from "./ui/use-toast";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { searchMovies, searchPeople } from "@/services/tmdb";
-import type { TMDBMovie, TMDBPerson } from "@/services/tmdb";
-import { SearchInput } from "./search/SearchInput";
-import { SearchResults } from "./search/SearchResults";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Search, Loader2, User, Film } from "lucide-react";
 import { motion } from "framer-motion";
-import { getGenreTranslationKey } from "@/utils/genreTranslation";
+import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
 
 export const SearchBar = () => {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<TMDBMovie[]>([]);
-  const [creatorResults, setCreatorResults] = useState<TMDBPerson[]>([]);
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const [query, setQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [searchType, setSearchType] = useState<"movies" | "creators">("movies");
-  const { toast } = useToast();
-  const { t } = useTranslation();
 
-  const handleSearch = async (e: React.FormEvent) => {
+  const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Allow empty search when using filters
-    if (!searchQuery.trim() && searchType === "creators") {
-      toast({
-        title: t("errors.searchTooShort"),
-        description: t("errors.searchMinLength"),
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!query.trim()) return;
 
     setIsSearching(true);
-    try {
-      if (searchType === "movies") {
-        const results = await searchMovies(searchQuery);
-        setSearchResults(results);
-        setCreatorResults([]);
-        
-        if (results.length > 0) {
-          toast({
-            title: t("search.resultsFound"),
-            description: t("search.resultsDescription", { count: results.length, query: searchQuery || "filters" }),
-            className: "bg-gradient-to-r from-blue-500 to-purple-500 text-white",
-          });
-        } else {
-          toast({
-            title: t("search.noResults"),
-            description: t("search.noResultsDescription", { query: searchQuery || "filters" }),
-            variant: "destructive",
-          });
-        }
-      } else {
-        const people = await searchPeople(searchQuery);
-        setCreatorResults(people);
-        setSearchResults([]);
-
-        if (people.length > 0) {
-          toast({
-            title: t("search.creatorsFound"),
-            description: t("search.creatorsDescription", { count: people.length, query: searchQuery }),
-            className: "bg-gradient-to-r from-blue-500 to-purple-500 text-white",
-          });
-        } else {
-          toast({
-            title: t("search.noCreators"),
-            description: t("search.noCreatorsDescription", { query: searchQuery }),
-            variant: "destructive",
-          });
-        }
-      }
-    } catch (error) {
-      console.error("Search error:", error);
-      toast({
-        title: t("errors.searchError"),
-        description: t("errors.tryAgain"),
-        variant: "destructive",
-      });
-    } finally {
+    // Simulate search delay
+    setTimeout(() => {
+      navigate(`/search?q=${encodeURIComponent(query)}&type=${searchType}`);
       setIsSearching(false);
-    }
+    }, 500);
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <SearchInput
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        handleSearch={handleSearch}
-        isSearching={isSearching}
-        searchType={searchType}
-        setSearchType={setSearchType}
-      />
+    <form onSubmit={handleSearch} className="relative w-full max-w-4xl mx-auto">
+      <Tabs defaultValue="movies" onValueChange={(value) => setSearchType(value as "movies" | "creators")} className="mb-4">
+        <TabsList className="grid w-full max-w-md mx-auto grid-cols-2">
+          <TabsTrigger value="movies" className="flex items-center gap-2">
+            <Film className="h-4 w-4" />
+            {t("search.movies")}
+          </TabsTrigger>
+          <TabsTrigger value="creators" className="flex items-center gap-2">
+            <User className="h-4 w-4" />
+            {t("search.creators")}
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
       
-      <SearchResults
-        searchResults={searchResults}
-        creatorResults={creatorResults}
-        getGenreTranslationKey={getGenreTranslationKey}
-      />
-    </motion.div>
+      <div className="relative flex items-center">
+        <Input 
+          type="text"
+          placeholder={searchType === "movies" ? t("search.placeholder") : t("search.creatorPlaceholder")}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="search-input w-full py-6 pl-12 pr-4 text-base md:text-lg rounded-full shadow-lg focus:ring-2 focus:ring-primary/20 transition-all duration-300"
+        />
+        <div className="absolute left-4 text-muted-foreground">
+          <Search className="h-5 w-5" />
+        </div>
+        <motion.div 
+          className="absolute right-2"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <Button 
+            type="submit" 
+            disabled={isSearching || !query.trim()} 
+            className="btn-gradient rounded-full h-10 px-6"
+          >
+            {isSearching ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              t("search.button")
+            )}
+          </Button>
+        </motion.div>
+      </div>
+
+      <div className="mt-4 flex flex-wrap justify-center gap-2 text-sm text-muted-foreground">
+        <span>{t("search.trySearching")}:</span>
+        {searchType === "movies" ? 
+          ["Action", "Comedy", "Drama", "Sci-Fi"].map((genre) => (
+            <motion.button
+              key={genre}
+              type="button"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setQuery(genre)}
+              className="px-3 py-1 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors"
+            >
+              {genre}
+            </motion.button>
+          )) :
+          ["Spielberg", "Nolan", "Tarantino", "Villeneuve"].map((creator) => (
+            <motion.button
+              key={creator}
+              type="button"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setQuery(creator)}
+              className="px-3 py-1 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors"
+            >
+              {creator}
+            </motion.button>
+          ))
+        }
+      </div>
+    </form>
   );
 };

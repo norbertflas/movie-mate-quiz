@@ -43,6 +43,9 @@ export const formatServiceLinks = (services: StreamingPlatformData[]): Streaming
       return service;
     }
     
+    // Normalize the service name
+    service.service = normalizeServiceName(service.service);
+    
     // Normalize the service name for URL creation
     const normalizedServiceName = service.service.toLowerCase()
       .replace(/\+/g, 'plus')
@@ -65,12 +68,45 @@ export const formatServiceLinks = (services: StreamingPlatformData[]): Streaming
   });
 };
 
+// Normalize service names to standard format
+function normalizeServiceName(name: string): string {
+  const serviceMap: Record<string, string> = {
+    'amazon prime': 'Prime Video',
+    'amazon prime video': 'Prime Video',
+    'amazonprimevideo': 'Prime Video',
+    'amazonprime': 'Prime Video',
+    'amazon': 'Prime Video',
+    'prime': 'Prime Video',
+    'netflix': 'Netflix',
+    'disney plus': 'Disney+',
+    'disneyplus': 'Disney+',
+    'disney+': 'Disney+',
+    'disney': 'Disney+',
+    'hbo max': 'Max',
+    'hbomax': 'Max',
+    'max': 'Max',
+    'hulu': 'Hulu',
+    'appletv+': 'Apple TV+',
+    'appletv': 'Apple TV+',
+    'apple tv': 'Apple TV+',
+    'apple tv+': 'Apple TV+',
+    'apple': 'Apple TV+',
+    'paramount+': 'Paramount+',
+    'paramountplus': 'Paramount+',
+    'paramount': 'Paramount+',
+    // Add more mappings as needed
+  };
+  
+  const lowercaseName = name.toLowerCase();
+  return serviceMap[lowercaseName] || name;
+}
+
 // Get the base URL for a streaming service
 function getServiceBaseUrl(serviceName: string): string {
   const serviceMap: Record<string, string> = {
     'netflix': 'https://www.netflix.com',
     'amazonprime': 'https://www.amazon.com/Prime-Video',
-    'prime': 'https://www.amazon.com/Prime-Video',
+    'primevideo': 'https://www.amazon.com/Prime-Video',
     'hulu': 'https://www.hulu.com',
     'disneyplus': 'https://www.disneyplus.com',
     'disney': 'https://www.disneyplus.com',
@@ -96,7 +132,7 @@ function getServiceLogoName(serviceName: string): string {
   const logoMap: Record<string, string> = {
     'netflix': 'netflix',
     'amazonprime': 'amazon',
-    'prime': 'prime',
+    'primevideo': 'prime',
     'hulu': 'hulu',
     'disneyplus': 'disneyplus',
     'disney': 'disney',
@@ -105,7 +141,7 @@ function getServiceLogoName(serviceName: string): string {
     'appletv': 'appletv',
     'apple': 'apple',
     'paramountplus': 'paramount',
-    'paramount': 'paramount'
+    'paramount': 'paramount',
     // Add more mappings as needed
   };
   
