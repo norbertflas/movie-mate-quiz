@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { CardContent } from "./ui/card";
 import { MovieCardContainer } from "./movie/MovieCardContainer";
@@ -35,25 +34,38 @@ export const MovieCard = ({
   const { t } = useTranslation();
   
   const { userRating, handleRating } = useMovieRating(title);
-  const { data: availabilityData, isLoading } = useStreamingAvailability(tmdbId || 0);
+  
+  // Only attempt to fetch streaming data if we have a valid tmdbId
+  const { data: availabilityData, isLoading: isLoadingAvailability } = 
+    useStreamingAvailability(tmdbId && tmdbId > 0 ? tmdbId : 0);
 
   // Process streaming services to ensure they have the correct format
   const processedServices = streamingServices.map(service => {
     if (typeof service === 'string') {
       return {
         service,
+        available: true,
         link: `https://${service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch/${tmdbId}`,
         logo: `/streaming-icons/${service.toLowerCase().replace(/\s/g, '')}.svg`
       };
     }
     return {
       ...service,
+      available: true,
       link: service.link || `https://${service.service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch/${tmdbId}`,
       logo: service.logo || `/streaming-icons/${service.service.toLowerCase().replace(/\s/g, '')}.svg`
     };
   });
 
-  const availableServices = availabilityData?.services || processedServices;
+  // Use API data if available, otherwise fall back to prop data
+  const availableServices = availabilityData?.services?.length > 0
+    ? availabilityData.services
+    : processedServices;
+    
+  // For display in the UI, calculate a timestamp for when streaming was last checked
+  const lastChecked = availabilityData?.timestamp 
+    ? new Date(availabilityData.timestamp).toLocaleString() 
+    : new Date().toLocaleString();
 
   // Safe translation function
   const safeTranslate = (key: string, defaultValue: string): string => {
@@ -136,15 +148,25 @@ export const MovieCard = ({
           )}
           
           <div className="mt-auto pt-2">
-            {!isLoading && availableServices && availableServices.length > 0 ? (
+            {isLoadingAvailability ? (
+              <p className="text-xs font-medium text-muted-foreground mb-2">
+                {safeTranslate("streaming.loading", "Loading streaming info...")}
+              </p>
+            ) : availableServices && availableServices.length > 0 ? (
               <>
                 <p className="text-xs font-medium text-muted-foreground mb-2">
                   {safeTranslate("streaming.availableOn", "Available on")}
+                  <span className="text-xs ml-1 opacity-75">
+                    • {safeTranslate("streaming.lastChecked", "Last checked")}: {lastChecked.split(',')[0]}
+                  </span>
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {availableServices.slice(0, 3).map((service, index) => (
-                    <Badge key={index} variant="outline" className="text-xs px-2 py-0.5">
-                      {typeof service === 'string' ? service : service.service}
+                    <Badge key={index} variant="outline" className="text-xs px-2 py-0.5 flex items-center gap-1">
+                      {service.logo && (
+                        <img src={service.logo} alt={service.service} className="w-3 h-3" />
+                      )}
+                      {service.service}
                     </Badge>
                   ))}
                   {availableServices.length > 3 && (
@@ -154,13 +176,12 @@ export const MovieCard = ({
                   )}
                 </div>
               </>
-            ) : !isLoading ? (
-              <p className="text-xs font-medium text-muted-foreground mb-2">
-                {safeTranslate("streaming.notavailable", "Not available for streaming")}
-              </p>
             ) : (
               <p className="text-xs font-medium text-muted-foreground mb-2">
-                {safeTranslate("streaming.loading", "Loading streaming info...")}
+                {safeTranslate("streaming.notAvailable", "Not available for streaming")}
+                <span className="text-xs ml-1 opacity-75">
+                  • {safeTranslate("streaming.lastChecked", "Last checked")}: {lastChecked.split(',')[0]}
+                </span>
               </p>
             )}
           </div>
@@ -185,7 +206,7 @@ export const MovieCard = ({
             explanations
           }}
           explanations={explanations}
-          streamingServices={processedServices}
+          streamingServices={availableServices}
         />
       )}
     </>

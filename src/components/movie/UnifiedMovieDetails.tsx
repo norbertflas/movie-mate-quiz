@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { getMovieTrailer } from "@/services/youtube";
 import type { TMDBMovie } from "@/services/tmdb";
+import type { StreamingPlatformData } from "@/types/streaming";
 import { Badge } from "@/components/ui/badge";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,12 +23,7 @@ interface UnifiedMovieDetailsProps {
   onClose: () => void;
   movie: TMDBMovie | null;
   explanations?: string[];
-  streamingServices?: Array<{
-    service: string;
-    link: string;
-    logo?: string;
-    type?: string;
-  }>;
+  streamingServices?: StreamingPlatformData[];
 }
 
 export const UnifiedMovieDetails = ({ 
@@ -48,9 +44,26 @@ export const UnifiedMovieDetails = ({
     movie?.id || 0
   );
 
-  const services = availabilityData?.services || initialStreamingServices;
+  const services = (availabilityData?.services?.length > 0)
+    ? availabilityData.services
+    : initialStreamingServices;
+
   const lastUpdated = availabilityData?.timestamp ? new Date(availabilityData.timestamp) : null;
   const isDataStale = lastUpdated && (Date.now() - lastUpdated.getTime() > 24 * 60 * 60 * 1000);
+  
+  const formattedLastChecked = lastUpdated 
+    ? lastUpdated.toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    : new Date().toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short', 
+        day: 'numeric'
+      });
 
   const handleWatchTrailer = async () => {
     if (!movie) return;
@@ -104,6 +117,30 @@ export const UnifiedMovieDetails = ({
     const iconPath = `/streaming-icons/${normalizedName}.svg`;
     
     return iconPath;
+  };
+
+  const getStreamingTypeLabel = (type: string | undefined): string => {
+    if (!type) return 'Subscription';
+    
+    switch(type.toLowerCase()) {
+      case 'subscription': 
+      case 'sub': 
+      case 'flatrate':
+        return 'Subscription';
+      case 'free':
+        return 'Free';
+      case 'ads':
+        return 'Free with ads';
+      case 'rent':
+      case 'tvod':
+        return 'Rent/Buy';
+      case 'buy':
+        return 'Buy';
+      case 'addon':
+        return 'Add-on package';
+      default:
+        return type;
+    }
   };
 
   const openStreamingService = (link: string, service: string) => {
@@ -180,55 +217,40 @@ export const UnifiedMovieDetails = ({
                       explanations={explanations}
                     />
                     
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-semibold">{t("streaming.availableOn")}</h3>
-                        {lastUpdated && (
-                          <span className="text-xs text-muted-foreground">
-                            {t("streaming.lastChecked", {
-                              time: lastUpdated.toLocaleDateString(undefined, {
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })
-                            })}
-                          </span>
-                        )}
+                    <div className="space-y-2 border rounded-lg p-4">
+                      <div className="flex items-center justify-between border-b pb-2 mb-3">
+                        <h3 className="text-lg font-semibold">
+                          {t("streaming.availableOn")}
+                        </h3>
+                        <Badge variant="outline" className="text-xs">
+                          {t("streaming.lastChecked")}: {formattedLastChecked}
+                        </Badge>
                       </div>
 
                       {isLoadingServices ? (
-                        <div className="flex gap-2">
-                          {[1, 2, 3].map((i) => (
-                            <Skeleton key={i} className="h-12 w-16 rounded-md" />
+                        <div className="flex gap-2 flex-wrap">
+                          {[1, 2, 3, 4].map((i) => (
+                            <Skeleton key={i} className="h-16 w-20 rounded-md" />
                           ))}
                         </div>
                       ) : isError ? (
-                        <Alert variant="destructive">
+                        <Alert variant="destructive" className="mb-4">
                           <AlertCircle className="h-4 w-4" />
                           <AlertDescription>
-                            {t("streaming.errorChecking")}
+                            {t("streaming.errorChecking", "Error checking streaming availability")}
                           </AlertDescription>
                         </Alert>
-                      ) : services.length === 0 ? (
-                        <Alert>
-                          <AlertCircle className="h-4 w-4" />
-                          <AlertDescription>
-                            {t("streaming.notAvailable")}
-                          </AlertDescription>
-                        </Alert>
-                      ) : (
+                      ) : services && services.length > 0 ? (
                         <>
                           {isDataStale && (
-                            <Alert>
+                            <Alert className="mb-4">
                               <AlertCircle className="h-4 w-4" />
                               <AlertDescription>
-                                {t("streaming.dataStale")}
+                                {t("streaming.dataStale", "This streaming information may be outdated")}
                               </AlertDescription>
                             </Alert>
                           )}
-                          <div className="flex flex-wrap gap-4 mt-4">
+                          <div className="flex flex-wrap gap-4 mt-2">
                             {services.map((service, index) => (
                               <HoverCard key={`${service.service}-${index}`}>
                                 <HoverCardTrigger asChild>
@@ -269,11 +291,9 @@ export const UnifiedMovieDetails = ({
                                       <span className="text-xs text-center font-medium">
                                         {service.service}
                                       </span>
-                                      {service.type && service.type !== 'sub' && service.type !== 'free' && (
+                                      {service.type && (
                                         <Badge variant="outline" className="text-[10px] px-1 py-0">
-                                          {service.type === 'tvod' ? 'Rent' : 
-                                           service.type === 'addon' ? 'Add-on' : 
-                                           service.type}
+                                          {getStreamingTypeLabel(service.type)}
                                         </Badge>
                                       )}
                                     </div>
@@ -285,20 +305,21 @@ export const UnifiedMovieDetails = ({
                                       {t("streaming.watchOn", { service: service.service })}
                                       {service.type && (
                                         <span className="ml-1 text-xs text-muted-foreground">
-                                          ({service.type === 'sub' ? 'Subscription' : 
-                                            service.type === 'free' ? 'Free' :
-                                            service.type === 'tvod' ? 'Rent/Buy' :
-                                            service.type === 'addon' ? 'Add-on package' :
-                                            service.type})
+                                          ({getStreamingTypeLabel(service.type)})
                                         </span>
                                       )}
                                     </h4>
                                     <p className="text-sm text-muted-foreground flex items-center gap-1">
                                       {t("streaming.clickToWatch")} <ExternalLink className="h-3 w-3" />
                                     </p>
-                                    {isDataStale && (
-                                      <p className="text-sm text-yellow-500">
-                                        {t("streaming.availabilityMayChange")}
+                                    {service.startDate && (
+                                      <p className="text-xs text-muted-foreground">
+                                        {t("streaming.availableSince")}: {new Date(service.startDate).toLocaleDateString()}
+                                      </p>
+                                    )}
+                                    {service.endDate && (
+                                      <p className="text-xs text-yellow-500">
+                                        {t("streaming.leavingSoon")}: {new Date(service.endDate).toLocaleDateString()}
                                       </p>
                                     )}
                                   </div>
@@ -307,6 +328,13 @@ export const UnifiedMovieDetails = ({
                             ))}
                           </div>
                         </>
+                      ) : (
+                        <Alert>
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertDescription>
+                            {t("streaming.notAvailable", "This movie is not available for streaming in your region")}
+                          </AlertDescription>
+                        </Alert>
                       )}
                     </div>
                     

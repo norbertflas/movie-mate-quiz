@@ -1,4 +1,3 @@
-
 const translations = {
   translation: {
     common: {
@@ -124,7 +123,16 @@ const translations = {
       dataStale: "Data may be outdated",
       errorChecking: "Error checking availability",
       availabilityMayChange: "Availability may change",
-      watchNow: "Watch Now"
+      watchNow: "Watch Now",
+      leavingSoon: "Leaving on",
+      availableSince: "Available since",
+      linkError: "Link not available",
+      noLinkAvailable: "No link available for {{service}}",
+      streamingPlatforms: "Streaming Platforms",
+      rentOrBuy: "Rent or Buy",
+      subscription: "Subscription",
+      freeWithAds: "Free with ads",
+      haveSubscription: "I have a subscription to:"
     },
     navigation: {
       home: "Home",
