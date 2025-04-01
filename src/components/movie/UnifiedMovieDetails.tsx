@@ -17,6 +17,7 @@ import { AlertCircle, X, ExternalLink } from "lucide-react";
 import { useStreamingAvailability } from "@/hooks/use-streaming-availability";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { getServiceIconPath, getStreamingTypeDisplay, normalizeServiceName } from "@/utils/streamingServices";
 
 interface UnifiedMovieDetailsProps {
   isOpen: boolean;
@@ -44,9 +45,15 @@ export const UnifiedMovieDetails = ({
     movie?.id || 0
   );
 
+  // Enriched services with proper formatting from API or props
   const services = (availabilityData?.services?.length > 0)
     ? availabilityData.services
-    : initialStreamingServices;
+    : initialStreamingServices.map(service => ({
+        ...service,
+        tmdbId: movie?.id,
+        logo: service.logo || getServiceIconPath(service.service),
+        service: normalizeServiceName(service.service)
+      }));
 
   const lastUpdated = availabilityData?.timestamp ? new Date(availabilityData.timestamp) : null;
   const isDataStale = lastUpdated && (Date.now() - lastUpdated.getTime() > 24 * 60 * 60 * 1000);
@@ -106,43 +113,6 @@ export const UnifiedMovieDetails = ({
     onClose();
   };
 
-  const getPlatformIcon = (service: string): string => {
-    const normalizedName = service.toLowerCase()
-      .replace(/\+/g, 'plus')
-      .replace(/\s/g, '')
-      .replace('amazon', 'prime')
-      .replace('hbomax', 'max')
-      .replace('appletv', 'apple');
-    
-    const iconPath = `/streaming-icons/${normalizedName}.svg`;
-    
-    return iconPath;
-  };
-
-  const getStreamingTypeLabel = (type: string | undefined): string => {
-    if (!type) return 'Subscription';
-    
-    switch(type.toLowerCase()) {
-      case 'subscription': 
-      case 'sub': 
-      case 'flatrate':
-        return 'Subscription';
-      case 'free':
-        return 'Free';
-      case 'ads':
-        return 'Free with ads';
-      case 'rent':
-      case 'tvod':
-        return 'Rent/Buy';
-      case 'buy':
-        return 'Buy';
-      case 'addon':
-        return 'Add-on package';
-      default:
-        return type;
-    }
-  };
-
   const openStreamingService = (link: string, service: string) => {
     if (!link) {
       toast({
@@ -200,6 +170,10 @@ export const UnifiedMovieDetails = ({
                       src={`https://image.tmdb.org/t/p/w1280${movie.backdrop_path || movie.poster_path}`}
                       alt={movie.title}
                       className="absolute inset-0 w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = "/placeholder.svg";
+                      }}
                     />
                   )}
                 </div>
@@ -260,32 +234,16 @@ export const UnifiedMovieDetails = ({
                                     onClick={() => openStreamingService(service.link, service.service)}
                                   >
                                     <div className="w-12 h-12 rounded-md overflow-hidden bg-accent/10 flex items-center justify-center">
-                                      {service.logo ? (
-                                        <img 
-                                          src={service.logo}
-                                          alt={service.service}
-                                          className="w-10 h-10 object-contain"
-                                          onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
-                                            const target = e.currentTarget;
-                                            target.src = getPlatformIcon(service.service);
-                                            target.onerror = () => {
-                                              target.onerror = null;
-                                              target.src = "/streaming-icons/default.svg";
-                                            };
-                                          }}
-                                        />
-                                      ) : (
-                                        <img 
-                                          src={getPlatformIcon(service.service)}
-                                          alt={service.service}
-                                          className="w-10 h-10 object-contain"
-                                          onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
-                                            const target = e.currentTarget;
-                                            target.onerror = null;
-                                            target.src = "/streaming-icons/default.svg";
-                                          }}
-                                        />
-                                      )}
+                                      <img 
+                                        src={service.logo || getServiceIconPath(service.service)}
+                                        alt={service.service}
+                                        className="w-10 h-10 object-contain"
+                                        onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                                          const target = e.currentTarget;
+                                          target.onerror = null;
+                                          target.src = "/streaming-icons/default.svg";
+                                        }}
+                                      />
                                     </div>
                                     <div className="flex flex-col items-center">
                                       <span className="text-xs text-center font-medium">
@@ -293,7 +251,7 @@ export const UnifiedMovieDetails = ({
                                       </span>
                                       {service.type && (
                                         <Badge variant="outline" className="text-[10px] px-1 py-0">
-                                          {getStreamingTypeLabel(service.type)}
+                                          {getStreamingTypeDisplay(service.type)}
                                         </Badge>
                                       )}
                                     </div>
@@ -305,7 +263,7 @@ export const UnifiedMovieDetails = ({
                                       {t("streaming.watchOn", { service: service.service })}
                                       {service.type && (
                                         <span className="ml-1 text-xs text-muted-foreground">
-                                          ({getStreamingTypeLabel(service.type)})
+                                          ({getStreamingTypeDisplay(service.type)})
                                         </span>
                                       )}
                                     </h4>

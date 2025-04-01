@@ -2,177 +2,243 @@ import axios from 'axios';
 import type { StreamingPlatformData } from "@/types/streaming";
 import i18n from "@/i18n";
 
-// Base URL for the streaming availability API - upewnij się, że używasz najnowszej wersji API
+// Base URL for the streaming availability API
 const API_BASE_URL = 'https://streaming-availability.p.rapidapi.com';
-
-// Types based on ts-streaming-availability library
-type StreamingInfo = {
-  service: string;
-  streamingType: string;
-  link: string;
-  availableSince?: string;
-  leavingDate?: string;
-  quality?: string;
-  audios?: Array<{
-    language: string;
-    region: string;
-  }>;
-  subtitles?: Array<{
-    language: string;
-    region: string;
-  }>;
-  price?: {
-    amount: number;
-    currency: string;
-    formatted: string;
-  };
-};
-
-interface StreamingResultV2 {
-  result: {
-    type: string;
-    title: string;
-    streamingInfo: Record<string, Record<string, StreamingInfo[]>>;
-  };
-}
-
-interface StreamingResultV3 {
-  result: {
-    type: string;
-    title: string;
-    streamingInfo: {
-      [country: string]: Array<{
-        service: string;
-        streamingType: string;
-        link: string;
-        availableSince?: string;
-        leavingDate?: string;
-      }>;
-    };
-  };
-}
 
 /**
  * Get streaming availability for a movie from the API
- * @param tmdbId The TMDB ID of the movie
- * @param country The country code to check availability for (default: based on current language)
- * @returns Array of streaming platform data
  */
 export async function getTsStreamingAvailability(
   tmdbId: number,
   country?: string
 ): Promise<StreamingPlatformData[]> {
   try {
-    // Sprawdź, czy mamy poprawne ID filmu
     if (!tmdbId || tmdbId <= 0) {
       console.log('[ts-streaming] Invalid TMDB ID:', tmdbId);
       return [];
     }
 
-    // Determine country based on the current language
     const currentLang = i18n.language;
     const streamingCountry = country || (currentLang === 'pl' ? 'pl' : 'us');
     
-    console.log(`[ts-streaming] Fetching availability for TMDB ID: ${tmdbId} in country: ${streamingCountry}`);
-    
-    // RapidAPI key - should be stored in environment variable in production
+    // RapidAPI key
     const rapidApiKey = '670d047a2bmsh3dff18a0b6211fcp17d3cdjsn9d8d3e10bfc9';
     
-    // Najpierw spróbuj API v3 (najnowsze) z parametrem movie/{tmdbId}
+    console.log(`[ts-streaming] Fetching streaming data for TMDB ID ${tmdbId}, Country: ${streamingCountry}`);
+    
+    // Try all possible API variants in order according to documentation
+    
+    // Variant 1: /v2/get/basic (new endpoint according to documentation)
     try {
-      const options = {
-        method: 'GET',
-        url: `${API_BASE_URL}/get/basic`,
-        params: {
-          tmdb_id: `movie/${tmdbId}`,
-          country: streamingCountry
-        },
-        headers: {
-          'X-RapidAPI-Key': rapidApiKey,
-          'X-RapidAPI-Host': 'streaming-availability.p.rapidapi.com'
-        }
-      };
-
-      const response = await axios.request(options);
-      
-      if (response.data?.result?.streamingInfo?.[streamingCountry]) {
-        const services = response.data.result.streamingInfo[streamingCountry];
-        const streamingPlatforms: StreamingPlatformData[] = [];
-        
-        for (const option of services) {
-          streamingPlatforms.push({
-            service: option.service,
-            available: true,
-            link: option.link || `https://${option.service.toLowerCase()}.com`,
-            startDate: option.availableSince || new Date().toISOString(),
-            endDate: option.leavingDate,
-            logo: getStreamingServiceLogo(option.service),
-            type: option.streamingType || 'subscription'
-          });
-        }
-        
-        console.log(`[ts-streaming] Found ${streamingPlatforms.length} streaming platforms`);
-        return streamingPlatforms;
+      const result = await tryBasicEndpoint(tmdbId, streamingCountry, rapidApiKey);
+      if (result && result.length > 0) {
+        return result;
       }
-    } catch (v3Error) {
-      console.error('[ts-streaming] Error with API v3:', v3Error);
+    } catch (e: any) {
+      console.error('[ts-streaming] Basic endpoint failed:', e.message);
+      // If we hit a 502 error, no need to try other endpoints
+      if (e.response?.status === 502) {
+        console.error('[ts-streaming] Server error 502 detected from API');
+        throw new Error('streaming_server_error_502');
+      }
     }
     
-    // Zapasowa metoda - spróbuj alternatywnego API endpoint (v2 lub starszy)
+    // Variant 2: /v2/get/movie (alternative endpoint format)
     try {
-      const options = {
-        method: 'GET',
-        url: `${API_BASE_URL}/v2/get/movie`,
-        params: {
-          tmdb_id: tmdbId,
-          country: streamingCountry
-        },
-        headers: {
-          'X-RapidAPI-Key': rapidApiKey,
-          'X-RapidAPI-Host': 'streaming-availability.p.rapidapi.com'
-        }
-      };
-
-      const response = await axios.request(options);
-      
-      if (response.data?.result?.streamingInfo) {
-        const streamingInfo = response.data.result.streamingInfo;
-        const countryToUse = streamingInfo[streamingCountry] ? 
-          streamingCountry : 
-          Object.keys(streamingInfo)[0];
-          
-        if (streamingInfo[countryToUse]) {
-          const streamingPlatforms: StreamingPlatformData[] = [];
-          
-          for (const [serviceName, options] of Object.entries(streamingInfo[countryToUse])) {
-            if (Array.isArray(options) && options.length > 0) {
-              const option = options[0];
-              
-              streamingPlatforms.push({
-                service: serviceName,
-                available: true,
-                link: option.link || `https://${serviceName.toLowerCase()}.com`,
-                startDate: option.availableSince || new Date().toISOString(),
-                endDate: option.leavingDate,
-                logo: getStreamingServiceLogo(serviceName),
-                type: option.streamingType || 'subscription'
-              });
-            }
-          }
-          
-          console.log(`[ts-streaming] Found ${streamingPlatforms.length} streaming platforms with v2 API`);
-          return streamingPlatforms;
-        }
+      const result = await tryMovieEndpoint(tmdbId, streamingCountry, rapidApiKey);
+      if (result && result.length > 0) {
+        return result;
       }
-    } catch (v2Error) {
-      console.error('[ts-streaming] Error with API v2:', v2Error);
+    } catch (e: any) {
+      console.error('[ts-streaming] Movie endpoint failed:', e.message);
+      if (e.response?.status === 502) {
+        console.error('[ts-streaming] Server error 502 detected from API');
+        throw new Error('streaming_server_error_502');
+      }
     }
     
+    // Variant 3: /get/basic (old API format)
+    try {
+      const result = await tryLegacyEndpoint(tmdbId, streamingCountry, rapidApiKey);
+      if (result && result.length > 0) {
+        return result;
+      }
+    } catch (e: any) {
+      console.error('[ts-streaming] Legacy endpoint failed:', e.message);
+      if (e.response?.status === 502) {
+        console.error('[ts-streaming] Server error 502 detected from API');
+        throw new Error('streaming_server_error_502');
+      }
+    }
+    
+    console.log('[ts-streaming] No streaming data found after trying all endpoints');
     return [];
-  } catch (error) {
-    console.error('[ts-streaming] Error fetching streaming availability:', error);
+  } catch (error: any) {
+    // Handle specific error types
+    if (error.message === 'streaming_server_error_502') {
+      console.error('[ts-streaming] Server error 502 detected, aborting streaming check');
+      throw error; // Re-throw to be handled by the hook
+    }
+    
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      console.error('[ts-streaming] Error response:', error.response.status, error.response.data);
+      
+      // Handle specific HTTP status codes
+      if (error.response.status === 502) {
+        throw new Error('streaming_server_error_502');
+      } else if (error.response.status === 429) {
+        throw new Error('streaming_rate_limit_exceeded');
+      }
+    } else if (error.request) {
+      // The request was made but no response was received
+      console.error('[ts-streaming] No response received:', error.request);
+      throw new Error('streaming_no_response');
+    }
+    
+    console.error('[ts-streaming] Error fetching streaming availability:', error.message);
     return [];
   }
+}
+
+/**
+ * Try the new v2/get/basic endpoint
+ */
+async function tryBasicEndpoint(
+  tmdbId: number,
+  country: string,
+  apiKey: string
+): Promise<StreamingPlatformData[]> {
+  console.log('[ts-streaming] Trying /v2/get/basic endpoint...');
+  
+  const options = {
+    method: 'GET',
+    url: `${API_BASE_URL}/v2/get/basic`,
+    params: {
+      tmdb_id: tmdbId,
+      country: country
+    },
+    headers: {
+      'X-RapidAPI-Key': apiKey,
+      'X-RapidAPI-Host': 'streaming-availability.p.rapidapi.com'
+    }
+  };
+  
+  const response = await axios.request(options);
+  
+  if (response.data?.result?.streamingInfo?.[country]) {
+    const services = response.data.result.streamingInfo[country];
+    console.log(`[ts-streaming] Found ${services.length} services via basic endpoint`);
+    
+    return services.map(option => ({
+      service: option.service,
+      available: true,
+      link: option.link || `https://${option.service.toLowerCase()}.com`,
+      startDate: option.availableSince,
+      endDate: option.leavingDate,
+      logo: getStreamingServiceLogo(option.service),
+      type: option.streamingType
+    }));
+  }
+  
+  return [];
+}
+
+/**
+ * Try the /v2/get/movie endpoint (alternative format)
+ */
+async function tryMovieEndpoint(
+  tmdbId: number,
+  country: string,
+  apiKey: string
+): Promise<StreamingPlatformData[]> {
+  console.log('[ts-streaming] Trying /v2/get/movie endpoint...');
+  
+  const options = {
+    method: 'GET',
+    url: `${API_BASE_URL}/v2/get/movie`,
+    params: {
+      tmdb_id: tmdbId,
+      country: country
+    },
+    headers: {
+      'X-RapidAPI-Key': apiKey,
+      'X-RapidAPI-Host': 'streaming-availability.p.rapidapi.com'
+    }
+  };
+  
+  const response = await axios.request(options);
+  
+  if (response.data?.result?.streamingInfo?.[country]) {
+    const countryInfo = response.data.result.streamingInfo[country];
+    const services: StreamingPlatformData[] = [];
+    
+    // In this format the data is structured as an object of services with arrays of options
+    for (const [serviceName, serviceOptions] of Object.entries(countryInfo)) {
+      if (Array.isArray(serviceOptions) && serviceOptions.length > 0) {
+        const option = serviceOptions[0];
+        
+        services.push({
+          service: serviceName,
+          available: true,
+          link: option.link || `https://${serviceName.toLowerCase()}.com`,
+          startDate: option.availableSince,
+          endDate: option.leavingDate,
+          logo: getStreamingServiceLogo(serviceName),
+          type: option.streamingType
+        });
+      }
+    }
+    
+    console.log(`[ts-streaming] Found ${services.length} services via movie endpoint`);
+    return services;
+  }
+  
+  return [];
+}
+
+/**
+ * Try the legacy /get/basic endpoint (older API version)
+ */
+async function tryLegacyEndpoint(
+  tmdbId: number,
+  country: string,
+  apiKey: string
+): Promise<StreamingPlatformData[]> {
+  console.log('[ts-streaming] Trying legacy endpoint...');
+  
+  const options = {
+    method: 'GET',
+    url: `${API_BASE_URL}/get/basic`,
+    params: {
+      tmdb_id: `movie/${tmdbId}`,
+      country: country
+    },
+    headers: {
+      'X-RapidAPI-Key': apiKey,
+      'X-RapidAPI-Host': 'streaming-availability.p.rapidapi.com'
+    }
+  };
+  
+  const response = await axios.request(options);
+  
+  if (response.data?.result?.streamingInfo?.[country]) {
+    const services = response.data.result.streamingInfo[country];
+    console.log(`[ts-streaming] Found ${services.length} services via legacy endpoint`);
+    
+    return services.map(option => ({
+      service: option.service,
+      available: true,
+      link: option.link || `https://${option.service.toLowerCase()}.com`,
+      startDate: option.availableSince,
+      endDate: option.leavingDate,
+      logo: getStreamingServiceLogo(option.service),
+      type: option.streamingType
+    }));
+  }
+  
+  return [];
 }
 
 /**
@@ -206,30 +272,21 @@ function getStreamingServiceLogo(serviceName: string): string {
 
 /**
  * Search for movies by title and get streaming availability
- * @param title The movie title to search for
- * @param country The country code to check availability for
- * @returns Array of movie results with streaming info
  */
 export async function searchMoviesWithStreaming(
   title: string, 
   country?: string
 ): Promise<any[]> {
   try {
-    // Determine country based on the current language
     const currentLang = i18n.language;
     const streamingCountry = country || (currentLang === 'pl' ? 'pl' : 'us');
-    
-    console.log(`[ts-streaming] Searching for movie: "${title}" in country: ${streamingCountry}`);
-    
-    // RapidAPI key
     const rapidApiKey = '670d047a2bmsh3dff18a0b6211fcp17d3cdjsn9d8d3e10bfc9';
     
-    // Create the request configuration
     const options = {
       method: 'GET',
-      url: `${API_BASE_URL}/search/title`,
+      url: `${API_BASE_URL}/v2/search/title`,
       params: {
-        title: title,
+        title,
         country: streamingCountry,
         show_type: 'movie',
         output_language: currentLang
@@ -240,17 +297,32 @@ export async function searchMoviesWithStreaming(
       }
     };
 
-    // Make the API request
-    const response = await axios.request(options);
+    console.log(`[ts-streaming] Searching for title: "${title}" in country: ${streamingCountry}`);
     
-    if (!response.data || !response.data.result || !Array.isArray(response.data.result)) {
-      console.log('[ts-streaming] Empty or invalid search response from API');
-      return [];
+    try {
+      const response = await axios.request(options);
+      
+      if (!response.data?.result || !Array.isArray(response.data.result)) {
+        console.log('[ts-streaming] Search returned no results');
+        return [];
+      }
+      
+      console.log(`[ts-streaming] Search found ${response.data.result.length} results`);
+      return response.data.result;
+    } catch (error: any) {
+      if (error.response?.status === 502) {
+        console.error('[ts-streaming] Server error 502 detected from API during search');
+        throw new Error('streaming_server_error_502');
+      }
+      throw error;
+    }
+  } catch (error: any) {
+    console.error('[ts-streaming] Error searching movies:', error.message);
+    
+    if (error.message === 'streaming_server_error_502') {
+      throw error; // Re-throw specific errors
     }
     
-    return response.data.result;
-  } catch (error) {
-    console.error('[ts-streaming] Error searching movies with streaming:', error);
     return [];
   }
 }

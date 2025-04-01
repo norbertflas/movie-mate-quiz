@@ -11,6 +11,7 @@ import { useTranslation } from "react-i18next";
 import { useStreamingAvailability } from "@/hooks/use-streaming-availability";
 import { MovieRating } from "./movie/MovieRating";
 import { Heart } from "lucide-react";
+import { formatServiceLinks, getServiceIconPath, normalizeServiceName } from "@/utils/streamingServices";
 
 export const MovieCard = ({
   title,
@@ -45,22 +46,25 @@ export const MovieCard = ({
       return {
         service,
         available: true,
-        link: `https://${service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch/${tmdbId}`,
-        logo: `/streaming-icons/${service.toLowerCase().replace(/\s/g, '')}.svg`
+        tmdbId,
+        link: undefined, // Will be populated by formatServiceLinks
+        logo: undefined  // Will be populated by formatServiceLinks
       };
     }
     return {
       ...service,
       available: true,
-      link: service.link || `https://${service.service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch/${tmdbId}`,
-      logo: service.logo || `/streaming-icons/${service.service.toLowerCase().replace(/\s/g, '')}.svg`
+      tmdbId,
     };
   });
+
+  // Format all service data to ensure consistent links and logos
+  const formattedPropServices = formatServiceLinks(processedServices);
 
   // Use API data if available, otherwise fall back to prop data
   const availableServices = availabilityData?.services?.length > 0
     ? availabilityData.services
-    : processedServices;
+    : formattedPropServices;
     
   // For display in the UI, calculate a timestamp for when streaming was last checked
   const lastChecked = availabilityData?.timestamp 
@@ -163,10 +167,16 @@ export const MovieCard = ({
                 <div className="flex flex-wrap gap-1.5">
                   {availableServices.slice(0, 3).map((service, index) => (
                     <Badge key={index} variant="outline" className="text-xs px-2 py-0.5 flex items-center gap-1">
-                      {service.logo && (
-                        <img src={service.logo} alt={service.service} className="w-3 h-3" />
-                      )}
-                      {service.service}
+                      <img 
+                        src={service.logo || getServiceIconPath(service.service)}
+                        alt={service.service}
+                        className="w-3 h-3"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = "/streaming-icons/default.svg";
+                        }}
+                      />
+                      {normalizeServiceName(service.service)}
                     </Badge>
                   ))}
                   {availableServices.length > 3 && (
