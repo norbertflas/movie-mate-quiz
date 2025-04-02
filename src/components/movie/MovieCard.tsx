@@ -1,15 +1,16 @@
-import { useState, useEffect } from "react";
-import { CardContent } from "./ui/card";
-import { MovieCardContainer } from "./movie/MovieCardContainer";
-import { MovieCardHeader } from "./movie/MovieCardHeader";
-import { MovieTrailerSection } from "./movie/MovieTrailerSection";
-import { useMovieRating } from "./movie/MovieRatingLogic";
-import { Badge } from "./ui/badge";
+
+import { useState } from "react";
+import { CardContent } from "../ui/card";
+import { MovieCardContainer } from "./MovieCardContainer";
+import { MovieCardHeader } from "./MovieCardHeader";
+import { MovieTrailerSection } from "./MovieTrailerSection";
+import { useMovieRating } from "./MovieRatingLogic";
+import { Badge } from "../ui/badge";
 import type { MovieCardProps } from "@/types/movie";
-import { UnifiedMovieDetails } from "./movie/UnifiedMovieDetails";
+import { UnifiedMovieDetails } from "./UnifiedMovieDetails";
 import { useTranslation } from "react-i18next";
 import { useStreamingAvailability } from "@/hooks/use-streaming-availability";
-import { MovieRating } from "./movie/MovieRating";
+import { MovieRating } from "./MovieRating";
 import { Heart } from "lucide-react";
 import { formatServiceLinks, getServiceIconPath, normalizeServiceName } from "@/utils/streamingServices";
 
