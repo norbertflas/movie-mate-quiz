@@ -44,9 +44,14 @@ export interface StreamingPlatformData {
   tmdbId?: number;
   
   /**
+   * Price of the movie on this service
+   */
+  price?: number;
+  
+  /**
    * Type of availability (subscription, rent, etc.)
    */
-  type?: string;
+  type?: 'subscription' | 'rent' | 'buy' | 'addon' | 'free';
   
   /**
    * Source of the streaming data (API name)

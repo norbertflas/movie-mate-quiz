@@ -6,7 +6,6 @@ import { motion } from "framer-motion";
 import { useLocation } from "react-router-dom";
 import { Breadcrumbs } from "./navigation/Breadcrumbs";
 import { Logo } from "./Logo";
-import { ThemeSwitcher } from "./ThemeSwitcher";
 import { cn } from "@/lib/utils";
 import { Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -63,7 +62,7 @@ export const Navigation = () => {
             >
               <Search className="h-5 w-5 text-muted-foreground" />
             </motion.button>
-            <ThemeSwitcher />
+            {/* ThemeSwitcher is already included in UserActions, so we don't need it here */}
             <UserActions />
           </motion.div>
         </div>

@@ -5,11 +5,11 @@ import i18n from "@/i18n";
 
 const RETRY_DELAY = 2000;
 const MAX_RETRIES = 3;
-const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 godziny
+const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-// Cache w pamięci na czas sesji
+// In-memory cache for the current session
 const localCache: Record<string, StreamingAvailabilityCache> = {};
 
 async function retryWithBackoff<T>(
@@ -40,30 +40,30 @@ async function retryWithBackoff<T>(
   }
 }
 
-// Poprawiona implementacja korzystająca z API Streaming Availability
+// Implementation using the Movie of the Night Streaming Availability API
 async function fetchStreamingAvailabilityAPI(
   tmdbId: number,
   mediaType: 'movie' | 'series' = 'movie',
   country: string = 'us'
 ): Promise<StreamingPlatformData[]> {
   try {
-    // Sprawdź lokalny cache w pamięci najpierw
+    // Check local memory cache first
     const cacheKey = `${tmdbId}-${country}`;
     if (localCache[cacheKey] && (Date.now() - localCache[cacheKey].timestamp) < CACHE_DURATION) {
       console.log('Using memory cached streaming data for:', tmdbId);
       return localCache[cacheKey].data;
     }
     
-    // Klucz API do Streaming Availability
+    // API key for Streaming Availability
     const rapidApiKey = '670d047a2bmsh3dff18a0b6211fcp17d3cdjsn9d8d3e10bfc9';
     
-    // Opcje żądania API zgodnie z aktualną dokumentacją
+    // Request options according to Movie of the Night documentation
     const options = {
       method: 'GET',
       url: 'https://streaming-availability.p.rapidapi.com/get',
       params: {
-        tmdb_id: `${tmdbId}`,
-        output_language: 'en'
+        tmdb_id: `${mediaType}/${tmdbId}`,
+        output_language: i18n.language || 'en'
       },
       headers: {
         'X-RapidAPI-Key': rapidApiKey,
@@ -71,34 +71,34 @@ async function fetchStreamingAvailabilityAPI(
       }
     };
 
-    console.log(`Fetching streaming availability for TMDB ID: ${tmdbId} in country: ${country}`);
+    console.log(`Fetching Movie of the Night API for TMDB ID: ${tmdbId} in country: ${country}`);
     const response = await axios.request(options);
-    console.log('Got response from Streaming Availability API', { status: response.status });
+    console.log('Got response from Movie of the Night API', { status: response.status });
     
     const data = response.data;
     console.log('API Response structure:', Object.keys(data));
     
     if (!data || !data.result) {
-      console.log('Empty or invalid response from Streaming Availability API');
-      throw new Error('Empty or invalid response from Streaming Availability API');
+      console.log('Empty or invalid response from Movie of the Night API');
+      throw new Error('Empty or invalid response from Movie of the Night API');
     }
     
-    // Konwersja odpowiedzi API do formatu StreamingPlatformData
+    // Convert API response to StreamingPlatformData format
     const streamingPlatforms: StreamingPlatformData[] = [];
     const result = data.result;
     
-    // Sprawdzamy, czy istnieje klucz streamingInfo, który jest używany w nowszym API
+    // Check if the streamingInfo key exists (used in newer API)
     if (result.streamingInfo && Object.keys(result.streamingInfo).length > 0) {
       console.log('Found streamingInfo in response with countries:', Object.keys(result.streamingInfo));
       
-      // Iterujemy po wszystkich krajach, jeśli nie ma dokładnie tego kraju
+      // Get data for the requested country or use the first available country
       const countryToUse = result.streamingInfo[country] ? country : Object.keys(result.streamingInfo)[0];
       
       if (result.streamingInfo[countryToUse]) {
-        // Konwersja streamingInfo na tablicę platform streamingowych
+        // Convert streamingInfo to an array of streaming platforms
         for (const [serviceName, options] of Object.entries(result.streamingInfo[countryToUse])) {
           if (Array.isArray(options) && options.length > 0) {
-            const option = options[0]; // Bierzemy pierwszą opcję dla danej usługi
+            const option = options[0]; // Take the first option for the service
             
             streamingPlatforms.push({
               service: serviceName,
@@ -107,7 +107,8 @@ async function fetchStreamingAvailabilityAPI(
               startDate: option.availableSince || new Date().toISOString(),
               endDate: option.leavingDate,
               logo: getStreamingServiceLogo(serviceName),
-              type: option.type || 'subscription'
+              type: option.type || 'subscription',
+              source: 'movie-of-the-night'
             });
           }
         }
@@ -115,10 +116,10 @@ async function fetchStreamingAvailabilityAPI(
         console.log(`Found ${streamingPlatforms.length} streaming platforms using streamingInfo structure`);
       }
     } else if (result.streamingOptions && Object.keys(result.streamingOptions).length > 0) {
-      // Nowsze wersje API używają streamingOptions
+      // Newer API versions use streamingOptions
       console.log('Found streamingOptions in response with countries:', Object.keys(result.streamingOptions));
       
-      // Iterujemy po wszystkich krajach, jeśli nie ma dokładnie tego kraju
+      // Get data for the requested country or use the first available country
       const countryToUse = result.streamingOptions[country] ? country : Object.keys(result.streamingOptions)[0];
       
       if (result.streamingOptions[countryToUse]) {
@@ -133,7 +134,8 @@ async function fetchStreamingAvailabilityAPI(
             startDate: option.availableSince || new Date().toISOString(),
             endDate: option.availableUntil,
             logo: getStreamingServiceLogo(option.service),
-            type: option.type || 'subscription'
+            type: option.type || 'subscription',
+            source: 'movie-of-the-night'
           });
         }
         
@@ -141,23 +143,23 @@ async function fetchStreamingAvailabilityAPI(
       }
     }
 
-    // Zapisz do lokalnego cache'a
+    // Save to local cache
     localCache[cacheKey] = {
       data: streamingPlatforms,
       timestamp: Date.now()
     };
     
-    // Zapisz do bazy danych jako cache
+    // Cache results in the database
     await cacheResults(streamingPlatforms, tmdbId, country);
     
     return streamingPlatforms;
   } catch (error) {
-    console.error('Error fetching from Streaming Availability API:', error);
+    console.error('Error fetching from Movie of the Night API:', error);
     throw error;
   }
 }
 
-// Helper do pobierania logo serwisu streamingowego
+// Helper to get streaming service logo
 function getStreamingServiceLogo(serviceName: string): string {
   const serviceMap: Record<string, string> = {
     'netflix': '/streaming-icons/netflix.svg',
@@ -185,12 +187,12 @@ export async function getStreamingAvailability(
 ): Promise<StreamingPlatformData[]> {
   try {
     console.log('Starting getStreamingAvailability for movie:', tmdbId, title);
-    // Określ kraj na podstawie języka lub parametru
+    // Determine country based on language or parameter
     const currentLang = i18n.language;
     const streamingCountry = country || (currentLang === 'pl' ? 'pl' : 'us');
     console.log('Using country for streaming search:', streamingCountry);
     
-    // Sprawdź najpierw cache z odpowiednią obsługą wygaśniętych danych
+    // First check cache with proper handling of expired data
     const { data: cachedServices, error: cacheError } = await supabase
       .from('movie_streaming_availability')
       .select(`
@@ -210,30 +212,31 @@ export async function getStreamingAvailability(
         link: `https://${item.streaming_services.name.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch/${tmdbId}`,
         logo: item.streaming_services.logo_url,
         available: true,
-        startDate: new Date().toISOString()
+        startDate: new Date().toISOString(),
+        source: 'database-cache'
       }));
     }
 
     console.log('Fetching fresh streaming data for movie:', tmdbId);
     
-    // Użyj bezpośredniego API Streaming Availability
+    // Use Movie of the Night Streaming Availability API
     try {
+      // Important change: Pass tmdbId directly as we'll format it in the API call
       const streamingResults = await fetchStreamingAvailabilityAPI(tmdbId, 'movie', streamingCountry);
       
       if (streamingResults && streamingResults.length > 0) {
-        console.log('Returning streaming results from direct API:', streamingResults);
+        console.log('Returning streaming results from Movie of the Night API:', streamingResults);
         return streamingResults;
       } else {
-        console.log('No streaming results from direct API for movie:', tmdbId);
+        console.log('No streaming results from Movie of the Night API for movie:', tmdbId);
       }
     } catch (error) {
-      console.error('Error with primary Streaming Availability API, trying fallbacks:', error);
-      // Kontynuuj do zapasowych metod
+      console.error('Error with Movie of the Night API, trying fallbacks:', error);
+      // Continue to fallback methods
     }
     
-    // Jeśli bezpośrednie API nie zwróciło wyników, spróbuj zapasowych metod
-    
-    // Spróbuj najpierw Watchmode
+    // If all fails, try the fallback methods from the original code
+    // Watchmode fallback
     try {
       console.log('Trying Watchmode API for movie:', tmdbId);
       const watchmodeResults = await getWatchmodeStreamingAvailability(tmdbId);
@@ -247,7 +250,7 @@ export async function getStreamingAvailability(
       console.error('Watchmode API error:', error);
     }
     
-    // Spróbuj DeepSeek jako kolejny zapasowy
+    // DeepSeek fallback
     try {
       console.log('Trying DeepSeek fallback for movie:', tmdbId);
       const deepseekResponse = await retryWithBackoff(async () => {
@@ -272,7 +275,7 @@ export async function getStreamingAvailability(
       console.error('DeepSeek API error:', error);
     }
 
-    // Spróbuj Gemini jako ostateczny zapasowy
+    // Gemini fallback
     await sleep(1000);
 
     try {
@@ -298,7 +301,7 @@ export async function getStreamingAvailability(
     } catch (error) {
       console.error('Gemini API error:', error);
     }
-
+    
     console.log('No streaming providers found for movie:', tmdbId);
     return [];
   } catch (error) {
