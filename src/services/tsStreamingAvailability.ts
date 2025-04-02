@@ -54,7 +54,55 @@ export async function getTsStreamingAvailability(
     
     console.log(`[ts-streaming] Fetching streaming data for TMDB ID ${tmdbId}, Country: ${streamingCountry}`);
     
-    // Get the English title for the movie
+    // Try direct TMDB ID search first
+    try {
+      console.log(`[ts-streaming] Trying direct TMDB ID search: ${tmdbId}`);
+      
+      const options = {
+        method: 'GET',
+        url: `${API_BASE_URL}/get/basic`,
+        params: {
+          tmdb_id: String(tmdbId),
+          country: streamingCountry.toLowerCase(),
+          output_language: currentLang
+        },
+        headers: {
+          'X-RapidAPI-Key': rapidApiKey,
+          'X-RapidAPI-Host': 'streaming-availability.p.rapidapi.com'
+        }
+      };
+      
+      const response = await axios.request(options);
+      
+      if (response.data && response.data.result && response.data.result.streamingInfo) {
+        console.log(`[ts-streaming] Direct TMDB ID search successful`);
+        const services: StreamingPlatformData[] = [];
+        const streamingInfo = response.data.result.streamingInfo;
+        
+        // Get streaming options for the current country
+        const countryOptions = streamingInfo[streamingCountry.toLowerCase()];
+        
+        if (countryOptions && Array.isArray(countryOptions)) {
+          for (const option of countryOptions) {
+            services.push({
+              service: option.service,
+              available: true,
+              link: option.link,
+              startDate: option.availableSince,
+              logo: getStreamingServiceLogo(option.service),
+              type: option.type
+            });
+          }
+        }
+        
+        console.log(`[ts-streaming] Found ${services.length} services via direct TMDB ID search`);
+        return services;
+      }
+    } catch (e: any) {
+      console.log(`[ts-streaming] Direct TMDB ID search failed, trying title search: ${e.message}`);
+    }
+    
+    // Get the English title for the movie if direct search fails
     const englishTitle = await fetchMovieEnglishTitle(tmdbId);
     if (!englishTitle && !originalTitle) {
       console.log(`[ts-streaming] Could not get English or original title for movie ${tmdbId}`);
@@ -66,39 +114,36 @@ export async function getTsStreamingAvailability(
     console.log(`[ts-streaming] Using search title: "${searchTitle}"`);
     
     try {
-      // Instead of searching by TMDB ID, search by title
+      // Search by title
       const searchResults = await searchMoviesWithStreaming(searchTitle, streamingCountry);
       
-      if (searchResults && Array.isArray(searchResults) && searchResults.length > 0) {
+      if (searchResults && Array.isArray(searchResults.result) && searchResults.result.length > 0) {
         // Try to find exact match first
-        let matchedMovie = searchResults.find(movie => 
+        let matchedMovie = searchResults.result.find(movie => 
           movie.tmdbId === tmdbId || 
-          movie.tmdbId === String(tmdbId) ||
+          String(movie.tmdbId) === String(tmdbId) ||
           movie.title === searchTitle
         );
         
         // If no exact match, use the first result
-        if (!matchedMovie && searchResults.length > 0) {
+        if (!matchedMovie && searchResults.result.length > 0) {
           console.log('[ts-streaming] No exact match found, using first result');
-          matchedMovie = searchResults[0];
+          matchedMovie = searchResults.result[0];
         }
         
-        if (matchedMovie && matchedMovie.streamingOptions && matchedMovie.streamingOptions[streamingCountry.toLowerCase()]) {
-          const countryStreamingOptions = matchedMovie.streamingOptions[streamingCountry.toLowerCase()];
+        if (matchedMovie && matchedMovie.streamingInfo && matchedMovie.streamingInfo[streamingCountry.toLowerCase()]) {
+          const countryStreamingOptions = matchedMovie.streamingInfo[streamingCountry.toLowerCase()];
           const services: StreamingPlatformData[] = [];
           
           for (const option of countryStreamingOptions) {
-            if (option.service && option.link) {
-              services.push({
-                service: option.service.name,
-                available: true,
-                link: option.link,
-                startDate: option.availableSince,
-                endDate: option.expiresSoon ? option.expiresOn : undefined,
-                logo: getStreamingServiceLogo(option.service.name),
-                type: option.type
-              });
-            }
+            services.push({
+              service: option.service,
+              available: true,
+              link: option.link,
+              startDate: option.availableSince,
+              logo: getStreamingServiceLogo(option.service),
+              type: option.type
+            });
           }
           
           console.log(`[ts-streaming] Found ${services.length} services via title search`);
@@ -188,7 +233,7 @@ export async function searchMoviesWithStreaming(
   title: string, 
   country?: string,
   englishTitle?: string
-): Promise<any[]> {
+): Promise<any> {
   try {
     const currentLang = i18n.language;
     const streamingCountry = country || (currentLang === 'pl' ? 'pl' : 'us');
@@ -199,7 +244,7 @@ export async function searchMoviesWithStreaming(
     
     const options = {
       method: 'GET',
-      url: `${API_BASE_URL}/shows/search/title`,
+      url: `${API_BASE_URL}/search/title`,
       params: {
         title: searchTitle,
         country: streamingCountry.toLowerCase(),
@@ -218,12 +263,12 @@ export async function searchMoviesWithStreaming(
     try {
       const response = await axios.request(options);
       
-      if (!response.data || !Array.isArray(response.data)) {
+      if (!response.data) {
         console.log('[ts-streaming] Search returned no results');
-        return [];
+        return { result: [] };
       }
       
-      console.log(`[ts-streaming] Search found ${response.data.length} results`);
+      console.log(`[ts-streaming] Search found ${response.data.result?.length || 0} results`);
       return response.data;
     } catch (error: any) {
       if (error.response?.status === 502) {
@@ -239,7 +284,7 @@ export async function searchMoviesWithStreaming(
       throw error; // Re-throw specific errors
     }
     
-    return [];
+    return { result: [] };
   }
 }
 
@@ -251,7 +296,7 @@ export async function searchMoviesWithEnglishTitle(
   originalTitle: string,
   englishTitle: string,
   country?: string
-): Promise<any[]> {
+): Promise<any> {
   console.log(`[ts-streaming] Testing search with English title: "${englishTitle}" (original: "${originalTitle}")`);
   return searchMoviesWithStreaming(originalTitle, country, englishTitle);
 }
