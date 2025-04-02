@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 import type { StreamingPlatformData } from "@/types/streaming";
 import i18n from "@/i18n";
@@ -27,16 +26,17 @@ export async function getTsStreamingAvailability(
     
     console.log(`[ts-streaming] Fetching streaming data for TMDB ID ${tmdbId}, Country: ${streamingCountry}`);
     
-    // Use the v4 API
+    // Use the updated API endpoint
     try {
-      console.log('[ts-streaming] Using v4 API endpoint...');
+      console.log('[ts-streaming] Using updated API endpoint...');
       
       const options = {
         method: 'GET',
-        url: `${API_BASE_URL}/v4/title`,
+        url: `${API_BASE_URL}/shows/get`,
         params: {
-          tmdb_id: tmdbId,
-          country: streamingCountry.toLowerCase()
+          id: `tmdb:${tmdbId}`,
+          country: streamingCountry.toLowerCase(),
+          output_language: currentLang
         },
         headers: {
           'X-RapidAPI-Key': rapidApiKey,
@@ -45,35 +45,33 @@ export async function getTsStreamingAvailability(
       };
       
       const response = await axios.request(options);
-      console.log('[ts-streaming] v4 API response status:', response.status);
+      console.log('[ts-streaming] API response status:', response.status);
       
-      if (response.data?.streamingInfo) {
-        const streamingInfo = response.data.streamingInfo;
+      if (response.data?.streamingOptions && response.data.streamingOptions[streamingCountry.toLowerCase()]) {
+        const countryStreamingOptions = response.data.streamingOptions[streamingCountry.toLowerCase()];
         const services: StreamingPlatformData[] = [];
         
-        for (const [providerName, countriesData] of Object.entries(streamingInfo)) {
-          if (countriesData[streamingCountry.toLowerCase()]) {
-            const providerData = countriesData[streamingCountry.toLowerCase()];
-            
+        for (const option of countryStreamingOptions) {
+          if (option.service && option.link) {
             services.push({
-              service: providerName,
+              service: option.service.name,
               available: true,
-              link: providerData.link || `https://${providerName.toLowerCase()}.com`,
-              startDate: providerData.availableSince,
-              endDate: providerData.leavingDate,
-              logo: getStreamingServiceLogo(providerName),
-              type: providerData.type
+              link: option.link,
+              startDate: option.availableSince,
+              endDate: option.expiresSoon ? option.expiresOn : undefined,
+              logo: getStreamingServiceLogo(option.service.name),
+              type: option.type
             });
           }
         }
         
-        console.log(`[ts-streaming] Found ${services.length} services via v4 API`);
+        console.log(`[ts-streaming] Found ${services.length} services via updated API`);
         return services;
       } else {
-        console.log('[ts-streaming] No streaming info found in v4 API response');
+        console.log('[ts-streaming] No streaming info found in API response');
       }
     } catch (e: any) {
-      console.error('[ts-streaming] v4 API failed:', e.message);
+      console.error('[ts-streaming] API failed:', e.message);
       if (e.response?.status === 502) {
         console.error('[ts-streaming] Server error 502 detected from API');
         throw new Error('streaming_server_error_502');
@@ -83,7 +81,7 @@ export async function getTsStreamingAvailability(
       }
     }
     
-    console.log('[ts-streaming] No streaming data found after trying v4 API');
+    console.log('[ts-streaming] No streaming data found after trying API');
     return [];
   } catch (error: any) {
     // Handle specific error types
@@ -157,11 +155,11 @@ export async function searchMoviesWithStreaming(
     
     const options = {
       method: 'GET',
-      url: `${API_BASE_URL}/v4/search/title`,
+      url: `${API_BASE_URL}/shows/search/title`,
       params: {
         title,
         country: streamingCountry.toLowerCase(),
-        type: 'movie',
+        show_type: 'movie',
         output_language: currentLang
       },
       headers: {
@@ -175,13 +173,13 @@ export async function searchMoviesWithStreaming(
     try {
       const response = await axios.request(options);
       
-      if (!response.data?.result || !Array.isArray(response.data.result)) {
+      if (!response.data || !Array.isArray(response.data)) {
         console.log('[ts-streaming] Search returned no results');
         return [];
       }
       
-      console.log(`[ts-streaming] Search found ${response.data.result.length} results`);
-      return response.data.result;
+      console.log(`[ts-streaming] Search found ${response.data.length} results`);
+      return response.data;
     } catch (error: any) {
       if (error.response?.status === 502) {
         console.error('[ts-streaming] Server error 502 detected from API during search');

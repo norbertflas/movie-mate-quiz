@@ -1,4 +1,3 @@
-
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 
 const corsHeaders = {
@@ -23,8 +22,8 @@ serve(async (req) => {
 
     console.log(`Fetching streaming availability for movie: ${tmdbId} in country: ${country}`)
 
-    // Using the RapidAPI Streaming Availability API v4
-    const url = `https://streaming-availability.p.rapidapi.com/v4/title`
+    // Using the updated Streaming Availability API endpoint
+    const url = `https://streaming-availability.p.rapidapi.com/shows/get`
     const options = {
       method: 'GET',
       headers: {
@@ -35,8 +34,9 @@ serve(async (req) => {
 
     // Construct the URL with query parameters
     const queryParams = new URLSearchParams({
-      tmdb_id: tmdbId.toString(),
-      country: country.toLowerCase()
+      id: `tmdb:${tmdbId}`,
+      country: country.toLowerCase(),
+      output_language: country.toLowerCase()
     })
     
     const fullUrl = `${url}?${queryParams.toString()}`
@@ -63,21 +63,20 @@ serve(async (req) => {
     
     console.log('API Response structure:', Object.keys(data))
 
-    // Extract streaming services from the response using v4 structure
+    // Extract streaming services from the response using the updated API structure
     let streamingServices = []
     
-    if (data?.streamingInfo) {
-      // Convert format from v4 API response
-      for (const [provider, countriesData] of Object.entries(data.streamingInfo)) {
-        if (countriesData[country.toLowerCase()]) {
-          streamingServices.push({
-            service: provider,
-            link: countriesData[country.toLowerCase()].link,
-            available: true,
-            type: countriesData[country.toLowerCase()].type || 'subscription'
-          })
-        }
-      }
+    if (data?.streamingOptions && data.streamingOptions[country.toLowerCase()]) {
+      const countryStreamingOptions = data.streamingOptions[country.toLowerCase()]
+      
+      // Extract streaming service information
+      streamingServices = countryStreamingOptions.map(option => ({
+        service: option.service?.name || '',
+        link: option.link || '',
+        available: true,
+        type: option.type || 'subscription'
+      })).filter(service => service.service && service.link)
+      
       console.log(`Found ${streamingServices.length} streaming services for movie ${tmdbId}`)
     } else {
       console.log('No streaming info found in response')
