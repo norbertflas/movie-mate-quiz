@@ -41,7 +41,9 @@ export const UnifiedMovieDetails = ({
   const { t } = useTranslation();
   const isMobile = useIsMobile();
   
-  const availabilityData = useStreamingAvailability(movie?.id || 0);
+  // Use the updated hook which doesn't auto-fetch
+  const availabilityData = useStreamingAvailability(movie?.id || 0, movie?.title, 
+    movie?.release_date ? new Date(movie?.release_date).getFullYear().toString() : undefined);
 
   // Enriched services with proper formatting from API or props
   const services = (availabilityData.services?.length > 0)
@@ -124,6 +126,13 @@ export const UnifiedMovieDetails = ({
     window.open(link, '_blank', 'noopener,noreferrer');
   };
 
+  // New function to handle checking streaming availability on demand
+  const checkStreamingAvailability = () => {
+    if (!availabilityData.requested) {
+      availabilityData.fetchStreamingData();
+    }
+  };
+
   if (!movie) return null;
 
   return (
@@ -194,12 +203,20 @@ export const UnifiedMovieDetails = ({
                         <h3 className="text-lg font-semibold">
                           {t("streaming.availableOn")}
                         </h3>
-                        <Badge variant="outline" className="text-xs">
-                          {t("streaming.lastChecked")}: {formattedLastChecked}
-                        </Badge>
+                        {availabilityData.requested && (
+                          <Badge variant="outline" className="text-xs">
+                            {t("streaming.lastChecked")}: {formattedLastChecked}
+                          </Badge>
+                        )}
                       </div>
 
-                      {availabilityData.isLoading ? (
+                      {!availabilityData.requested ? (
+                        <div className="flex justify-center p-4">
+                          <Button onClick={checkStreamingAvailability}>
+                            {t("streaming.checkAvailability", "Check Streaming Availability")}
+                          </Button>
+                        </div>
+                      ) : availabilityData.isLoading ? (
                         <div className="flex gap-2 flex-wrap">
                           {[1, 2, 3, 4].map((i) => (
                             <Skeleton key={i} className="h-16 w-20 rounded-md" />
