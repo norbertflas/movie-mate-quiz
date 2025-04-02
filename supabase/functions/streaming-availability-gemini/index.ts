@@ -270,4 +270,3 @@ serve(async (req) => {
     );
   }
 });
-
