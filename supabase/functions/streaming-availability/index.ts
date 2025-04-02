@@ -23,19 +23,24 @@ serve(async (req) => {
 
     console.log(`Fetching streaming availability for movie: ${tmdbId} in country: ${country}`)
 
-    // Using the RapidAPI Movies-TV-Shows-Database endpoint
-    const url = `https://movies-tv-shows-database.p.rapidapi.com/movie/id/${tmdbId}/streaminginfo`
+    // Using the RapidAPI Streaming Availability API v4
+    const url = `https://streaming-availability.p.rapidapi.com/v4/title`
     const options = {
       method: 'GET',
       headers: {
         'X-RapidAPI-Key': rapidApiKey,
-        'X-RapidAPI-Host': 'movies-tv-shows-database.p.rapidapi.com',
-        'Type': 'get-movie-details',
-        'country': country.toUpperCase()
+        'X-RapidAPI-Host': 'streaming-availability.p.rapidapi.com'
       }
     }
 
-    const response = await fetch(url, options)
+    // Construct the URL with query parameters
+    const queryParams = new URLSearchParams({
+      tmdb_id: tmdbId.toString(),
+      country: country.toLowerCase()
+    })
+    
+    const fullUrl = `${url}?${queryParams.toString()}`
+    const response = await fetch(fullUrl, options)
     
     if (!response.ok) {
       console.error(`API error: ${response.status} ${response.statusText}`)
@@ -58,41 +63,29 @@ serve(async (req) => {
     
     console.log('API Response structure:', Object.keys(data))
 
-    // Extract streaming services from the response
+    // Extract streaming services from the response using v4 structure
     let streamingServices = []
     
-    // Check if we have streaming data in the expected format
-    if (data?.streamingAvailability?.[country.toLowerCase()]) {
-      streamingServices = data.streamingAvailability[country.toLowerCase()]
-    } else if (data?.results?.streamingInfo?.[country.toLowerCase()]) {
-      // Alternative structure sometimes returned by the API
-      streamingServices = data.results.streamingInfo[country.toLowerCase()]
-    } else if (Array.isArray(data?.results)) {
-      // Yet another possible structure
-      streamingServices = data.results
-        .filter(item => item.country?.toLowerCase() === country.toLowerCase())
-        .map(item => ({
-          service: item.platform || item.service,
-          link: item.url || item.link,
-          available: true
-        }))
+    if (data?.streamingInfo) {
+      // Convert format from v4 API response
+      for (const [provider, countriesData] of Object.entries(data.streamingInfo)) {
+        if (countriesData[country.toLowerCase()]) {
+          streamingServices.push({
+            service: provider,
+            link: countriesData[country.toLowerCase()].link,
+            available: true,
+            type: countriesData[country.toLowerCase()].type || 'subscription'
+          })
+        }
+      }
+      console.log(`Found ${streamingServices.length} streaming services for movie ${tmdbId}`)
+    } else {
+      console.log('No streaming info found in response')
     }
-    
-    console.log(`Found ${streamingServices.length} streaming services for movie ${tmdbId}`)
-
-    // Normalize the data structure for consistency
-    const normalizedServices = Array.isArray(streamingServices) 
-      ? streamingServices.map(service => ({
-          service: service.service || service.platform || service.provider || service.name,
-          link: service.link || service.url || `https://www.${service.service?.toLowerCase()}.com`,
-          available: true,
-          type: service.type || 'subscription'
-        }))
-      : [];
     
     return new Response(
       JSON.stringify({ 
-        result: normalizedServices,
+        result: streamingServices,
         timestamp: new Date().toISOString()
       }),
       { 

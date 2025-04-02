@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import type { StreamingPlatformData, StreamingAvailabilityCache } from "@/types/streaming";
 import axios from 'axios';
@@ -40,10 +41,9 @@ async function retryWithBackoff<T>(
   }
 }
 
-// Implementation using the Movie of the Night Streaming Availability API
+// Implementation using the Movie of the Night Streaming Availability API v4
 async function fetchStreamingAvailabilityAPI(
   tmdbId: number,
-  mediaType: 'movie' | 'series' = 'movie',
   country: string = 'us'
 ): Promise<StreamingPlatformData[]> {
   try {
@@ -57,13 +57,14 @@ async function fetchStreamingAvailabilityAPI(
     // API key for Streaming Availability
     const rapidApiKey = '670d047a2bmsh3dff18a0b6211fcp17d3cdjsn9d8d3e10bfc9';
     
-    // Request options according to Movie of the Night documentation
+    // Request options according to Movie of the Night v4 API documentation
     const options = {
       method: 'GET',
-      url: 'https://streaming-availability.p.rapidapi.com/get',
+      url: 'https://streaming-availability.p.rapidapi.com/v4/title',
       params: {
-        tmdb_id: `${mediaType}/${tmdbId}`,
-        output_language: i18n.language || 'en'
+        tmdb_id: tmdbId,
+        output_language: i18n.language || 'en',
+        country: country.toLowerCase()
       },
       headers: {
         'X-RapidAPI-Key': rapidApiKey,
@@ -71,76 +72,45 @@ async function fetchStreamingAvailabilityAPI(
       }
     };
 
-    console.log(`Fetching Movie of the Night API for TMDB ID: ${tmdbId} in country: ${country}`);
+    console.log(`Fetching Movie of the Night API v4 for TMDB ID: ${tmdbId} in country: ${country}`);
     const response = await axios.request(options);
-    console.log('Got response from Movie of the Night API', { status: response.status });
+    console.log('Got response from Movie of the Night API v4', { status: response.status });
     
     const data = response.data;
     console.log('API Response structure:', Object.keys(data));
     
-    if (!data || !data.result) {
+    if (!data) {
       console.log('Empty or invalid response from Movie of the Night API');
       throw new Error('Empty or invalid response from Movie of the Night API');
     }
     
     // Convert API response to StreamingPlatformData format
     const streamingPlatforms: StreamingPlatformData[] = [];
-    const result = data.result;
     
-    // Check if the streamingInfo key exists (used in newer API)
-    if (result.streamingInfo && Object.keys(result.streamingInfo).length > 0) {
-      console.log('Found streamingInfo in response with countries:', Object.keys(result.streamingInfo));
+    // In v4, the streaming info is in the `streamingInfo` property
+    if (data.streamingInfo && Object.keys(data.streamingInfo).length > 0) {
+      console.log('Found streamingInfo in response with providers:', Object.keys(data.streamingInfo));
       
-      // Get data for the requested country or use the first available country
-      const countryToUse = result.streamingInfo[country] ? country : Object.keys(result.streamingInfo)[0];
-      
-      if (result.streamingInfo[countryToUse]) {
-        // Convert streamingInfo to an array of streaming platforms
-        for (const [serviceName, options] of Object.entries(result.streamingInfo[countryToUse])) {
-          if (Array.isArray(options) && options.length > 0) {
-            const option = options[0]; // Take the first option for the service
-            
-            streamingPlatforms.push({
-              service: serviceName,
-              available: true,
-              link: option.link || `https://${serviceName.toLowerCase()}.com`,
-              startDate: option.availableSince || new Date().toISOString(),
-              endDate: option.leavingDate,
-              logo: getStreamingServiceLogo(serviceName),
-              type: option.type || 'subscription',
-              source: 'movie-of-the-night'
-            });
-          }
-        }
-        
-        console.log(`Found ${streamingPlatforms.length} streaming platforms using streamingInfo structure`);
-      }
-    } else if (result.streamingOptions && Object.keys(result.streamingOptions).length > 0) {
-      // Newer API versions use streamingOptions
-      console.log('Found streamingOptions in response with countries:', Object.keys(result.streamingOptions));
-      
-      // Get data for the requested country or use the first available country
-      const countryToUse = result.streamingOptions[country] ? country : Object.keys(result.streamingOptions)[0];
-      
-      if (result.streamingOptions[countryToUse]) {
-        const streamingOptions = result.streamingOptions[countryToUse];
-        console.log(`Found ${streamingOptions.length} streaming options for country: ${countryToUse}`);
-        
-        for (const option of streamingOptions) {
+      // Iterate through each streaming service provider
+      for (const [providerName, countriesData] of Object.entries(data.streamingInfo)) {
+        // Check if data exists for the requested country
+        if (countriesData[country.toLowerCase()]) {
+          const providerData = countriesData[country.toLowerCase()];
+          
           streamingPlatforms.push({
-            service: option.service,
+            service: providerName,
             available: true,
-            link: option.link || `https://${option.service.toLowerCase()}.com`,
-            startDate: option.availableSince || new Date().toISOString(),
-            endDate: option.availableUntil,
-            logo: getStreamingServiceLogo(option.service),
-            type: option.type || 'subscription',
-            source: 'movie-of-the-night'
+            link: providerData.link || `https://${providerName.toLowerCase()}.com`,
+            startDate: providerData.availableSince || new Date().toISOString(),
+            endDate: providerData.leavingDate,
+            logo: getStreamingServiceLogo(providerName),
+            type: providerData.type || 'subscription',
+            source: 'movie-of-the-night-v4'
           });
         }
-        
-        console.log(`Converted ${streamingPlatforms.length} streaming platforms from streamingOptions`);
       }
+      
+      console.log(`Found ${streamingPlatforms.length} streaming platforms using v4 API`);
     }
 
     // Save to local cache
@@ -154,7 +124,7 @@ async function fetchStreamingAvailabilityAPI(
     
     return streamingPlatforms;
   } catch (error) {
-    console.error('Error fetching from Movie of the Night API:', error);
+    console.error('Error fetching from Movie of the Night API v4:', error);
     throw error;
   }
 }
@@ -219,19 +189,18 @@ export async function getStreamingAvailability(
 
     console.log('Fetching fresh streaming data for movie:', tmdbId);
     
-    // Use Movie of the Night Streaming Availability API
+    // Use Movie of the Night Streaming Availability API v4
     try {
-      // Important change: Pass tmdbId directly as we'll format it in the API call
-      const streamingResults = await fetchStreamingAvailabilityAPI(tmdbId, 'movie', streamingCountry);
+      const streamingResults = await fetchStreamingAvailabilityAPI(tmdbId, streamingCountry);
       
       if (streamingResults && streamingResults.length > 0) {
-        console.log('Returning streaming results from Movie of the Night API:', streamingResults);
+        console.log('Returning streaming results from Movie of the Night API v4:', streamingResults);
         return streamingResults;
       } else {
-        console.log('No streaming results from Movie of the Night API for movie:', tmdbId);
+        console.log('No streaming results from Movie of the Night API v4 for movie:', tmdbId);
       }
     } catch (error) {
-      console.error('Error with Movie of the Night API, trying fallbacks:', error);
+      console.error('Error with Movie of the Night API v4, trying fallbacks:', error);
       // Continue to fallback methods
     }
     

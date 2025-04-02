@@ -4,19 +4,25 @@ import { getStreamingAvailability } from "@/services/streamingAvailability";
 import type { StreamingPlatformData } from "@/types/streaming";
 import i18n from "@/i18n";
 
-interface StreamingAvailabilityState {
+/**
+ * State interface for streaming availability data
+ */
+export interface StreamingAvailabilityState {
   services: StreamingPlatformData[];
   isLoading: boolean;
   error: Error | null;
   timestamp: number;
   source: string;
-  data?: {
+  data: {
     services: StreamingPlatformData[];
     timestamp: number;
-  };
-  isError?: boolean;
+  } | undefined;
+  isError: boolean;
 }
 
+/**
+ * Hook for fetching streaming availability data for a movie
+ */
 export function useStreamingAvailability(tmdbId: number, title?: string, year?: string) {
   const [state, setState] = useState<StreamingAvailabilityState>({
     services: [],
