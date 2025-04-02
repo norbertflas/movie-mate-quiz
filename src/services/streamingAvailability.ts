@@ -8,6 +8,9 @@ const RETRY_DELAY = 2000;
 const MAX_RETRIES = 3;
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 
+// Get API key from environment variables
+const RAPIDAPI_KEY = import.meta.env.VITE_RAPIDAPI_KEY;
+
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 // In-memory cache for the current session
@@ -46,7 +49,7 @@ async function fetchStreamingAvailabilityAPI(
   tmdbId: number,
   title?: string,
   year?: string,
-  country: string = 'us'
+  country: string = 'pl'
 ): Promise<StreamingPlatformData[]> {
   try {
     // Check local memory cache first
@@ -55,9 +58,6 @@ async function fetchStreamingAvailabilityAPI(
       console.log('Using memory cached streaming data for:', tmdbId);
       return localCache[cacheKey].data;
     }
-    
-    // API key for Streaming Availability
-    const rapidApiKey = '670d047a2bmsh3dff18a0b6211fcp17d3cdjsn9d8d3e10bfc9';
     
     console.log(`Fetching Movie of the Night API for TMDB ID: ${tmdbId} in country: ${country}`);
     
@@ -71,10 +71,14 @@ async function fetchStreamingAvailabilityAPI(
           params: {
             title: title,
             country: country.toLowerCase(),
-            output_language: i18n.language || 'en',
+            output_language: i18n.language === 'pl' ? 'pl' : 'en',
             show_type: 'movie',
             year: year
           },
           headers: {
-            'X-RapidAPI-Key': rapidApiKey,
-            'X-R
+            'X-RapidAPI-Key': RAPIDAPI_KEY,
+            'X-RapidAPI-Host': 'streaming-availability.p.rapidapi.com'
+          }
+        };
+
+        // ...existing code...

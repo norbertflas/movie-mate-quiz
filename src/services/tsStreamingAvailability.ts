@@ -5,17 +5,18 @@ import i18n from "@/i18n";
 // Base URL for the streaming availability API
 const API_BASE_URL = 'https://streaming-availability.p.rapidapi.com';
 
+// Get API keys from environment variables
+const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
+const RAPIDAPI_KEY = import.meta.env.VITE_RAPIDAPI_KEY;
+
 /**
  * Fetch the English title of a movie from TMDB API
  */
 async function fetchMovieEnglishTitle(tmdbId: number): Promise<string | null> {
   try {
-    // TMDB API key
-    const tmdbApiKey = 'fd7b55a64a74b0ecc5c7532dff8651d0';
-    
     const response = await axios.get(`https://api.themoviedb.org/3/movie/${tmdbId}`, {
       params: {
-        api_key: tmdbApiKey,
+        api_key: TMDB_API_KEY,
         language: 'en-US' // Force English language to get English title
       }
     });
@@ -49,9 +50,6 @@ export async function getTsStreamingAvailability(
     const currentLang = i18n.language;
     const streamingCountry = country || (currentLang === 'pl' ? 'pl' : 'us');
     
-    // RapidAPI key
-    const rapidApiKey = '670d047a2bmsh3dff18a0b6211fcp17d3cdjsn9d8d3e10bfc9';
-    
     console.log(`[ts-streaming] Fetching streaming data for TMDB ID ${tmdbId}, Country: ${streamingCountry}`);
     
     // Try direct TMDB ID search first
@@ -67,7 +65,7 @@ export async function getTsStreamingAvailability(
           output_language: currentLang
         },
         headers: {
-          'X-RapidAPI-Key': rapidApiKey,
+          'X-RapidAPI-Key': RAPIDAPI_KEY,
           'X-RapidAPI-Host': 'streaming-availability.p.rapidapi.com'
         }
       };
@@ -237,7 +235,6 @@ export async function searchMoviesWithStreaming(
   try {
     const currentLang = i18n.language;
     const streamingCountry = country || (currentLang === 'pl' ? 'pl' : 'us');
-    const rapidApiKey = '670d047a2bmsh3dff18a0b6211fcp17d3cdjsn9d8d3e10bfc9';
     
     // Use English title if provided, otherwise use the original title
     const searchTitle = englishTitle || title;
@@ -253,7 +250,7 @@ export async function searchMoviesWithStreaming(
         output_language: currentLang
       },
       headers: {
-        'X-RapidAPI-Key': rapidApiKey,
+        'X-RapidAPI-Key': RAPIDAPI_KEY,
         'X-RapidAPI-Host': 'streaming-availability.p.rapidapi.com'
       }
     };
