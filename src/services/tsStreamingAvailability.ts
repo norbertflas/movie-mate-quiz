@@ -6,11 +6,39 @@ import i18n from "@/i18n";
 const API_BASE_URL = 'https://streaming-availability.p.rapidapi.com';
 
 /**
+ * Fetch the English title of a movie from TMDB API
+ */
+async function fetchMovieEnglishTitle(tmdbId: number): Promise<string | null> {
+  try {
+    // TMDB API key
+    const tmdbApiKey = 'fd7b55a64a74b0ecc5c7532dff8651d0';
+    
+    const response = await axios.get(`https://api.themoviedb.org/3/movie/${tmdbId}`, {
+      params: {
+        api_key: tmdbApiKey,
+        language: 'en-US' // Force English language to get English title
+      }
+    });
+    
+    if (response.data && response.data.title) {
+      console.log(`[ts-streaming] Found English title for TMDB ID ${tmdbId}: "${response.data.title}"`);
+      return response.data.title;
+    }
+    return null;
+  } catch (error) {
+    console.error(`[ts-streaming] Error fetching English title for TMDB ID ${tmdbId}:`, error);
+    return null;
+  }
+}
+
+/**
  * Get streaming availability for a movie from the API
+ * Now uses English title for better compatibility with the Streaming Availability API
  */
 export async function getTsStreamingAvailability(
   tmdbId: number,
-  country?: string
+  country?: string,
+  originalTitle?: string
 ): Promise<StreamingPlatformData[]> {
   try {
     if (!tmdbId || tmdbId <= 0) {
@@ -26,52 +54,63 @@ export async function getTsStreamingAvailability(
     
     console.log(`[ts-streaming] Fetching streaming data for TMDB ID ${tmdbId}, Country: ${streamingCountry}`);
     
-    // Use the updated API endpoint
+    // Get the English title for the movie
+    const englishTitle = await fetchMovieEnglishTitle(tmdbId);
+    if (!englishTitle && !originalTitle) {
+      console.log(`[ts-streaming] Could not get English or original title for movie ${tmdbId}`);
+      return [];
+    }
+    
+    // Use English title if available, otherwise fall back to original title
+    const searchTitle = englishTitle || originalTitle || '';
+    console.log(`[ts-streaming] Using search title: "${searchTitle}"`);
+    
     try {
-      console.log('[ts-streaming] Using updated API endpoint...');
+      // Instead of searching by TMDB ID, search by title
+      const searchResults = await searchMoviesWithStreaming(searchTitle, streamingCountry);
       
-      const options = {
-        method: 'GET',
-        url: `${API_BASE_URL}/shows/get`,
-        params: {
-          id: `tmdb:${tmdbId}`,
-          country: streamingCountry.toLowerCase(),
-          output_language: currentLang
-        },
-        headers: {
-          'X-RapidAPI-Key': rapidApiKey,
-          'X-RapidAPI-Host': 'streaming-availability.p.rapidapi.com'
-        }
-      };
-      
-      const response = await axios.request(options);
-      console.log('[ts-streaming] API response status:', response.status);
-      
-      if (response.data?.streamingOptions && response.data.streamingOptions[streamingCountry.toLowerCase()]) {
-        const countryStreamingOptions = response.data.streamingOptions[streamingCountry.toLowerCase()];
-        const services: StreamingPlatformData[] = [];
+      if (searchResults && Array.isArray(searchResults) && searchResults.length > 0) {
+        // Try to find exact match first
+        let matchedMovie = searchResults.find(movie => 
+          movie.tmdbId === tmdbId || 
+          movie.tmdbId === String(tmdbId) ||
+          movie.title === searchTitle
+        );
         
-        for (const option of countryStreamingOptions) {
-          if (option.service && option.link) {
-            services.push({
-              service: option.service.name,
-              available: true,
-              link: option.link,
-              startDate: option.availableSince,
-              endDate: option.expiresSoon ? option.expiresOn : undefined,
-              logo: getStreamingServiceLogo(option.service.name),
-              type: option.type
-            });
+        // If no exact match, use the first result
+        if (!matchedMovie && searchResults.length > 0) {
+          console.log('[ts-streaming] No exact match found, using first result');
+          matchedMovie = searchResults[0];
+        }
+        
+        if (matchedMovie && matchedMovie.streamingOptions && matchedMovie.streamingOptions[streamingCountry.toLowerCase()]) {
+          const countryStreamingOptions = matchedMovie.streamingOptions[streamingCountry.toLowerCase()];
+          const services: StreamingPlatformData[] = [];
+          
+          for (const option of countryStreamingOptions) {
+            if (option.service && option.link) {
+              services.push({
+                service: option.service.name,
+                available: true,
+                link: option.link,
+                startDate: option.availableSince,
+                endDate: option.expiresSoon ? option.expiresOn : undefined,
+                logo: getStreamingServiceLogo(option.service.name),
+                type: option.type
+              });
+            }
           }
+          
+          console.log(`[ts-streaming] Found ${services.length} services via title search`);
+          return services;
         }
-        
-        console.log(`[ts-streaming] Found ${services.length} services via updated API`);
-        return services;
-      } else {
-        console.log('[ts-streaming] No streaming info found in API response');
       }
+      
+      console.log('[ts-streaming] No streaming info found in search results');
+      return [];
+      
     } catch (e: any) {
-      console.error('[ts-streaming] API failed:', e.message);
+      console.error('[ts-streaming] API search failed:', e.message);
       if (e.response?.status === 502) {
         console.error('[ts-streaming] Server error 502 detected from API');
         throw new Error('streaming_server_error_502');

@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { getStreamingAvailability } from "@/services/streamingAvailability";
+import { getTsStreamingAvailability } from "@/services/tsStreamingAvailability";
 import type { StreamingPlatformData } from "@/types/streaming";
 import i18n from "@/i18n";
 
@@ -51,6 +52,30 @@ export function useStreamingAvailability(tmdbId: number, title?: string, year?: 
     console.log(`[hook] Fetching streaming availability for TMDB ID: ${tmdbId}, title: ${title}, year: ${year}, country: ${country}`);
     
     try {
+      // Try using the TS Streaming Availability API with English title search
+      try {
+        const tsServices = await getTsStreamingAvailability(tmdbId, country, title);
+        if (tsServices && tsServices.length > 0) {
+          console.log(`[hook] TS API returned ${tsServices.length} streaming services`);
+          
+          const newState = {
+            services: tsServices.map(service => ({...service, source: 'ts-api'})),
+            isLoading: false,
+            error: null,
+            timestamp: Date.now(),
+            source: 'ts-api',
+            requested: true
+          };
+          
+          setState(newState);
+          console.log(`[hook] Final result: Found ${tsServices.length} streaming services from source: ts-api`);
+          return;
+        }
+      } catch (tsError) {
+        console.error('[hook] Error with TS API, trying fallback:', tsError);
+      }
+      
+      // Fall back to legacy API
       const services = await getStreamingAvailability(tmdbId, title, year, country);
       
       console.log(`[hook] Received ${services.length} streaming services`);
