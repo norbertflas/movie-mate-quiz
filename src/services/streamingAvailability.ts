@@ -44,6 +44,8 @@ async function retryWithBackoff<T>(
 // Implementation using the Movie of the Night Streaming Availability API
 async function fetchStreamingAvailabilityAPI(
   tmdbId: number,
+  title?: string,
+  year?: string,
   country: string = 'us'
 ): Promise<StreamingPlatformData[]> {
   try {
@@ -59,43 +61,20 @@ async function fetchStreamingAvailabilityAPI(
     
     console.log(`Fetching Movie of the Night API for TMDB ID: ${tmdbId} in country: ${country}`);
     
-    // First try the direct shows endpoint with TMDB ID
-    try {
-      const options = {
-        method: 'GET',
-        url: `https://streaming-availability.p.rapidapi.com/shows/movie/${tmdbId}`,
-        params: {
-          country: country.toLowerCase(),
-          output_language: i18n.language || 'en'
-        },
-        headers: {
-          'X-RapidAPI-Key': rapidApiKey,
-          'X-RapidAPI-Host': 'streaming-availability.p.rapidapi.com'
-        }
-      };
-
-      const response = await axios.request(options);
-      console.log('Got response from Movie of the Night direct endpoint', { status: response.status });
-      
-      if (response.data) {
-        // This endpoint returns a single movie object, not an array
-        return processMovieResponse([response.data], country);
-      }
-    } catch (error) {
-      console.error('Error with direct ID endpoint, trying search endpoint:', error);
-    }
-    
-    // If direct ID fails, try the shows/search/title endpoint with TMDB ID
-    try {
-      const options = {
-        method: 'GET',
-        url: 'https://streaming-availability.p.rapidapi.com/shows/search/title',
-        params: {
-          title: `movie/${tmdbId}`, // Try using the TMDB ID format
-          country: country.toLowerCase(),
-          output_language: i18n.language || 'en',
-          show_type: 'movie'
-        },
-        headers: {
-          'X-RapidAPI-Key': rapidApiKey,
-          'X-Rapid
+    // Try title-based search first since it seems to be the most reliable endpoint
+    if (title) {
+      try {
+        console.log('Using title search with:', title);
+        const options = {
+          method: 'GET',
+          url: 'https://streaming-availability.p.rapidapi.com/shows/search/title',
+          params: {
+            title: title,
+            country: country.toLowerCase(),
+            output_language: i18n.language || 'en',
+            show_type: 'movie',
+            year: year
+          },
+          headers: {
+            'X-RapidAPI-Key': rapidApiKey,
+            'X-R
