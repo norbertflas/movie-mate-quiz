@@ -41,12 +41,10 @@ export const UnifiedMovieDetails = ({
   const { t } = useTranslation();
   const isMobile = useIsMobile();
   
-  const { data: availabilityData, isLoading: isLoadingServices, isError } = useStreamingAvailability(
-    movie?.id || 0
-  );
+  const availabilityData = useStreamingAvailability(movie?.id || 0);
 
   // Enriched services with proper formatting from API or props
-  const services = (availabilityData?.services?.length > 0)
+  const services = (availabilityData.services?.length > 0)
     ? availabilityData.services
     : initialStreamingServices.map(service => ({
         ...service,
@@ -55,7 +53,7 @@ export const UnifiedMovieDetails = ({
         service: normalizeServiceName(service.service)
       }));
 
-  const lastUpdated = availabilityData?.timestamp ? new Date(availabilityData.timestamp) : null;
+  const lastUpdated = availabilityData.timestamp ? new Date(availabilityData.timestamp) : null;
   const isDataStale = lastUpdated && (Date.now() - lastUpdated.getTime() > 24 * 60 * 60 * 1000);
   
   const formattedLastChecked = lastUpdated 
@@ -201,13 +199,13 @@ export const UnifiedMovieDetails = ({
                         </Badge>
                       </div>
 
-                      {isLoadingServices ? (
+                      {availabilityData.isLoading ? (
                         <div className="flex gap-2 flex-wrap">
                           {[1, 2, 3, 4].map((i) => (
                             <Skeleton key={i} className="h-16 w-20 rounded-md" />
                           ))}
                         </div>
-                      ) : isError ? (
+                      ) : availabilityData.error ? (
                         <Alert variant="destructive" className="mb-4">
                           <AlertCircle className="h-4 w-4" />
                           <AlertDescription>

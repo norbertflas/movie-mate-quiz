@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { CardContent } from "../ui/card";
 import { MovieCardContainer } from "./MovieCardContainer";
@@ -38,8 +37,7 @@ export const MovieCard = ({
   const { userRating, handleRating } = useMovieRating(title);
   
   // Only attempt to fetch streaming data if we have a valid tmdbId
-  const { data: availabilityData, isLoading: isLoadingAvailability } = 
-    useStreamingAvailability(tmdbId && tmdbId > 0 ? tmdbId : 0);
+  const availabilityData = useStreamingAvailability(tmdbId && tmdbId > 0 ? tmdbId : 0);
 
   // Process streaming services to ensure they have the correct format
   const processedServices = streamingServices.map(service => {
@@ -63,12 +61,12 @@ export const MovieCard = ({
   const formattedPropServices = formatServiceLinks(processedServices);
 
   // Use API data if available, otherwise fall back to prop data
-  const availableServices = availabilityData?.services?.length > 0
+  const availableServices = availabilityData.services?.length > 0
     ? availabilityData.services
     : formattedPropServices;
     
   // For display in the UI, calculate a timestamp for when streaming was last checked
-  const lastChecked = availabilityData?.timestamp 
+  const lastChecked = availabilityData.timestamp 
     ? new Date(availabilityData.timestamp).toLocaleString() 
     : new Date().toLocaleString();
 
@@ -153,7 +151,7 @@ export const MovieCard = ({
           )}
           
           <div className="mt-auto pt-2">
-            {isLoadingAvailability ? (
+            {availabilityData.isLoading ? (
               <p className="text-xs font-medium text-muted-foreground mb-2">
                 {safeTranslate("streaming.loading", "Loading streaming info...")}
               </p>
