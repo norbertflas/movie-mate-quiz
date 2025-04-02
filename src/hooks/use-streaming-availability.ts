@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import type { StreamingPlatformData } from "@/types/streaming";
 import { getStreamingAvailability } from "@/services/streamingAvailability";

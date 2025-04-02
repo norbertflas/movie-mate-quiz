@@ -30,9 +30,39 @@ export async function getTsStreamingAvailability(
     
     // Variant 1: /v2/get/basic (new endpoint according to documentation)
     try {
-      const result = await tryBasicEndpoint(tmdbId, streamingCountry, rapidApiKey);
-      if (result && result.length > 0) {
-        return result;
+      console.log('[ts-streaming] Trying /v2/get/basic endpoint...');
+      
+      const options = {
+        method: 'GET',
+        url: `${API_BASE_URL}/v2/get/basic`,
+        params: {
+          tmdb_id: tmdbId,
+          country: streamingCountry
+        },
+        headers: {
+          'X-RapidAPI-Key': rapidApiKey,
+          'X-RapidAPI-Host': 'streaming-availability.p.rapidapi.com'
+        }
+      };
+      
+      const response = await axios.request(options);
+      console.log('[ts-streaming] Basic endpoint response status:', response.status);
+      
+      if (response.data?.result?.streamingInfo?.[streamingCountry]) {
+        const services = response.data.result.streamingInfo[streamingCountry];
+        console.log(`[ts-streaming] Found ${services.length} services via basic endpoint`);
+        
+        return services.map(option => ({
+          service: option.service,
+          available: true,
+          link: option.link || `https://${option.service.toLowerCase()}.com`,
+          startDate: option.availableSince,
+          endDate: option.leavingDate,
+          logo: getStreamingServiceLogo(option.service),
+          type: option.streamingType
+        }));
+      } else {
+        console.log('[ts-streaming] No streaming info found in basic endpoint response');
       }
     } catch (e: any) {
       console.error('[ts-streaming] Basic endpoint failed:', e.message);
@@ -45,9 +75,49 @@ export async function getTsStreamingAvailability(
     
     // Variant 2: /v2/get/movie (alternative endpoint format)
     try {
-      const result = await tryMovieEndpoint(tmdbId, streamingCountry, rapidApiKey);
-      if (result && result.length > 0) {
-        return result;
+      console.log('[ts-streaming] Trying /v2/get/movie endpoint...');
+      
+      const options = {
+        method: 'GET',
+        url: `${API_BASE_URL}/v2/get/movie`,
+        params: {
+          tmdb_id: tmdbId,
+          country: streamingCountry
+        },
+        headers: {
+          'X-RapidAPI-Key': rapidApiKey,
+          'X-RapidAPI-Host': 'streaming-availability.p.rapidapi.com'
+        }
+      };
+      
+      const response = await axios.request(options);
+      console.log('[ts-streaming] Movie endpoint response status:', response.status);
+      
+      if (response.data?.result?.streamingInfo?.[streamingCountry]) {
+        const countryInfo = response.data.result.streamingInfo[streamingCountry];
+        const services: StreamingPlatformData[] = [];
+        
+        // In this format the data is structured as an object of services with arrays of options
+        for (const [serviceName, serviceOptions] of Object.entries(countryInfo)) {
+          if (Array.isArray(serviceOptions) && serviceOptions.length > 0) {
+            const option = serviceOptions[0];
+            
+            services.push({
+              service: serviceName,
+              available: true,
+              link: option.link || `https://${serviceName.toLowerCase()}.com`,
+              startDate: option.availableSince,
+              endDate: option.leavingDate,
+              logo: getStreamingServiceLogo(serviceName),
+              type: option.streamingType
+            });
+          }
+        }
+        
+        console.log(`[ts-streaming] Found ${services.length} services via movie endpoint`);
+        return services;
+      } else {
+        console.log('[ts-streaming] No streaming info found in movie endpoint response');
       }
     } catch (e: any) {
       console.error('[ts-streaming] Movie endpoint failed:', e.message);
@@ -59,9 +129,39 @@ export async function getTsStreamingAvailability(
     
     // Variant 3: /get/basic (old API format)
     try {
-      const result = await tryLegacyEndpoint(tmdbId, streamingCountry, rapidApiKey);
-      if (result && result.length > 0) {
-        return result;
+      console.log('[ts-streaming] Trying legacy endpoint...');
+      
+      const options = {
+        method: 'GET',
+        url: `${API_BASE_URL}/get/basic`,
+        params: {
+          tmdb_id: `movie/${tmdbId}`,
+          country: streamingCountry
+        },
+        headers: {
+          'X-RapidAPI-Key': rapidApiKey,
+          'X-RapidAPI-Host': 'streaming-availability.p.rapidapi.com'
+        }
+      };
+      
+      const response = await axios.request(options);
+      console.log('[ts-streaming] Legacy endpoint response status:', response.status);
+      
+      if (response.data?.result?.streamingInfo?.[streamingCountry]) {
+        const services = response.data.result.streamingInfo[streamingCountry];
+        console.log(`[ts-streaming] Found ${services.length} services via legacy endpoint`);
+        
+        return services.map(option => ({
+          service: option.service,
+          available: true,
+          link: option.link || `https://${option.service.toLowerCase()}.com`,
+          startDate: option.availableSince,
+          endDate: option.leavingDate,
+          logo: getStreamingServiceLogo(option.service),
+          type: option.streamingType
+        }));
+      } else {
+        console.log('[ts-streaming] No streaming info found in legacy endpoint response');
       }
     } catch (e: any) {
       console.error('[ts-streaming] Legacy endpoint failed:', e.message);
