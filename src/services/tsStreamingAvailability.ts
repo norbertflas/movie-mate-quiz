@@ -143,23 +143,29 @@ function getStreamingServiceLogo(serviceName: string): string {
 
 /**
  * Search for movies by title and get streaming availability
+ * Uses English title for better compatibility with the API
  */
 export async function searchMoviesWithStreaming(
   title: string, 
-  country?: string
+  country?: string,
+  englishTitle?: string
 ): Promise<any[]> {
   try {
     const currentLang = i18n.language;
     const streamingCountry = country || (currentLang === 'pl' ? 'pl' : 'us');
     const rapidApiKey = '670d047a2bmsh3dff18a0b6211fcp17d3cdjsn9d8d3e10bfc9';
     
+    // Use English title if provided, otherwise use the original title
+    const searchTitle = englishTitle || title;
+    
     const options = {
       method: 'GET',
       url: `${API_BASE_URL}/shows/search/title`,
       params: {
-        title,
+        title: searchTitle,
         country: streamingCountry.toLowerCase(),
         show_type: 'movie',
+        // Always keep output in the user's language
         output_language: currentLang
       },
       headers: {
@@ -168,7 +174,7 @@ export async function searchMoviesWithStreaming(
       }
     };
 
-    console.log(`[ts-streaming] Searching for title: "${title}" in country: ${streamingCountry}`);
+    console.log(`[ts-streaming] Searching for title: "${title}" (search using: "${searchTitle}") in country: ${streamingCountry}`);
     
     try {
       const response = await axios.request(options);
@@ -196,4 +202,17 @@ export async function searchMoviesWithStreaming(
     
     return [];
   }
+}
+
+/**
+ * Search for movies by title using English title for better results
+ * This is a test function to verify if searching with English titles works better
+ */
+export async function searchMoviesWithEnglishTitle(
+  originalTitle: string,
+  englishTitle: string,
+  country?: string
+): Promise<any[]> {
+  console.log(`[ts-streaming] Testing search with English title: "${englishTitle}" (original: "${originalTitle}")`);
+  return searchMoviesWithStreaming(originalTitle, country, englishTitle);
 }
