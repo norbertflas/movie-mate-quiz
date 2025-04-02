@@ -13,11 +13,6 @@ export interface StreamingAvailabilityState {
   error: Error | null;
   timestamp: number;
   source: string;
-  data: {
-    services: StreamingPlatformData[];
-    timestamp: number;
-  } | undefined;
-  isError: boolean;
 }
 
 /**
@@ -29,9 +24,7 @@ export function useStreamingAvailability(tmdbId: number, title?: string, year?: 
     isLoading: true,
     error: null,
     timestamp: 0,
-    source: 'none',
-    data: undefined,
-    isError: false
+    source: 'none'
   });
 
   const currentLang = i18n.language;
@@ -45,9 +38,7 @@ export function useStreamingAvailability(tmdbId: number, title?: string, year?: 
         isLoading: false,
         error: new Error('Invalid TMDB ID'),
         timestamp: Date.now(),
-        source: 'none',
-        data: undefined,
-        isError: true
+        source: 'none'
       });
       return;
     }
@@ -71,12 +62,7 @@ export function useStreamingAvailability(tmdbId: number, title?: string, year?: 
             isLoading: false,
             error: null,
             timestamp: Date.now(),
-            source: services.length > 0 ? services[0].source || 'api' : 'none',
-            data: {
-              services,
-              timestamp: Date.now()
-            },
-            isError: false
+            source: services.length > 0 ? services[0].source || 'api' : 'none'
           };
           
           setState(newState);
@@ -90,9 +76,7 @@ export function useStreamingAvailability(tmdbId: number, title?: string, year?: 
             isLoading: false,
             error: error instanceof Error ? error : new Error(String(error)),
             timestamp: Date.now(),
-            source: 'error',
-            data: undefined,
-            isError: true
+            source: 'error'
           });
         }
       }

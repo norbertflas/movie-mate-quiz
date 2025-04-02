@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { StreamingPlatformData, StreamingAvailabilityCache } from "@/types/streaming";
 import axios from 'axios';
 import i18n from "@/i18n";
+import { formatServiceLinks } from "@/utils/streamingServices";
 
 const RETRY_DELAY = 2000;
 const MAX_RETRIES = 3;
@@ -202,6 +203,34 @@ export async function getStreamingAvailability(
     } catch (error) {
       console.error('Error with Movie of the Night API v4, trying fallbacks:', error);
       // Continue to fallback methods
+    }
+    
+    // Try the Utelly API as a new fallback if we have a title
+    if (title) {
+      try {
+        console.log('Trying Utelly API for movie title:', title);
+        const utellyResponse = await retryWithBackoff(async () => {
+          const response = await supabase.functions.invoke('streaming-availability-utelly', {
+            body: { title, country: streamingCountry },
+            headers: { 'Content-Type': 'application/json' }
+          });
+          
+          if (!response.data) {
+            throw new Error('Empty response from Utelly API');
+          }
+          
+          return response.data?.result || [];
+        });
+
+        if (utellyResponse && utellyResponse.length > 0) {
+          console.log('Got results from Utelly:', utellyResponse);
+          const formattedServices = formatServiceLinks(utellyResponse);
+          await cacheResults(formattedServices, tmdbId, streamingCountry);
+          return formattedServices;
+        }
+      } catch (error) {
+        console.error('Utelly API error:', error);
+      }
     }
     
     // If all fails, try the fallback methods from the original code
