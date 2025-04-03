@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from "react";
 import { getStreamingAvailability } from "@/services/streamingAvailability";
 import { getTsStreamingAvailability } from "@/services/tsStreamingAvailability";
@@ -52,7 +53,7 @@ export function useStreamingAvailability(tmdbId: number, title?: string, year?: 
     console.log(`[hook] Fetching streaming availability for TMDB ID: ${tmdbId}, title: ${title}, year: ${year}, country: ${country}`);
     
     try {
-      // Try using the TS Streaming Availability API with English title search
+      // Try using the TS Streaming Availability API first
       try {
         const tsServices = await getTsStreamingAvailability(tmdbId, country, title);
         if (tsServices && tsServices.length > 0) {
@@ -75,7 +76,7 @@ export function useStreamingAvailability(tmdbId: number, title?: string, year?: 
         console.error('[hook] Error with TS API, trying fallback:', tsError);
       }
       
-      // Fall back to legacy API
+      // Fall back to our refactored service
       const services = await getStreamingAvailability(tmdbId, title, year, country);
       
       console.log(`[hook] Received ${services.length} streaming services`);

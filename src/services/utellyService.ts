@@ -1,74 +1,141 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import axios from 'axios';
 import type { StreamingPlatformData } from "@/types/streaming";
-import { formatServiceLinks } from "@/utils/streamingServices";
+
+// The API key is securely accessed from environment variables
+const RAPIDAPI_KEY = import.meta.env.VITE_RAPIDAPI_KEY;
 
 /**
- * Fetch streaming availability data from Utelly API
+ * Fetches streaming availability information using the Utelly API
+ * 
+ * @param title Movie title
+ * @param country Country code (e.g., 'us', 'uk', 'pl')
+ * @returns Array of streaming platforms where the movie is available
  */
-export async function fetchUtellyAvailability(
+export async function getUtellyStreamingAvailability(
   title: string,
-  country: string = 'us'
+  country: string = 'pl'
 ): Promise<StreamingPlatformData[]> {
   try {
-    console.log(`Fetching Utelly data for title: "${title}" in country: ${country}`);
+    console.log(`[utelly] Fetching streaming availability for "${title}" in ${country}`);
     
-    const response = await supabase.functions.invoke('streaming-availability-utelly', {
-      body: { 
-        title, 
-        country 
+    // Map country code to what Utelly supports
+    const utellyCountry = mapCountryToUtellySupported(country);
+    
+    const options = {
+      method: 'GET',
+      url: 'https://utelly-tv-shows-and-movies-availability-v1.p.rapidapi.com/lookup',
+      params: {
+        term: title,
+        country: utellyCountry
       },
-      headers: { 'Content-Type': 'application/json' }
-    });
+      headers: {
+        'x-rapidapi-key': RAPIDAPI_KEY,
+        'x-rapidapi-host': 'utelly-tv-shows-and-movies-availability-v1.p.rapidapi.com'
+      }
+    };
+
+    const response = await axios.request(options);
     
-    if (!response.data || !response.data.result) {
-      console.error('Empty or invalid response from Utelly API');
+    if (!response.data || !response.data.results || !Array.isArray(response.data.results)) {
+      console.log('[utelly] No results found or invalid response structure');
       return [];
     }
     
-    const services = response.data.result;
-    console.log(`Received ${services.length} streaming services from Utelly`);
+    // Find the best matching result (first result is usually the most relevant)
+    const matchingResult = response.data.results[0];
     
-    // Format the services to ensure consistent data
-    return formatServiceLinks(services);
+    if (!matchingResult || !Array.isArray(matchingResult.locations)) {
+      console.log('[utelly] No matching result or locations found');
+      return [];
+    }
+    
+    console.log(`[utelly] Found ${matchingResult.locations.length} streaming locations for "${title}"`);
+    
+    // Convert Utelly format to our StreamingPlatformData format
+    const streamingServices: StreamingPlatformData[] = matchingResult.locations.map(location => ({
+      service: mapUtellyServiceName(location.display_name),
+      available: true,
+      link: location.url || '',
+      logo: location.icon || getLogoForService(location.display_name),
+      type: 'subscription',
+      source: 'utelly'
+    }));
+    
+    return streamingServices;
   } catch (error) {
-    console.error('Error fetching from Utelly API:', error);
+    console.error('[utelly] Error fetching streaming availability:', error);
     return [];
   }
 }
 
 /**
- * Search for titles using Utelly API
+ * Maps a country code to a country supported by Utelly API
  */
-export async function searchUtellyTitles(
-  query: string,
-  country: string = 'us'
-): Promise<any[]> {
-  try {
-    if (!query || query.length < 2) {
-      console.log('Search query too short for Utelly API');
-      return [];
-    }
-    
-    console.log(`Searching Utelly for "${query}" in country: ${country}`);
-    
-    const response = await supabase.functions.invoke('streaming-availability-utelly', {
-      body: { 
-        title: query, 
-        country,
-        search: true
-      },
-      headers: { 'Content-Type': 'application/json' }
-    });
-    
-    if (!response.data || !response.data.result || !Array.isArray(response.data.result)) {
-      console.log('No search results from Utelly API');
-      return [];
-    }
-    
-    return response.data.result;
-  } catch (error) {
-    console.error('Error searching with Utelly API:', error);
-    return [];
-  }
+function mapCountryToUtellySupported(country: string): string {
+  // Utelly mainly supports us, uk, ca
+  const supportedCountries: Record<string, string> = {
+    'pl': 'uk', // Fallback to UK for Poland
+    'us': 'us',
+    'uk': 'uk',
+    'ca': 'ca',
+    'gb': 'uk',
+    'en': 'uk',
+    'fr': 'uk',
+    'de': 'uk',
+    'it': 'uk',
+    'es': 'uk'
+  };
+  
+  return supportedCountries[country.toLowerCase()] || 'us';
+}
+
+/**
+ * Standardizes service names from Utelly to our format
+ */
+function mapUtellyServiceName(utellyName: string): string {
+  const serviceMap: Record<string, string> = {
+    'Netflix': 'Netflix',
+    'Amazon Prime': 'Amazon Prime Video',
+    'Amazon Prime Video': 'Amazon Prime Video',
+    'Amazon Instant Video': 'Amazon Prime Video',
+    'Disney+': 'Disney+',
+    'Disney Plus': 'Disney+',
+    'HBO Max': 'HBO Max',
+    'HBO GO': 'HBO Max',
+    'Apple TV+': 'Apple TV+',
+    'Apple TV Plus': 'Apple TV+',
+    'Hulu': 'Hulu',
+    'Canal+': 'Canal+',
+    'Player': 'Player',
+    'SkyShowtime': 'SkyShowtime'
+  };
+  
+  return serviceMap[utellyName] || utellyName;
+}
+
+/**
+ * Gets the logo path for a streaming service
+ */
+function getLogoForService(serviceName: string): string {
+  const normalizedName = serviceName.toLowerCase().replace(/\s+/g, '');
+  
+  const logoMap: Record<string, string> = {
+    'netflix': '/streaming-icons/netflix.svg',
+    'amazonprime': '/streaming-icons/prime.svg',
+    'amazonprimevideo': '/streaming-icons/prime.svg',
+    'disney+': '/streaming-icons/disney.svg',
+    'disneyplus': '/streaming-icons/disneyplus.svg',
+    'hbomax': '/streaming-icons/hbomax.svg',
+    'hbogo': '/streaming-icons/hbomax.svg',
+    'appletv+': '/streaming-icons/appletv.svg',
+    'appletvplus': '/streaming-icons/appletv.svg',
+    'hulu': '/streaming-icons/hulu.svg',
+    'canal+': '/streaming-icons/default.svg',
+    'canalplus': '/streaming-icons/default.svg',
+    'player': '/streaming-icons/default.svg',
+    'skyshowtime': '/streaming-icons/default.svg'
+  };
+  
+  return logoMap[normalizedName] || '/streaming-icons/default.svg';
 }

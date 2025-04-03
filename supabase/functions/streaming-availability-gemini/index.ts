@@ -1,272 +1,204 @@
-
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { GoogleGenerativeAI } from 'https://esm.sh/@google/generative-ai@0.1.3'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
+import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.2.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const RETRY_ATTEMPTS = 3;
-const RETRY_DELAY = 2000; // 2 seconds
-const RATE_LIMIT_DELAY = 60000; // 60 seconds
-
-const supabaseUrl = Deno.env.get('SUPABASE_URL') as string;
-const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') as string;
-const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
-
-async function fetchWithRetry(fn: () => Promise<any>, attempts: number = RETRY_ATTEMPTS): Promise<any> {
-  try {
-    return await fn();
-  } catch (error) {
-    console.error('Error in fetchWithRetry:', error);
-    
-    if (attempts > 1) {
-      if (error.message?.includes('quota') || error.message?.includes('rate limit')) {
-        console.log('Rate limit hit, waiting 60 seconds...');
-        await new Promise(resolve => setTimeout(resolve, RATE_LIMIT_DELAY));
-        return fetchWithRetry(fn, attempts - 1);
-      }
-      
-      console.log(`Attempt failed, retrying... (${attempts - 1} attempts left)`);
-      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
-      return fetchWithRetry(fn, attempts - 1);
-    }
-    throw error;
-  }
-}
-
-async function getStreamingServices(country: string): Promise<{ id: string; name: string }[]> {
-  try {
-    const { data: services, error } = await supabase
-      .from('streaming_services')
-      .select('id, name')
-      .contains('regions', [country.toLowerCase()]);
-
-    if (error) {
-      console.error('Error fetching streaming services:', error);
-      return [];
-    }
-
-    return services || [];
-  } catch (error) {
-    console.error('Error in getStreamingServices:', error);
-    return [];
-  }
-}
-
-async function saveStreamingAvailability(
-  tmdbId: number,
-  services: string[],
-  country: string
-): Promise<void> {
-  try {
-    // Get service IDs for the available streaming services
-    const { data: serviceIds } = await supabase
-      .from('streaming_services')
-      .select('id, name')
-      .in('name', services);
-
-    if (!serviceIds?.length) {
-      console.log('No matching service IDs found');
-      return;
-    }
-
-    // Prepare the records for insertion
-    const records = serviceIds.map(service => ({
-      tmdb_id: tmdbId,
-      service_id: service.id,
-      region: country.toLowerCase(),
-    }));
-
-    // Insert the availability records
-    const { error } = await supabase
-      .from('movie_streaming_availability')
-      .upsert(
-        records,
-        { onConflict: 'tmdb_id,service_id,region' }
-      );
-
-    if (error) {
-      console.error('Error saving streaming availability:', error);
-    }
-  } catch (error) {
-    console.error('Error in saveStreamingAvailability:', error);
-  }
-}
-
-serve(async (req) => {
+serve(async (req: Request) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders });
   }
-
+  
   try {
-    let body;
+    // Parse request body
+    const { tmdbId, title, country = 'pl' } = await req.json();
+    
+    // Validate input
+    if (!tmdbId && !title) {
+      throw new Error('Either tmdbId or title is required');
+    }
+    
+    console.log(`Processing request for tmdbId: ${tmdbId}, title: ${title}, country: ${country}`);
+    
+    // Get API keys from environment variables
+    const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
+    const tmdbApiKey = Deno.env.get('TMDB_API_KEY');
+    
+    if (!geminiApiKey) {
+      throw new Error('GEMINI_API_KEY not configured');
+    }
+    
+    if (!tmdbApiKey) {
+      throw new Error('TMDB_API_KEY not configured');
+    }
+    
+    // Get movie details from TMDB if we have the ID
+    let movieTitle = title;
+    let movieYear = '';
+    let movieGenres = [];
+    
+    if (tmdbId) {
+      try {
+        const tmdbResponse = await fetch(
+          `https://api.themoviedb.org/3/movie/${tmdbId}?api_key=${tmdbApiKey}&language=${country === 'pl' ? 'pl-PL' : 'en-US'}`
+        );
+        
+        if (!tmdbResponse.ok) {
+          throw new Error(`TMDB API error: ${tmdbResponse.status}`);
+        }
+        
+        const movieData = await tmdbResponse.json();
+        movieTitle = movieData.title || movieTitle;
+        movieYear = movieData.release_date ? movieData.release_date.split('-')[0] : '';
+        movieGenres = movieData.genres?.map((g: any) => g.name) || [];
+        
+        console.log(`Found movie: "${movieTitle}" (${movieYear})`);
+      } catch (error) {
+        console.error('Error fetching movie details from TMDB:', error);
+      }
+    }
+    
+    if (!movieTitle) {
+      throw new Error('Unable to determine movie title');
+    }
+    
+    // Initialize Gemini AI
+    const genAI = new GoogleGenerativeAI(geminiApiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    
+    // Define streaming services based on country
+    const countryStreamingServices = country.toLowerCase() === 'pl' 
+      ? 'Netflix, HBO Max, Disney+, Amazon Prime Video, Canal+, Player, SkyShowtime, Apple TV+' 
+      : 'Netflix, HBO Max, Disney+, Amazon Prime Video, Hulu, Paramount+, Apple TV+, Peacock';
+    
+    // Create prompt
+    const prompt = `
+      I need accurate, up-to-date information about streaming service availability for a movie.
+      
+      Movie: "${movieTitle}" ${movieYear ? `(${movieYear})` : ''}
+      ${movieGenres.length > 0 ? `Genres: ${movieGenres.join(', ')}` : ''}
+      Country: ${country.toUpperCase()}
+      
+      Please tell me which of these streaming services currently offer this movie in ${country.toUpperCase()}: 
+      ${countryStreamingServices}
+      
+      Respond with ONLY a JSON object in this exact format:
+      {
+        "services": [
+          {
+            "service": "Netflix",  // Service name exactly as provided in the list above
+            "available": true,
+            "link": "https://www.netflix.com",  // General service homepage if specific URL unknown
+            "type": "subscription"  // Use: subscription, rent, buy, free
+          },
+          // other services...
+        ]
+      }
+      
+      Keep the response brief and focused on current streaming availability data ONLY.
+      If uncertain whether a movie is available on a service, do NOT include that service.
+      DO NOT include any explanations, headers, or additional text outside the JSON.
+    `;
+    
+    // Generate response from Gemini
+    console.log('Sending request to Gemini API...');
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+    
+    console.log('Received response from Gemini API');
+    
+    // Extract JSON from the response
+    let jsonMatch = text.match(/(\{[\s\S]*\})/);
+    let jsonStr = jsonMatch ? jsonMatch[0] : '';
+    
+    if (!jsonStr) {
+      jsonStr = text; // Try using the entire response if no JSON pattern found
+    }
+    
     try {
-      body = await req.json();
-      console.log('Request body:', body);
-    } catch (parseError) {
-      console.error('Error parsing request body:', parseError);
+      const data = JSON.parse(jsonStr);
+      
+      if (!data.services || !Array.isArray(data.services)) {
+        throw new Error('Invalid response format: services array missing');
+      }
+      
+      // Process services to add logos and ensure all fields are present
+      const processedServices = data.services.map((service: any) => {
+        return {
+          service: service.service,
+          available: service.available === true,
+          link: service.link || getDefaultServiceLink(service.service, country),
+          logo: `/streaming-icons/${service.service.toLowerCase().replace(/\s+/g, '')}.svg`,
+          type: service.type || 'subscription'
+        };
+      }).filter((service: any) => service.available); // Only include available services
+      
+      console.log(`Found ${processedServices.length} streaming services from Gemini AI`);
+      
       return new Response(
         JSON.stringify({ 
-          result: [],
-          error: 'Invalid JSON in request body'
+          services: processedServices,
+          source: 'gemini',
+          timestamp: new Date().toISOString()
         }),
         { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200
+          headers: { 
+            ...corsHeaders,
+            'Content-Type': 'application/json'
+          } 
         }
       );
-    }
-
-    const { tmdbId, title, year, country = 'us' } = body;
-
-    if (!title || !year) {
-      console.error('Missing required parameters:', { title, year });
-      return new Response(
-        JSON.stringify({
-          result: [],
-          error: 'Missing required parameters: title and year are required'
-        }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200
-        }
-      );
-    }
-
-    // Get available streaming services for the country
-    const availableServices = await getStreamingServices(country);
-    const serviceNames = availableServices.map(s => s.name);
-
-    console.log('Available streaming services for country:', serviceNames);
-
-    const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
-    if (!geminiApiKey) {
-      console.error('GEMINI_API_KEY not configured');
-      return new Response(
-        JSON.stringify({
-          result: [],
-          error: 'GEMINI_API_KEY not configured'
-        }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200
-        }
-      );
-    }
-
-    // Add initial delay to help prevent rate limiting
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    console.log('Initializing Gemini API...');
-    const genAI = new GoogleGenerativeAI(geminiApiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-
-    const prompt = `Find streaming services where the movie "${title}" (${year}) is available for streaming in ${country.toUpperCase()}. Only return a list of streaming service names from these options: ${serviceNames.join(', ')}. Do not include any explanation or additional text, just the service names separated by commas.`;
-
-    console.log('Making request to Gemini API with prompt:', prompt);
-
-    let result;
-    try {
-      result = await fetchWithRetry(async () => {
-        const response = await model.generateContent(prompt);
-        const text = response.response.text();
-        console.log('Raw Gemini API response:', text);
-        return text;
-      });
-    } catch (apiError) {
-      console.error('Error calling Gemini API:', apiError);
       
-      if (apiError.message?.includes('quota') || apiError.message?.includes('rate limit')) {
-        return new Response(
-          JSON.stringify({
-            result: [],
-            error: 'Rate limit exceeded',
-            message: 'Please try again in 60 seconds',
-            retryAfter: 60
-          }),
-          {
-            headers: {
-              ...corsHeaders,
-              'Content-Type': 'application/json',
-              'Retry-After': '60'
-            },
-            status: 200
-          }
-        );
-      }
-      
-      return new Response(
-        JSON.stringify({
-          result: [],
-          error: 'Gemini API error',
-          message: apiError.message
-        }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200
-        }
-      );
+    } catch (error) {
+      console.error('Error parsing Gemini response:', error, 'Raw response:', text);
+      throw new Error('Failed to parse Gemini response');
     }
-
-    if (!result) {
-      return new Response(
-        JSON.stringify({
-          result: [],
-          error: 'Empty response from Gemini API'
-        }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200
-        }
-      );
-    }
-
-    const services = result
-      .split(',')
-      .map(s => s.trim())
-      .filter(s => s.length > 0 && serviceNames.includes(s));
-
-    console.log('Processed streaming services:', services);
-
-    // Save the streaming availability data
-    if (services.length > 0) {
-      await saveStreamingAvailability(tmdbId, services, country);
-    }
-
-    // Map services to their logos
-    const servicesWithLogos = services.map(service => {
-      const serviceInfo = availableServices.find(s => s.name === service);
-      return {
-        service,
-        link: `https://${service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch/${tmdbId}`
-      };
-    });
-
-    return new Response(
-      JSON.stringify({
-        result: servicesWithLogos
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    );
-
+    
   } catch (error) {
-    console.error('Unhandled error in edge function:', error);
+    console.error('Error in streaming-availability-gemini function:', error);
+    
     return new Response(
-      JSON.stringify({
-        result: [],
-        error: 'Internal server error',
-        message: error.message
+      JSON.stringify({ 
+        error: error instanceof Error ? error.message : String(error),
+        services: []
       }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200
+      { 
+        status: 200, // Use 200 even for errors to avoid client-side crashes
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        } 
       }
     );
   }
 });
+
+// Helper function to get default service links based on service name and country
+function getDefaultServiceLink(serviceName: string, country: string): string {
+  const normalizedName = serviceName.toLowerCase().replace(/\s+/g, '');
+  const isPoland = country.toLowerCase() === 'pl';
+  
+  const serviceLinks: Record<string, string> = {
+    'netflix': isPoland ? 'https://www.netflix.com/pl/' : 'https://www.netflix.com',
+    'hbomax': isPoland ? 'https://www.max.com/pl' : 'https://www.max.com',
+    'disney+': isPoland ? 'https://www.disneyplus.com/pl' : 'https://www.disneyplus.com',
+    'disneyplus': isPoland ? 'https://www.disneyplus.com/pl' : 'https://www.disneyplus.com',
+    'amazonprimevideo': isPoland ? 'https://www.primevideo.com/region/eu/' : 'https://www.amazon.com/Prime-Video',
+    'primevideo': isPoland ? 'https://www.primevideo.com/region/eu/' : 'https://www.amazon.com/Prime-Video',
+    'appletv+': 'https://tv.apple.com',
+    'appletvplus': 'https://tv.apple.com',
+    'canal+': isPoland ? 'https://www.canalplus.com/pl/' : 'https://www.canalplus.com',
+    'canalplus': isPoland ? 'https://www.canalplus.com/pl/' : 'https://www.canalplus.com',
+    'player': 'https://player.pl',
+    'skyshowtime': isPoland ? 'https://www.skyshowtime.com/pl' : 'https://www.skyshowtime.com',
+    'hulu': 'https://www.hulu.com',
+    'paramountplus': 'https://www.paramountplus.com',
+    'peacock': 'https://www.peacocktv.com'
+  };
+  
+  return serviceLinks[normalizedName] || 'https://www.google.com/search?q=' + encodeURIComponent(`watch ${serviceName} ${country}`);
+}
