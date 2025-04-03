@@ -7,16 +7,20 @@ const API_BASE_URL = 'https://streaming-availability.p.rapidapi.com';
 
 // Get API keys from environment variables
 const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
+const TMDB_ACCESS_TOKEN = import.meta.env.VITE_TMDB_ACCESS_TOKEN;
 const RAPIDAPI_KEY = import.meta.env.VITE_RAPIDAPI_KEY;
 
 /**
- * Fetch the English title of a movie from TMDB API
+ * Fetch the English title of a movie from TMDB API using bearer token authentication
  */
 async function fetchMovieEnglishTitle(tmdbId: number): Promise<string | null> {
   try {
     const response = await axios.get(`https://api.themoviedb.org/3/movie/${tmdbId}`, {
+      headers: {
+        'Authorization': `Bearer ${TMDB_ACCESS_TOKEN}`,
+        'Content-Type': 'application/json'
+      },
       params: {
-        api_key: TMDB_API_KEY,
         language: 'en-US' // Force English language to get English title
       }
     });
@@ -29,6 +33,33 @@ async function fetchMovieEnglishTitle(tmdbId: number): Promise<string | null> {
   } catch (error) {
     console.error(`[ts-streaming] Error fetching English title for TMDB ID ${tmdbId}:`, error);
     return null;
+  }
+}
+
+/**
+ * Function to sleep/delay execution for error retries
+ */
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * Retry function with exponential backoff
+ */
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  retries = 3,
+  baseDelayMs = 1000
+): Promise<T> {
+  try {
+    return await fn();
+  } catch (error: any) {
+    if (retries === 0) {
+      throw error;
+    }
+    
+    const delay = baseDelayMs * Math.pow(2, 3 - retries);
+    console.log(`Retrying after ${delay}ms, ${retries} retries left`);
+    await sleep(delay);
+    return retryWithBackoff(fn, retries - 1, baseDelayMs);
   }
 }
 
@@ -58,10 +89,11 @@ export async function getTsStreamingAvailability(
       
       const options = {
         method: 'GET',
-        url: `${API_BASE_URL}/get/basic`,
+        url: `${API_BASE_URL}/v2/get/title`,
         params: {
           tmdb_id: String(tmdbId),
           country: streamingCountry.toLowerCase(),
+          type: 'movie',
           output_language: currentLang
         },
         headers: {
@@ -70,7 +102,7 @@ export async function getTsStreamingAvailability(
         }
       };
       
-      const response = await axios.request(options);
+      const response = await retryWithBackoff(() => axios.request(options));
       
       if (response.data && response.data.result && response.data.result.streamingInfo) {
         console.log(`[ts-streaming] Direct TMDB ID search successful`);
@@ -241,11 +273,11 @@ export async function searchMoviesWithStreaming(
     
     const options = {
       method: 'GET',
-      url: `${API_BASE_URL}/search/title`,
+      url: `${API_BASE_URL}/v2/search/title`,
       params: {
         title: searchTitle,
         country: streamingCountry.toLowerCase(),
-        show_type: 'movie',
+        type: 'movie',
         // Always keep output in the user's language
         output_language: currentLang
       },
@@ -258,7 +290,7 @@ export async function searchMoviesWithStreaming(
     console.log(`[ts-streaming] Searching for title: "${title}" (search using: "${searchTitle}") in country: ${streamingCountry}`);
     
     try {
-      const response = await axios.request(options);
+      const response = await retryWithBackoff(() => axios.request(options));
       
       if (!response.data) {
         console.log('[ts-streaming] Search returned no results');
