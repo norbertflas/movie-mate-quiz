@@ -65,7 +65,7 @@ async function retryWithBackoff<T>(
 
 /**
  * Get streaming availability for a movie from the API
- * Now uses English title for better compatibility with the Streaming Availability API
+ * Uses English title for better compatibility with the Streaming Availability API
  */
 export async function getTsStreamingAvailability(
   tmdbId: number,
@@ -83,9 +83,9 @@ export async function getTsStreamingAvailability(
     
     console.log(`[ts-streaming] Fetching streaming data for TMDB ID ${tmdbId}, Country: ${streamingCountry}`);
     
-    // Try direct TMDB ID search first
+    // Try direct TMDB ID search first using v2/get/title endpoint
     try {
-      console.log(`[ts-streaming] Trying direct TMDB ID search: ${tmdbId}`);
+      console.log(`[ts-streaming] Trying direct TMDB ID search with v2/get/title: ${tmdbId}`);
       
       const options = {
         method: 'GET',
@@ -144,21 +144,37 @@ export async function getTsStreamingAvailability(
     console.log(`[ts-streaming] Using search title: "${searchTitle}"`);
     
     try {
-      // Search by title
-      const searchResults = await searchMoviesWithStreaming(searchTitle, streamingCountry);
+      // Search by title using /shows/search/title endpoint
+      const searchOptions = {
+        method: 'GET',
+        url: `${API_BASE_URL}/shows/search/title`,
+        params: {
+          title: searchTitle,
+          country: streamingCountry.toLowerCase(),
+          type: 'movie',
+          output_language: currentLang
+        },
+        headers: {
+          'X-RapidAPI-Key': RAPIDAPI_KEY,
+          'X-RapidAPI-Host': 'streaming-availability.p.rapidapi.com'
+        }
+      };
       
-      if (searchResults && Array.isArray(searchResults.result) && searchResults.result.length > 0) {
+      console.log(`[ts-streaming] Searching with title: "${searchTitle}" using /shows/search/title`);
+      const searchResponse = await retryWithBackoff(() => axios.request(searchOptions));
+      
+      if (searchResponse.data && Array.isArray(searchResponse.data.result) && searchResponse.data.result.length > 0) {
         // Try to find exact match first
-        let matchedMovie = searchResults.result.find(movie => 
+        let matchedMovie = searchResponse.data.result.find(movie => 
           movie.tmdbId === tmdbId || 
           String(movie.tmdbId) === String(tmdbId) ||
           movie.title === searchTitle
         );
         
         // If no exact match, use the first result
-        if (!matchedMovie && searchResults.result.length > 0) {
+        if (!matchedMovie && searchResponse.data.result.length > 0) {
           console.log('[ts-streaming] No exact match found, using first result');
-          matchedMovie = searchResults.result[0];
+          matchedMovie = searchResponse.data.result[0];
         }
         
         if (matchedMovie && matchedMovie.streamingInfo && matchedMovie.streamingInfo[streamingCountry.toLowerCase()]) {
@@ -273,7 +289,7 @@ export async function searchMoviesWithStreaming(
     
     const options = {
       method: 'GET',
-      url: `${API_BASE_URL}/v2/search/title`,
+      url: `${API_BASE_URL}/shows/search/title`,
       params: {
         title: searchTitle,
         country: streamingCountry.toLowerCase(),
