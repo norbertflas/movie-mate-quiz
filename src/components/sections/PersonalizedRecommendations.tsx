@@ -1,7 +1,8 @@
+
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { MovieCard } from "@/components/MovieCard";
 import { Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -37,12 +38,14 @@ export const PersonalizedRecommendations = () => {
     gcTime: 10 * 60 * 1000,
     retry: 2,
     meta: {
-      onError: (error: Error) => {
-        toast({
-          title: t("errors.recommendationError"),
-          description: t("errors.tryAgain"),
-          variant: "destructive",
-        });
+      onSettled: (data, error) => {
+        if (error) {
+          toast({
+            title: t("recommendations.recommendationError"),
+            description: t("recommendations.tryAgain"),
+            variant: "destructive",
+          });
+        }
       }
     }
   });
@@ -60,7 +63,7 @@ export const PersonalizedRecommendations = () => {
       <Alert variant="destructive" className="mb-6">
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          {t("errors.recommendationError")}
+          {t("recommendations.recommendationError")}
         </AlertDescription>
       </Alert>
     );
@@ -94,6 +97,8 @@ export const PersonalizedRecommendations = () => {
               rating={movie.vote_average * 10}
               tmdbId={movie.id}
               explanations={movie.explanations}
+              // Remove streaming info from cards
+              streamingServices={[]}
             />
           </motion.div>
         ))}

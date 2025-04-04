@@ -43,6 +43,11 @@ export const PlatformFilter = ({
     fetchStreamingServices();
   }, [i18n.language, t, toast]);
 
+  // Debugging translation issues
+  console.log(`[PlatformFilter] Current language: ${i18n.language}`);
+  console.log(`[PlatformFilter] Filter label translation:`, t("filters.platform"));
+  console.log(`[PlatformFilter] Loading translation:`, t("common.loading"));
+
   return (
     <MovieFilterSection
       label={t("filters.platform")}

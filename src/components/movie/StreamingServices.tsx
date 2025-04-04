@@ -23,6 +23,7 @@ export const StreamingServices = ({ services }: StreamingServicesProps) => {
       try {
         if (!services || services.length === 0) {
           setAvailableServices([]);
+          setIsLoading(false);
           return;
         }
         
@@ -34,6 +35,7 @@ export const StreamingServices = ({ services }: StreamingServicesProps) => {
         if (!allServices || allServices.length === 0) {
           console.log('No streaming services found for region:', region);
           setAvailableServices([]);
+          setIsLoading(false);
           return;
         }
         
@@ -41,8 +43,9 @@ export const StreamingServices = ({ services }: StreamingServicesProps) => {
         // Use more flexible matching to handle slight name variations
         const filteredServices = allServices.filter(service => 
           services.some(s => {
-            const serviceName = s.toLowerCase().trim();
-            const dbServiceName = service.name.toLowerCase().trim();
+            // Normalize both strings for comparison: lowercase, remove spaces and special chars
+            const serviceName = s.toLowerCase().trim().replace(/[\s+]/g, '');
+            const dbServiceName = service.name.toLowerCase().trim().replace(/[\s+]/g, '');
             return serviceName === dbServiceName || 
                    dbServiceName.includes(serviceName) || 
                    serviceName.includes(dbServiceName);
@@ -87,11 +90,11 @@ export const StreamingServices = ({ services }: StreamingServicesProps) => {
 
   return (
     <div className="space-y-2">
-      <span className="text-sm font-semibold">{t("streaming.availableOn") || "Available on"}</span>
+      <span className="text-sm font-semibold">{t("streaming.availableOn")}</span>
       <div className="flex flex-wrap gap-2">
         {availableServices.map((service) => (
           <Badge key={service.id} variant="secondary">
-            {service.name}
+            {t(`services.${service.name.toLowerCase()}`, service.name)}
           </Badge>
         ))}
       </div>

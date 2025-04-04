@@ -93,6 +93,51 @@ export function useStreamingAvailability(tmdbId: number, title?: string, year?: 
         }
       }
       
+      // Try the DeepSeek AI API
+      try {
+        console.log('[hook] Attempting to fetch with DeepSeek AI');
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        
+        if (supabaseUrl && title) {
+          const aiResponse = await fetch(`${supabaseUrl}/functions/v1/streaming-availability-deepseek`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              tmdbId,
+              title,
+              year,
+              country
+            }),
+          });
+          
+          if (aiResponse.ok) {
+            const data = await aiResponse.json();
+            if (data?.result && data.result.length > 0) {
+              console.log(`[hook] DeepSeek API returned ${data.result.length} streaming services`);
+              
+              setState({
+                services: data.result.map((service: any) => ({
+                  ...service,
+                  source: 'deepseek-ai'
+                })),
+                isLoading: false,
+                error: null,
+                timestamp: Date.now(),
+                source: 'deepseek-ai',
+                requested: true
+              });
+              return;
+            } else {
+              console.log('[hook] DeepSeek AI returned no services, trying next method');
+            }
+          }
+        }
+      } catch (aiError) {
+        console.error('[hook] Error with DeepSeek AI, trying fallback:', aiError);
+      }
+      
       // Fall back to our refactored service
       console.log('[hook] Attempting to fetch with fallback service');
       const services = await getStreamingAvailability(tmdbId, title, year, country);
@@ -134,7 +179,6 @@ export function useStreamingAvailability(tmdbId: number, title?: string, year?: 
     }
   }, [tmdbId, title, year, country]);
 
-  // Auto-fetch if tmdbId is provided directly - this makes the component more flexible
   const refetch = useCallback(() => {
     setState(prev => ({
       ...prev,

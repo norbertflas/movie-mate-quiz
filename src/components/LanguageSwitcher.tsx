@@ -46,10 +46,8 @@ export const LanguageSwitcher = ({ variant = "default" }: LanguageSwitcherProps)
         className: "bg-gradient-to-r from-blue-500 to-purple-500 text-white",
       });
       
-      // Reload the page after a short delay to ensure all components refresh translations
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
+      // Force page reload to ensure all components refresh translations
+      window.location.reload();
     } catch (error) {
       console.error("Failed to change language:", error);
       toast({

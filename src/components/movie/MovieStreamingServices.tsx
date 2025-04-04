@@ -1,19 +1,28 @@
+
 import { Badge } from "../ui/badge";
 import { motion } from "framer-motion";
 import { Card } from "../ui/card";
 import { Skeleton } from "../ui/skeleton";
+import { useTranslation } from "react-i18next";
 
 export interface MovieStreamingServicesProps {
   services?: string[];
   isLoading?: boolean;
   onError?: () => void;
+  displayOnCard?: boolean; // New prop to control display on card or detail view
 }
 
 export const MovieStreamingServices = ({ 
   services = [], 
   isLoading = false,
-  onError 
+  onError,
+  displayOnCard = false // By default, don't show on cards
 }: MovieStreamingServicesProps) => {
+  const { t } = useTranslation();
+  
+  // If we're on a card and we've specified not to display, return null
+  if (displayOnCard === false) return null;
+
   if (isLoading) {
     return (
       <Card className="p-4 bg-background/50 backdrop-blur-sm">
@@ -45,7 +54,9 @@ export const MovieStreamingServices = ({
               variant="secondary" 
               className="flex items-center gap-2 px-3 py-1.5"
             >
-              <span className="font-medium">{service}</span>
+              <span className="font-medium">
+                {t(`services.${service.toLowerCase()}`, service)}
+              </span>
             </Badge>
           </motion.div>
         ))}

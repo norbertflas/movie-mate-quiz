@@ -33,9 +33,8 @@ i18n
     react: {
       useSuspense: false,
     },
-    keySeparator: false,
-    nsSeparator: false,
-    // Add debug option to help troubleshoot translation issues in development
+    // Fix: Remove keySeparator and nsSeparator settings which were causing issues
+    // debug option to help troubleshoot translation issues in development
     debug: import.meta.env.DEV,
   });
 

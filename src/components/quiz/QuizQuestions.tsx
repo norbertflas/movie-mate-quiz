@@ -6,7 +6,7 @@ import { X } from "lucide-react";
 import { motion } from "framer-motion";
 
 export const QuizQuestions = ({ questions, currentStep, onAnswer, answers, answerMap }: QuizQuestionsProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const currentQuestion = questions[currentStep];
 
   if (!currentQuestion) {
@@ -28,11 +28,27 @@ export const QuizQuestions = ({ questions, currentStep, onAnswer, answers, answe
     if (currentQuestion.id === "platforms") {
       return option;
     }
-    return t(option);
+    
+    // Make sure we have the full translation path
+    const translationKey = option.includes(".") ? option : `quiz.options.${option}`;
+    return t(translationKey, option);
   });
   
-  const questionText = t(currentQuestion.question);
-  const subtitleText = currentQuestion.subtitle ? t(currentQuestion.subtitle) : "";
+  // Make sure we have the full translation path for questions
+  const questionKey = currentQuestion.question.includes(".") ? 
+    currentQuestion.question : 
+    `quiz.questions.${currentQuestion.question}`;
+    
+  const subtitleKey = currentQuestion.subtitle && currentQuestion.subtitle.includes(".") ?
+    currentQuestion.subtitle :
+    currentQuestion.subtitle ? `quiz.questions.${currentQuestion.subtitle}` : "";
+    
+  const questionText = t(questionKey, currentQuestion.question);
+  const subtitleText = subtitleKey ? t(subtitleKey, "") : "";
+
+  console.log(`[Quiz] Rendering question: ${questionKey} -> ${questionText}`);
+  console.log(`[Quiz] Current language: ${i18n.language}`);
+  console.log(`[Quiz] Translated options:`, translatedOptions);
 
   return (
     <motion.div

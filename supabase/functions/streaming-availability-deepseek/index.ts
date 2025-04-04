@@ -58,10 +58,15 @@ serve(async (req) => {
     // Add delay to prevent rate limiting
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    const prompt = `Find streaming services where the movie "${title}" (${year}) is available for streaming in ${country.toUpperCase()}. Only return a list of streaming service names from these options: Netflix, Amazon Prime Video, Disney+, Hulu, Apple TV+, Max, Paramount+, Peacock. Do not include any explanation or additional text, just the service names separated by commas.`
+    // Construct a prompt that requests streaming services specific to the country
+    const countryName = country.toLowerCase() === 'pl' ? 'Poland' : 'United States';
+    const prompt = `Find streaming services where the movie "${title}" (${year}) is available for streaming in ${countryName}. 
+    If searching for Poland, include services like: Netflix, Amazon Prime Video, Disney+, Apple TV+, Max, Canal+, Player, HBO Max.
+    If searching for the US, include services like: Netflix, Amazon Prime Video, Disney+, Hulu, Apple TV+, Max, Paramount+, Peacock.
+    Do not include any explanation or additional text, just the service names separated by commas.`;
 
     console.log('Making request to DeepSeek API...');
-    console.log('Request details:', { title, year, country });
+    console.log('Request details:', { title, year, country, countryName });
     
     const controller = new AbortController();
     const timeout = setTimeout(() => {
@@ -135,12 +140,28 @@ serve(async (req) => {
         .filter((s: string) => s.length > 0);
       
       console.log('DeepSeek found streaming services:', services);
+      
+      // Generate appropriate streaming links based on country
+      const getStreamingLink = (service: string) => {
+        const serviceLower = service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '');
+        
+        if (country.toLowerCase() === 'pl') {
+          if (serviceLower.includes('canal')) return `https://www.canalplus.com/`;
+          if (serviceLower.includes('player')) return `https://player.pl/`;
+          if (serviceLower === 'hbomax' || serviceLower === 'hbo') return `https://www.max.com/`;
+        }
+        
+        return `https://${serviceLower}.com/watch/${tmdbId}`;
+      };
 
       return new Response(
         JSON.stringify({ 
           result: services.map((service: string) => ({
             service,
-            link: `https://${service.toLowerCase().replace(/\+/g, 'plus').replace(/\s/g, '')}.com/watch/${tmdbId}`
+            link: getStreamingLink(service),
+            available: true,
+            source: 'deepseek-ai',
+            type: 'subscription'
           }))
         }),
         { 
