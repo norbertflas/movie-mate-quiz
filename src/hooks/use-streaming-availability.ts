@@ -31,6 +31,7 @@ export function useStreamingAvailability(tmdbId: number, title?: string, year?: 
     requested: false
   });
 
+  // Determine the country code based on the current language
   const currentLang = i18n.language;
   const country = currentLang === 'pl' ? 'pl' : 'us';
 
@@ -56,7 +57,7 @@ export function useStreamingAvailability(tmdbId: number, title?: string, year?: 
       // Try using the TS Streaming Availability API first
       try {
         console.log('[hook] Attempting to fetch with TS API');
-        const tsServices = await getTsStreamingAvailability(tmdbId, country, title);
+        const tsServices = await getTsStreamingAvailability(tmdbId, country, title, year);
         if (tsServices && tsServices.length > 0) {
           console.log(`[hook] TS API returned ${tsServices.length} streaming services`);
           

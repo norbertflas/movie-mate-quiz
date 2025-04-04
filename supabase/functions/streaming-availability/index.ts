@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { tmdbId, country = 'us' } = await req.json()
+    const { tmdbId, country = 'us', title, year } = await req.json()
     const rapidApiKey = Deno.env.get('RAPIDAPI_KEY')
     
     if (!rapidApiKey) {
@@ -21,7 +21,7 @@ serve(async (req) => {
       throw new Error('RAPIDAPI_KEY not configured')
     }
 
-    console.log(`Fetching streaming availability for movie: ${tmdbId} in country: ${country}`)
+    console.log(`Fetching streaming availability for movie: ${tmdbId} in country: ${country}, title: ${title}, year: ${year}`)
 
     // Using the updated Streaming Availability API v2 endpoint
     const url = `https://streaming-availability.p.rapidapi.com/v2/get/title`
@@ -35,10 +35,8 @@ serve(async (req) => {
 
     // Construct the URL with query parameters
     const queryParams = new URLSearchParams({
-      tmdb_id: String(tmdbId),
-      country: country.toLowerCase(),
-      type: 'movie',
-      output_language: country.toLowerCase()
+      tmdb_id: `movie/${String(tmdbId)}`,
+      country: country.toLowerCase()
     })
     
     const fullUrl = `${url}?${queryParams.toString()}`
@@ -49,34 +47,45 @@ serve(async (req) => {
     if (!response.ok) {
       console.error(`API error: ${response.status} ${response.statusText}`)
       
-      // If we get a 404 (Not Found), try a different approach
-      if (response.status === 404) {
-        console.log('Received 404, attempting to fetch using TMDB API to get English title')
+      // If we get a 404 (Not Found) or any other error, try a title search
+      if (title) {
+        console.log('Attempting to fetch using title search')
         
         // Try to get English title from TMDB API
-        const tmdbResponse = await fetchMovieTitleFromTMDB(tmdbId)
+        let searchTitle = title;
+        let englishTitle = null;
         
-        if (tmdbResponse.title) {
-          console.log(`Got English title from TMDB: "${tmdbResponse.title}". Trying title search.`)
-          
-          // Use the title to search instead of direct TMDB ID lookup
-          const titleSearchResponse = await searchByTitle(tmdbResponse.title, country, rapidApiKey)
-          
-          if (titleSearchResponse) {
-            return new Response(
-              JSON.stringify({ 
-                result: titleSearchResponse,
-                source: 'title-search',
-                timestamp: new Date().toISOString()
-              }),
-              { 
-                headers: { 
-                  ...corsHeaders,
-                  'Content-Type': 'application/json'
-                } 
-              }
-            )
+        // If we're in a non-English locale, try to get the English title first from TMDB
+        if (country.toLowerCase() !== 'us' && country.toLowerCase() !== 'gb') {
+          try {
+            englishTitle = await fetchMovieTitleFromTMDB(tmdbId)
+            if (englishTitle && englishTitle.title) {
+              console.log(`Got English title from TMDB: "${englishTitle.title}". Using for search.`)
+              searchTitle = englishTitle.title
+            }
+          } catch (e) {
+            console.error('Error fetching English title:', e)
+            // Continue with original title
           }
+        }
+        
+        // Use the title (or English title if available) to search
+        const titleSearchResponse = await searchByTitle(searchTitle, country, rapidApiKey, year)
+        
+        if (titleSearchResponse) {
+          return new Response(
+            JSON.stringify({ 
+              result: titleSearchResponse,
+              source: 'title-search',
+              timestamp: new Date().toISOString()
+            }),
+            { 
+              headers: { 
+                ...corsHeaders,
+                'Content-Type': 'application/json'
+              } 
+            }
+          )
         }
       }
       
@@ -157,6 +166,7 @@ async function fetchMovieTitleFromTMDB(tmdbId: number) {
       return { title: null }
     }
     
+    // First try to get the English title specifically
     const url = `https://api.themoviedb.org/3/movie/${tmdbId}?api_key=${tmdbApiKey}&language=en-US`
     const response = await fetch(url)
     
@@ -177,15 +187,26 @@ async function fetchMovieTitleFromTMDB(tmdbId: number) {
 }
 
 // Helper function to search by title
-async function searchByTitle(title: string, country: string, rapidApiKey: string) {
+async function searchByTitle(title: string, country: string, rapidApiKey: string, year?: string) {
   try {
-    const url = 'https://streaming-availability.p.rapidapi.com/shows/search/title'
+    // Determine which API endpoint to use - v2/search/title is more modern
+    const url = 'https://streaming-availability.p.rapidapi.com/v2/search/title'
+    
+    // Set language parameter based on supported languages
+    const supportedLanguages = ['en', 'es', 'fr', 'de', 'it'];
+    const outputLanguage = supportedLanguages.includes(country.toLowerCase()) ? 
+                           country.toLowerCase() : 'en';
+    
     const queryParams = new URLSearchParams({
       title,
       country: country.toLowerCase(),
-      type: 'movie',
-      output_language: country.toLowerCase()
+      show_type: 'movie',
+      output_language: outputLanguage
     })
+    
+    if (year) {
+      queryParams.append('year', year)
+    }
     
     const options = {
       method: 'GET',
@@ -212,10 +233,23 @@ async function searchByTitle(title: string, country: string, rapidApiKey: string
       return null
     }
     
-    // Get the first movie's streaming info
-    const movie = data.result[0]
-    if (movie.streamingInfo && movie.streamingInfo[country.toLowerCase()]) {
-      const streamingOptions = movie.streamingInfo[country.toLowerCase()]
+    // Find the best match - if year is provided, try to match by year
+    let bestMatch = data.result[0];
+    
+    if (year && data.result.length > 1) {
+      const yearMatch = data.result.find(movie => 
+        movie.year === parseInt(year) || 
+        (movie.firstAirYear && movie.firstAirYear === parseInt(year))
+      );
+      
+      if (yearMatch) {
+        bestMatch = yearMatch;
+      }
+    }
+    
+    // Get the streaming info
+    if (bestMatch.streamingInfo && bestMatch.streamingInfo[country.toLowerCase()]) {
+      const streamingOptions = bestMatch.streamingInfo[country.toLowerCase()]
       
       return streamingOptions.map(option => ({
         service: option.service || '',

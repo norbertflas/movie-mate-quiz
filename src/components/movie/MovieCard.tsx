@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { CardContent } from "../ui/card";
 import { MovieCardContainer } from "./MovieCardContainer";
@@ -37,7 +38,7 @@ export const MovieCard = ({
   const { userRating, handleRating } = useMovieRating(title);
   
   // Only attempt to fetch streaming data if we have a valid tmdbId
-  const availabilityData = useStreamingAvailability(tmdbId && tmdbId > 0 ? tmdbId : 0);
+  const availabilityData = useStreamingAvailability(tmdbId && tmdbId > 0 ? tmdbId : 0, title, year);
 
   // Process streaming services to ensure they have the correct format
   const processedServices = streamingServices.map(service => {
@@ -150,50 +151,7 @@ export const MovieCard = ({
             </p>
           )}
           
-          <div className="mt-auto pt-2">
-            {availabilityData.isLoading ? (
-              <p className="text-xs font-medium text-muted-foreground mb-2">
-                {safeTranslate("streaming.loading", "Loading streaming info...")}
-              </p>
-            ) : availableServices && availableServices.length > 0 ? (
-              <>
-                <p className="text-xs font-medium text-muted-foreground mb-2">
-                  {safeTranslate("streaming.availableOn", "Available on")}
-                  <span className="text-xs ml-1 opacity-75">
-                    • {safeTranslate("streaming.lastChecked", "Last checked")}: {lastChecked.split(',')[0]}
-                  </span>
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {availableServices.slice(0, 3).map((service, index) => (
-                    <Badge key={index} variant="outline" className="text-xs px-2 py-0.5 flex items-center gap-1">
-                      <img 
-                        src={service.logo || getServiceIconPath(service.service)}
-                        alt={service.service}
-                        className="w-3 h-3"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = "/streaming-icons/default.svg";
-                        }}
-                      />
-                      {normalizeServiceName(service.service)}
-                    </Badge>
-                  ))}
-                  {availableServices.length > 3 && (
-                    <Badge variant="outline" className="text-xs px-2 py-0.5">
-                      +{availableServices.length - 3}
-                    </Badge>
-                  )}
-                </div>
-              </>
-            ) : (
-              <p className="text-xs font-medium text-muted-foreground mb-2">
-                {safeTranslate("streaming.notAvailable", "Not available for streaming")}
-                <span className="text-xs ml-1 opacity-75">
-                  • {safeTranslate("streaming.lastChecked", "Last checked")}: {lastChecked.split(',')[0]}
-                </span>
-              </p>
-            )}
-          </div>
+          {/* Removed streaming availability info from card view as requested */}
         </CardContent>
       </div>
 

@@ -9,6 +9,7 @@ import {
 import { Languages } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 const languages = [
   { code: "en", label: "English" },
@@ -22,31 +23,41 @@ interface LanguageSwitcherProps {
 export const LanguageSwitcher = ({ variant = "default" }: LanguageSwitcherProps) => {
   const { t, i18n } = useTranslation();
   const { toast } = useToast();
+  const [isChanging, setIsChanging] = useState(false);
 
   const handleLanguageChange = async (langCode: string) => {
+    if (langCode === i18n.language || isChanging) return;
+    
     try {
+      setIsChanging(true);
+      
+      // Change language without page reload first
       await i18n.changeLanguage(langCode);
       localStorage.setItem("language", langCode);
       
+      // Determine message by language to ensure it's in the new language
       const message = langCode === 'pl' ? 
         'Pomyślnie zmieniono język na Polski' : 
         'Language successfully changed to English';
       
       toast({
-        title: t("languageChanged"),
+        title: langCode === 'pl' ? 'Język zmieniony' : 'Language changed',
         description: message,
         className: "bg-gradient-to-r from-blue-500 to-purple-500 text-white",
       });
       
-      // Force reload to ensure all components update their translations
-      window.location.reload();
+      // Reload the page after a short delay to ensure all components refresh translations
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
     } catch (error) {
       console.error("Failed to change language:", error);
       toast({
         title: t("error"),
-        description: t("languageChangeError"),
+        description: t("languageChangeError", "Failed to change language"),
         variant: "destructive",
       });
+      setIsChanging(false);
     }
   };
 
@@ -54,7 +65,7 @@ export const LanguageSwitcher = ({ variant = "default" }: LanguageSwitcherProps)
   const renderButton = () => {
     if (variant === "minimal") {
       return (
-        <Button variant="ghost" size="sm" className="flex items-center gap-2">
+        <Button variant="ghost" size="sm" className="flex items-center gap-2" disabled={isChanging}>
           <Languages className="h-4 w-4" />
           <span>{i18n.language.toUpperCase()}</span>
         </Button>
@@ -62,9 +73,9 @@ export const LanguageSwitcher = ({ variant = "default" }: LanguageSwitcherProps)
     }
     
     return (
-      <Button variant="ghost" size="icon">
+      <Button variant="ghost" size="icon" disabled={isChanging}>
         <Languages className="h-4 w-4" />
-        <span className="sr-only">{t("changeLanguage")}</span>
+        <span className="sr-only">{t("common.changeLanguage", "Change language")}</span>
       </Button>
     );
   };
@@ -80,6 +91,7 @@ export const LanguageSwitcher = ({ variant = "default" }: LanguageSwitcherProps)
             key={lang.code}
             onClick={() => handleLanguageChange(lang.code)}
             className={i18n.language === lang.code ? "bg-accent" : ""}
+            disabled={isChanging || i18n.language === lang.code}
           >
             {lang.label}
           </DropdownMenuItem>
