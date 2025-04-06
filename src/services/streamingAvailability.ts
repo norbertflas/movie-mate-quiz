@@ -45,7 +45,7 @@ async function retryWithBackoff<T>(
   }
 }
 
-// Implementation using the Movie of the Night Streaming Availability API
+// Implementation using the Movie of the Night Streaming Availability API (v4)
 async function fetchStreamingAvailabilityAPI(
   tmdbId: number,
   title?: string,
@@ -72,8 +72,9 @@ async function fetchStreamingAvailabilityAPI(
           params: {
             title: title,
             country: country.toLowerCase(),
-            output_language: i18n.language === 'pl' ? 'pl' : 'en', // Fixed syntax error here
+            output_language: i18n.language === 'pl' ? 'pl' : 'en',
             show_type: 'movie',
+            series_granularity: 'show',
             year: year
           },
           headers: {
@@ -97,19 +98,22 @@ async function fetchStreamingAvailabilityAPI(
             
             const services: StreamingPlatformData[] = [];
             
-            // Extract streaming info
+            // Extract streaming info - API v4 format
             if (matchingMovie.streamingInfo && matchingMovie.streamingInfo[country.toLowerCase()]) {
               const streamingOptions = matchingMovie.streamingInfo[country.toLowerCase()];
               
-              for (const option of streamingOptions) {
-                services.push({
-                  service: option.service,
-                  available: true,
-                  link: option.link,
-                  logo: `/streaming-icons/${option.service.toLowerCase()}.svg`,
-                  type: option.type || 'subscription',
-                  source: 'rapid-api'
-                });
+              // In v4, streamingInfo structure is {service: [{link, type}]} instead of array of items
+              for (const [service, options] of Object.entries(streamingOptions)) {
+                if (Array.isArray(options) && options.length > 0) {
+                  services.push({
+                    service,
+                    available: true,
+                    link: options[0].link,
+                    logo: `/streaming-icons/${service.toLowerCase()}.svg`,
+                    type: options[0].type || 'subscription',
+                    source: 'rapid-api'
+                  });
+                }
               }
             }
             
@@ -130,16 +134,14 @@ async function fetchStreamingAvailabilityAPI(
       }
     }
     
-    // If title search failed, try direct TMDB ID search with v2/get/title endpoint
+    // If title search failed, try direct TMDB ID search with the v4 shows/movie endpoint
     try {
-      console.log('Trying direct TMDB ID lookup with endpoint v2/get/title');
+      console.log('Trying direct TMDB ID lookup with v4 endpoint shows/movie');
       const options = {
         method: 'GET',
-        url: 'https://streaming-availability.p.rapidapi.com/v2/get/title',
+        url: `https://streaming-availability.p.rapidapi.com/shows/movie/${tmdbId}`,
         params: {
-          tmdb_id: String(tmdbId),
-          country: country.toLowerCase(),
-          type: 'movie'
+          country: country.toLowerCase()
         },
         headers: {
           'X-RapidAPI-Key': RAPIDAPI_KEY,
@@ -149,22 +151,25 @@ async function fetchStreamingAvailabilityAPI(
       
       const response = await retryWithBackoff(() => axios.request(options));
       
-      if (response.data?.result?.streamingInfo) {
+      if (response.data?.streamingInfo) {
         console.log('Got streaming info from direct TMDB ID lookup');
         
         const services: StreamingPlatformData[] = [];
-        const countryServices = response.data.result.streamingInfo[country.toLowerCase()];
+        const countryServices = response.data.streamingInfo[country.toLowerCase()];
         
-        if (countryServices && Array.isArray(countryServices)) {
-          for (const option of countryServices) {
-            services.push({
-              service: option.service,
-              available: true,
-              link: option.link,
-              logo: `/streaming-icons/${option.service.toLowerCase()}.svg`,
-              type: option.type || 'subscription',
-              source: 'rapid-api-direct'
-            });
+        if (countryServices) {
+          // In v4, the structure is {serviceName: [{link, type}]}
+          for (const [service, options] of Object.entries(countryServices)) {
+            if (Array.isArray(options) && options.length > 0) {
+              services.push({
+                service,
+                available: true,
+                link: options[0].link,
+                logo: `/streaming-icons/${service.toLowerCase()}.svg`,
+                type: options[0].type || 'subscription',
+                source: 'rapid-api-direct'
+              });
+            }
           }
         }
         
@@ -200,7 +205,7 @@ export async function getStreamingAvailability(
     // Try with our streaming availability Supabase function first
     try {
       const { data, error } = await supabase.functions.invoke('streaming-availability', {
-        body: { tmdbId, country }
+        body: { tmdbId, country, title, year }
       });
       
       if (error) {
@@ -220,8 +225,9 @@ export async function getStreamingAvailability(
       console.error('Exception calling streaming-availability function:', error);
     }
     
-    // Try the RapidAPI endpoint
+    // Try the RapidAPI endpoint with v4 API
     try {
+      console.log('[hook] Attempting to fetch with RapidAPI');
       const services = await fetchStreamingAvailabilityAPI(tmdbId, title, year, country);
       if (services.length > 0) {
         console.log(`Found ${services.length} streaming services via RapidAPI`);
@@ -229,6 +235,27 @@ export async function getStreamingAvailability(
       }
     } catch (error) {
       console.error('Error with RapidAPI fallback:', error);
+    }
+    
+    // Try DeepSeek API if available through our edge function
+    try {
+      console.log('[hook] Attempting to fetch with DeepSeek AI');
+      const { data, error } = await supabase.functions.invoke('streaming-availability-deepseek', {
+        body: { tmdbId, title, year, country }
+      });
+      
+      if (error) {
+        console.error('Error calling DeepSeek function:', error);
+      } else if (data && Array.isArray(data.result) && data.result.length > 0) {
+        console.log(`Received ${data.result.length} streaming services from DeepSeek`);
+        
+        return data.result.map((service: any) => ({
+          ...service,
+          source: 'deepseek-ai'
+        }));
+      }
+    } catch (error) {
+      console.error('Exception calling DeepSeek function:', error);
     }
     
     // Try Gemini API if available through our edge function
@@ -272,7 +299,7 @@ export async function getStreamingAvailability(
   }
 }
 
-// New function to fetch data from Watchmode API via our edge function
+// Function to fetch data from Watchmode API via our edge function
 async function fetchWatchmodeData(
   tmdbId: number,
   title?: string,

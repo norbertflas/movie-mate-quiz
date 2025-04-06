@@ -74,8 +74,7 @@ export function useStreamingAvailability(tmdbId: number, title?: string, year?: 
     console.log(`[hook] Fetching streaming availability for TMDB ID: ${tmdbId}, title: ${title}, year: ${year}, country: ${country}`);
     
     try {
-      // We'll simplify the approach and rely primarily on our fallback service
-      // since the external APIs are giving errors
+      // Use our combined service that tries multiple APIs and fallbacks
       const services = await getStreamingAvailability(tmdbId, title, year, country);
       
       console.log(`[hook] Received ${services.length} streaming services from fallback`);

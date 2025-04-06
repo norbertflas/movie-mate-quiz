@@ -35,13 +35,12 @@ serve(async (req) => {
 
     console.log(`Fetching streaming availability for movie: ${tmdbId} in country: ${country}, title: ${title}, year: ${year}`)
 
-    // Using the updated Streaming Availability API v2 endpoint
-    const url = `https://streaming-availability.p.rapidapi.com/v2/get/title`
+    // Using the updated Streaming Availability API v4 endpoint
+    const url = `https://streaming-availability.p.rapidapi.com/shows/movie/${String(tmdbId)}`
     
     try {
       // Construct the URL with query parameters
       const queryParams = new URLSearchParams({
-        tmdb_id: `movie/${String(tmdbId)}`,
         country: country.toLowerCase()
       })
       
@@ -123,19 +122,22 @@ serve(async (req) => {
       
       console.log('API Response structure:', Object.keys(data))
 
-      // Extract streaming services from the response using the updated API structure
+      // Extract streaming services from the response using the updated API v4 structure
       let streamingServices = []
       
-      if (data?.result?.streamingInfo && data.result.streamingInfo[country.toLowerCase()]) {
-        const countryStreamingOptions = data.result.streamingInfo[country.toLowerCase()]
+      if (data.streamingInfo && data.streamingInfo[country.toLowerCase()]) {
+        const countryStreamingOptions = data.streamingInfo[country.toLowerCase()]
         
         // Extract streaming service information
-        streamingServices = countryStreamingOptions.map(option => ({
-          service: option.service || '',
-          link: option.link || '',
-          available: true,
-          type: option.type || 'subscription'
-        })).filter(service => service.service && service.link)
+        streamingServices = Object.entries(countryStreamingOptions).map(([service, options]) => {
+          const option = options[0]; // Take the first option for each service
+          return {
+            service,
+            link: option?.link || '',
+            available: true,
+            type: option?.type || 'subscription'
+          };
+        }).filter(service => service.service && service.link)
         
         console.log(`Found ${streamingServices.length} streaming services for movie ${tmdbId}`)
       } else {
@@ -228,11 +230,11 @@ async function fetchMovieTitleFromTMDB(tmdbId: number) {
   }
 }
 
-// Helper function to search by title
+// Helper function to search by title - updated to v4 API format
 async function searchByTitle(title: string, country: string, rapidApiKey: string, year?: string) {
   try {
-    // Determine which API endpoint to use - v2/search/title is more modern
-    const url = 'https://streaming-availability.p.rapidapi.com/v2/search/title'
+    // Use v4 endpoint for title search
+    const url = 'https://streaming-availability.p.rapidapi.com/shows/search/title'
     
     // Set language parameter based on supported languages
     const supportedLanguages = ['en', 'es', 'fr', 'de', 'it'];
@@ -243,7 +245,8 @@ async function searchByTitle(title: string, country: string, rapidApiKey: string
       title,
       country: country.toLowerCase(),
       show_type: 'movie',
-      output_language: outputLanguage
+      output_language: outputLanguage,
+      series_granularity: 'show'
     })
     
     if (year) {
@@ -297,16 +300,20 @@ async function searchByTitle(title: string, country: string, rapidApiKey: string
         }
       }
       
-      // Get the streaming info
+      // Get the streaming info - API v4 format
       if (bestMatch.streamingInfo && bestMatch.streamingInfo[country.toLowerCase()]) {
-        const streamingOptions = bestMatch.streamingInfo[country.toLowerCase()]
+        const countryInfo = bestMatch.streamingInfo[country.toLowerCase()];
         
-        return streamingOptions.map(option => ({
-          service: option.service || '',
-          link: option.link || '',
-          available: true,
-          type: option.type || 'subscription'
-        })).filter(service => service.service && service.link)
+        // API v4 returns an object with service names as keys, each containing an array of offerings
+        return Object.entries(countryInfo).map(([service, options]) => {
+          const option = options[0]; // Take first option for each service
+          return {
+            service,
+            link: option?.link || '',
+            available: true,
+            type: option?.type || 'subscription'
+          };
+        }).filter(service => service.service && service.link);
       }
       
       return null
@@ -320,3 +327,4 @@ async function searchByTitle(title: string, country: string, rapidApiKey: string
     return null
   }
 }
+

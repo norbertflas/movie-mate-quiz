@@ -19,11 +19,11 @@ export async function getTsStreamingAvailability(tmdbId: number, country: string
     const currentLanguage = i18n.language;
     const apiLanguage = supportedLanguages.includes(currentLanguage) ? currentLanguage : 'en';
     
-    // Step 1: Try direct search by TMDB ID first
+    // Step 1: Try direct search by TMDB ID first - using v4 API
     try {
-      const response = await axios.get('https://streaming-availability.p.rapidapi.com/v2/get/title', {
+      console.log('[TS API] Attempting to fetch with TS API');
+      const response = await axios.get(`https://streaming-availability.p.rapidapi.com/shows/movie/${tmdbId}`, {
         params: {
-          tmdb_id: `movie/${tmdbId}`,
           country: country.toLowerCase()
         },
         headers: {
@@ -32,19 +32,22 @@ export async function getTsStreamingAvailability(tmdbId: number, country: string
         }
       });
       
-      if (response.data?.result?.streamingInfo) {
-        const countryInfo = response.data.result.streamingInfo[country.toLowerCase()];
+      if (response.data?.streamingInfo) {
+        const countryInfo = response.data.streamingInfo[country.toLowerCase()];
         
-        if (countryInfo && countryInfo.length > 0) {
-          console.log(`[TS API] Found ${countryInfo.length} streaming services for TMDB ID ${tmdbId}`);
+        if (countryInfo && Object.keys(countryInfo).length > 0) {
+          console.log(`[TS API] Found ${Object.keys(countryInfo).length} streaming services for TMDB ID ${tmdbId}`);
           
-          return countryInfo.map((info: any) => ({
-            service: info.service,
-            link: info.link,
-            available: true,
-            source: 'ts-api',
-            type: info.type || 'subscription'
-          }));
+          return Object.entries(countryInfo).map(([service, options]) => {
+            const option = options[0]; // Take first option
+            return {
+              service,
+              link: option?.link || '',
+              available: true,
+              source: 'ts-api',
+              type: option?.type || 'subscription'
+            };
+          }).filter(s => s.service && s.link);
         }
       }
       
@@ -59,11 +62,12 @@ export async function getTsStreamingAvailability(tmdbId: number, country: string
       try {
         console.log(`[TS API] Attempting title search for: "${title}" in country: ${country}`);
         
-        const titleResponse = await axios.get('https://streaming-availability.p.rapidapi.com/v2/search/title', {
+        const titleResponse = await axios.get('https://streaming-availability.p.rapidapi.com/shows/search/title', {
           params: {
             title,
             country: country.toLowerCase(),
             show_type: 'movie',
+            series_granularity: 'show',
             // Use a supported language for the API, defaulting to English
             output_language: apiLanguage
           },
@@ -92,15 +96,18 @@ export async function getTsStreamingAvailability(tmdbId: number, country: string
           if (match?.streamingInfo && match.streamingInfo[country.toLowerCase()]) {
             const countryInfo = match.streamingInfo[country.toLowerCase()];
             
-            console.log(`[TS API] Found ${countryInfo.length} streaming services via title search`);
+            console.log(`[TS API] Found ${Object.keys(countryInfo).length} streaming services via title search`);
             
-            return countryInfo.map((info: any) => ({
-              service: info.service,
-              link: info.link,
-              available: true,
-              source: 'ts-api-title-search',
-              type: info.type || 'subscription'
-            }));
+            return Object.entries(countryInfo).map(([service, options]) => {
+              const option = options[0]; // Take the first option
+              return {
+                service,
+                link: option?.link || '',
+                available: true,
+                source: 'ts-api-title-search',
+                type: option?.type || 'subscription'
+              };
+            }).filter(s => s.service && s.link);
           }
         }
         
