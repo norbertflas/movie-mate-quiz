@@ -16,7 +16,7 @@ export interface StreamingAvailabilityState {
   requested: boolean;
 }
 
-// Check if localStorage is available to avoid errors
+// Check if localStorage is available to avoid errors in restricted contexts
 const isLocalStorageAvailable = () => {
   try {
     const testKey = '__test__';
@@ -43,7 +43,6 @@ export function useStreamingAvailability(tmdbId: number, title?: string, year?: 
   });
 
   // Determine the country code based on the current language
-  // Use a try-catch block to avoid potential issues with i18n
   let country = 'us';
   try {
     const currentLang = i18n?.language;

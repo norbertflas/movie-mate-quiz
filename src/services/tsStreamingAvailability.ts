@@ -16,7 +16,7 @@ export async function getTsStreamingAvailability(tmdbId: number, country: string
     // Determine the supported language for the API
     // The API supports limited languages, so we'll default to English for unsupported languages
     const supportedLanguages = ['en', 'es', 'fr', 'de', 'it'];
-    const currentLanguage = i18n.language;
+    const currentLanguage = i18n.language?.substring(0, 2) || 'en';
     const apiLanguage = supportedLanguages.includes(currentLanguage) ? currentLanguage : 'en';
     
     // Step 1: Try direct search by TMDB ID first - using v4 API

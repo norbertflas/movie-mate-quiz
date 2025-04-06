@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import type { StreamingPlatformData, StreamingAvailabilityCache } from "@/types/streaming";
 import axios from 'axios';
@@ -66,13 +65,19 @@ async function fetchStreamingAvailabilityAPI(
     if (title) {
       try {
         console.log('Using title search with:', title);
+        
+        // Use only supported languages for output_language parameter
+        // The API supports a limited set of languages: en, es, fr, de, it
+        const supportedLanguages = ['en', 'es', 'fr', 'de', 'it'];
+        const outputLanguage = supportedLanguages.includes(i18n.language) ? i18n.language : 'en';
+        
         const options = {
           method: 'GET',
           url: 'https://streaming-availability.p.rapidapi.com/shows/search/title',
           params: {
             title: title,
             country: country.toLowerCase(),
-            output_language: i18n.language === 'pl' ? 'pl' : 'en',
+            output_language: outputLanguage, // Use supported language
             show_type: 'movie',
             series_granularity: 'show',
             year: year
@@ -235,27 +240,6 @@ export async function getStreamingAvailability(
       }
     } catch (error) {
       console.error('Error with RapidAPI fallback:', error);
-    }
-    
-    // Try DeepSeek API if available through our edge function
-    try {
-      console.log('[hook] Attempting to fetch with DeepSeek AI');
-      const { data, error } = await supabase.functions.invoke('streaming-availability-deepseek', {
-        body: { tmdbId, title, year, country }
-      });
-      
-      if (error) {
-        console.error('Error calling DeepSeek function:', error);
-      } else if (data && Array.isArray(data.result) && data.result.length > 0) {
-        console.log(`Received ${data.result.length} streaming services from DeepSeek`);
-        
-        return data.result.map((service: any) => ({
-          ...service,
-          source: 'deepseek-ai'
-        }));
-      }
-    } catch (error) {
-      console.error('Exception calling DeepSeek function:', error);
     }
     
     // Try Gemini API if available through our edge function

@@ -1,4 +1,3 @@
-
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 
 const corsHeaders = {
@@ -327,4 +326,3 @@ async function searchByTitle(title: string, country: string, rapidApiKey: string
     return null
   }
 }
-
