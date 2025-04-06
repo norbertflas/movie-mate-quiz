@@ -1,7 +1,6 @@
 
 import { useState, useCallback } from "react";
 import { getStreamingAvailability } from "@/services/streamingAvailability";
-import { getTsStreamingAvailability } from "@/services/tsStreamingAvailability";
 import type { StreamingPlatformData } from "@/types/streaming";
 import i18n from "@/i18n";
 
@@ -16,6 +15,18 @@ export interface StreamingAvailabilityState {
   source: string;
   requested: boolean;
 }
+
+// Check if localStorage is available to avoid errors
+const isLocalStorageAvailable = () => {
+  try {
+    const testKey = '__test__';
+    localStorage.setItem(testKey, testKey);
+    localStorage.removeItem(testKey);
+    return true;
+  } catch (e) {
+    return false;
+  }
+};
 
 /**
  * Hook for fetching streaming availability data for a movie
@@ -32,8 +43,14 @@ export function useStreamingAvailability(tmdbId: number, title?: string, year?: 
   });
 
   // Determine the country code based on the current language
-  const currentLang = i18n.language;
-  const country = currentLang === 'pl' ? 'pl' : 'us';
+  // Use a try-catch block to avoid potential issues with i18n
+  let country = 'us';
+  try {
+    const currentLang = i18n?.language;
+    country = currentLang === 'pl' ? 'pl' : 'us';
+  } catch (e) {
+    console.warn('Error accessing i18n language, defaulting to "us"');
+  }
 
   const fetchStreamingData = useCallback(async () => {
     // If we're already in a loading state or invalid TMDB ID, don't proceed

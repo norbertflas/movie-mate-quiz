@@ -8,6 +8,12 @@ import LanguageDetector from "i18next-browser-languagedetector";
 // Get saved language from localStorage or use browser settings with fallback to 'en'
 const getSavedLanguage = () => {
   try {
+    // Check if localStorage is available 
+    const testKey = '__test__';
+    localStorage.setItem(testKey, testKey);
+    localStorage.removeItem(testKey);
+    
+    // If we get here, localStorage is available
     const savedLanguage = localStorage.getItem("language");
     if (savedLanguage) return savedLanguage;
     

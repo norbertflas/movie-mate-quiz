@@ -6,18 +6,33 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const RETRY_ATTEMPTS = 3;
-const RETRY_DELAY = 2000; // 2 seconds
+const RETRY_ATTEMPTS = 2;
+const RETRY_DELAY = 1000; // 1 second
 
 async function fetchWithRetry(url: string, options: RequestInit, attempts: number = RETRY_ATTEMPTS): Promise<Response> {
   try {
-    const response = await fetch(url, options);
-    if (!response.ok && attempts > 1) {
-      console.log(`Attempt failed, retrying... (${attempts - 1} attempts left)`);
-      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
-      return fetchWithRetry(url, options, attempts - 1);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+    
+    const fetchOptions = {
+      ...options,
+      signal: controller.signal
+    };
+    
+    try {
+      const response = await fetch(url, fetchOptions);
+      clearTimeout(timeout);
+      
+      if (!response.ok && attempts > 1) {
+        console.log(`Attempt failed, retrying... (${attempts - 1} attempts left)`);
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+        return fetchWithRetry(url, options, attempts - 1);
+      }
+      return response;
+    } catch (error) {
+      clearTimeout(timeout);
+      throw error;
     }
-    return response;
   } catch (error) {
     if (attempts > 1) {
       console.log(`Fetch failed, retrying... (${attempts - 1} attempts left)`);
@@ -56,7 +71,7 @@ serve(async (req) => {
     }
 
     // Add delay to prevent rate limiting
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 500));
 
     // Construct a prompt that requests streaming services specific to the country
     const countryName = country.toLowerCase() === 'pl' ? 'Poland' : 'United States';
@@ -68,12 +83,6 @@ serve(async (req) => {
     console.log('Making request to DeepSeek API...');
     console.log('Request details:', { title, year, country, countryName });
     
-    const controller = new AbortController();
-    const timeout = setTimeout(() => {
-      controller.abort();
-      console.log('Request timed out');
-    }, 15000); // 15 second timeout
-
     try {
       const response = await fetchWithRetry('https://api.deepseek.com/v1/chat/completions', {
         method: 'POST',
@@ -86,11 +95,8 @@ serve(async (req) => {
           messages: [{ role: 'user', content: prompt }],
           temperature: 0.2,
           max_tokens: 100
-        }),
-        signal: controller.signal
+        })
       });
-
-      clearTimeout(timeout);
 
       if (!response.ok) {
         console.error(`DeepSeek API error: ${response.status} ${response.statusText}`);
@@ -151,7 +157,7 @@ serve(async (req) => {
           if (serviceLower === 'hbomax' || serviceLower === 'hbo') return `https://www.max.com/`;
         }
         
-        return `https://${serviceLower}.com/watch/${tmdbId}`;
+        return `https://${serviceLower}.com`;
       };
 
       return new Response(
@@ -172,7 +178,6 @@ serve(async (req) => {
         }
       );
     } catch (fetchError) {
-      clearTimeout(timeout);
       console.error('Fetch error:', fetchError);
       // Return empty result instead of throwing
       return new Response(

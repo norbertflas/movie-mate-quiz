@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { CardContent } from "./ui/card";
 import { MovieCardContainer } from "./movie/MovieCardContainer";
@@ -60,15 +61,6 @@ export const MovieCard = ({
   const availableServices = availabilityData.services?.length > 0
     ? availabilityData.services
     : formattedPropServices;
-    
-  const lastChecked = availabilityData.timestamp 
-    ? new Date(availabilityData.timestamp).toLocaleString() 
-    : new Date().toLocaleString();
-
-  const safeTranslate = (key: string, defaultValue: string): string => {
-    const translated = t(key);
-    return translated !== key ? translated : defaultValue;
-  };
 
   const handleCardClick = () => {
     setIsDetailsOpen(true);
@@ -143,51 +135,6 @@ export const MovieCard = ({
               {description}
             </p>
           )}
-          
-          <div className="mt-auto pt-2">
-            {availabilityData.isLoading ? (
-              <p className="text-xs font-medium text-muted-foreground mb-2">
-                {safeTranslate("streaming.loading", "Loading streaming info...")}
-              </p>
-            ) : availableServices && availableServices.length > 0 ? (
-              <>
-                <p className="text-xs font-medium text-muted-foreground mb-2">
-                  {safeTranslate("streaming.availableOn", "Available on")}
-                  <span className="text-xs ml-1 opacity-75">
-                    • {safeTranslate("streaming.lastChecked", "Last checked")}: {lastChecked.split(',')[0]}
-                  </span>
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {availableServices.slice(0, 3).map((service, index) => (
-                    <Badge key={index} variant="outline" className="text-xs px-2 py-0.5 flex items-center gap-1">
-                      <img 
-                        src={service.logo || getServiceIconPath(service.service)}
-                        alt={service.service}
-                        className="w-3 h-3"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = "/streaming-icons/default.svg";
-                        }}
-                      />
-                      {normalizeServiceName(service.service)}
-                    </Badge>
-                  ))}
-                  {availableServices.length > 3 && (
-                    <Badge variant="outline" className="text-xs px-2 py-0.5">
-                      +{availableServices.length - 3}
-                    </Badge>
-                  )}
-                </div>
-              </>
-            ) : (
-              <p className="text-xs font-medium text-muted-foreground mb-2">
-                {safeTranslate("streaming.notAvailable", "Not available for streaming")}
-                <span className="text-xs ml-1 opacity-75">
-                  • {safeTranslate("streaming.lastChecked", "Last checked")}: {lastChecked.split(',')[0]}
-                </span>
-              </p>
-            )}
-          </div>
         </CardContent>
       </div>
 
