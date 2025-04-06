@@ -94,7 +94,7 @@ export const StreamingServices = ({ services }: StreamingServicesProps) => {
       <div className="flex flex-wrap gap-2">
         {availableServices.map((service) => (
           <Badge key={service.id} variant="secondary">
-            {t(`services.${service.name.toLowerCase()}`, service.name)}
+            {t(`services.${service.name.toLowerCase()}`, { defaultValue: service.name })}
           </Badge>
         ))}
       </div>

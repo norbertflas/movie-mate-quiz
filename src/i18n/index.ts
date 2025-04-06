@@ -17,6 +17,7 @@ const getSavedLanguage = () => {
   return 'en'; // Default fallback
 };
 
+// Initialize i18next
 i18n
   .use(initReactI18next)
   .use(LanguageDetector) // Add language detector to better handle browser language
@@ -33,18 +34,20 @@ i18n
     react: {
       useSuspense: false,
     },
-    // Fix: Remove keySeparator and nsSeparator settings which were causing issues
-    // debug option to help troubleshoot translation issues in development
+    // Remove keySeparator and nsSeparator which were causing issues
     debug: import.meta.env.DEV,
   });
 
+// Set up language change handling
 i18n.on("languageChanged", (lng) => {
   localStorage.setItem("language", lng);
   document.documentElement.lang = lng;
+  document.documentElement.dir = i18n.dir(lng);
   
-  // Force refresh key components that depend on translations
-  // This helps ensure translations are applied correctly
+  // Dispatch a custom event for components that need to react to language changes
   document.dispatchEvent(new CustomEvent('languageChanged', { detail: { language: lng } }));
+  
+  console.log(`Language changed to: ${lng}`);
 });
 
 export default i18n;

@@ -43,10 +43,11 @@ export const PlatformFilter = ({
     fetchStreamingServices();
   }, [i18n.language, t, toast]);
 
-  // Debugging translation issues
-  console.log(`[PlatformFilter] Current language: ${i18n.language}`);
-  console.log(`[PlatformFilter] Filter label translation:`, t("filters.platform"));
-  console.log(`[PlatformFilter] Loading translation:`, t("common.loading"));
+  // Create translated options for the filter
+  const translatedOptions = streamingServices.map(service => ({
+    id: service.id,
+    name: t(`services.${service.name.toLowerCase()}`, { defaultValue: service.name })
+  }));
 
   return (
     <MovieFilterSection
@@ -54,10 +55,7 @@ export const PlatformFilter = ({
       value={selectedPlatforms.join(',')}
       onValueChange={(value) => onPlatformChange(value ? value.split(',') : [])}
       placeholder={isLoading ? t("common.loading") : t("filters.selectPlatform")}
-      options={streamingServices.map(service => ({
-        id: service.id,
-        name: t(`services.${service.name.toLowerCase()}`, service.name)
-      }))}
+      options={translatedOptions}
     />
   );
 };

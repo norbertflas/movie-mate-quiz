@@ -65,17 +65,6 @@ export const MovieCard = ({
   const availableServices = availabilityData.services?.length > 0
     ? availabilityData.services
     : formattedPropServices;
-    
-  // For display in the UI, calculate a timestamp for when streaming was last checked
-  const lastChecked = availabilityData.timestamp 
-    ? new Date(availabilityData.timestamp).toLocaleString() 
-    : new Date().toLocaleString();
-
-  // Safe translation function
-  const safeTranslate = (key: string, defaultValue: string): string => {
-    const translated = t(key);
-    return translated !== key ? translated : defaultValue;
-  };
 
   const handleCardClick = () => {
     setIsDetailsOpen(true);
@@ -151,7 +140,7 @@ export const MovieCard = ({
             </p>
           )}
           
-          {/* Removed streaming availability info from card view as requested */}
+          {/* Streaming services have been removed from the card view as requested */}
         </CardContent>
       </div>
 

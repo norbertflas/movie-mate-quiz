@@ -9,6 +9,7 @@ import { Logo } from "./Logo";
 import { cn } from "@/lib/utils";
 import { Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { LanguageSwitcher } from "./LanguageSwitcher";
 
 export const Navigation = () => {
   const location = useLocation();
@@ -62,7 +63,9 @@ export const Navigation = () => {
             >
               <Search className="h-5 w-5 text-muted-foreground" />
             </motion.button>
-            {/* ThemeSwitcher is already included in UserActions, so we don't need it here */}
+            <div className="hidden sm:block">
+              <LanguageSwitcher />
+            </div>
             <UserActions />
           </motion.div>
         </div>

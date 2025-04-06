@@ -55,7 +55,7 @@ export const MovieStreamingServices = ({
               className="flex items-center gap-2 px-3 py-1.5"
             >
               <span className="font-medium">
-                {t(`services.${service.toLowerCase()}`, service)}
+                {t(`services.${service.toLowerCase()}`, { defaultValue: service })}
               </span>
             </Badge>
           </motion.div>
