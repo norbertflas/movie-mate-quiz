@@ -43,6 +43,9 @@ export const MovieStreamingServices = ({
         animate={{ opacity: 1, y: 0 }}
         className="flex flex-wrap gap-2"
       >
+        <h4 className="text-sm font-semibold w-full mb-1">
+          {t("streaming.availableOn", "Available on")}
+        </h4>
         {services.map((service, index) => (
           <motion.div
             key={service}

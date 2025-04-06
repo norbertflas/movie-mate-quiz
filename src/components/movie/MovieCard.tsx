@@ -12,7 +12,7 @@ import { useTranslation } from "react-i18next";
 import { useStreamingAvailability } from "@/hooks/use-streaming-availability";
 import { MovieRating } from "./MovieRating";
 import { Heart } from "lucide-react";
-import { formatServiceLinks, getServiceIconPath, normalizeServiceName } from "@/utils/streamingServices";
+import { formatServiceLinks } from "@/utils/streamingServices";
 
 export const MovieCard = ({
   title,
@@ -140,7 +140,7 @@ export const MovieCard = ({
             </p>
           )}
           
-          {/* Streaming services have been removed from the card view as requested */}
+          {/* Removed streaming services display from card view */}
         </CardContent>
       </div>
 

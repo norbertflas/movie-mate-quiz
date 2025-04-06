@@ -80,12 +80,16 @@ export default {
       availableOn: "Dostępne na",
       watchOn: "Obejrzyj na {{service}}",
       clickToWatch: "Kliknij, aby obejrzeć",
-      lastChecked: "Ostatnio sprawdzono: {{time}}",
-      notAvailable: "Nie znaleziono dostępnych serwisów streamingowych",
+      lastChecked: "Ostatnio sprawdzane",
+      notAvailable: "Niedostępne do streamingu",
       notavailable: "Niedostępne w serwisach streamingowych",
       errorChecking: "Błąd podczas sprawdzania dostępności streamingu",
       dataStale: "Dane mogą być nieaktualne",
-      availabilityMayChange: "Dostępność mogła się zmienić"
+      availabilityMayChange: "Dostępność mogła się zmienić",
+      loading: "Ładowanie informacji o streamingu...",
+      streamNow: "Oglądaj teraz",
+      error: "Nie udało się załadować informacji o streamingu",
+      tryAgain: "Spróbuj ponownie później"
     },
     errors: {
       recommendationError: "Nie udało się wygenerować rekomendacji",

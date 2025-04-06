@@ -7,14 +7,19 @@ import LanguageDetector from "i18next-browser-languagedetector";
 
 // Get saved language from localStorage or use browser settings with fallback to 'en'
 const getSavedLanguage = () => {
-  const savedLanguage = localStorage.getItem("language");
-  if (savedLanguage) return savedLanguage;
-  
-  // Try to detect browser language
-  const browserLang = navigator.language;
-  if (browserLang && browserLang.startsWith('pl')) return 'pl';
-  
-  return 'en'; // Default fallback
+  try {
+    const savedLanguage = localStorage.getItem("language");
+    if (savedLanguage) return savedLanguage;
+    
+    // Try to detect browser language
+    const browserLang = navigator.language;
+    if (browserLang && browserLang.startsWith('pl')) return 'pl';
+    
+    return 'en'; // Default fallback
+  } catch (error) {
+    console.warn('Error accessing localStorage:', error);
+    return 'en'; // Fallback if localStorage is not available
+  }
 };
 
 // Initialize i18next
@@ -40,7 +45,12 @@ i18n
 
 // Set up language change handling
 i18n.on("languageChanged", (lng) => {
-  localStorage.setItem("language", lng);
+  try {
+    localStorage.setItem("language", lng);
+  } catch (error) {
+    console.warn('Error writing to localStorage:', error);
+  }
+  
   document.documentElement.lang = lng;
   document.documentElement.dir = i18n.dir(lng);
   

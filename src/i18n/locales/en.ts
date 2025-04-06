@@ -1,4 +1,3 @@
-
 export default {
   translation: {
     common: {
@@ -92,18 +91,12 @@ export default {
     },
     streaming: {
       availableOn: "Available on",
-      checkAvailability: "Check Availability",
-      viewOn: "View on {{platform}}",
-      availableForRent: "Available for rent",
-      availableForPurchase: "Available for purchase",
-      subscription: "Subscription",
-      includedWith: "Included with {{service}}",
-      availableInRegion: "Available in your region",
-      notAvailable: "Not available for streaming",
-      noStreamingInfo: "No streaming information available",
       lastChecked: "Last checked",
+      notAvailable: "Not available for streaming",
       loading: "Loading streaming info...",
-      source: "Source: {{source}}"
+      streamNow: "Stream Now",
+      error: "Could not load streaming information",
+      tryAgain: "Please try again later"
     },
     services: {
       netflix: "Netflix",

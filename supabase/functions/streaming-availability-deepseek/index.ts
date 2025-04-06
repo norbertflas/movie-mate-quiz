@@ -31,7 +31,7 @@ async function fetchWithRetry(url: string, options: RequestInit, attempts: numbe
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
