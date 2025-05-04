@@ -18,12 +18,12 @@ export const NavLinks = ({ onNavigate }: NavLinksProps) => {
   };
 
   const navItems = [
-    { path: "/", icon: Home, label: t("navigation.home") },
-    { path: "/quiz", icon: PlayCircle, label: t("navigation.quiz") },
-    { path: "/search", icon: Search, label: t("navigation.search") },
-    { path: "/favorites", icon: Heart, label: t("navigation.favorites") },
-    { path: "/ratings", icon: Star, label: t("navigation.ratings") },
-    { path: "/services", icon: Tv, label: t("navigation.streamingServices") }
+    { path: "/", icon: Home, label: t("navigation.home", "Home") },
+    { path: "/quiz", icon: PlayCircle, label: t("quiz.start", "Quiz") },
+    { path: "/search", icon: Search, label: t("search.movies", "Search") },
+    { path: "/favorites", icon: Heart, label: t("common.favorites", "Favorites") },
+    { path: "/ratings", icon: Star, label: t("common.ratings", "Ratings") },
+    { path: "/services", icon: Tv, label: t("services.preferences", "Streaming") }
   ];
 
   return (
