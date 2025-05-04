@@ -1,7 +1,7 @@
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Loader2, Film, User } from "lucide-react";
+import { Search, Loader2, Film, User, Sparkles } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
@@ -11,8 +11,8 @@ interface SearchInputProps {
   setSearchQuery: (query: string) => void;
   handleSearch: (e: React.FormEvent) => void;
   isSearching: boolean;
-  searchType: "movies" | "creators";
-  setSearchType: (type: "movies" | "creators") => void;
+  searchType: "movies" | "creators" | "personalized";
+  setSearchType: (type: "movies" | "creators" | "personalized") => void;
 }
 
 export const SearchInput = ({
@@ -32,45 +32,38 @@ export const SearchInput = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <Tabs defaultValue={searchType} onValueChange={(value) => setSearchType(value as "movies" | "creators")}>
-        <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto mb-6 bg-secondary/50 backdrop-blur-sm">
-          <TabsTrigger value="movies" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-white">
-            <Film className="h-4 w-4" />
-            <span className="whitespace-nowrap">{t("search.movies")}</span>
-          </TabsTrigger>
-          <TabsTrigger value="creators" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-white">
-            <User className="h-4 w-4" />
-            <span className="whitespace-nowrap">{t("search.creators")}</span>
-          </TabsTrigger>
-        </TabsList>
-
-        <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3 max-w-2xl mx-auto">
-          <div className="relative flex-1">
-            <Input
-              type="text"
-              placeholder={searchType === "movies" ? t("search.placeholder") : t("search.creatorPlaceholder")}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-12 pl-12 pr-4 rounded-xl border-2 border-border focus:border-primary transition-colors bg-secondary/30 backdrop-blur-sm"
-            />
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-          </div>
-          <Button 
-            type="submit" 
-            disabled={isSearching} 
-            className="h-12 px-8 rounded-xl bg-gradient-to-r from-primary to-purple-600 hover:from-primary hover:to-purple-500 transition-all duration-300 shadow-md hover:shadow-lg hover:shadow-primary/20"
-          >
-            {isSearching ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <>
-                <Search className="mr-2 h-5 w-5" />
-                <span className="whitespace-nowrap">{t("search.button")}</span>
-              </>
-            )}
-          </Button>
-        </form>
-      </Tabs>
+      {/* We don't need Tabs here since they're now managed in the parent component */}
+      <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3 max-w-2xl mx-auto">
+        <div className="relative flex-1">
+          <Input
+            type="text"
+            placeholder={searchType === "movies" 
+              ? t("search.placeholder") 
+              : searchType === "creators" 
+                ? t("search.creatorPlaceholder")
+                : t("recommendations.prompt")}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="h-12 pl-12 pr-4 rounded-xl border-2 border-border focus:border-primary transition-colors bg-secondary/30 backdrop-blur-sm"
+            disabled={searchType === "personalized"}
+          />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+        </div>
+        <Button 
+          type="submit" 
+          disabled={isSearching || (searchType !== "personalized" && !searchQuery.trim())} 
+          className="h-12 px-8 rounded-xl bg-gradient-to-r from-primary to-purple-600 hover:from-primary hover:to-purple-500 transition-all duration-300 shadow-md hover:shadow-lg hover:shadow-primary/20"
+        >
+          {isSearching ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <>
+              <Search className="mr-2 h-5 w-5" />
+              <span className="whitespace-nowrap">{t("search.button")}</span>
+            </>
+          )}
+        </Button>
+      </form>
     </motion.div>
   );
 };

@@ -19,7 +19,7 @@ export async function getMovieRecommendations(
 
   console.log("Initializing Gemini with API key");
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+  const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro" }); // Changed model name
 
   const movieContext = selectedMovies.length > 0 
     ? `Based on these movies: ${selectedMovies.map(m => m.title).join(', ')}\n`

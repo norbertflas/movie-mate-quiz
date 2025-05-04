@@ -28,9 +28,9 @@ serve(async (req) => {
     console.log("Language:", language);
     console.log("Using Gemini API key (first 5 chars):", GEMINI_API_KEY.substring(0, 5) + "...");
 
-    // Initialize the Gemini API client with the latest version
+    // Initialize the Gemini API client with a valid model name
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro" }); // Changed model name
     
     const MAX_RETRIES = 3;
     const RETRY_DELAY = 1000;

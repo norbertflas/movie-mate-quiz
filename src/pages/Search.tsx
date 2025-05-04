@@ -24,7 +24,9 @@ const Search = () => {
   const initialType = searchParams.get('type') as "movies" | "creators" || "movies";
 
   const [query, setQuery] = useState(initialQuery);
-  const [searchType, setSearchType] = useState<"movies" | "creators">(initialType);
+  const [searchType, setSearchType] = useState<"movies" | "creators" | "personalized">(
+    initialType === "personalized" ? initialType : (initialType as "movies" | "creators" || "movies")
+  );
   const [filters, setFilters] = useState<MovieFiltersType>({
     yearRange: [1900, new Date().getFullYear()],
     minRating: 0,
@@ -106,7 +108,12 @@ const Search = () => {
           setSearchType={setSearchType}
         />
         
-        <Tabs defaultValue={searchType} onValueChange={(val) => setSearchType(val as "movies" | "creators")} className="mt-12">
+        <Tabs 
+          defaultValue={searchType} 
+          value={searchType}
+          onValueChange={(val) => setSearchType(val as "movies" | "creators" | "personalized")} 
+          className="mt-12"
+        >
           <TabsList className="grid w-full grid-cols-3 max-w-xl mx-auto mb-8">
             <TabsTrigger value="movies" className="flex items-center gap-2">
               <Film className="h-4 w-4" />
