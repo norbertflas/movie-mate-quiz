@@ -11,6 +11,13 @@ export async function getMovieRecommendations(
   selectedMovies: Array<{ id: number; title: string; genres?: number[]; }> = [],
   apiKey: string
 ): Promise<{ data: number[] }> {
+  // Make sure we have an API key
+  if (!apiKey) {
+    console.error("Missing Gemini API key");
+    throw new Error("Gemini API key is not configured");
+  }
+
+  console.log("Initializing Gemini with API key");
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
 
@@ -36,6 +43,8 @@ export async function getMovieRecommendations(
       const result = await model.generateContent(aiPrompt);
       const response = await result.response;
       const text = response.text();
+      
+      console.log("Raw Gemini response:", text);
       
       // Extract array pattern from response
       const arrayMatch = text.match(/\[[\d,\s]+\]/);
