@@ -14,6 +14,10 @@ import { useState } from "react";
 const languages = [
   { code: "en", label: "English" },
   { code: "pl", label: "Polski" },
+  { code: "fr", label: "Français" },
+  { code: "de", label: "Deutsch" },
+  { code: "es", label: "Español" },
+  { code: "it", label: "Italiano" },
 ];
 
 interface LanguageSwitcherProps {
@@ -38,12 +42,36 @@ export const LanguageSwitcher = ({ variant = "default" }: LanguageSwitcherProps)
       await i18n.changeLanguage(langCode);
       
       // Determine message by language to ensure it's in the new language
-      const message = langCode === 'pl' ? 
-        'Pomyślnie zmieniono język na Polski' : 
-        'Language successfully changed to English';
+      let title, message;
+      
+      switch (langCode) {
+        case 'pl':
+          title = 'Język zmieniony';
+          message = 'Pomyślnie zmieniono język na Polski';
+          break;
+        case 'fr':
+          title = 'Langue modifiée';
+          message = 'La langue a été changée avec succès en Français';
+          break;
+        case 'de':
+          title = 'Sprache geändert';
+          message = 'Die Sprache wurde erfolgreich auf Deutsch geändert';
+          break;
+        case 'es':
+          title = 'Idioma cambiado';
+          message = 'El idioma se ha cambiado correctamente a Español';
+          break;
+        case 'it':
+          title = 'Lingua cambiata';
+          message = 'La lingua è stata cambiata con successo in Italiano';
+          break;
+        default:
+          title = 'Language changed';
+          message = 'Language successfully changed to English';
+      }
       
       toast({
-        title: langCode === 'pl' ? 'Język zmieniony' : 'Language changed',
+        title: title,
         description: message,
         className: "bg-gradient-to-r from-blue-500 to-purple-500 text-white",
       });

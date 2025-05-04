@@ -3,8 +3,8 @@ import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 
-import { en } from "./locales/en";
-import { pl } from "./locales/pl";
+import en from "./locales/en";
+import pl from "./locales/pl";
 import { fr } from "./locales/fr";
 import { es } from "./locales/es";
 import { it } from "./locales/it";
