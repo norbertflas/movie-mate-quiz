@@ -35,8 +35,8 @@ serve(async (req) => {
 
     console.log(`Fetching streaming availability for movie: ${tmdbId} in country: ${country}, title: ${title}, year: ${year}`)
 
-    // Using the updated Streaming Availability API v4 endpoint format
-    const url = `https://streaming-availability.p.rapidapi.com/shows/movie/${String(tmdbId)}`
+    // Using the updated Streaming Availability API v2 endpoint format
+    const url = `https://streaming-availability.p.rapidapi.com/v2/get/movie/${String(tmdbId)}`
     
     try {
       // Construct the URL with query parameters
@@ -122,11 +122,11 @@ serve(async (req) => {
       
       console.log('API Response structure:', Object.keys(data))
 
-      // Extract streaming services from the response using the updated API v4 structure
+      // Extract streaming services from the response using the updated API structure
       let streamingServices = []
       
-      if (data.streamingInfo && data.streamingInfo[country.toLowerCase()]) {
-        const countryStreamingOptions = data.streamingInfo[country.toLowerCase()]
+      if (data.result?.streamingInfo && data.result.streamingInfo[country.toLowerCase()]) {
+        const countryStreamingOptions = data.result.streamingInfo[country.toLowerCase()]
         
         // Extract streaming service information
         streamingServices = Object.entries(countryStreamingOptions).map(([service, options]) => {
@@ -230,23 +230,21 @@ async function fetchMovieTitleFromTMDB(tmdbId: number) {
   }
 }
 
-// Helper function to search by title - updated for v4 API format
+// Helper function to search by title - updated for v2 API format
 async function searchByTitle(title: string, country: string, rapidApiKey: string, year?: string) {
   try {
-    // Use v4 endpoint for title search
-    const url = 'https://streaming-availability.p.rapidapi.com/shows/search/title'
+    // Use v2 endpoint for title search
+    const url = 'https://streaming-availability.p.rapidapi.com/v2/search/title'
     
     // Set language parameter based on supported languages
     const supportedLanguages = ['en', 'es', 'fr', 'de', 'it'];
-    const outputLanguage = supportedLanguages.includes(country.toLowerCase()) ? 
-                           country.toLowerCase() : 'en';
+    const outputLanguage = 'en'; // Always use English for more reliable results
     
     const queryParams = new URLSearchParams({
       title,
       country: country.toLowerCase(),
       show_type: 'movie',
-      output_language: outputLanguage,
-      series_granularity: 'show'
+      output_language: outputLanguage
     })
     
     if (year) {
@@ -300,11 +298,11 @@ async function searchByTitle(title: string, country: string, rapidApiKey: string
         }
       }
       
-      // Get the streaming info - API v4 format
+      // Get the streaming info - API v2 format
       if (bestMatch.streamingInfo && bestMatch.streamingInfo[country.toLowerCase()]) {
         const countryInfo = bestMatch.streamingInfo[country.toLowerCase()];
         
-        // API v4 returns an object with service names as keys, each containing an array of offerings
+        // API v2 returns an object with service names as keys, each containing an array of offerings
         return Object.entries(countryInfo).map(([service, options]) => {
           const option = Array.isArray(options) && options.length > 0 ? options[0] : options;
           return {

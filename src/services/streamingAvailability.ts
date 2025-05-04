@@ -76,13 +76,12 @@ async function fetchStreamingAvailabilityAPI(
         
         const options = {
           method: 'GET',
-          url: 'https://streaming-availability.p.rapidapi.com/shows/search/title',
+          url: 'https://streaming-availability.p.rapidapi.com/v2/search/title',
           params: {
             title: title,
             country: country.toLowerCase(),
             output_language: outputLanguage, // Use supported language
             show_type: 'movie',
-            series_granularity: 'show',
             year: year
           },
           headers: {
@@ -136,8 +135,61 @@ async function fetchStreamingAvailabilityAPI(
             console.log('No exact match found in search results');
           }
         }
-      } catch (error) {
-        console.error('Error with title-based search:', error);
+      } catch (error: any) {
+        const errorMessage = error?.response?.data?.message || error?.message;
+        console.error('Error with title-based search:', errorMessage);
+        
+        // Check if error is specifically about invalid output_language
+        if (errorMessage?.includes('output_language')) {
+          console.log('Retrying with default output_language=en');
+          try {
+            const options = {
+              method: 'GET',
+              url: 'https://streaming-availability.p.rapidapi.com/v2/search/title',
+              params: {
+                title: title,
+                country: country.toLowerCase(),
+                output_language: 'en', // Use English as fallback
+                show_type: 'movie',
+                year: year
+              },
+              headers: {
+                'X-RapidAPI-Key': RAPIDAPI_KEY,
+                'X-RapidAPI-Host': 'streaming-availability.p.rapidapi.com'
+              }
+            };
+            
+            const response = await retryWithBackoff(() => axios.request(options));
+            
+            if (response.data && Array.isArray(response.data.result)) {
+              const matchingMovie = response.data.result.find((movie: any) => {
+                return movie.tmdbId === tmdbId || String(movie.tmdbId) === String(tmdbId);
+              });
+              
+              if (matchingMovie && matchingMovie.streamingInfo && matchingMovie.streamingInfo[country.toLowerCase()]) {
+                const services: StreamingPlatformData[] = [];
+                const streamingOptions = matchingMovie.streamingInfo[country.toLowerCase()];
+                
+                for (const [service, options] of Object.entries(streamingOptions)) {
+                  if (Array.isArray(options) && options.length > 0) {
+                    services.push({
+                      service,
+                      available: true,
+                      link: options[0].link,
+                      logo: `/streaming-icons/${service.toLowerCase()}.svg`,
+                      type: options[0].type || 'subscription',
+                      source: 'rapid-api-en'
+                    });
+                  }
+                }
+                
+                return services;
+              }
+            }
+          } catch (retryError) {
+            console.error('Error with retry search using default language:', retryError);
+          }
+        }
         // Fall back to next method
       }
     }
@@ -147,7 +199,7 @@ async function fetchStreamingAvailabilityAPI(
       console.log('Trying direct TMDB ID lookup with v4 endpoint shows/movie');
       const options = {
         method: 'GET',
-        url: `https://streaming-availability.p.rapidapi.com/shows/movie/${tmdbId}`,
+        url: `https://streaming-availability.p.rapidapi.com/v2/get/movie/${tmdbId}`,
         params: {
           country: country.toLowerCase()
         },
@@ -159,11 +211,11 @@ async function fetchStreamingAvailabilityAPI(
       
       const response = await retryWithBackoff(() => axios.request(options));
       
-      if (response.data?.streamingInfo) {
+      if (response.data?.result?.streamingInfo) {
         console.log('Got streaming info from direct TMDB ID lookup');
         
         const services: StreamingPlatformData[] = [];
-        const countryServices = response.data.streamingInfo[country.toLowerCase()];
+        const countryServices = response.data.result.streamingInfo[country.toLowerCase()];
         
         if (countryServices) {
           // In v4, the structure is {serviceName: [{link, type}]}

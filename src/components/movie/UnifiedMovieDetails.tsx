@@ -1,3 +1,4 @@
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MovieDetailsSection } from "./MovieDetailsSection";
 import { MovieActions } from "./MovieActions";
@@ -13,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, X, ExternalLink } from "lucide-react";
+import { AlertCircle, X, ExternalLink, RefreshCw } from "lucide-react";
 import { useStreamingAvailability } from "@/hooks/use-streaming-availability";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -116,21 +117,69 @@ export const UnifiedMovieDetails = ({
   const openStreamingService = (link: string, service: string) => {
     if (!link) {
       toast({
-        title: t("streaming.linkError"),
-        description: t("streaming.noLinkAvailable", { service }),
+        title: t("streaming.linkError", "Streaming Link Error"),
+        description: t("streaming.noLinkAvailable", "No link available for {{service}}", { service }),
         variant: "destructive",
       });
       return;
     }
     
-    window.open(link, '_blank', 'noopener,noreferrer');
+    // Fix streaming links - ensure they have proper URL format
+    let url = link;
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = `https://${url}`;
+    }
+    
+    // Add path for specific streaming sites if needed
+    if (url.includes('disneyplus.com') && !url.includes('/video')) {
+      url = `${url}/home`;
+    } else if (url.includes('netflix.com') && !url.includes('/title')) {
+      url = `${url}/browse`;
+    } else if (url.includes('hbomax.com') && !url.includes('/feature')) {
+      url = `${url}/movies`;
+    } else if (url.includes('primevideo.com') && !url.includes('/detail')) {
+      url = `${url}/storefront`;
+    }
+    
+    console.log(`Opening streaming service: ${service} with URL: ${url}`);
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
-  // New function to handle checking streaming availability on demand
+  // New function to handle checking streaming availability on demand with error handling
   const checkStreamingAvailability = () => {
-    if (!availabilityData.requested) {
+    try {
+      if (availabilityData.isLoading) {
+        toast({
+          title: t("streaming.alreadyChecking", "Already checking"),
+          description: t("streaming.pleaseWait", "Please wait while we check streaming availability"),
+        });
+        return;
+      }
+      
       availabilityData.fetchStreamingData();
+      
+      toast({
+        title: t("streaming.checking", "Checking Availability"),
+        description: t("streaming.checkingDescription", "Searching for {{title}} on streaming services", { 
+          title: movie?.title 
+        }),
+      });
+    } catch (error) {
+      console.error('Error triggering streaming availability check:', error);
+      toast({
+        title: t("errors.generalError", "Error"),
+        description: t("streaming.checkError", "Failed to check streaming availability"),
+        variant: "destructive",
+      });
     }
+  };
+
+  const handleRetry = () => {
+    availabilityData.refetch();
+    toast({
+      title: t("streaming.retrying", "Retrying"),
+      description: t("streaming.retryingDescription", "Checking streaming services again"),
+    });
   };
 
   if (!movie) return null;
@@ -201,13 +250,26 @@ export const UnifiedMovieDetails = ({
                     <div className="space-y-2 border rounded-lg p-4">
                       <div className="flex items-center justify-between border-b pb-2 mb-3">
                         <h3 className="text-lg font-semibold">
-                          {t("streaming.availableOn")}
+                          {t("streaming.availableOn", "Available on")}
                         </h3>
-                        {availabilityData.requested && (
-                          <Badge variant="outline" className="text-xs">
-                            {t("streaming.lastChecked")}: {formattedLastChecked}
-                          </Badge>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {availabilityData.requested && !availabilityData.isLoading && (
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="gap-1"
+                              onClick={handleRetry}
+                            >
+                              <RefreshCw className="h-3 w-3" />
+                              {t("common.refresh", "Refresh")}
+                            </Button>
+                          )}
+                          {availabilityData.requested && (
+                            <Badge variant="outline" className="text-xs">
+                              {t("streaming.lastChecked", "Last checked")}: {formattedLastChecked}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
 
                       {!availabilityData.requested ? (
@@ -217,18 +279,29 @@ export const UnifiedMovieDetails = ({
                           </Button>
                         </div>
                       ) : availabilityData.isLoading ? (
-                        <div className="flex gap-2 flex-wrap">
-                          {[1, 2, 3, 4].map((i) => (
-                            <Skeleton key={i} className="h-16 w-20 rounded-md" />
-                          ))}
+                        <div className="flex flex-col items-center justify-center py-6">
+                          <div className="flex gap-2 flex-wrap mb-4">
+                            {[1, 2, 3, 4].map((i) => (
+                              <Skeleton key={i} className="h-16 w-20 rounded-md" />
+                            ))}
+                          </div>
+                          <p className="text-sm text-muted-foreground animate-pulse">
+                            {t("streaming.searching", "Searching streaming platforms...")}
+                          </p>
                         </div>
                       ) : availabilityData.error ? (
-                        <Alert variant="destructive" className="mb-4">
-                          <AlertCircle className="h-4 w-4" />
-                          <AlertDescription>
-                            {t("streaming.errorChecking", "Error checking streaming availability")}
-                          </AlertDescription>
-                        </Alert>
+                        <div className="flex flex-col items-center py-4">
+                          <Alert variant="destructive" className="mb-4">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertDescription>
+                              {t("streaming.errorChecking", "Error checking streaming availability")}
+                            </AlertDescription>
+                          </Alert>
+                          <Button onClick={handleRetry} variant="outline" className="mt-2">
+                            <RefreshCw className="mr-2 h-4 w-4" />
+                            {t("common.tryAgain", "Try Again")}
+                          </Button>
+                        </div>
                       ) : services && services.length > 0 ? (
                         <>
                           {isDataStale && (
@@ -262,11 +335,11 @@ export const UnifiedMovieDetails = ({
                                     </div>
                                     <div className="flex flex-col items-center">
                                       <span className="text-xs text-center font-medium">
-                                        {service.service}
+                                        {t(`services.${service.service.toLowerCase()}`, { defaultValue: service.service })}
                                       </span>
                                       {service.type && (
                                         <Badge variant="outline" className="text-[10px] px-1 py-0">
-                                          {getStreamingTypeDisplay(service.type)}
+                                          {t(`streaming.types.${service.type}`, { defaultValue: getStreamingTypeDisplay(service.type) })}
                                         </Badge>
                                       )}
                                     </div>
@@ -275,24 +348,24 @@ export const UnifiedMovieDetails = ({
                                 <HoverCardContent className="w-80">
                                   <div className="space-y-1">
                                     <h4 className="text-sm font-semibold">
-                                      {t("streaming.watchOn", { service: service.service })}
+                                      {t("streaming.watchOn", "Watch on {{service}}", { service: t(`services.${service.service.toLowerCase()}`, { defaultValue: service.service }) })}
                                       {service.type && (
                                         <span className="ml-1 text-xs text-muted-foreground">
-                                          ({getStreamingTypeDisplay(service.type)})
+                                          ({t(`streaming.types.${service.type}`, { defaultValue: getStreamingTypeDisplay(service.type) })})
                                         </span>
                                       )}
                                     </h4>
                                     <p className="text-sm text-muted-foreground flex items-center gap-1">
-                                      {t("streaming.clickToWatch")} <ExternalLink className="h-3 w-3" />
+                                      {t("streaming.clickToWatch", "Click to watch")} <ExternalLink className="h-3 w-3" />
                                     </p>
                                     {service.startDate && (
                                       <p className="text-xs text-muted-foreground">
-                                        {t("streaming.availableSince")}: {new Date(service.startDate).toLocaleDateString()}
+                                        {t("streaming.availableSince", "Available since")}: {new Date(service.startDate).toLocaleDateString()}
                                       </p>
                                     )}
                                     {service.endDate && (
                                       <p className="text-xs text-yellow-500">
-                                        {t("streaming.leavingSoon")}: {new Date(service.endDate).toLocaleDateString()}
+                                        {t("streaming.leavingSoon", "Leaving soon")}: {new Date(service.endDate).toLocaleDateString()}
                                       </p>
                                     )}
                                   </div>
@@ -328,22 +401,22 @@ export const UnifiedMovieDetails = ({
                   
                   <div className="space-y-4">
                     <div className="rounded-lg bg-card p-4 space-y-2">
-                      <h3 className="font-semibold">{t("movie.details")}</h3>
+                      <h3 className="font-semibold">{t("movie.details", "Details")}</h3>
                       <dl className="space-y-2 text-sm">
                         <div>
-                          <dt className="text-muted-foreground">{t("movie.releaseDate")}</dt>
+                          <dt className="text-muted-foreground">{t("movie.releaseDate", "Release Date")}</dt>
                           <dd>{new Date(movie.release_date).toLocaleDateString()}</dd>
                         </div>
                         <div>
-                          <dt className="text-muted-foreground">{t("movie.rating")}</dt>
+                          <dt className="text-muted-foreground">{t("movie.rating", "Rating")}</dt>
                           <dd>{movie.vote_average ? (movie.vote_average * 10).toFixed(0) : 0}%</dd>
                         </div>
                         <div>
-                          <dt className="text-muted-foreground">{t("movie.votes")}</dt>
+                          <dt className="text-muted-foreground">{t("movie.votes", "Votes")}</dt>
                           <dd>{movie.vote_count?.toLocaleString() || 0}</dd>
                         </div>
                         <div>
-                          <dt className="text-muted-foreground">{t("movie.popularity")}</dt>
+                          <dt className="text-muted-foreground">{t("movie.popularity", "Popularity")}</dt>
                           <dd>{movie.popularity ? Math.round(movie.popularity).toLocaleString() : 0}</dd>
                         </div>
                       </dl>
