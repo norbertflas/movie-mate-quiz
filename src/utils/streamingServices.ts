@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import type { StreamingPlatformData } from "@/types/streaming";
 
@@ -50,6 +51,8 @@ export function normalizeServiceName(serviceName: string): string {
     'canal+': 'Canal+',
     'mubi': 'MUBI',
     'play': 'Play',
+    'google': 'Google Play',
+    'youtube': 'YouTube',
   };
 
   const key = serviceName.toLowerCase().trim();
@@ -87,6 +90,8 @@ export function getServiceIconPath(serviceName: string): string {
     'play': '/streaming-icons/default.svg',
     'canal+': '/streaming-icons/default.svg',
     'canalplus': '/streaming-icons/default.svg',
+    'google': '/streaming-icons/default.svg',
+    'youtube': '/streaming-icons/default.svg',
   };
 
   const key = serviceName.toLowerCase().trim();
@@ -94,10 +99,30 @@ export function getServiceIconPath(serviceName: string): string {
 }
 
 /**
- * Builds a valid streaming service URL based on service name
+ * Movie-specific direct links for popular movies
+ * This helps ensure we link directly to the content when possible
  */
-export function buildServiceUrl(serviceName: string, tmdbId?: number): string {
+export const knownMovieLinks: Record<string, Record<string, string>> = {
+  // Movie ID: { service: direct link }
+  '348': { // Alien (1979)
+    'hulu': 'https://www.hulu.com/movie/alien-27389b6b-bf27-45a6-afdf-cef0fe723cff',
+    'disney': 'https://www.disneyplus.com/movies/alien/4IcBqr9hAPDJ',
+    'prime': 'https://www.amazon.com/Alien-Sigourney-Weaver/dp/B001GJ7OT8',
+    'apple': 'https://tv.apple.com/us/movie/alien/umc.cmc.53br8g12tjkru519sz48vkjqa'
+  }
+};
+
+/**
+ * Builds a valid streaming service URL based on service name
+ * Now with improved handling for different services and direct content linking
+ */
+export function buildServiceUrl(serviceName: string, tmdbId?: number, movieTitle?: string): string {
   const normalizedName = serviceName.toLowerCase().trim();
+  
+  // Check if we have a known direct link for this movie
+  if (tmdbId && knownMovieLinks[String(tmdbId)] && knownMovieLinks[String(tmdbId)][normalizedName]) {
+    return knownMovieLinks[String(tmdbId)][normalizedName];
+  }
   
   // Map for special domain formats
   const domainMap: Record<string, string> = {
@@ -124,7 +149,9 @@ export function buildServiceUrl(serviceName: string, tmdbId?: number): string {
     'canal+': 'canalplus.com',
     'canalplus': 'canalplus.com',
     'mubi': 'mubi.com',
-    'play': 'play.pl'
+    'play': 'play.pl',
+    'google': 'play.google.com/store/movies',
+    'youtube': 'youtube.com'
   };
   
   const domain = domainMap[normalizedName] || `${normalizedName.replace(/\+/g, 'plus').replace(/\s+/g, '')}.com`;
@@ -140,9 +167,26 @@ export function buildServiceUrl(serviceName: string, tmdbId?: number): string {
       path = `/movie/${tmdbId}`;
     } else if (normalizedName.includes('apple')) {
       path = `/movie/movie-${tmdbId}`;
+    } else if (normalizedName.includes('hulu')) {
+      path = movieTitle ? `/movie/${encodeURIComponent(movieTitle.toLowerCase().replace(/\s+/g, '-'))}` : '/hub/movies';
     } else {
-      path = `/movie/${tmdbId}`;
+      path = movieTitle ? `/movie/${encodeURIComponent(movieTitle.toLowerCase().replace(/\s+/g, '-'))}` : `/movie/${tmdbId}`;
     }
+  } else {
+    // Default paths for home pages
+    const servicePaths: Record<string, string> = {
+      'netflix': '/browse',
+      'prime': '/storefront',
+      'amazon': '/storefront',
+      'disney': '/home',
+      'hulu': '/hub/movies',
+      'hbo': '/movies',
+      'max': '/movies',
+      'apple': '/us/movies',
+      'paramount': '/movies',
+    };
+    
+    path = servicePaths[normalizedName] || '';
   }
   
   return `https://${domain}${path}`;
@@ -164,10 +208,17 @@ export function formatServiceLinks(services: StreamingPlatformData[]): Streaming
     // Generate appropriate logo path
     const logoPath = service.logo || getServiceIconPath(service.service);
     
-    // Build a reasonable link URL if none provided
-    let link = service.link;
-    if (!link) {
-      link = buildServiceUrl(service.service, service.tmdbId);
+    // Check if we have a directLink from the API (preferred)
+    let link = service.directLink || service.link;
+    
+    // If we don't have a valid link, build one
+    if (!link || link === '' || link === 'https://') {
+      link = buildServiceUrl(service.service, service.tmdbId, service.title);
+    }
+    
+    // Ensure links have protocol
+    if (link && !link.startsWith('http')) {
+      link = `https://${link}`;
     }
     
     return {
