@@ -1,4 +1,5 @@
-import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.1.3";
+
+import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.2.0";
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1 second
@@ -11,7 +12,7 @@ export async function getMovieRecommendations(
   apiKey: string
 ): Promise<{ data: number[] }> {
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
 
   const movieContext = selectedMovies.length > 0 
     ? `Based on these movies: ${selectedMovies.map(m => m.title).join(', ')}\n`
@@ -36,11 +37,13 @@ export async function getMovieRecommendations(
       const response = await result.response;
       const text = response.text();
       
-      if (!text.trim().startsWith('[') || !text.trim().endsWith(']')) {
-        throw new Error('Invalid response format from Gemini');
+      // Extract array pattern from response
+      const arrayMatch = text.match(/\[[\d,\s]+\]/);
+      if (!arrayMatch) {
+        throw new Error('Could not find array in Gemini response');
       }
       
-      const movieIds = JSON.parse(text);
+      const movieIds = JSON.parse(arrayMatch[0]);
       if (!Array.isArray(movieIds) || movieIds.length === 0) {
         throw new Error('Invalid movie IDs array from Gemini');
       }
