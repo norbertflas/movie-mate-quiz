@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import type { StreamingPlatformData, StreamingAvailabilityCache } from "@/types/streaming";
 import axios from 'axios';
@@ -69,7 +70,9 @@ async function fetchStreamingAvailabilityAPI(
         // Use only supported languages for output_language parameter
         // The API supports a limited set of languages: en, es, fr, de, it
         const supportedLanguages = ['en', 'es', 'fr', 'de', 'it'];
-        const outputLanguage = supportedLanguages.includes(i18n.language) ? i18n.language : 'en';
+        // Extract base language code (e.g. 'en' from 'en-US')
+        const currentLang = i18n.language?.split('-')[0] || 'en';
+        const outputLanguage = supportedLanguages.includes(currentLang) ? currentLang : 'en';
         
         const options = {
           method: 'GET',

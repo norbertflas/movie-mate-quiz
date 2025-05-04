@@ -20,6 +20,7 @@ export async function getTsStreamingAvailability(tmdbId: number, country: string
     const apiLanguage = supportedLanguages.includes(currentLanguage) ? currentLanguage : 'en';
     
     // Step 1: Try direct search by TMDB ID first - using v4 API
+    // Corrected endpoint format based on Movie of the Night API documentation
     try {
       console.log('[TS API] Attempting to fetch with TS API');
       const response = await axios.get(`https://streaming-availability.p.rapidapi.com/shows/movie/${tmdbId}`, {
@@ -68,7 +69,7 @@ export async function getTsStreamingAvailability(tmdbId: number, country: string
             country: country.toLowerCase(),
             show_type: 'movie',
             series_granularity: 'show',
-            // Use a supported language for the API, defaulting to English
+            // Only use supported languages for the API
             output_language: apiLanguage
           },
           headers: {

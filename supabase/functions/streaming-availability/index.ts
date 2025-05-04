@@ -1,3 +1,4 @@
+
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 
 const corsHeaders = {
@@ -34,7 +35,7 @@ serve(async (req) => {
 
     console.log(`Fetching streaming availability for movie: ${tmdbId} in country: ${country}, title: ${title}, year: ${year}`)
 
-    // Using the updated Streaming Availability API v4 endpoint
+    // Using the updated Streaming Availability API v4 endpoint format
     const url = `https://streaming-availability.p.rapidapi.com/shows/movie/${String(tmdbId)}`
     
     try {
