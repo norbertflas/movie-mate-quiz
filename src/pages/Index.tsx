@@ -9,17 +9,18 @@ import { motion, AnimatePresence } from "framer-motion";
 import { LoadingState } from "@/components/LoadingState";
 import { useQuery } from "@tanstack/react-query";
 import { getTrendingMovies, getPopularMovies } from "@/services/tmdb/trending";
+import { QuickActions } from "@/components/QuickActions";
 
 const Index = () => {
   const [showQuiz, setShowQuiz] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const { isLoading: isTrendingLoading } = useQuery({
+  const { isLoading: isTrendingLoading, data: trendingMovies = [] } = useQuery({
     queryKey: ['trendingMovies', 'US', '1'],
     queryFn: getTrendingMovies,
   });
 
-  const { isLoading: isPopularLoading } = useQuery({
+  const { isLoading: isPopularLoading, data: popularMovies = [] } = useQuery({
     queryKey: ['popularMovies', 'US', '1'],
     queryFn: getPopularMovies,
   });
@@ -80,6 +81,7 @@ const Index = () => {
 
         {!showQuiz && !isLoading && (
           <>
+            <QuickActions />
             <MainContent />
             <PersonalizedRecommendations />
           </>

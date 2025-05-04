@@ -1,6 +1,5 @@
 
 import { useState } from "react";
-import { MovieCard } from "../MovieCard";
 import { motion } from "framer-motion";
 import { UnifiedMovieDetails } from "../movie/UnifiedMovieDetails";
 import type { TMDBMovie } from "@/services/tmdb";
@@ -28,6 +27,9 @@ export const QuizResults = ({ recommendations, isGroupQuiz = false }: QuizResult
     setSelectedMovie(null);
   };
 
+  // Ensure we always display exactly 5 recommendations
+  const displayRecommendations = recommendations.slice(0, 5);
+  
   return (
     <div className="w-full bg-black text-white rounded-xl overflow-hidden">
       <div className="p-6">
@@ -51,7 +53,7 @@ export const QuizResults = ({ recommendations, isGroupQuiz = false }: QuizResult
         </motion.div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {recommendations.slice(0, 6).map((movie, index) => (
+          {displayRecommendations.map((movie, index) => (
             <motion.div
               key={movie.id}
               initial={{ opacity: 0, y: 20 }}
@@ -86,7 +88,7 @@ export const QuizResults = ({ recommendations, isGroupQuiz = false }: QuizResult
                     onClick={() => handleMovieClick(movie)}
                   >
                     <Plus className="mr-2 h-4 w-4" />
-                    Add to Watchlist
+                    {t("common.addToWatchlist", "Add to Watchlist")}
                   </Button>
                 </div>
               </div>

@@ -47,6 +47,16 @@ export const useQuizLogic = (): QuizLogicHook => {
       
       setAnswerMap(answers);
       console.log('Answer map for processing:', answers);
+      
+      // Ensure we have a genre preference in the answers
+      const hasGenre = quizAnswers.some(a => a.questionId === 'genre' || a.questionId === 'preferredGenre');
+      if (!hasGenre) {
+        // Add a default genre preference if none exists
+        quizAnswers.push({
+          questionId: 'preferredGenre',
+          answer: 'Action' // Default to action if no genre specified
+        });
+      }
 
       // Get recommendations from Edge Function
       const { data, error } = await supabase.functions.invoke('get-personalized-recommendations', {
@@ -54,7 +64,6 @@ export const useQuizLogic = (): QuizLogicHook => {
           answers: quizAnswers,
           userId: user?.id,
           includeExplanations: true,
-          answerMap: answers // Send structured answers for easier processing
         }
       });
 
@@ -141,6 +150,30 @@ export const useQuizLogic = (): QuizLogicHook => {
         platform: "Netflix",
         type: "series",
         explanations: ["Popular sci-fi series with supernatural elements"]
+      },
+      {
+        id: 4, 
+        title: "Inception",
+        overview: "A thief who steals corporate secrets through the use of dream-sharing technology.",
+        poster_path: "/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg",
+        release_date: "2010-07-16",
+        vote_average: 8.4,
+        genre: "Sci-Fi",
+        trailer_url: null,
+        platform: "HBO Max",
+        explanations: ["Mind-bending sci-fi thriller with complex plot"]
+      },
+      {
+        id: 5,
+        title: "The Shawshank Redemption",
+        overview: "Two imprisoned men bond over a number of years, finding solace and eventual redemption.",
+        poster_path: "/q6y0Go1tsGEsmtFryDOJo3dEmqu.jpg",
+        release_date: "1994-09-23",
+        vote_average: 8.7,
+        genre: "Drama",
+        trailer_url: null,
+        platform: "HBO Max",
+        explanations: ["Classic prison drama with powerful performances"]
       }
     ];
 
@@ -170,7 +203,7 @@ export const useQuizLogic = (): QuizLogicHook => {
       }
       
       return true;
-    });
+    }).slice(0, 5);
   };
 
   return {

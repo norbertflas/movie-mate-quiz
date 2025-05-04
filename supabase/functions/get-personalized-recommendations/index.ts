@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { corsHeaders } from "./utils.ts";
@@ -33,7 +34,7 @@ serve(async (req) => {
           GEMINI_API_KEY
         );
 
-        const movieDetailsPromises = recommendations.slice(0, 6).map(movieId => 
+        const movieDetailsPromises = recommendations.slice(0, 5).map(movieId => 
           getMovieDetails(movieId, TMDB_API_KEY)
         );
 
@@ -59,8 +60,9 @@ serve(async (req) => {
     const cleanedAnswers = cleanAnswers(requestData.answers);
     console.log('Cleaned answers:', cleanedAnswers);
 
+    // Find genre from answers - could be either "genre" or "preferredGenre"
     const genreAnswer = cleanedAnswers.find(answer => 
-      answer.questionId === 'genre'
+      answer.questionId === 'genre' || answer.questionId === 'preferredGenre'
     );
 
     if (!genreAnswer) {
@@ -81,18 +83,20 @@ serve(async (req) => {
     const formattedAnswers = formatAnswersForPrompt(cleanedAnswers);
     
     try {
-      const recommendedIds = await getMovieRecommendations(formattedAnswers, [], GEMINI_API_KEY);
+      const { data: recommendedIds } = await getMovieRecommendations(formattedAnswers, [], GEMINI_API_KEY);
       console.log('Received recommended IDs:', recommendedIds);
       
+      // Find movies from our genre movies that match the recommended IDs
       const prioritizedMovies = genreMovies
         .filter(movie => recommendedIds.includes(movie.id))
-        .slice(0, 6);
+        .slice(0, 5);
 
+      // If we don't have 5 matches, add more movies from the genre
       const finalMovies = [
         ...prioritizedMovies,
         ...genreMovies
           .filter(movie => !prioritizedMovies.some(pm => pm.id === movie.id))
-          .slice(0, 6 - prioritizedMovies.length)
+          .slice(0, 5 - prioritizedMovies.length)
       ];
 
       const movieDetailsPromises = finalMovies.map(movie => 
@@ -115,8 +119,9 @@ serve(async (req) => {
     } catch (aiError) {
       console.error('AI recommendations failed, falling back to genre-based:', aiError);
       
+      // Fallback to just using the top 5 movies by genre if AI recommendations fail
       const fallbackMovies = genreMovies
-        .slice(0, 6)
+        .slice(0, 5)
         .map(movie => getMovieDetails(movie.id, TMDB_API_KEY));
 
       const movies = (await Promise.all(fallbackMovies))
