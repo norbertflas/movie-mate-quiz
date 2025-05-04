@@ -1,6 +1,8 @@
-import { supabase } from "@/integrations/supabase/client";
-import type { StreamingPlatformData } from "@/types/streaming";
 
+import { supabase } from "@/integrations/supabase/client";
+import type { StreamingPlatformData, StreamingService } from "@/types/streaming";
+
+// Function to get streaming availability from Supabase
 export const getStreamingAvailability = async (tmdbId: number, type: 'movie' | 'tv', countryCode: string = 'US'): Promise<StreamingPlatformData[]> => {
   try {
     const { data, error } = await supabase
@@ -20,7 +22,7 @@ export const getStreamingAvailability = async (tmdbId: number, type: 'movie' | '
       return [];
     }
 
-    return data;
+    return data as StreamingPlatformData[];
   } catch (error) {
     console.error("Error in getStreamingAvailability:", error);
     return [];
@@ -28,11 +30,11 @@ export const getStreamingAvailability = async (tmdbId: number, type: 'movie' | '
 };
 
 // Function to update the streaming link for a service
-export const updateStreamingLink = async (id: number, streamingLink: string) => {
+export const updateStreamingLink = async (id: number, link: string) => {
   try {
     const { data, error } = await supabase
-      .from('streaming_availability')
-      .update({ streamingLink: streamingLink })
+      .from('movie_streaming_availability')
+      .update({ link })
       .eq('id', id);
 
     if (error) {
@@ -47,17 +49,28 @@ export const updateStreamingLink = async (id: number, streamingLink: string) => 
   }
 };
 
-// Update the specific functions that are having type errors
+// Map of known direct links for specific movies
+export const knownMovieLinks: Record<string, Record<string, string>> = {
+  // Alien (1979) - TMDB ID: 348
+  "348": {
+    "hulu": "https://www.hulu.com/movie/alien-27389b6b-bf27-45a6-afdf-cef0fe723cff",
+    "disney+": "https://www.disneyplus.com/movies/alien/4IcBqr9hAPDJ",
+    "amazon prime": "https://www.amazon.com/Alien-Sigourney-Weaver/dp/B001GJ7OT8",
+    "apple tv+": "https://tv.apple.com/us/movie/alien/umc.cmc.53br8g12tjkru519sz48vkjqa",
+  }
+};
+
+// Function to build service URL based on service name and movie details
 export const buildServiceUrl = (service: StreamingPlatformData, tmdbId?: number, title?: string) => {
   if (!service) return null;
 
   // Special cases for direct links (when available from the API)
-  if (service.streamingLink) {
-    return service.streamingLink;
+  if (service.link) {
+    return service.link;
   }
   
   // Handle specific services based on service name
-  switch(service.provider) {
+  switch(service.service) {
     case 'Netflix':
       return 'https://www.netflix.com/search?q=' + (title || '');
     case 'Disney Plus':
@@ -86,6 +99,22 @@ export const buildServiceUrl = (service: StreamingPlatformData, tmdbId?: number,
   }
 };
 
+// Function to normalize service names for consistent display
+export const normalizeServiceName = (providerName: string): string => {
+  const normalizedName = providerName.toLowerCase().trim();
+  
+  if (normalizedName.includes('netflix')) return 'Netflix';
+  if (normalizedName.includes('disney')) return 'Disney+';
+  if (normalizedName.includes('hulu')) return 'Hulu';
+  if (normalizedName.includes('amazon') || normalizedName.includes('prime')) return 'Amazon Prime';
+  if (normalizedName.includes('hbo')) return 'HBO Max';
+  if (normalizedName.includes('max') && !normalizedName.includes('hbo')) return 'Max';
+  if (normalizedName.includes('apple')) return 'Apple TV+';
+  
+  return providerName; // Return original if no match
+};
+
+// Function to get friendly service name for display
 export const getFriendlyServiceName = (providerName: string): string => {
   switch (providerName) {
     case 'Netflix':
@@ -110,5 +139,99 @@ export const getFriendlyServiceName = (providerName: string): string => {
       return 'Apple TV+';
     default:
       return providerName;
+  }
+};
+
+// Function to get streaming services by region
+export const getStreamingServicesByRegion = async (region: string): Promise<StreamingService[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('streaming_services')
+      .select('*')
+      .contains('regions', [region]);
+
+    if (error) {
+      console.error("Error fetching streaming services:", error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error("Error in getStreamingServicesByRegion:", error);
+    return [];
+  }
+};
+
+// Map language codes to region codes
+export const languageToRegion: Record<string, string> = {
+  'en': 'us',
+  'es': 'es',
+  'fr': 'fr',
+  'de': 'de',
+  'it': 'it',
+  'pl': 'pl',
+  'en-US': 'us',
+  'en-GB': 'gb'
+};
+
+// Function to get service icon path
+export const getServiceIconPath = (serviceName: string): string => {
+  const name = serviceName.toLowerCase().replace(/[\s+]/g, '');
+  
+  if (name.includes('netflix')) return '/streaming-icons/netflix.svg';
+  if (name.includes('disney')) return '/streaming-icons/disney.svg';
+  if (name.includes('hulu')) return '/streaming-icons/hulu.svg';
+  if (name.includes('amazon') || name.includes('prime')) return '/streaming-icons/prime.svg';
+  if (name.includes('hbomax')) return '/streaming-icons/hbomax.svg';
+  if (name === 'max') return '/streaming-icons/max.svg';
+  if (name.includes('apple')) return '/streaming-icons/apple.svg';
+  if (name.includes('paramount')) return '/streaming-icons/paramount.svg';
+  
+  return '/streaming-icons/default.svg';
+};
+
+// Format service data to ensure it has links and logos
+export const formatServiceLinks = (services: Array<any>): StreamingPlatformData[] => {
+  if (!services || !Array.isArray(services)) return [];
+  
+  return services.map(service => {
+    const serviceName = typeof service === 'string' 
+      ? service 
+      : service.service || service.provider || service.name || '';
+    
+    const normalizedService = normalizeServiceName(serviceName);
+    
+    const serviceObj: StreamingPlatformData = {
+      service: normalizedService,
+      available: true,
+      link: service.link || buildServiceUrl({ service: normalizedService, available: true }),
+      logo: service.logo || getServiceIconPath(normalizedService),
+      type: service.type || 'subscription'
+    };
+    
+    if (service.tmdbId) serviceObj.tmdbId = service.tmdbId;
+    if (service.title) serviceObj.title = service.title;
+    if (service.startDate) serviceObj.startDate = service.startDate;
+    if (service.endDate) serviceObj.endDate = service.endDate;
+    
+    return serviceObj;
+  });
+};
+
+// Function to get display text for streaming type
+export const getStreamingTypeDisplay = (type: string): string => {
+  switch (type) {
+    case 'subscription':
+      return 'Subscription';
+    case 'rent':
+      return 'Rent';
+    case 'buy':
+      return 'Buy';
+    case 'addon':
+      return 'Add-on';
+    case 'free':
+      return 'Free';
+    default:
+      return type;
   }
 };

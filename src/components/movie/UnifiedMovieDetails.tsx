@@ -18,7 +18,13 @@ import { AlertCircle, X, ExternalLink, RefreshCw } from "lucide-react";
 import { useStreamingAvailability } from "@/hooks/use-streaming-availability";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { getServiceIconPath, getStreamingTypeDisplay, normalizeServiceName, formatServiceLinks, knownMovieLinks } from "@/utils/streamingServices";
+import { 
+  getServiceIconPath, 
+  getStreamingTypeDisplay, 
+  normalizeServiceName, 
+  formatServiceLinks, 
+  knownMovieLinks 
+} from "@/utils/streamingServices";
 
 interface UnifiedMovieDetailsProps {
   isOpen: boolean;
@@ -386,7 +392,7 @@ export const UnifiedMovieDetails = ({
                                   <Button
                                     variant="outline"
                                     className="flex flex-col items-center gap-1 p-2 h-auto"
-                                    onClick={() => openStreamingService(service.link, service.service)}
+                                    onClick={() => openStreamingService(service.link || '', service.service)}
                                   >
                                     <div className="w-12 h-12 rounded-md overflow-hidden bg-accent/10 flex items-center justify-center">
                                       <img 

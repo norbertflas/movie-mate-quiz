@@ -1,3 +1,4 @@
+
 export interface StreamingService {
   id: string;
   name: string;
@@ -42,6 +43,11 @@ export interface StreamingPlatformData {
    * The TMDB ID of the movie (for building watch URLs)
    */
   tmdbId?: number;
+  
+  /**
+   * Title of the movie (for building watch URLs)
+   */
+  title?: string;
   
   /**
    * Price of the movie on this service

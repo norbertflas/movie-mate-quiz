@@ -12,7 +12,7 @@ import { useTranslation } from "react-i18next";
 import { useStreamingAvailability } from "@/hooks/use-streaming-availability";
 import { MovieRating } from "./movie/MovieRating";
 import { Heart } from "lucide-react";
-import { formatServiceLinks, getServiceIconPath, normalizeServiceName } from "@/utils/streamingServices";
+import { formatServiceLinks } from "@/utils/streamingServices";
 
 export const MovieCard = ({
   title,
