@@ -22,7 +22,7 @@ export const Logo = ({ size = "md", animated = true }: LogoProps) => {
         transition={{ duration: 0.2 }}
       >
         <img 
-          src="/lovable-uploads/b768987a-04a0-4ab6-a310-3bcb2f10ada8.png" 
+          src="/lovable-uploads/a19c50cb-957d-4c09-8623-3478de4a026d.png" 
           alt="MovieFinder Logo" 
           className="h-full w-auto object-contain"
         />
