@@ -1,4 +1,3 @@
-
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
@@ -77,7 +76,28 @@ const fallbackResources = {
   'streaming.types.rent': 'Rent',
   'streaming.types.buy': 'Buy',
   'streaming.types.tvod': 'Rent/Buy',
-  'streaming.types.addon': 'Add-on package'
+  'streaming.types.addon': 'Add-on package',
+
+  // Footer translations
+  'footer.companyInfo': 'Company',
+  'footer.support': 'Support',
+  'footer.legal': 'Legal',
+  'footer.about': 'About Us',
+  'footer.contact': 'Contact',
+  'footer.careers': 'Careers',
+  'footer.press': 'Press',
+  'footer.help': 'Help Center',
+  'footer.faq': 'FAQ',
+  'footer.refunds': 'Refunds',
+  'footer.terms': 'Terms of Service',
+  'footer.privacy': 'Privacy Policy',
+  'footer.copyright': 'Copyright',
+  'footer.cookies': 'Cookie Policy',
+  'footer.language': 'Language',
+  'footer.allRightsReserved': 'All Rights Reserved',
+  'footer.madeWith': 'Made with',
+  'footer.by': 'by',
+  'footer.description': 'MovieFinder helps you discover your next favorite movie across all streaming platforms. Find what to watch next with personalized recommendations.'
 };
 
 // Add fallback translations to English and Polish resources
@@ -145,7 +165,28 @@ const enhancedPl = {
     'streaming.types.rent': 'Wypożyczenie',
     'streaming.types.buy': 'Zakup',
     'streaming.types.tvod': 'Wypożyczenie/Zakup',
-    'streaming.types.addon': 'Dodatek'
+    'streaming.types.addon': 'Dodatek',
+
+    // Footer translations
+    'footer.companyInfo': 'Firma',
+    'footer.support': 'Wsparcie',
+    'footer.legal': 'Prawne',
+    'footer.about': 'O nas',
+    'footer.contact': 'Kontakt',
+    'footer.careers': 'Kariera',
+    'footer.press': 'Prasa',
+    'footer.help': 'Centrum pomocy',
+    'footer.faq': 'FAQ',
+    'footer.refunds': 'Zwroty',
+    'footer.terms': 'Warunki korzystania',
+    'footer.privacy': 'Polityka prywatności',
+    'footer.copyright': 'Prawa autorskie',
+    'footer.cookies': 'Polityka plików cookie',
+    'footer.language': 'Język',
+    'footer.allRightsReserved': 'Wszelkie prawa zastrzeżone',
+    'footer.madeWith': 'Stworzone z',
+    'footer.by': 'przez',
+    'footer.description': 'MovieFinder pomaga odkryć Twój następny ulubiony film na wszystkich platformach streamingowych. Znajdź co obejrzeć dzięki spersonalizowanym rekomendacjom.'
   }
 };
 
