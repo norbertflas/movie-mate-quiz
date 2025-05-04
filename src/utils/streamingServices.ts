@@ -5,12 +5,12 @@ import type { StreamingPlatformData, StreamingService } from "@/types/streaming"
 // Function to get streaming availability from Supabase
 export const getStreamingAvailability = async (tmdbId: number, type: 'movie' | 'tv', countryCode: string = 'US'): Promise<StreamingPlatformData[]> => {
   try {
+    // Use the correct table name "movie_streaming_availability" instead of "streaming_availability"
     const { data, error } = await supabase
-      .from('streaming_availability')
+      .from('movie_streaming_availability')
       .select('*')
       .eq('tmdb_id', tmdbId)
-      .eq('type', type)
-      .eq('country_code', countryCode);
+      .eq('region', countryCode);
 
     if (error) {
       console.error("Error fetching streaming availability:", error);
@@ -18,11 +18,19 @@ export const getStreamingAvailability = async (tmdbId: number, type: 'movie' | '
     }
 
     if (!data || data.length === 0) {
-      console.log(`No streaming data found for TMDB ID ${tmdbId} and type ${type}`);
+      console.log(`No streaming data found for TMDB ID ${tmdbId} in region ${countryCode}`);
       return [];
     }
 
-    return data as StreamingPlatformData[];
+    // Transform the data to match StreamingPlatformData structure
+    const streamingData: StreamingPlatformData[] = data.map(item => ({
+      service: item.service_id || 'unknown',
+      available: true,
+      link: item.link || null,
+      type: 'subscription'
+    }));
+
+    return streamingData;
   } catch (error) {
     console.error("Error in getStreamingAvailability:", error);
     return [];
@@ -34,8 +42,8 @@ export const updateStreamingLink = async (id: number, link: string) => {
   try {
     const { data, error } = await supabase
       .from('movie_streaming_availability')
-      .update({ link })
-      .eq('id', id);
+      .update({ link }) // Ensure the column exists in your table
+      .eq('id', id.toString()); // Convert id to string as expected by the table
 
     if (error) {
       console.error("Error updating streaming link:", error);
