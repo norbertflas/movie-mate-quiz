@@ -20,7 +20,7 @@ export const MobileNav = () => {
         <Button 
           variant="ghost" 
           size="icon" 
-          className="relative hover:bg-primary/10 transition-all"
+          className="relative hover:bg-primary/10 transition-all p-1"
         >
           <AnimatePresence mode="wait">
             {isOpen ? (
@@ -59,6 +59,7 @@ export const MobileNav = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1, duration: 0.3 }}
+            className="w-full"
           >
             <NavLinks onNavigate={() => setIsOpen(false)} />
           </motion.div>

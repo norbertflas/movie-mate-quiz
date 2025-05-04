@@ -48,7 +48,7 @@ export const UserActions = () => {
   };
 
   return (
-    <div className="flex flex-1 items-center justify-end space-x-2">
+    <div className="flex items-center justify-end space-x-1 sm:space-x-2">
       <ThemeSwitcher />
       
       {/* Only show language switcher on desktop - mobile version in MobileNav */}
@@ -67,7 +67,7 @@ export const UserActions = () => {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            <Button variant="ghost" size="icon" className="hover:bg-primary/10 transition-all">
+            <Button variant="ghost" size="icon" className="hover:bg-primary/10 transition-all h-8 w-8 p-1">
               <Settings className="h-4 w-4" />
             </Button>
           </motion.div>

@@ -58,7 +58,7 @@ export const Navigation = () => {
       animate={{ y: 0 }}
       transition={{ duration: 0.5, type: "spring", stiffness: 100 }}
     >
-      <div className="container relative mx-auto px-4 sm:px-6">
+      <div className="container relative mx-auto px-2 sm:px-4 md:px-6 max-w-full">
         {/* Enhanced animated background gradient */}
         <div className="absolute inset-0 overflow-hidden">
           <motion.div
@@ -77,7 +77,7 @@ export const Navigation = () => {
         
         <div className="relative flex h-16 items-center justify-between z-10">
           {/* Logo section with enhanced animation */}
-          <div className="flex items-center">
+          <div className="flex items-center md:w-1/4">
             <motion.div
               whileHover={{ scale: 1.05 }}
               transition={{ type: "spring", stiffness: 400, damping: 10 }}
@@ -90,14 +90,14 @@ export const Navigation = () => {
           <AnimatePresence>
             {!isMobile && (
               <motion.div 
-                className="hidden md:flex md:flex-1 justify-center"
+                className="hidden md:flex justify-center w-1/2 overflow-x-auto scrollbar-hide"
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2, duration: 0.5 }}
               >
-                <NavigationMenu>
-                  <NavigationMenuList>
-                    <NavigationMenuItem className="relative px-1">
+                <NavigationMenu className="max-w-full">
+                  <NavigationMenuList className="flex-nowrap">
+                    <NavigationMenuItem className="relative">
                       <NavLinks />
                     </NavigationMenuItem>
                   </NavigationMenuList>
@@ -116,13 +116,13 @@ export const Navigation = () => {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
-            className="flex items-center gap-3"
+            className="flex items-center gap-2 md:gap-3 md:w-1/4 justify-end"
           >
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={handleSearchClick}
-              className="p-2 rounded-full bg-muted/30 hover:bg-primary/20 transition-colors hover:text-primary flex items-center gap-1.5"
+              className="p-2 rounded-full bg-muted/30 hover:bg-primary/20 transition-colors hover:text-primary flex items-center gap-1"
             >
               <Search className="h-4 w-4 text-foreground" />
               <span className="hidden sm:inline text-sm font-medium">Search</span>
@@ -144,7 +144,7 @@ export const Navigation = () => {
         {/* Breadcrumbs for non-home pages with enhanced animation */}
         {!isHomePage && (
           <motion.div 
-            className="py-2 overflow-x-auto"
+            className="py-2 overflow-x-auto scrollbar-hide"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}

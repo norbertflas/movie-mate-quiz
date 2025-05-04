@@ -28,8 +28,8 @@ export const NavLinks = ({ onNavigate }: NavLinksProps) => {
 
   return (
     <nav className={cn(
-      "flex",
-      isMobile ? "flex-col space-y-2" : "items-center space-x-1"
+      "flex w-full",
+      isMobile ? "flex-col space-y-2" : "items-center justify-center space-x-1"
     )}>
       {navItems.map((item, index) => (
         <NavLink 
