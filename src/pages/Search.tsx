@@ -17,16 +17,16 @@ import { SearchResults } from "@/components/search/SearchResults";
 import { useLocation } from "react-router-dom";
 import { SearchInput } from "@/components/search/SearchInput";
 
+type SearchType = "movies" | "creators" | "personalized";
+
 const Search = () => {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const initialQuery = searchParams.get('q') || '';
-  const initialType = searchParams.get('type') as "movies" | "creators" || "movies";
+  const initialType = searchParams.get('type') as SearchType || "movies";
 
   const [query, setQuery] = useState(initialQuery);
-  const [searchType, setSearchType] = useState<"movies" | "creators" | "personalized">(
-    initialType === "personalized" ? initialType : (initialType as "movies" | "creators" || "movies")
-  );
+  const [searchType, setSearchType] = useState<SearchType>(initialType);
   const [filters, setFilters] = useState<MovieFiltersType>({
     yearRange: [1900, new Date().getFullYear()],
     minRating: 0,
@@ -111,7 +111,7 @@ const Search = () => {
         <Tabs 
           defaultValue={searchType} 
           value={searchType}
-          onValueChange={(val) => setSearchType(val as "movies" | "creators" | "personalized")} 
+          onValueChange={(val) => setSearchType(val as SearchType)} 
           className="mt-12"
         >
           <TabsList className="grid w-full grid-cols-3 max-w-xl mx-auto mb-8">

@@ -30,7 +30,7 @@ serve(async (req) => {
 
     // Initialize the Gemini API client with a valid model name
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro" }); // Changed model name
+    const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro" }); // Using stable model
     
     const MAX_RETRIES = 3;
     const RETRY_DELAY = 1000;

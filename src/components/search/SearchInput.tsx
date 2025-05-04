@@ -6,13 +6,15 @@ import { useTranslation } from "react-i18next";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
 
+type SearchType = "movies" | "creators" | "personalized";
+
 interface SearchInputProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   handleSearch: (e: React.FormEvent) => void;
   isSearching: boolean;
-  searchType: "movies" | "creators" | "personalized";
-  setSearchType: (type: "movies" | "creators" | "personalized") => void;
+  searchType: SearchType;
+  setSearchType: (type: SearchType) => void;
 }
 
 export const SearchInput = ({
@@ -32,7 +34,6 @@ export const SearchInput = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      {/* We don't need Tabs here since they're now managed in the parent component */}
       <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3 max-w-2xl mx-auto">
         <div className="relative flex-1">
           <Input
