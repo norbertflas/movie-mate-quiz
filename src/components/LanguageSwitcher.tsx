@@ -6,7 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Globe, Languages } from "lucide-react";
+import { Globe } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
@@ -142,8 +142,3 @@ export const LanguageSwitcher = ({ variant = "default" }: LanguageSwitcherProps)
     </DropdownMenu>
   );
 };
-
-// Helper function for class names
-function cn(...classes: (string | undefined | boolean)[]) {
-  return classes.filter(Boolean).join(" ");
-}
