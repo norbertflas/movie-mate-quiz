@@ -2,10 +2,11 @@
 import { Logo } from "./Logo";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { Heart, Github, Mail, Copyright, Link } from "lucide-react";
+import { Heart, Github, Mail, Copyright, Link, Globe, MessageSquare, ShieldCheck, Facebook, Twitter, Instagram } from "lucide-react";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { Link as RouterLink } from "react-router-dom";
 import { Separator } from "./ui/separator";
+import { Button } from "./ui/button";
 
 export const Footer = () => {
   const { t } = useTranslation();
@@ -42,8 +43,11 @@ export const Footer = () => {
   ];
 
   const socialLinks = [
-    { icon: <Github className="h-5 w-5" />, name: "GitHub", url: "https://github.com" },
-    { icon: <Mail className="h-5 w-5" />, name: "Email", url: "mailto:contact@moviefinder.com" },
+    { icon: <Github className="h-4 w-4" />, name: "GitHub", url: "https://github.com" },
+    { icon: <Mail className="h-4 w-4" />, name: "Email", url: "mailto:contact@moviefinder.com" },
+    { icon: <Facebook className="h-4 w-4" />, name: "Facebook", url: "https://facebook.com" },
+    { icon: <Twitter className="h-4 w-4" />, name: "Twitter", url: "https://twitter.com" },
+    { icon: <Instagram className="h-4 w-4" />, name: "Instagram", url: "https://instagram.com" },
   ];
 
   const containerVariants = {
@@ -66,85 +70,164 @@ export const Footer = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ delay: 0.2, duration: 0.5 }}
-      className="mt-auto border-t border-border/40 bg-background/95 backdrop-blur-md"
+      className="mt-auto border-t border-border/40 bg-background/50 backdrop-blur-lg"
     >
-      <div className="container mx-auto px-4 py-12">
-        {/* Upper section with columns */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-8 mb-8">
-          {/* Logo & Description column */}
-          <div className="md:col-span-2 space-y-4">
-            <Logo size="lg" />
-            <p className="text-muted-foreground text-sm max-w-md">
-              {t("footer.description")}
-            </p>
-            <div className="flex space-x-3 pt-2">
-              {socialLinks.map((link) => (
-                <motion.a
-                  key={link.name}
-                  href={link.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-2 bg-muted/50 rounded-full text-muted-foreground hover:text-primary hover:bg-muted transition-all"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                  aria-label={link.name}
-                >
-                  {link.icon}
-                </motion.a>
+      <div className="relative">
+        {/* Animated background gradient */}
+        <div className="absolute inset-0 overflow-hidden">
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-r from-primary/5 via-blue-500/5 to-purple-500/5 rounded-full blur-3xl opacity-30"
+            animate={{
+              rotate: [0, 360],
+              scale: [0.8, 1.2, 0.8],
+            }}
+            transition={{
+              duration: 30,
+              repeat: Infinity,
+              repeatType: "mirror",
+            }}
+          />
+        </div>
+        
+        <div className="container relative z-10 mx-auto px-4 py-16">
+          {/* Upper section with columns */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
+            {/* Logo & Description column */}
+            <div className="md:col-span-1 space-y-4">
+              <Logo size="lg" />
+              <p className="text-muted-foreground text-sm max-w-md">
+                {t("footer.description")}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {socialLinks.map((link) => (
+                  <motion.a
+                    key={link.name}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 bg-muted/30 rounded-full text-muted-foreground hover:text-primary hover:bg-muted/50 transition-all"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    aria-label={link.name}
+                  >
+                    {link.icon}
+                  </motion.a>
+                ))}
+              </div>
+            </div>
+
+            {/* Footer links columns */}
+            <motion.div 
+              className="col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-8"
+              variants={containerVariants}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+            >
+              {footerLinks.map((column) => (
+                <motion.div key={column.title} className="space-y-4" variants={itemVariants}>
+                  <h3 className="text-lg font-semibold">{column.title}</h3>
+                  <ul className="space-y-2">
+                    {column.links.map((link) => (
+                      <li key={link.name}>
+                        <RouterLink
+                          to={link.to}
+                          className="text-muted-foreground hover:text-foreground transition-colors text-sm flex items-center gap-1.5 group"
+                        >
+                          <div className="relative">
+                            <Link className="h-3 w-3" />
+                            <motion.span
+                              className="absolute -inset-1 bg-primary/10 rounded-full scale-0 opacity-0"
+                              animate={{ scale: 0, opacity: 0 }}
+                              whileHover={{ scale: 1, opacity: 1 }}
+                              transition={{ duration: 0.2 }}
+                            />
+                          </div>
+                          <span className="group-hover:underline decoration-primary/40 underline-offset-2">{link.name}</span>
+                        </RouterLink>
+                      </li>
+                    ))}
+                  </ul>
+                </motion.div>
               ))}
+            </motion.div>
+          </div>
+
+          <div className="rounded-lg border border-border/30 bg-card/30 backdrop-blur-sm p-6">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="flex flex-col items-center md:items-start space-y-2">
+                <div className="flex items-center gap-2">
+                  <motion.div
+                    animate={{ rotate: [0, 10, 0] }}
+                    transition={{ duration: 2, repeat: Infinity, repeatType: "mirror" }}
+                  >
+                    <Globe className="h-4 w-4 text-primary" />
+                  </motion.div>
+                  <h4 className="text-sm font-medium">{t("footer.language")}</h4>
+                </div>
+                <p className="text-xs text-muted-foreground">{t("footer.selectLanguage")}</p>
+              </div>
+              
+              <div className="grid grid-cols-3 gap-2">
+                {languages.slice(0, 6).map((lang) => (
+                  <motion.button
+                    key={lang.code}
+                    className="px-3 py-2 text-sm rounded-md hover:bg-primary/10 transition-colors flex items-center gap-2"
+                    onClick={() => handleLanguageChange(lang.code)}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <span>{lang.flag}</span>
+                    <span>{lang.label}</span>
+                  </motion.button>
+                ))}
+              </div>
             </div>
           </div>
 
-          {/* Footer links columns */}
-          <motion.div 
-            className="col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-8"
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-          >
-            {footerLinks.map((column) => (
-              <motion.div key={column.title} className="space-y-4" variants={itemVariants}>
-                <h3 className="text-lg font-semibold">{column.title}</h3>
-                <ul className="space-y-2">
-                  {column.links.map((link) => (
-                    <li key={link.name}>
-                      <RouterLink
-                        to={link.to}
-                        className="text-muted-foreground hover:text-foreground transition-colors text-sm flex items-center gap-1"
-                      >
-                        <Link className="h-3 w-3" />
-                        <span>{link.name}</span>
-                      </RouterLink>
-                    </li>
-                  ))}
-                </ul>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
+          <Separator className="my-6 opacity-20" />
 
-        <Separator className="my-6 opacity-20" />
+          {/* Language selector and copyright section */}
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-primary" />
+              <div className="flex flex-col sm:flex-row items-center gap-2">
+                <span className="text-sm text-muted-foreground flex items-center gap-1">
+                  <Copyright className="h-3.5 w-3.5" /> {currentYear} MovieFinder
+                </span>
+                <span className="hidden sm:inline text-muted-foreground">•</span>
+                <span className="text-sm text-muted-foreground">{t("footer.allRightsReserved")}</span>
+              </div>
+            </div>
 
-        {/* Language selector and copyright section */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex flex-col sm:flex-row items-center gap-4">
-            <span className="text-sm text-muted-foreground flex items-center gap-1">
-              <Copyright className="h-4 w-4" /> {currentYear} MovieFinder
-            </span>
-            <span className="hidden sm:inline text-muted-foreground">•</span>
-            <span className="text-sm text-muted-foreground">{t("footer.allRightsReserved")}</span>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground hidden md:flex items-center">
-              <Heart className="h-4 w-4 text-red-500 mr-1" />{" "}
-              {t("footer.madeWith")} {t("footer.by")} MovieFinder Team
-            </span>
-            <LanguageSwitcher variant="minimal" />
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-muted-foreground hidden md:flex items-center">
+                <Heart className="h-3.5 w-3.5 text-red-500 mr-1" />{" "}
+                {t("footer.madeWith")} {t("footer.by")} MovieFinder Team
+              </span>
+              <Button variant="outline" size="sm" className="text-xs h-8">
+                <MessageSquare className="h-3 w-3 mr-1.5" />
+                {t("footer.contactUs")}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
     </motion.footer>
   );
+};
+
+// We need this for the Footer's language buttons to work
+const languages = [
+  { code: "en", label: "English", flag: "🇺🇸" },
+  { code: "pl", label: "Polski", flag: "🇵🇱" },
+  { code: "fr", label: "Français", flag: "🇫🇷" },
+  { code: "de", label: "Deutsch", flag: "🇩🇪" },
+  { code: "es", label: "Español", flag: "🇪🇸" },
+  { code: "it", label: "Italiano", flag: "🇮🇹" },
+];
+
+const handleLanguageChange = (langCode: string) => {
+  localStorage.setItem("language", langCode);
+  window.location.reload();
 };

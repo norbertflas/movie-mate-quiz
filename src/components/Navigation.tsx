@@ -7,7 +7,7 @@ import { useLocation } from "react-router-dom";
 import { Breadcrumbs } from "./navigation/Breadcrumbs";
 import { Logo } from "./Logo";
 import { cn } from "@/lib/utils";
-import { Search } from "lucide-react";
+import { Search, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -41,47 +41,61 @@ export const Navigation = () => {
     <motion.nav 
       className={cn(
         "sticky top-0 z-50 w-full border-b transition-all duration-300",
-        isHomePage ? "bg-background/50" : "bg-background/80",
-        scrolled ? "shadow-md backdrop-blur-md" : "backdrop-blur-lg"
+        isHomePage ? "bg-background/20" : "bg-background/60",
+        scrolled ? 
+          "shadow-lg backdrop-blur-xl border-primary/10" : 
+          "backdrop-blur-md"
       )}
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.5, type: "spring", stiffness: 100 }}
     >
-      <div className="container mx-auto px-4 sm:px-6">
-        <div className="flex h-16 items-center justify-between">
-          {/* Logo and animated highlight */}
-          <div className="flex items-center relative">
+      <div className="container relative mx-auto px-4 sm:px-6">
+        {/* Animated background gradient */}
+        <div className="absolute inset-0 overflow-hidden">
+          <motion.div
+            className="absolute -inset-[50%] bg-gradient-to-r from-primary/5 via-blue-500/5 to-purple-500/5 rounded-full blur-3xl opacity-50"
+            animate={{
+              rotate: [0, 360],
+              scale: [0.8, 1.2, 0.8],
+            }}
+            transition={{
+              duration: 20,
+              repeat: Infinity,
+              repeatType: "mirror",
+            }}
+          />
+        </div>
+        
+        <div className="relative flex h-16 items-center justify-between z-10">
+          {/* Logo section with subtle animation */}
+          <div className="flex items-center">
             <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-primary/10 to-blue-500/10 rounded-full blur-xl"
-              animate={{ 
-                scale: [1, 1.1, 1],
-                opacity: [0.5, 0.7, 0.5]
-              }}
-              transition={{ 
-                duration: 5, 
-                repeat: Infinity,
-                repeatType: "reverse"
-              }}
-            />
-            <Logo animated />
+              whileHover={{ scale: 1.05 }}
+              transition={{ type: "spring", stiffness: 400, damping: 10 }}
+            >
+              <Logo animated />
+            </motion.div>
           </div>
           
+          {/* Main navigation links - desktop only */}
           <AnimatePresence>
             <motion.div 
-              className="hidden md:flex md:flex-1 justify-center space-x-4"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2 }}
+              className="hidden md:flex md:flex-1 justify-center space-x-6"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
             >
               <NavLinks />
             </motion.div>
           </AnimatePresence>
           
-          <div className={`flex ${isMobile ? "" : "md:hidden"}`}>
+          {/* Mobile navigation toggle */}
+          <div className="md:hidden">
             <MobileNav />
           </div>
 
+          {/* Right side actions: search, language, user */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -92,11 +106,21 @@ export const Navigation = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={handleSearchClick}
-              className="p-2 rounded-full bg-muted/50 hover:bg-muted/80 transition-colors hover:text-primary"
+              className="p-2 rounded-full bg-muted/30 hover:bg-primary/20 transition-colors hover:text-primary flex items-center gap-1.5"
             >
-              <Search className="h-5 w-5 text-muted-foreground" />
+              <Search className="h-4 w-4 text-foreground" />
+              <span className="hidden sm:inline text-sm font-medium">Search</span>
+              <motion.span 
+                className="absolute -right-1 -top-1" 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+              >
+                <Sparkles className="h-3 w-3 text-primary" />
+              </motion.span>
             </motion.button>
-            {/* Only show language switcher in desktop mode, mobile version is in MobileNav */}
+            
+            {/* Only show language switcher on desktop - mobile version in MobileNav */}
             {!isMobile && (
               <LanguageSwitcher />
             )}
@@ -104,6 +128,7 @@ export const Navigation = () => {
           </motion.div>
         </div>
         
+        {/* Breadcrumbs for non-home pages */}
         {!isHomePage && (
           <motion.div 
             className="py-2 overflow-x-auto"
