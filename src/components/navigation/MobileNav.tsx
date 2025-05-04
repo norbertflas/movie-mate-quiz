@@ -17,7 +17,11 @@ export const MobileNav = () => {
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="relative hover:bg-primary/10 transition-all"
+        >
           <AnimatePresence mode="wait">
             {isOpen ? (
               <motion.div
@@ -44,7 +48,7 @@ export const MobileNav = () => {
           <span className="sr-only">Menu</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-[280px] sm:w-[320px] py-6">
+      <SheetContent side="left" className="w-[280px] sm:w-[320px] py-6 border-r border-primary/10">
         <SheetHeader className="mb-6">
           <div className="flex justify-center">
             <Logo size="lg" />
@@ -80,8 +84,8 @@ export const MobileNav = () => {
               className="mt-4"
             >
               <Button 
-                variant="outline" 
-                className="w-full bg-primary/10 hover:bg-primary/20"
+                variant="gradient" 
+                className="w-full"
                 onClick={() => setIsOpen(false)}
               >
                 {t("common.close")}

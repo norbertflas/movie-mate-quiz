@@ -9,9 +9,17 @@ import { Logo } from "./Logo";
 import { cn } from "@/lib/utils";
 import { Search, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { LanguageSwitcher } from "./LanguageSwitcher";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState, useEffect } from "react";
+import { 
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+  navigationMenuTriggerStyle,
+} from "@/components/ui/navigation-menu";
 
 export const Navigation = () => {
   const location = useLocation();
@@ -51,7 +59,7 @@ export const Navigation = () => {
       transition={{ duration: 0.5, type: "spring", stiffness: 100 }}
     >
       <div className="container relative mx-auto px-4 sm:px-6">
-        {/* Animated background gradient */}
+        {/* Enhanced animated background gradient */}
         <div className="absolute inset-0 overflow-hidden">
           <motion.div
             className="absolute -inset-[50%] bg-gradient-to-r from-primary/5 via-blue-500/5 to-purple-500/5 rounded-full blur-3xl opacity-50"
@@ -68,7 +76,7 @@ export const Navigation = () => {
         </div>
         
         <div className="relative flex h-16 items-center justify-between z-10">
-          {/* Logo section with subtle animation */}
+          {/* Logo section with enhanced animation */}
           <div className="flex items-center">
             <motion.div
               whileHover={{ scale: 1.05 }}
@@ -80,14 +88,22 @@ export const Navigation = () => {
           
           {/* Main navigation links - desktop only */}
           <AnimatePresence>
-            <motion.div 
-              className="hidden md:flex md:flex-1 justify-center space-x-6"
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
-            >
-              <NavLinks />
-            </motion.div>
+            {!isMobile && (
+              <motion.div 
+                className="hidden md:flex md:flex-1 justify-center"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2, duration: 0.5 }}
+              >
+                <NavigationMenu>
+                  <NavigationMenuList>
+                    <NavigationMenuItem className="relative px-1">
+                      <NavLinks />
+                    </NavigationMenuItem>
+                  </NavigationMenuList>
+                </NavigationMenu>
+              </motion.div>
+            )}
           </AnimatePresence>
           
           {/* Mobile navigation toggle */}
@@ -95,7 +111,7 @@ export const Navigation = () => {
             <MobileNav />
           </div>
 
-          {/* Right side actions: search, language, user */}
+          {/* Right side actions: search and user actions (includes language switcher) */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -120,15 +136,12 @@ export const Navigation = () => {
               </motion.span>
             </motion.button>
             
-            {/* Only show language switcher on desktop - mobile version in MobileNav */}
-            {!isMobile && (
-              <LanguageSwitcher />
-            )}
+            {/* User actions include the language switcher - removing duplicate */}
             <UserActions />
           </motion.div>
         </div>
         
-        {/* Breadcrumbs for non-home pages */}
+        {/* Breadcrumbs for non-home pages with enhanced animation */}
         {!isHomePage && (
           <motion.div 
             className="py-2 overflow-x-auto"

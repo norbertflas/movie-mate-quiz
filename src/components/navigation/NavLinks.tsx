@@ -61,10 +61,17 @@ export const NavLinks = ({ onNavigate }: NavLinksProps) => {
                   />
                 )}
               </div>
-              <span className="whitespace-nowrap">{item.label}</span>
+              <span className={cn(
+                "whitespace-nowrap transition-all",
+                isActive && "font-semibold"
+              )}>
+                {item.label}
+              </span>
+              
+              {/* Fixed dot positioning for desktop */}
               {isActive && !isMobile && (
                 <motion.div
-                  className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-primary rounded-full"
+                  className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-primary rounded-full"
                   layoutId="navDot"
                   transition={{ type: "spring", duration: 0.5 }}
                 />

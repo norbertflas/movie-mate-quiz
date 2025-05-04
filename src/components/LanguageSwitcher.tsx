@@ -11,6 +11,7 @@ import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 const languages = [
   { code: "en", label: "English", flag: "🇺🇸" },
@@ -91,7 +92,7 @@ export const LanguageSwitcher = ({ variant = "default" }: LanguageSwitcherProps)
       <Button 
         variant="ghost" 
         size="sm"
-        className="flex items-center gap-2 bg-muted/30 hover:bg-primary/20 transition-colors text-foreground hover:text-primary"
+        className="flex items-center gap-2 hover:bg-primary/10 transition-colors text-foreground hover:text-primary"
         disabled={isChanging}
       >
         <Globe className="h-4 w-4" />
@@ -109,7 +110,10 @@ export const LanguageSwitcher = ({ variant = "default" }: LanguageSwitcherProps)
           {renderButton()}
         </motion.div>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48 p-2">
+      <DropdownMenuContent 
+        align="end" 
+        className="w-48 p-2 bg-background/80 backdrop-blur-lg border border-primary/10"
+      >
         <div className="mb-2 px-2 py-1.5">
           <p className="text-xs text-muted-foreground">{t("common.selectLanguage")}</p>
         </div>

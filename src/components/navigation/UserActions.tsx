@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { LogOut, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -6,17 +7,20 @@ import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { ThemeSwitcher } from "../ThemeSwitcher";
 import { LanguageSwitcher } from "../LanguageSwitcher";
+import { motion } from "framer-motion";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const UserActions = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
 
   const handleLogout = async () => {
     try {
@@ -46,15 +50,29 @@ export const UserActions = () => {
   return (
     <div className="flex flex-1 items-center justify-end space-x-2">
       <ThemeSwitcher />
-      <LanguageSwitcher />
+      
+      {/* Only show language switcher on desktop - mobile version in MobileNav */}
+      {!isMobile && (
+        <motion.div 
+          whileHover={{ scale: 1.05 }} 
+          whileTap={{ scale: 0.95 }}
+        >
+          <LanguageSwitcher />
+        </motion.div>
+      )}
       
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon">
-            <Settings className="h-4 w-4" />
-          </Button>
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <Button variant="ghost" size="icon" className="hover:bg-primary/10 transition-all">
+              <Settings className="h-4 w-4" />
+            </Button>
+          </motion.div>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
+        <DropdownMenuContent align="end" className="bg-background/80 backdrop-blur-lg border border-primary/10">
           <DropdownMenuItem onSelect={handleNavigateToServices}>
             {t("navigation.streamingServices")}
           </DropdownMenuItem>
