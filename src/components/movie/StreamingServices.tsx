@@ -4,12 +4,14 @@ import { Badge } from "../ui/badge";
 import { useTranslation } from "react-i18next";
 import { getStreamingServicesByRegion, languageToRegion } from "@/utils/streamingServices";
 import { Skeleton } from "../ui/skeleton";
+import { Button } from "../ui/button";
 
 interface StreamingServicesProps {
   services: string[];
+  links?: Record<string, string>;
 }
 
-export const StreamingServices = ({ services }: StreamingServicesProps) => {
+export const StreamingServices = ({ services, links = {} }: StreamingServicesProps) => {
   const [availableServices, setAvailableServices] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -52,8 +54,24 @@ export const StreamingServices = ({ services }: StreamingServicesProps) => {
           })
         );
         
-        console.log('Streaming services found:', filteredServices.map(s => s.name).join(', '));
-        setAvailableServices(filteredServices);
+        // Add links to the services if available
+        const servicesWithLinks = filteredServices.map(service => {
+          const serviceKey = Object.keys(links).find(key => {
+            const linkServiceName = key.toLowerCase().trim().replace(/[\s+]/g, '');
+            const dbServiceName = service.name.toLowerCase().trim().replace(/[\s+]/g, '');
+            return linkServiceName === dbServiceName || 
+                   dbServiceName.includes(linkServiceName) || 
+                   linkServiceName.includes(dbServiceName);
+          });
+          
+          return {
+            ...service,
+            link: serviceKey ? links[serviceKey] : null
+          };
+        });
+        
+        console.log('Streaming services found:', servicesWithLinks.map(s => s.name).join(', '));
+        setAvailableServices(servicesWithLinks);
       } catch (error) {
         console.error('Error fetching streaming services:', error);
         setError('Failed to fetch streaming services');
@@ -64,7 +82,25 @@ export const StreamingServices = ({ services }: StreamingServicesProps) => {
     };
 
     fetchStreamingServices();
-  }, [i18n.language, services]);
+  }, [i18n.language, services, links]);
+
+  const openStreamingService = (link: string, serviceName: string) => {
+    if (!link) return;
+    
+    // Fix streaming links - ensure they have proper URL format
+    let url = link;
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = `https://${url}`;
+    }
+    
+    // Add path for specific streaming sites if needed
+    if (url.includes('disneyplus.com') && !url.includes('/video')) {
+      url = `${url}/home`;
+    }
+    
+    console.log(`Opening streaming service: ${serviceName} with URL: ${url}`);
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
 
   if (isLoading) {
     return (
@@ -93,9 +129,15 @@ export const StreamingServices = ({ services }: StreamingServicesProps) => {
       <span className="text-sm font-semibold">{t("streaming.availableOn")}</span>
       <div className="flex flex-wrap gap-2">
         {availableServices.map((service) => (
-          <Badge key={service.id} variant="secondary">
+          <Button 
+            key={service.id} 
+            variant="secondary"
+            size="sm"
+            onClick={() => openStreamingService(service.link, service.name)}
+            className="rounded-full flex items-center gap-1 px-3 py-1 h-auto text-xs"
+          >
             {t(`services.${service.name.toLowerCase()}`, { defaultValue: service.name })}
-          </Badge>
+          </Button>
         ))}
       </div>
     </div>

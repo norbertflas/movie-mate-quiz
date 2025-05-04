@@ -130,7 +130,7 @@ serve(async (req) => {
         
         // Extract streaming service information
         streamingServices = Object.entries(countryStreamingOptions).map(([service, options]) => {
-          const option = options[0]; // Take the first option for each service
+          const option = Array.isArray(options) && options.length > 0 ? options[0] : options;
           return {
             service,
             link: option?.link || '',
@@ -230,7 +230,7 @@ async function fetchMovieTitleFromTMDB(tmdbId: number) {
   }
 }
 
-// Helper function to search by title - updated to v4 API format
+// Helper function to search by title - updated for v4 API format
 async function searchByTitle(title: string, country: string, rapidApiKey: string, year?: string) {
   try {
     // Use v4 endpoint for title search
@@ -306,7 +306,7 @@ async function searchByTitle(title: string, country: string, rapidApiKey: string
         
         // API v4 returns an object with service names as keys, each containing an array of offerings
         return Object.entries(countryInfo).map(([service, options]) => {
-          const option = options[0]; // Take first option for each service
+          const option = Array.isArray(options) && options.length > 0 ? options[0] : options;
           return {
             service,
             link: option?.link || '',

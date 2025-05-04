@@ -14,6 +14,7 @@ export interface StreamingAvailabilityState {
   timestamp: number;
   source: string;
   requested: boolean;
+  links: Record<string, string>;
 }
 
 // Check if localStorage is available to avoid errors in restricted contexts
@@ -39,7 +40,8 @@ export function useStreamingAvailability(tmdbId: number, title?: string, year?: 
     error: null,
     timestamp: 0,
     source: 'none',
-    requested: false
+    requested: false,
+    links: {}
   });
 
   // Determine the country code based on the current language
@@ -78,13 +80,22 @@ export function useStreamingAvailability(tmdbId: number, title?: string, year?: 
       
       console.log(`[hook] Received ${services.length} streaming services from fallback`);
       
+      // Extract links from services
+      const links: Record<string, string> = {};
+      services.forEach(service => {
+        if (service.link) {
+          links[service.service] = service.link;
+        }
+      });
+      
       const newState = {
         services,
         isLoading: false,
         error: null,
         timestamp: Date.now(),
         source: services.length > 0 ? services[0].source || 'api' : 'none',
-        requested: true
+        requested: true,
+        links
       };
       
       setState(newState);
@@ -98,7 +109,8 @@ export function useStreamingAvailability(tmdbId: number, title?: string, year?: 
         error: new Error(error.message || 'Failed to fetch streaming availability'),
         timestamp: Date.now(),
         source: 'error',
-        requested: true
+        requested: true,
+        links: {}
       });
     }
   }, [tmdbId, title, year, country, state.isLoading]);

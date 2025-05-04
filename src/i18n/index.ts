@@ -45,7 +45,9 @@ i18n
     react: {
       useSuspense: false,
     },
-    // Remove keySeparator and nsSeparator which were causing issues
+    // Fix issues with keySeparator and nsSeparator
+    keySeparator: '.',
+    nsSeparator: ':',
     debug: import.meta.env.DEV,
   });
 

@@ -10,10 +10,12 @@ import { cn } from "@/lib/utils";
 import { Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { LanguageSwitcher } from "./LanguageSwitcher";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const Navigation = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const isHomePage = location.pathname === "/";
 
   const handleSearchClick = () => {
@@ -45,7 +47,7 @@ export const Navigation = () => {
             <NavLinks />
           </motion.div>
           
-          <div className="flex md:hidden">
+          <div className={`flex ${isMobile ? "" : "md:hidden"}`}>
             <MobileNav />
           </div>
 
@@ -63,9 +65,10 @@ export const Navigation = () => {
             >
               <Search className="h-5 w-5 text-muted-foreground" />
             </motion.button>
-            <div className="hidden sm:block">
+            {/* Only show language switcher in desktop mode, mobile version is in MobileNav */}
+            {!isMobile && (
               <LanguageSwitcher />
-            </div>
+            )}
             <UserActions />
           </motion.div>
         </div>
