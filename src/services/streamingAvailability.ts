@@ -350,24 +350,35 @@ async function fetchStreamingAvailabilityAPI(
       try {
         console.log('[API] Trying title search with:', title);
         
+        // Define proper interface for search parameters
+        interface SearchParams {
+          query: string;
+          country: string;
+          type: string;
+          output_language: string;
+          year?: string;
+        }
+        
+        const searchParams: SearchParams = {
+          query: title,
+          country: country.toLowerCase(),
+          type: 'movie',
+          output_language: 'en'
+        };
+
+        if (year) {
+          searchParams.year = year;
+        }
+
         const searchOptions = {
           method: 'GET',
           url: 'https://streaming-availability.p.rapidapi.com/v4/search',
-          params: {
-            query: title,
-            country: country.toLowerCase(),
-            type: 'movie',
-            output_language: 'en'
-          },
+          params: searchParams,
           headers: {
             'X-RapidAPI-Key': RAPIDAPI_KEY,
             'X-RapidAPI-Host': 'streaming-availability.p.rapidapi.com'
           }
         };
-
-        if (year) {
-          searchOptions.params.year = year;
-        }
 
         const response = await retryWithBackoff(() => axios.request(searchOptions));
         
