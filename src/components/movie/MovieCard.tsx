@@ -3,6 +3,7 @@ import { useState, memo, useCallback } from "react";
 import { CardContent } from "../ui/card";
 import { Badge } from "../ui/badge";
 import type { MovieCardProps } from "@/types/movie";
+import type { StreamingPlatformData } from "@/types/streaming";
 import { UnifiedMovieDetails } from "./UnifiedMovieDetails";
 import { useTranslation } from "react-i18next";
 import { useOptimizedStreaming } from "@/hooks/use-optimized-streaming";
@@ -60,10 +61,30 @@ export const MovieCard = memo(({
     setIsFavorite(!isFavorite);
   }, [isFavorite]);
 
-  // Use streaming data from optimized hook if available, otherwise fallback to props
+  // Transform streaming services to proper format
+  const transformedServices: StreamingPlatformData[] = streamingServices.map(service => {
+    if (typeof service === 'string') {
+      return {
+        service,
+        available: true,
+        tmdbId,
+        type: 'subscription' as const
+      };
+    }
+    return {
+      service: service.service,
+      available: true,
+      link: service.link,
+      logo: service.logo,
+      tmdbId,
+      type: 'subscription' as const
+    };
+  });
+
+  // Use streaming data from optimized hook if available, otherwise fallback to transformed props
   const availableServices = streamingData.services?.length > 0
     ? streamingData.services
-    : streamingServices;
+    : transformedServices;
 
   return (
     <>
