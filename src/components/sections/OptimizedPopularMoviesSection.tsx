@@ -3,9 +3,8 @@ import { motion, useInView } from "framer-motion";
 import type { TMDBMovie } from "@/services/tmdb";
 import { useTranslation } from "react-i18next";
 import { useRef, useState, useCallback, memo } from "react";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { TrendingUp } from "lucide-react";
-import { VirtualizedMovieGrid } from "../movie/VirtualizedMovieGrid";
+import { OptimizedMovieGrid } from "../movie/OptimizedMovieGrid";
 import { UnifiedMovieDetails } from "../movie/UnifiedMovieDetails";
 
 interface OptimizedPopularMoviesSectionProps {
@@ -16,7 +15,6 @@ export const OptimizedPopularMoviesSection = memo(({ movies }: OptimizedPopularM
   const { t } = useTranslation();
   const ref = useRef(null);
   const isInView = useInView(ref, { once: false, amount: 0.1 });
-  const isMobile = useIsMobile();
   const [selectedMovie, setSelectedMovie] = useState<TMDBMovie | null>(null);
 
   const handleMovieClick = useCallback((movie: TMDBMovie) => {
@@ -70,7 +68,7 @@ export const OptimizedPopularMoviesSection = memo(({ movies }: OptimizedPopularM
           animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
           transition={{ duration: 0.5 }}
         >
-          <VirtualizedMovieGrid 
+          <OptimizedMovieGrid 
             movies={movies}
             onMovieClick={handleMovieClick}
             className="w-full"
