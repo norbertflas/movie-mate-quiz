@@ -16,13 +16,15 @@ const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 // In-memory cache for the current session
 const localCache: Record<string, StreamingAvailabilityCache> = {};
 
-// Service name mapping for consistency
+// Enhanced service name mapping for consistency
 const serviceNameMap: Record<string, string> = {
   'netflix': 'Netflix',
   'amazon': 'Prime Video',
   'amazon prime video': 'Prime Video',
   'amazon prime': 'Prime Video',
   'prime video': 'Prime Video',
+  'prime': 'Prime Video',
+  'primevideo': 'Prime Video',
   'disney': 'Disney+',
   'disney plus': 'Disney+',
   'disneyplus': 'Disney+',
@@ -81,7 +83,7 @@ async function retryWithBackoff<T>(
 // Fetch from Supabase database first
 async function fetchFromDatabase(tmdbId: number, country: string): Promise<StreamingPlatformData[]> {
   try {
-    console.log(`Checking database for TMDB ID: ${tmdbId} in region: ${country}`);
+    console.log(`[DB] Checking database for TMDB ID: ${tmdbId} in region: ${country}`);
     
     const { data, error } = await supabase
       .from('movie_streaming_availability')
@@ -93,12 +95,12 @@ async function fetchFromDatabase(tmdbId: number, country: string): Promise<Strea
       .eq('region', country.toUpperCase());
 
     if (error) {
-      console.error('Database error:', error);
+      console.error('[DB] Database error:', error);
       return [];
     }
 
     if (!data || data.length === 0) {
-      console.log('No data found in database');
+      console.log('[DB] No data found in database');
       return [];
     }
 
@@ -111,10 +113,10 @@ async function fetchFromDatabase(tmdbId: number, country: string): Promise<Strea
       source: 'database'
     }));
 
-    console.log(`Found ${services.length} services in database`);
+    console.log(`[DB] Found ${services.length} services in database`);
     return services;
   } catch (error) {
-    console.error('Error fetching from database:', error);
+    console.error('[DB] Error fetching from database:', error);
     return [];
   }
 }
@@ -122,32 +124,144 @@ async function fetchFromDatabase(tmdbId: number, country: string): Promise<Strea
 function generateServiceLink(serviceName: string): string {
   const normalized = serviceName.toLowerCase().replace(/[\s+]/g, '');
   
-  switch (normalized) {
-    case 'netflix':
-      return 'https://www.netflix.com';
-    case 'primevideo':
-    case 'amazon':
-    case 'amazonprime':
-      return 'https://www.primevideo.com';
-    case 'disney+':
-    case 'disneyplus':
-      return 'https://www.disneyplus.com';
-    case 'hulu':
-      return 'https://www.hulu.com';
-    case 'hbomax':
-    case 'max':
-      return 'https://play.max.com';
-    case 'appletv+':
-    case 'appletv':
-      return 'https://tv.apple.com';
-    case 'paramount+':
-      return 'https://www.paramountplus.com';
-    default:
-      return `https://www.${normalized}.com`;
+  const linkMap: Record<string, string> = {
+    'netflix': 'https://www.netflix.com',
+    'primevideo': 'https://www.primevideo.com',
+    'amazon': 'https://www.primevideo.com',
+    'prime': 'https://www.primevideo.com',
+    'disney': 'https://www.disneyplus.com',
+    'disneyplus': 'https://www.disneyplus.com',
+    'hulu': 'https://www.hulu.com',
+    'hbomax': 'https://play.max.com',
+    'max': 'https://play.max.com',
+    'apple': 'https://tv.apple.com',
+    'appletv': 'https://tv.apple.com',
+    'paramount': 'https://www.paramountplus.com',
+    'paramountplus': 'https://www.paramountplus.com'
+  };
+  
+  return linkMap[normalized] || `https://www.${normalized}.com`;
+}
+
+// Main function to get streaming availability
+export async function getStreamingAvailability(
+  tmdbId: number,
+  title?: string,
+  year?: string,
+  country: string = 'us'
+): Promise<StreamingPlatformData[]> {
+  try {
+    console.log(`[MAIN] Getting streaming availability for TMDB ID: ${tmdbId}, country: ${country}, title: ${title}, year: ${year}`);
+    
+    // Check local memory cache first
+    const cacheKey = `${tmdbId}-${country}`;
+    if (localCache[cacheKey] && (Date.now() - localCache[cacheKey].timestamp) < CACHE_DURATION) {
+      console.log('[MAIN] Using memory cached streaming data for:', tmdbId);
+      return localCache[cacheKey].data;
+    }
+    
+    // First try database
+    const dbResults = await fetchFromDatabase(tmdbId, country);
+    if (dbResults.length > 0) {
+      console.log(`[MAIN] Found ${dbResults.length} services in database`);
+      // Cache the result
+      localCache[cacheKey] = {
+        data: dbResults,
+        timestamp: Date.now()
+      };
+      return dbResults;
+    }
+    
+    // Try Supabase edge function with enhanced error handling
+    try {
+      console.log('[MAIN] Trying Supabase edge function');
+      const { data, error } = await supabase.functions.invoke('streaming-availability', {
+        body: { tmdbId, country, title, year }
+      });
+      
+      if (!error && data?.result && Array.isArray(data.result) && data.result.length > 0) {
+        console.log(`[MAIN] Received ${data.result.length} streaming services from edge function`);
+        
+        const processedResults = data.result.map((service: any) => ({
+          ...service,
+          service: normalizeServiceName(service.service),
+          logo: service.logo || `/streaming-icons/${service.service.toLowerCase().replace(/\s+/g, '')}.svg`,
+          source: 'edge-function'
+        }));
+        
+        // Cache the result
+        localCache[cacheKey] = {
+          data: processedResults,
+          timestamp: Date.now()
+        };
+        
+        return processedResults;
+      } else if (error) {
+        console.error('[MAIN] Edge function error:', error);
+      }
+    } catch (error) {
+      console.error('[MAIN] Edge function error:', error);
+    }
+    
+    // Try RapidAPI directly as fallback
+    if (RAPIDAPI_KEY) {
+      try {
+        console.log('[MAIN] Trying RapidAPI directly');
+        const apiResults = await fetchStreamingAvailabilityAPI(tmdbId, title, year, country);
+        if (apiResults.length > 0) {
+          console.log(`[MAIN] Found ${apiResults.length} services via RapidAPI`);
+          // Cache the result
+          localCache[cacheKey] = {
+            data: apiResults,
+            timestamp: Date.now()
+          };
+          return apiResults;
+        }
+      } catch (error) {
+        console.error('[MAIN] RapidAPI error:', error);
+      }
+    }
+    
+    // Try Watchmode API as last resort
+    try {
+      console.log('[MAIN] Trying Watchmode API');
+      const { data, error } = await supabase.functions.invoke('watchmode-availability', {
+        body: { tmdbId, region: country.toUpperCase() }
+      });
+      
+      if (!error && data?.sources && Array.isArray(data.sources) && data.sources.length > 0) {
+        console.log(`[MAIN] Found ${data.sources.length} services via Watchmode`);
+        
+        const watchmodeResults = data.sources.map((source: any) => ({
+          service: normalizeServiceName(source.service),
+          available: true,
+          link: source.link || generateServiceLink(source.service),
+          logo: source.logo || `/streaming-icons/default.svg`,
+          type: source.type || 'subscription',
+          source: 'watchmode'
+        }));
+        
+        // Cache the result
+        localCache[cacheKey] = {
+          data: watchmodeResults,
+          timestamp: Date.now()
+        };
+        
+        return watchmodeResults;
+      }
+    } catch (error) {
+      console.error('[MAIN] Watchmode error:', error);
+    }
+    
+    console.log('[MAIN] No streaming services found from any source');
+    return [];
+  } catch (error) {
+    console.error('[MAIN] Error in getStreamingAvailability:', error);
+    return [];
   }
 }
 
-// Implementation using the Streaming Availability API
+// Implementation using the Streaming Availability API directly
 async function fetchStreamingAvailabilityAPI(
   tmdbId: number,
   title?: string,
@@ -155,83 +269,95 @@ async function fetchStreamingAvailabilityAPI(
   country: string = 'us'
 ): Promise<StreamingPlatformData[]> {
   try {
-    console.log(`Fetching from Streaming Availability API for TMDB ID: ${tmdbId}`);
+    console.log(`[API] Fetching from Streaming Availability API for TMDB ID: ${tmdbId}`);
     
     if (!RAPIDAPI_KEY) {
-      console.log('No RapidAPI key available');
+      console.log('[API] No RapidAPI key available');
       return [];
     }
     
-    // Check local memory cache first
-    const cacheKey = `${tmdbId}-${country}`;
-    if (localCache[cacheKey] && (Date.now() - localCache[cacheKey].timestamp) < CACHE_DURATION) {
-      console.log('Using memory cached streaming data for:', tmdbId);
-      return localCache[cacheKey].data;
-    }
+    // Try multiple API versions and endpoints
+    const endpoints = [
+      {
+        name: 'v4-direct',
+        url: `https://streaming-availability.p.rapidapi.com/v4/shows/movie/${tmdbId}`,
+        params: { country: country.toLowerCase() }
+      },
+      {
+        name: 'v3-direct', 
+        url: `https://streaming-availability.p.rapidapi.com/v3/movie/${tmdbId}`,
+        params: { country: country.toLowerCase() }
+      }
+    ];
     
-    // Try direct TMDB ID lookup first
-    try {
-      const options = {
-        method: 'GET',
-        url: `https://streaming-availability.p.rapidapi.com/v2/get/movie/${tmdbId}`,
-        params: {
-          country: country.toLowerCase()
-        },
-        headers: {
-          'X-RapidAPI-Key': RAPIDAPI_KEY,
-          'X-RapidAPI-Host': 'streaming-availability.p.rapidapi.com'
-        }
-      };
-      
-      const response = await retryWithBackoff(() => axios.request(options));
-      
-      if (response.data?.result?.streamingInfo) {
-        console.log('Got streaming info from direct TMDB ID lookup');
+    for (const endpoint of endpoints) {
+      try {
+        const queryParams = new URLSearchParams(endpoint.params);
+        const fullUrl = `${endpoint.url}?${queryParams.toString()}`;
         
-        const services: StreamingPlatformData[] = [];
-        const countryServices = response.data.result.streamingInfo[country.toLowerCase()];
+        const options = {
+          method: 'GET',
+          url: fullUrl,
+          headers: {
+            'X-RapidAPI-Key': RAPIDAPI_KEY,
+            'X-RapidAPI-Host': 'streaming-availability.p.rapidapi.com'
+          }
+        };
         
-        if (countryServices) {
-          for (const [service, options] of Object.entries(countryServices)) {
-            if (Array.isArray(options) && options.length > 0) {
-              services.push({
-                service: normalizeServiceName(service),
-                available: true,
-                link: options[0].link || generateServiceLink(service),
-                logo: `/streaming-icons/${service.toLowerCase()}.svg`,
-                type: options[0].type || 'subscription',
-                source: 'rapid-api-direct'
-              });
+        const response = await retryWithBackoff(() => axios.request(options));
+        
+        if (response.data) {
+          console.log(`[API] Got response from ${endpoint.name}`);
+          
+          let streamingInfo = null;
+          if (response.data.streamingInfo) {
+            streamingInfo = response.data.streamingInfo;
+          } else if (response.data.result?.streamingInfo) {
+            streamingInfo = response.data.result.streamingInfo;
+          }
+          
+          if (streamingInfo?.[country.toLowerCase()]) {
+            const services: StreamingPlatformData[] = [];
+            const countryServices = streamingInfo[country.toLowerCase()];
+            
+            for (const [service, options] of Object.entries(countryServices)) {
+              if (Array.isArray(options) && options.length > 0) {
+                services.push({
+                  service: normalizeServiceName(service),
+                  available: true,
+                  link: options[0].link || generateServiceLink(service),
+                  logo: `/streaming-icons/${service.toLowerCase()}.svg`,
+                  type: options[0].type || 'subscription',
+                  source: endpoint.name
+                });
+              }
+            }
+            
+            if (services.length > 0) {
+              console.log(`[API] Found ${services.length} services via ${endpoint.name}`);
+              return services;
             }
           }
         }
-        
-        // Cache the result
-        localCache[cacheKey] = {
-          data: services,
-          timestamp: Date.now()
-        };
-        
-        return services;
+      } catch (error) {
+        console.error(`[API] Error with ${endpoint.name}:`, error);
+        continue;
       }
-    } catch (error) {
-      console.error('Error with direct TMDB ID lookup:', error);
     }
     
-    // If direct lookup failed and we have title, try title search
+    // If direct lookups failed and we have title, try title search
     if (title) {
       try {
-        console.log('Trying title search with:', title);
+        console.log('[API] Trying title search with:', title);
         
         const searchOptions = {
           method: 'GET',
-          url: 'https://streaming-availability.p.rapidapi.com/v2/search/title',
+          url: 'https://streaming-availability.p.rapidapi.com/v4/search',
           params: {
-            title: title,
+            query: title,
             country: country.toLowerCase(),
-            output_language: 'en',
-            show_type: 'movie',
-            year: year
+            type: 'movie',
+            output_language: 'en'
           },
           headers: {
             'X-RapidAPI-Key': RAPIDAPI_KEY,
@@ -239,15 +365,19 @@ async function fetchStreamingAvailabilityAPI(
           }
         };
 
+        if (year) {
+          searchOptions.params.year = year;
+        }
+
         const response = await retryWithBackoff(() => axios.request(searchOptions));
         
-        if (response.data && Array.isArray(response.data.result)) {
-          const matchingMovie = response.data.result.find((movie: any) => {
+        if (response.data?.matches && Array.isArray(response.data.matches)) {
+          const matchingMovie = response.data.matches.find((movie: any) => {
             return movie.tmdbId === tmdbId || String(movie.tmdbId) === String(tmdbId);
-          });
+          }) || response.data.matches[0];
           
           if (matchingMovie?.streamingInfo?.[country.toLowerCase()]) {
-            console.log('Found matching movie in search results');
+            console.log('[API] Found matching movie in search results');
             
             const services: StreamingPlatformData[] = [];
             const streamingOptions = matchingMovie.streamingInfo[country.toLowerCase()];
@@ -260,102 +390,25 @@ async function fetchStreamingAvailabilityAPI(
                   link: options[0].link || generateServiceLink(service),
                   logo: `/streaming-icons/${service.toLowerCase()}.svg`,
                   type: options[0].type || 'subscription',
-                  source: 'rapid-api-search'
+                  source: 'api-search'
                 });
               }
             }
             
-            // Cache the result
-            localCache[cacheKey] = {
-              data: services,
-              timestamp: Date.now()
-            };
-            
-            return services;
+            if (services.length > 0) {
+              console.log(`[API] Found ${services.length} services via title search`);
+              return services;
+            }
           }
         }
       } catch (error) {
-        console.error('Error with title search:', error);
+        console.error('[API] Error with title search:', error);
       }
     }
     
     return [];
   } catch (error) {
-    console.error('Error fetching streaming availability:', error);
-    return [];
-  }
-}
-
-// Main function to get streaming availability
-export async function getStreamingAvailability(
-  tmdbId: number,
-  title?: string,
-  year?: string,
-  country: string = 'us'
-): Promise<StreamingPlatformData[]> {
-  try {
-    console.log(`Getting streaming availability for TMDB ID: ${tmdbId}, country: ${country}`);
-    
-    // First try database
-    const dbResults = await fetchFromDatabase(tmdbId, country);
-    if (dbResults.length > 0) {
-      console.log(`Found ${dbResults.length} services in database`);
-      return dbResults;
-    }
-    
-    // Try Supabase edge function
-    try {
-      const { data, error } = await supabase.functions.invoke('streaming-availability', {
-        body: { tmdbId, country, title, year }
-      });
-      
-      if (!error && data?.result && Array.isArray(data.result) && data.result.length > 0) {
-        console.log(`Received ${data.result.length} streaming services from edge function`);
-        
-        return data.result.map((service: any) => ({
-          ...service,
-          service: normalizeServiceName(service.service),
-          logo: service.logo || `/streaming-icons/${service.service.toLowerCase().replace(/\s+/g, '')}.svg`,
-          source: 'edge-function'
-        }));
-      }
-    } catch (error) {
-      console.error('Edge function error:', error);
-    }
-    
-    // Try RapidAPI as fallback
-    const apiResults = await fetchStreamingAvailabilityAPI(tmdbId, title, year, country);
-    if (apiResults.length > 0) {
-      console.log(`Found ${apiResults.length} services via RapidAPI`);
-      return apiResults;
-    }
-    
-    // Try Watchmode API as last resort
-    try {
-      const { data, error } = await supabase.functions.invoke('watchmode-availability', {
-        body: { tmdbId, region: country.toUpperCase() }
-      });
-      
-      if (!error && data?.sources && Array.isArray(data.sources) && data.sources.length > 0) {
-        console.log(`Found ${data.sources.length} services via Watchmode`);
-        
-        return data.sources.map((source: any) => ({
-          service: normalizeServiceName(source.service),
-          available: true,
-          link: source.link || generateServiceLink(source.service),
-          logo: source.logo || `/streaming-icons/default.svg`,
-          type: source.type || 'subscription',
-          source: 'watchmode'
-        }));
-      }
-    } catch (error) {
-      console.error('Watchmode error:', error);
-    }
-    
-    console.log('No streaming services found from any source');
-    return [];
-  } catch (error) {
-    console.error('Error in getStreamingAvailability:', error);
+    console.error('[API] Error fetching streaming availability:', error);
     return [];
   }
 }

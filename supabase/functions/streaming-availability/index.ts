@@ -28,127 +28,39 @@ serve(async (req) => {
             ...corsHeaders,
             'Content-Type': 'application/json'
           },
-          status: 200 // Return 200 to handle gracefully
+          status: 200
         }
       )
     }
 
     console.log(`Fetching streaming availability for movie: ${tmdbId} in country: ${country}, title: ${title}, year: ${year}`)
 
-    // Using the Streaming Availability API v4 endpoint format
     let streamingServices = []
     let apiError = null
     
-    // First try with TMDB ID directly using v4 format
-    try {
-      const directUrl = `https://streaming-availability.p.rapidapi.com/v4/shows/movie/${tmdbId}`
-      const queryParams = new URLSearchParams({
-        country: country.toLowerCase(),
-      })
-      
-      const fullUrl = `${directUrl}?${queryParams.toString()}`
-      console.log(`Making request to: ${fullUrl}`)
+    // Try multiple API endpoints for better coverage
+    const apiEndpoints = [
+      // Current v4 API
+      {
+        name: 'v4-direct',
+        url: `https://streaming-availability.p.rapidapi.com/v4/shows/movie/${tmdbId}`,
+        params: { country: country.toLowerCase() }
+      },
+      // Legacy v3 API as fallback
+      {
+        name: 'v3-direct', 
+        url: `https://streaming-availability.p.rapidapi.com/v3/movie/${tmdbId}`,
+        params: { country: country.toLowerCase() }
+      }
+    ]
 
-      const options = {
-        method: 'GET',
-        headers: {
-          'X-RapidAPI-Key': rapidApiKey,
-          'X-RapidAPI-Host': 'streaming-availability.p.rapidapi.com'
-        }
-      }
-      
-      const response = await fetch(fullUrl, options)
-      
-      if (response.ok) {
-        const data = await response.json()
-        
-        console.log('API Response structure:', Object.keys(data))
-        
-        // Extract streaming services from the response using the v4 API structure
-        if (data && data.streamingInfo && data.streamingInfo[country.toLowerCase()]) {
-          const countryStreamingOptions = data.streamingInfo[country.toLowerCase()]
-          
-          // Extract streaming service information
-          streamingServices = Object.entries(countryStreamingOptions).map(([service, options]) => {
-            // In v4, options is an array of streaming options
-            const streamingOptions = Array.isArray(options) ? options : [options];
-            
-            return {
-              service,
-              link: streamingOptions[0]?.link || '',
-              available: true,
-              type: streamingOptions[0]?.type || 'subscription',
-              // Include directLinks that point to specific content pages when available
-              directLink: service === 'hulu' ? 'https://www.hulu.com/movie/alien-27389b6b-bf27-45a6-afdf-cef0fe723cff' : null
-            };
-          }).filter(service => service.service && service.link)
-          
-          console.log(`Found ${streamingServices.length} streaming services for movie ${tmdbId} using direct endpoint`)
-          
-          // If we found services, return them
-          if (streamingServices.length > 0) {
-            return new Response(
-              JSON.stringify({ 
-                result: streamingServices,
-                timestamp: new Date().toISOString(),
-                source: 'direct-tmdb'
-              }),
-              { 
-                headers: { 
-                  ...corsHeaders,
-                  'Content-Type': 'application/json'
-                } 
-              }
-            )
-          }
-        }
-      } else {
-        console.error(`API error on direct endpoint: ${response.status} ${response.statusText}`)
-        apiError = `${response.status} ${response.statusText}`
-      }
-    } catch (directError) {
-      console.error('Error with direct TMDB lookup:', directError)
-      apiError = directError.message
-    }
-    
-    // If direct lookup failed, try title search
-    if (title) {
+    // Try each endpoint
+    for (const endpoint of apiEndpoints) {
       try {
-        console.log('Attempting to fetch using title search')
-        
-        // Try to get English title from TMDB API
-        let searchTitle = title;
-        let englishTitle = null;
-        
-        // If we're in a non-English locale, try to get the English title first from TMDB
-        if (country.toLowerCase() !== 'us' && country.toLowerCase() !== 'gb') {
-          try {
-            englishTitle = await fetchMovieTitleFromTMDB(tmdbId)
-            if (englishTitle && englishTitle.title) {
-              console.log(`Got English title from TMDB: "${englishTitle.title}". Using for search.`)
-              searchTitle = englishTitle.title
-            }
-          } catch (e) {
-            console.error('Error fetching English title:', e)
-          }
-        }
-        
-        // Use the title (or English title if available) to search
-        const titleSearchUrl = 'https://streaming-availability.p.rapidapi.com/v4/search'
-        const searchParams = new URLSearchParams({
-          query: searchTitle,
-          country: country.toLowerCase(),
-          type: 'movie',
-          output_language: 'en'
-        })
-        
-        if (year) {
-          searchParams.append('year', year)
-        }
-        
-        const fullSearchUrl = `${titleSearchUrl}?${searchParams.toString()}`
-        console.log(`Searching by title: "${searchTitle}" using URL: ${fullSearchUrl}`)
-        
+        const queryParams = new URLSearchParams(endpoint.params)
+        const fullUrl = `${endpoint.url}?${queryParams.toString()}`
+        console.log(`Trying ${endpoint.name}: ${fullUrl}`)
+
         const options = {
           method: 'GET',
           headers: {
@@ -157,72 +69,167 @@ serve(async (req) => {
           }
         }
         
-        const response = await fetch(fullSearchUrl, options)
+        const response = await fetch(fullUrl, options)
         
         if (response.ok) {
           const data = await response.json()
+          console.log(`${endpoint.name} - Response structure:`, Object.keys(data))
           
-          if (data && data.matches && data.matches.length > 0) {
-            console.log(`Title search found ${data.matches.length} matches`)
-            
-            // Find the best match - if year is provided, try to match by year
-            const matches = data.matches.filter(movie => 
-              movie.tmdbId === tmdbId ||
-              String(movie.tmdbId) === String(tmdbId)
-            )
-            
-            console.log(`Found ${matches.length} exact matches by TMDB ID`)
-            
-            let bestMatch = matches.length > 0 ? 
-              matches[0] : 
-              data.matches[0]; // Default to first result if no exact match
-            
-            if (year && data.matches.length > 1 && matches.length === 0) {
-              // If no exact ID match but we have a year, try to match by title and year
-              const yearMatches = data.matches.filter(movie => 
-                movie.year === parseInt(year) || 
-                (movie.firstAirYear && movie.firstAirYear === parseInt(year))
-              );
-              
-              if (yearMatches.length > 0) {
-                bestMatch = yearMatches[0];
-                console.log(`Found match by year: ${bestMatch.title} (${bestMatch.year})`)
-              }
+          // Handle different API response structures
+          let streamingInfo = null
+          
+          if (data.streamingInfo) {
+            // v4 API structure
+            streamingInfo = data.streamingInfo
+          } else if (data.result && data.result.streamingInfo) {
+            // Alternative v4 structure
+            streamingInfo = data.result.streamingInfo
+          } else if (data.streamingOptions) {
+            // v3 API structure
+            const countryData = data.streamingOptions[country.toLowerCase()]
+            if (countryData) {
+              streamingInfo = { [country.toLowerCase()]: countryData }
             }
+          }
+          
+          if (streamingInfo && streamingInfo[country.toLowerCase()]) {
+            const countryStreamingOptions = streamingInfo[country.toLowerCase()]
             
-            // Get the streaming info from the best match
-            if (bestMatch && bestMatch.streamingInfo && bestMatch.streamingInfo[country.toLowerCase()]) {
-              const countryStreamingOptions = bestMatch.streamingInfo[country.toLowerCase()]
+            streamingServices = Object.entries(countryStreamingOptions).map(([service, options]) => {
+              const streamingOptions = Array.isArray(options) ? options : [options];
+              const firstOption = streamingOptions[0] || {}
               
-              // In v4 API, the structure is {service: [{link, type}]}
-              streamingServices = Object.entries(countryStreamingOptions).map(([service, options]) => {
-                const streamingOptions = Array.isArray(options) ? options : [options];
-                
-                // Special case for Alien (1979)
-                const directLink = (title === 'Alien' && year === '1979') ? {
-                  'hulu': 'https://www.hulu.com/movie/alien-27389b6b-bf27-45a6-afdf-cef0fe723cff',
-                  'disney': 'https://www.disneyplus.com/movies/alien/4IcBqr9hAPDJ',
-                  'prime': 'https://www.amazon.com/Alien-Sigourney-Weaver/dp/B001GJ7OT8',
-                  'apple': 'https://tv.apple.com/us/movie/alien/umc.cmc.53br8g12tjkru519sz48vkjqa'
-                }[service.toLowerCase()] : null;
-                
-                return {
-                  service,
-                  link: streamingOptions[0]?.link || '',
-                  available: true,
-                  type: streamingOptions[0]?.type || 'subscription',
-                  directLink
-                };
-              }).filter(service => service.service && service.link)
-              
-              console.log(`Found ${streamingServices.length} streaming services via title search`)
+              return {
+                service: normalizeServiceName(service),
+                link: firstOption.link || generateDefaultLink(service),
+                available: true,
+                type: firstOption.type || 'subscription',
+                source: endpoint.name
+              };
+            }).filter(service => service.service && service.link)
+            
+            if (streamingServices.length > 0) {
+              console.log(`Found ${streamingServices.length} services via ${endpoint.name}`)
+              break
             }
           }
         } else {
-          console.error(`Title search API error: ${response.status}`)
+          console.log(`${endpoint.name} failed: ${response.status} ${response.statusText}`)
+          apiError = `${response.status} ${response.statusText}`
+        }
+      } catch (error) {
+        console.log(`${endpoint.name} error:`, error.message)
+        apiError = error.message
+      }
+    }
+    
+    // If direct lookups failed, try title search
+    if (streamingServices.length === 0 && title) {
+      try {
+        console.log('Attempting title search')
+        
+        const searchEndpoints = [
+          {
+            name: 'v4-search',
+            url: 'https://streaming-availability.p.rapidapi.com/v4/search',
+            params: {
+              query: title,
+              country: country.toLowerCase(),
+              type: 'movie',
+              output_language: 'en'
+            }
+          },
+          {
+            name: 'v3-search',
+            url: 'https://streaming-availability.p.rapidapi.com/v3/search',
+            params: {
+              title: title,
+              country: country.toLowerCase(),
+              output_language: 'en',
+              show_type: 'movie'
+            }
+          }
+        ]
+        
+        if (year) {
+          searchEndpoints.forEach(endpoint => {
+            endpoint.params.year = year
+          })
+        }
+        
+        for (const searchEndpoint of searchEndpoints) {
+          try {
+            const searchParams = new URLSearchParams(searchEndpoint.params)
+            const searchUrl = `${searchEndpoint.url}?${searchParams.toString()}`
+            console.log(`Trying ${searchEndpoint.name}: ${searchUrl}`)
+            
+            const searchResponse = await fetch(searchUrl, {
+              method: 'GET',
+              headers: {
+                'X-RapidAPI-Key': rapidApiKey,
+                'X-RapidAPI-Host': 'streaming-availability.p.rapidapi.com'
+              }
+            })
+            
+            if (searchResponse.ok) {
+              const searchData = await searchResponse.json()
+              
+              let matches = []
+              if (searchData.matches) {
+                matches = searchData.matches
+              } else if (searchData.result) {
+                matches = Array.isArray(searchData.result) ? searchData.result : [searchData.result]
+              }
+              
+              if (matches && matches.length > 0) {
+                console.log(`${searchEndpoint.name} found ${matches.length} matches`)
+                
+                // Find exact match by TMDB ID or best match by title/year
+                let bestMatch = matches.find(movie => 
+                  movie.tmdbId === tmdbId || String(movie.tmdbId) === String(tmdbId)
+                ) || matches[0]
+                
+                if (year && !bestMatch.tmdbId) {
+                  const yearMatches = matches.filter(movie => 
+                    movie.year === parseInt(year) || 
+                    (movie.firstAirYear && movie.firstAirYear === parseInt(year))
+                  )
+                  if (yearMatches.length > 0) {
+                    bestMatch = yearMatches[0]
+                  }
+                }
+                
+                if (bestMatch && bestMatch.streamingInfo && bestMatch.streamingInfo[country.toLowerCase()]) {
+                  const countryStreamingOptions = bestMatch.streamingInfo[country.toLowerCase()]
+                  
+                  streamingServices = Object.entries(countryStreamingOptions).map(([service, options]) => {
+                    const streamingOptions = Array.isArray(options) ? options : [options];
+                    const firstOption = streamingOptions[0] || {}
+                    
+                    return {
+                      service: normalizeServiceName(service),
+                      link: firstOption.link || generateDefaultLink(service),
+                      available: true,
+                      type: firstOption.type || 'subscription',
+                      source: searchEndpoint.name
+                    };
+                  }).filter(service => service.service && service.link)
+                  
+                  if (streamingServices.length > 0) {
+                    console.log(`Found ${streamingServices.length} services via ${searchEndpoint.name}`)
+                    break
+                  }
+                }
+              }
+            } else {
+              console.log(`${searchEndpoint.name} failed: ${searchResponse.status}`)
+            }
+          } catch (searchError) {
+            console.log(`${searchEndpoint.name} error:`, searchError.message)
+          }
         }
       } catch (titleError) {
-        console.error('Fetch error in title search:', titleError)
+        console.log('Title search failed:', titleError.message)
       }
     }
     
@@ -230,8 +237,8 @@ serve(async (req) => {
       JSON.stringify({ 
         result: streamingServices,
         timestamp: new Date().toISOString(),
-        source: streamingServices.length > 0 ? 'title-search' : 'not-found',
-        apiError
+        source: streamingServices.length > 0 ? streamingServices[0].source || 'api' : 'not-found',
+        apiError: streamingServices.length === 0 ? apiError : null
       }),
       { 
         headers: { 
@@ -245,10 +252,10 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         error: error.message || 'Internal server error',
-        result: [] // Always include an empty result array even on error
+        result: []
       }),
       { 
-        status: 200, // Use 200 even for errors to prevent client crashing
+        status: 200,
         headers: { 
           ...corsHeaders,
           'Content-Type': 'application/json'
@@ -258,42 +265,52 @@ serve(async (req) => {
   }
 })
 
-// Helper function to fetch movie details from TMDB API
-async function fetchMovieTitleFromTMDB(tmdbId: number) {
-  try {
-    const tmdbApiKey = Deno.env.get('TMDB_API_KEY')
-    if (!tmdbApiKey) {
-      console.error('TMDB_API_KEY not configured')
-      return { title: null }
-    }
-    
-    // First try to get the English title specifically
-    const url = `https://api.themoviedb.org/3/movie/${tmdbId}?api_key=${tmdbApiKey}&language=en-US`
-    
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
-    
-    try {
-      const response = await fetch(url, { signal: controller.signal });
-      clearTimeout(timeout);
-      
-      if (!response.ok) {
-        console.error(`TMDB API error: ${response.status}`)
-        return { title: null }
-      }
-      
-      const data = await response.json()
-      return { 
-        title: data.title || null,
-        original_title: data.original_title || null
-      }
-    } catch (error) {
-      clearTimeout(timeout);
-      console.error('Fetch error for TMDB:', error);
-      return { title: null }
-    }
-  } catch (error) {
-    console.error('Error fetching from TMDB:', error)
-    return { title: null }
+// Helper function to normalize service names
+function normalizeServiceName(serviceName: string): string {
+  const serviceMap: Record<string, string> = {
+    'netflix': 'Netflix',
+    'amazon': 'Prime Video',
+    'amazonprime': 'Prime Video',
+    'prime': 'Prime Video',
+    'primevideo': 'Prime Video',
+    'disney': 'Disney+',
+    'disneyplus': 'Disney+',
+    'hulu': 'Hulu',
+    'hbo': 'HBO Max',
+    'hbomax': 'HBO Max',
+    'max': 'Max',
+    'apple': 'Apple TV+',
+    'appletv': 'Apple TV+',
+    'paramount': 'Paramount+',
+    'paramountplus': 'Paramount+',
+    'peacock': 'Peacock',
+    'showtime': 'Showtime',
+    'starz': 'Starz'
   }
+  
+  const normalized = serviceName.toLowerCase().trim()
+  return serviceMap[normalized] || serviceName
+}
+
+// Helper function to generate default links
+function generateDefaultLink(serviceName: string): string {
+  const normalized = serviceName.toLowerCase().replace(/[\s+]/g, '')
+  
+  const linkMap: Record<string, string> = {
+    'netflix': 'https://www.netflix.com',
+    'primevideo': 'https://www.primevideo.com',
+    'amazon': 'https://www.primevideo.com',
+    'prime': 'https://www.primevideo.com',
+    'disney': 'https://www.disneyplus.com',
+    'disneyplus': 'https://www.disneyplus.com',
+    'hulu': 'https://www.hulu.com',
+    'hbomax': 'https://play.max.com',
+    'max': 'https://play.max.com',
+    'apple': 'https://tv.apple.com',
+    'appletv': 'https://tv.apple.com',
+    'paramount': 'https://www.paramountplus.com',
+    'paramountplus': 'https://www.paramountplus.com'
+  }
+  
+  return linkMap[normalized] || `https://www.${normalized}.com`
 }

@@ -90,6 +90,15 @@ export function useStreamingAvailability(tmdbId: number, title?: string, year?: 
       
       setState(newState);
       console.log(`[hook] Final result: Found ${services.length} streaming services from source: ${services.length > 0 ? services[0].source || 'api' : 'none'}`);
+      
+      // Log detailed service information for debugging
+      if (services.length > 0) {
+        console.log('[hook] Service details:', services.map(s => ({
+          name: s.service,
+          link: s.link,
+          source: s.source
+        })));
+      }
     } catch (error: any) {
       console.error('[hook] Error fetching streaming availability:', error.message);
       
