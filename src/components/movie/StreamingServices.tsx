@@ -1,5 +1,4 @@
-
-import { useEffect, useState } from "react";
+import { useEffect, useState, memo, useMemo } from "react";
 import { Badge } from "../ui/badge";
 import { useTranslation } from "react-i18next";
 import { getStreamingServicesByRegion, languageToRegion } from "@/utils/streamingServices";
@@ -12,77 +11,77 @@ interface StreamingServicesProps {
   links?: Record<string, string>;
 }
 
-export const StreamingServices = ({ services, links = {} }: StreamingServicesProps) => {
+export const StreamingServices = memo(({ services, links = {} }: StreamingServicesProps) => {
   const [availableServices, setAvailableServices] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { i18n, t } = useTranslation();
 
-  useEffect(() => {
-    const fetchStreamingServices = async () => {
-      setIsLoading(true);
-      setError(null);
+  // Memoize region calculation
+  const region = useMemo(() => 
+    languageToRegion[i18n.language] || 'us', [i18n.language]
+  );
+
+  // Memoize service processing function
+  const processServices = useMemo(() => async () => {
+    if (!services || services.length === 0) {
+      setAvailableServices([]);
+      setIsLoading(false);
+      return;
+    }
+    
+    try {
+      const allServices = await getStreamingServicesByRegion(region);
       
-      try {
-        if (!services || services.length === 0) {
-          setAvailableServices([]);
-          setIsLoading(false);
-          return;
-        }
-        
-        const region = languageToRegion[i18n.language] || 'us';
-        console.log(`Fetching streaming services for region ${region} and services:`, services);
-        
-        const allServices = await getStreamingServicesByRegion(region);
-        
-        if (!allServices || allServices.length === 0) {
-          console.log('No streaming services found for region:', region);
-          setAvailableServices([]);
-          setIsLoading(false);
-          return;
-        }
-        
-        // Map services to available ones with better matching
-        const servicesWithLinks = services.map(serviceName => {
-          // Find matching service in database
-          const dbService = allServices.find(service => {
-            const normalizedServiceName = serviceName.toLowerCase().trim().replace(/[\s+]/g, '');
-            const normalizedDbName = service.name.toLowerCase().trim().replace(/[\s+]/g, '');
-            return normalizedServiceName === normalizedDbName || 
-                   normalizedDbName.includes(normalizedServiceName) || 
-                   normalizedServiceName.includes(normalizedDbName);
-          });
-          
-          // Find corresponding link
-          const linkKey = Object.keys(links).find(key => {
-            const linkServiceName = key.toLowerCase().trim().replace(/[\s+]/g, '');
-            const currentServiceName = serviceName.toLowerCase().trim().replace(/[\s+]/g, '');
-            return linkServiceName === currentServiceName || 
-                   currentServiceName.includes(linkServiceName) || 
-                   linkServiceName.includes(currentServiceName);
-          });
-          
-          return {
-            id: dbService?.id || serviceName,
-            name: serviceName,
-            logo_url: dbService?.logo_url || `/streaming-icons/${serviceName.toLowerCase().replace(/\s+/g, '')}.svg`,
-            link: linkKey ? links[linkKey] : generateDefaultLink(serviceName)
-          };
+      if (!allServices || allServices.length === 0) {
+        setAvailableServices([]);
+        setIsLoading(false);
+        return;
+      }
+      
+      const servicesWithLinks = services.map(serviceName => {
+        // Find matching service in database
+        const dbService = allServices.find(service => {
+          const normalizedServiceName = serviceName.toLowerCase().trim().replace(/[\s+]/g, '');
+          const normalizedDbName = service.name.toLowerCase().trim().replace(/[\s+]/g, '');
+          return normalizedServiceName === normalizedDbName || 
+                 normalizedDbName.includes(normalizedServiceName) || 
+                 normalizedServiceName.includes(normalizedDbName);
         });
         
-        console.log('Streaming services processed:', servicesWithLinks.map(s => s.name).join(', '));
-        setAvailableServices(servicesWithLinks);
-      } catch (error) {
-        console.error('Error fetching streaming services:', error);
-        setError('Failed to fetch streaming services');
-        setAvailableServices([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+        // Find corresponding link
+        const linkKey = Object.keys(links).find(key => {
+          const linkServiceName = key.toLowerCase().trim().replace(/[\s+]/g, '');
+          const currentServiceName = serviceName.toLowerCase().trim().replace(/[\s+]/g, '');
+          return linkServiceName === currentServiceName || 
+                 currentServiceName.includes(linkServiceName) || 
+                 linkServiceName.includes(currentServiceName);
+        });
+        
+        return {
+          id: dbService?.id || serviceName,
+          name: serviceName,
+          logo_url: dbService?.logo_url || `/streaming-icons/${serviceName.toLowerCase().replace(/\s+/g, '')}.svg`,
+          link: linkKey ? links[linkKey] : generateDefaultLink(serviceName)
+        };
+      });
+      
+      console.log('Streaming services processed:', servicesWithLinks.map(s => s.name).join(', '));
+      setAvailableServices(servicesWithLinks);
+    } catch (error) {
+      console.error('Error fetching streaming services:', error);
+      setError('Failed to fetch streaming services');
+      setAvailableServices([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [services, region, links]);
 
-    fetchStreamingServices();
-  }, [i18n.language, services, links]);
+  useEffect(() => {
+    setIsLoading(true);
+    setError(null);
+    processServices();
+  }, [processServices]);
 
   const generateDefaultLink = (serviceName: string): string => {
     const normalized = serviceName.toLowerCase().replace(/[\s+]/g, '');
@@ -135,12 +134,7 @@ export const StreamingServices = ({ services, links = {} }: StreamingServicesPro
     );
   }
 
-  if (error) {
-    console.log("Streaming services error:", error);
-    return null;
-  }
-
-  if (!availableServices.length) {
+  if (error || !availableServices.length) {
     return null;
   }
 
@@ -172,4 +166,6 @@ export const StreamingServices = ({ services, links = {} }: StreamingServicesPro
       </div>
     </div>
   );
-};
+});
+
+StreamingServices.displayName = "StreamingServices";

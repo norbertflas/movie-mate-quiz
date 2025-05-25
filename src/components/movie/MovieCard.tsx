@@ -1,20 +1,16 @@
 
-import { useState } from "react";
+import { useState, memo, useCallback } from "react";
 import { CardContent } from "../ui/card";
-import { MovieCardContainer } from "./MovieCardContainer";
-import { MovieCardHeader } from "./MovieCardHeader";
-import { MovieTrailerSection } from "./MovieTrailerSection";
-import { useMovieRating } from "./MovieRatingLogic";
 import { Badge } from "../ui/badge";
 import type { MovieCardProps } from "@/types/movie";
 import { UnifiedMovieDetails } from "./UnifiedMovieDetails";
 import { useTranslation } from "react-i18next";
-import { useStreamingAvailability } from "@/hooks/use-streaming-availability";
+import { useOptimizedStreaming } from "@/hooks/use-optimized-streaming";
 import { MovieRating } from "./MovieRating";
 import { Heart } from "lucide-react";
-import { formatServiceLinks } from "@/utils/streamingServices";
+import { OptimizedMovieImage } from "./OptimizedMovieImage";
 
-export const MovieCard = ({
+export const MovieCard = memo(({
   title,
   year,
   platform,
@@ -28,49 +24,28 @@ export const MovieCard = ({
   tmdbId,
   explanations = [],
   onClose,
+  onClick,
 }: MovieCardProps) => {
   const [isFavorite, setIsFavorite] = useState(false);
-  const [showTrailer, setShowTrailer] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-  const [trailerUrl, setTrailerUrl] = useState(initialTrailerUrl);
   const { t } = useTranslation();
   
-  const { userRating, handleRating } = useMovieRating(title);
-  
-  // Only attempt to fetch streaming data if we have a valid tmdbId
-  const availabilityData = useStreamingAvailability(tmdbId && tmdbId > 0 ? tmdbId : 0, title, year);
+  // Use optimized streaming hook
+  const streamingData = useOptimizedStreaming(tmdbId && tmdbId > 0 ? tmdbId : 0, title, year);
 
-  // Process streaming services to ensure they have the correct format
-  const processedServices = streamingServices.map(service => {
-    if (typeof service === 'string') {
-      return {
-        service,
-        available: true,
-        tmdbId,
-        link: undefined, // Will be populated by formatServiceLinks
-        logo: undefined  // Will be populated by formatServiceLinks
-      };
+  const handleCardClick = useCallback(() => {
+    if (onClick) {
+      onClick();
+    } else {
+      // Lazy load streaming data only when details are opened
+      if (!streamingData.services.length && tmdbId > 0) {
+        streamingData.fetchData();
+      }
+      setIsDetailsOpen(true);
     }
-    return {
-      ...service,
-      available: true,
-      tmdbId,
-    };
-  });
+  }, [onClick, streamingData, tmdbId]);
 
-  // Format all service data to ensure consistent links and logos
-  const formattedPropServices = formatServiceLinks(processedServices);
-
-  // Use API data if available, otherwise fall back to prop data
-  const availableServices = availabilityData.services?.length > 0
-    ? availabilityData.services
-    : formattedPropServices;
-
-  const handleCardClick = () => {
-    setIsDetailsOpen(true);
-  };
-
-  const handleCloseDetails = (e?: React.MouseEvent) => {
+  const handleCloseDetails = useCallback((e?: React.MouseEvent) => {
     if (e) {
       e.stopPropagation();
     }
@@ -78,12 +53,17 @@ export const MovieCard = ({
     if (onClose) {
       onClose();
     }
-  };
+  }, [onClose]);
 
-  const handleToggleFavorite = (e: React.MouseEvent) => {
+  const handleToggleFavorite = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     setIsFavorite(!isFavorite);
-  };
+  }, [isFavorite]);
+
+  // Use streaming data from optimized hook if available, otherwise fallback to props
+  const availableServices = streamingData.services?.length > 0
+    ? streamingData.services
+    : streamingServices;
 
   return (
     <>
@@ -92,15 +72,11 @@ export const MovieCard = ({
         onClick={handleCardClick}
       >
         <div className="relative h-[240px] overflow-hidden rounded-t-xl">
-          <img 
-            src={imageUrl || "/placeholder.svg"}
-            alt={title}
-            className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+          <OptimizedMovieImage
+            imageUrl={imageUrl}
+            title={title}
+            className="w-full h-full"
             loading="lazy"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.src = "/placeholder.svg";
-            }}
           />
           <div className="absolute top-3 right-3 z-10">
             <button
@@ -139,8 +115,15 @@ export const MovieCard = ({
               {description}
             </p>
           )}
-          
-          {/* Removed streaming services display from card view */}
+
+          {/* Show streaming availability indicator */}
+          {availableServices.length > 0 && (
+            <div className="flex items-center gap-1">
+              <Badge variant="secondary" className="text-xs">
+                {availableServices.length} service{availableServices.length > 1 ? 's' : ''}
+              </Badge>
+            </div>
+          )}
         </CardContent>
       </div>
 
@@ -167,4 +150,6 @@ export const MovieCard = ({
       )}
     </>
   );
-};
+});
+
+MovieCard.displayName = "MovieCard";

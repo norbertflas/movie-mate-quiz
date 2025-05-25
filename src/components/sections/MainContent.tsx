@@ -6,7 +6,7 @@ import { SearchBar } from "../SearchBar";
 import { TrendingMoviesSection } from "./TrendingMoviesSection";
 import { useQuery } from "@tanstack/react-query";
 import { getTrendingMovies, getPopularMovies } from "@/services/tmdb/trending";
-import { PopularMoviesSection } from "./PopularMoviesSection";
+import { OptimizedPopularMoviesSection } from "./OptimizedPopularMoviesSection";
 import { LoadingState } from "@/components/LoadingState";
 import { Film, Sparkles } from "lucide-react";
 
@@ -16,11 +16,15 @@ export const MainContent = () => {
   const { data: trendingMovies = [], isLoading: isTrendingLoading } = useQuery({
     queryKey: ['trendingMovies', 'US', '1'],
     queryFn: getTrendingMovies,
+    staleTime: 1000 * 60 * 10, // 10 minutes
+    gcTime: 1000 * 60 * 30, // 30 minutes
   });
 
   const { data: popularMovies = [], isLoading: isPopularLoading } = useQuery({
     queryKey: ['popularMovies', 'US', '1'],
     queryFn: getPopularMovies,
+    staleTime: 1000 * 60 * 10, // 10 minutes
+    gcTime: 1000 * 60 * 30, // 30 minutes
   });
 
   const isLoading = isTrendingLoading || isPopularLoading;
@@ -89,7 +93,7 @@ export const MainContent = () => {
           </motion.div>
           
           <motion.div variants={itemVariants} className="glass-panel p-6 rounded-xl">
-            <PopularMoviesSection movies={popularMovies} />
+            <OptimizedPopularMoviesSection movies={popularMovies} />
           </motion.div>
         </>
       )}
