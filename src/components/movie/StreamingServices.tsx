@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { getStreamingServicesByRegion, languageToRegion } from "@/utils/streamingServices";
 import { Skeleton } from "../ui/skeleton";
 import { Button } from "../ui/button";
+import { ExternalLink } from "lucide-react";
 
 interface StreamingServicesProps {
   services: string[];
@@ -41,36 +42,35 @@ export const StreamingServices = ({ services, links = {} }: StreamingServicesPro
           return;
         }
         
-        // Filter services that are available based on the services prop
-        // Use more flexible matching to handle slight name variations
-        const filteredServices = allServices.filter(service => 
-          services.some(s => {
-            // Normalize both strings for comparison: lowercase, remove spaces and special chars
-            const serviceName = s.toLowerCase().trim().replace(/[\s+]/g, '');
-            const dbServiceName = service.name.toLowerCase().trim().replace(/[\s+]/g, '');
-            return serviceName === dbServiceName || 
-                   dbServiceName.includes(serviceName) || 
-                   serviceName.includes(dbServiceName);
-          })
-        );
-        
-        // Add links to the services if available
-        const servicesWithLinks = filteredServices.map(service => {
-          const serviceKey = Object.keys(links).find(key => {
+        // Map services to available ones with better matching
+        const servicesWithLinks = services.map(serviceName => {
+          // Find matching service in database
+          const dbService = allServices.find(service => {
+            const normalizedServiceName = serviceName.toLowerCase().trim().replace(/[\s+]/g, '');
+            const normalizedDbName = service.name.toLowerCase().trim().replace(/[\s+]/g, '');
+            return normalizedServiceName === normalizedDbName || 
+                   normalizedDbName.includes(normalizedServiceName) || 
+                   normalizedServiceName.includes(normalizedDbName);
+          });
+          
+          // Find corresponding link
+          const linkKey = Object.keys(links).find(key => {
             const linkServiceName = key.toLowerCase().trim().replace(/[\s+]/g, '');
-            const dbServiceName = service.name.toLowerCase().trim().replace(/[\s+]/g, '');
-            return linkServiceName === dbServiceName || 
-                   dbServiceName.includes(linkServiceName) || 
-                   linkServiceName.includes(dbServiceName);
+            const currentServiceName = serviceName.toLowerCase().trim().replace(/[\s+]/g, '');
+            return linkServiceName === currentServiceName || 
+                   currentServiceName.includes(linkServiceName) || 
+                   linkServiceName.includes(currentServiceName);
           });
           
           return {
-            ...service,
-            link: serviceKey ? links[serviceKey] : null
+            id: dbService?.id || serviceName,
+            name: serviceName,
+            logo_url: dbService?.logo_url || `/streaming-icons/${serviceName.toLowerCase().replace(/\s+/g, '')}.svg`,
+            link: linkKey ? links[linkKey] : generateDefaultLink(serviceName)
           };
         });
         
-        console.log('Streaming services found:', servicesWithLinks.map(s => s.name).join(', '));
+        console.log('Streaming services processed:', servicesWithLinks.map(s => s.name).join(', '));
         setAvailableServices(servicesWithLinks);
       } catch (error) {
         console.error('Error fetching streaming services:', error);
@@ -84,18 +84,39 @@ export const StreamingServices = ({ services, links = {} }: StreamingServicesPro
     fetchStreamingServices();
   }, [i18n.language, services, links]);
 
+  const generateDefaultLink = (serviceName: string): string => {
+    const normalized = serviceName.toLowerCase().replace(/[\s+]/g, '');
+    
+    switch (normalized) {
+      case 'netflix':
+        return 'https://www.netflix.com';
+      case 'primevideo':
+      case 'amazon':
+      case 'amazonprime':
+        return 'https://www.primevideo.com';
+      case 'disney+':
+      case 'disneyplus':
+        return 'https://www.disneyplus.com';
+      case 'hulu':
+        return 'https://www.hulu.com';
+      case 'hbomax':
+      case 'max':
+        return 'https://play.max.com';
+      case 'appletv+':
+      case 'appletv':
+        return 'https://tv.apple.com';
+      default:
+        return `https://www.${normalized}.com`;
+    }
+  };
+
   const openStreamingService = (link: string, serviceName: string) => {
     if (!link) return;
     
-    // Fix streaming links - ensure they have proper URL format
+    // Ensure proper URL format
     let url = link;
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
       url = `https://${url}`;
-    }
-    
-    // Add path for specific streaming sites if needed
-    if (url.includes('disneyplus.com') && !url.includes('/video')) {
-      url = `${url}/home`;
     }
     
     console.log(`Opening streaming service: ${serviceName} with URL: ${url}`);
@@ -107,8 +128,8 @@ export const StreamingServices = ({ services, links = {} }: StreamingServicesPro
       <div className="space-y-2">
         <Skeleton className="h-4 w-24" />
         <div className="flex flex-wrap gap-2">
-          <Skeleton className="h-6 w-16" />
-          <Skeleton className="h-6 w-20" />
+          <Skeleton className="h-8 w-20" />
+          <Skeleton className="h-8 w-24" />
         </div>
       </div>
     );
@@ -116,27 +137,36 @@ export const StreamingServices = ({ services, links = {} }: StreamingServicesPro
 
   if (error) {
     console.log("Streaming services error:", error);
-    return null; // Hide errors from UI to improve user experience
+    return null;
   }
 
   if (!availableServices.length) {
-    // Don't show anything if no streaming services are available
     return null;
   }
 
   return (
-    <div className="space-y-2">
-      <span className="text-sm font-semibold">{t("streaming.availableOn")}</span>
+    <div className="space-y-3">
+      <span className="text-sm font-semibold text-foreground">{t("streaming.availableOn")}</span>
       <div className="flex flex-wrap gap-2">
         {availableServices.map((service) => (
           <Button 
-            key={service.id} 
-            variant="secondary"
+            key={service.id || service.name} 
+            variant="outline"
             size="sm"
             onClick={() => openStreamingService(service.link, service.name)}
-            className="rounded-full flex items-center gap-1 px-3 py-1 h-auto text-xs"
+            className="rounded-lg flex items-center gap-2 px-3 py-2 h-auto text-xs hover:bg-primary/10 transition-colors border-border/50"
           >
-            {t(`services.${service.name.toLowerCase()}`, { defaultValue: service.name })}
+            <img 
+              src={service.logo_url} 
+              alt={service.name}
+              className="w-4 h-4 object-contain"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = `/streaming-icons/default.svg`;
+              }}
+            />
+            <span>{t(`services.${service.name.toLowerCase()}`, { defaultValue: service.name })}</span>
+            <ExternalLink className="w-3 h-3 opacity-60" />
           </Button>
         ))}
       </div>

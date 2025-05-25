@@ -17,21 +17,9 @@ export interface StreamingAvailabilityState {
   links: Record<string, string>;
 }
 
-// Check if localStorage is available to avoid errors in restricted contexts
-const isLocalStorageAvailable = () => {
-  try {
-    const testKey = '__test__';
-    localStorage.setItem(testKey, testKey);
-    localStorage.removeItem(testKey);
-    return true;
-  } catch (e) {
-    return false;
-  }
-};
-
 /**
  * Hook for fetching streaming availability data for a movie
- * Changed to lazy loading - only fetches when fetchStreamingData is called
+ * Uses lazy loading - only fetches when fetchStreamingData is called
  */
 export function useStreamingAvailability(tmdbId: number, title?: string, year?: string) {
   const [state, setState] = useState<StreamingAvailabilityState>({
@@ -54,31 +42,33 @@ export function useStreamingAvailability(tmdbId: number, title?: string, year?: 
   }
 
   const fetchStreamingData = useCallback(async () => {
-    // If we're already in a loading state or invalid TMDB ID, don't proceed
-    if (state.isLoading || !tmdbId || tmdbId <= 0) {
-      if (!tmdbId || tmdbId <= 0) {
-        console.log('[hook] Invalid tmdbId:', tmdbId);
-        setState(prev => ({
-          ...prev,
-          isLoading: false,
-          error: new Error('Invalid TMDB ID'),
-          timestamp: Date.now(),
-          source: 'none',
-          requested: true
-        }));
-      }
+    // Validate inputs
+    if (!tmdbId || tmdbId <= 0) {
+      console.log('[hook] Invalid tmdbId:', tmdbId);
+      setState(prev => ({
+        ...prev,
+        isLoading: false,
+        error: new Error('Invalid TMDB ID'),
+        timestamp: Date.now(),
+        source: 'none',
+        requested: true
+      }));
       return;
     }
 
-    setState(prev => ({ ...prev, isLoading: true, requested: true }));
+    // Prevent concurrent requests
+    if (state.isLoading) {
+      return;
+    }
+
+    setState(prev => ({ ...prev, isLoading: true, requested: true, error: null }));
     
     console.log(`[hook] Fetching streaming availability for TMDB ID: ${tmdbId}, title: ${title}, year: ${year}, country: ${country}`);
     
     try {
-      // Use our combined service that tries multiple APIs and fallbacks
       const services = await getStreamingAvailability(tmdbId, title, year, country);
       
-      console.log(`[hook] Received ${services.length} streaming services from fallback`);
+      console.log(`[hook] Received ${services.length} streaming services`);
       
       // Extract links from services
       const links: Record<string, string> = {};
@@ -113,12 +103,13 @@ export function useStreamingAvailability(tmdbId: number, title?: string, year?: 
         links: {}
       });
     }
-  }, [tmdbId, title, year, country, state.isLoading]);
+  }, [tmdbId, title, year, country]);
 
   const refetch = useCallback(() => {
     setState(prev => ({
       ...prev,
       requested: false,
+      error: null
     }));
     fetchStreamingData();
   }, [fetchStreamingData]);
