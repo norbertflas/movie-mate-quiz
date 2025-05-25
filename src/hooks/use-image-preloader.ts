@@ -8,7 +8,7 @@ interface PreloadOptions {
 
 export function useImagePreloader() {
   const preloadedImages = useRef<Set<string>>(new Set());
-  const preloadQueue = useRef<Array<{ url: string; options: PreloadOptions }>([]);
+  const preloadQueue = useRef<Array<{ url: string; options: PreloadOptions }>>([]);
   const isProcessing = useRef(false);
 
   const preloadImage = useCallback((url: string, options: PreloadOptions = {}) => {
