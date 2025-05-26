@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { corsHeaders } from "./utils.ts";
@@ -32,20 +31,34 @@ serve(async (req) => {
     // Handle personalized recommendations based on prompt and selected movies
     if (requestData.prompt || requestData.selectedMovies) {
       console.log('Processing personalized recommendations with prompt:', requestData.prompt);
+      console.log('Selected movies:', requestData.selectedMovies);
       
       try {
-        const input = requestData.prompt || 'Recommend popular movies';
+        const input = requestData.prompt || 'Recommend popular movies based on my selected favorites';
+        
+        // Create a more specific prompt that includes user preferences
+        let enhancedPrompt = input;
+        if (requestData.selectedMovies && requestData.selectedMovies.length > 0) {
+          enhancedPrompt = `${input}\n\nI particularly enjoyed these movies: ${requestData.selectedMovies.map(m => m.title).join(', ')}. Please recommend movies that align with these preferences.`;
+        }
+        
         const { data: recommendations } = await getMovieRecommendations(
-          input,
+          enhancedPrompt,
           requestData.selectedMovies || [],
           GEMINI_API_KEY
         );
 
         console.log('AI recommended movie IDs:', recommendations);
 
-        const movieDetailsPromises = recommendations.slice(0, 8).map(movieId => 
-          getMovieDetails(movieId, TMDB_API_KEY)
-        );
+        // Get detailed movie information for each recommendation
+        const movieDetailsPromises = recommendations.slice(0, 8).map(async (movieId) => {
+          try {
+            return await getMovieDetails(movieId, TMDB_API_KEY);
+          } catch (error) {
+            console.error(`Failed to get details for movie ${movieId}:`, error);
+            return null;
+          }
+        });
 
         const movies = (await Promise.all(movieDetailsPromises))
           .filter((movie): movie is MovieRecommendation => movie !== null);
@@ -62,9 +75,12 @@ serve(async (req) => {
       } catch (error) {
         console.error('Error processing personalized recommendations:', error);
         
-        // Fallback to popular movies if AI fails
-        console.log('Falling back to popular movies due to AI error');
-        const fallbackMovies = await getMoviesByGenre(35, TMDB_API_KEY); // Comedy as fallback
+        // Enhanced fallback with more variety
+        console.log('Using enhanced fallback recommendations');
+        const fallbackGenres = [28, 35, 18, 53, 878]; // Action, Comedy, Drama, Thriller, Sci-Fi
+        const randomGenre = fallbackGenres[Math.floor(Math.random() * fallbackGenres.length)];
+        
+        const fallbackMovies = await getMoviesByGenre(randomGenre, TMDB_API_KEY);
         const movieDetailsPromises = fallbackMovies.slice(0, 6).map(movie => 
           getMovieDetails(movie.id, TMDB_API_KEY)
         );

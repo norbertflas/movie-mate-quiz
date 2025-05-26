@@ -19,20 +19,31 @@ export async function getMovieRecommendations(
 
   console.log("Initializing Gemini with API key");
   const genAI = new GoogleGenerativeAI(apiKey);
-  // Using gemini-pro instead of gemini-1.0-pro which doesn't exist
-  const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+  // Use gemini-1.5-flash which is more reliable than gemini-pro
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
+  // Build context from selected movies
   const movieContext = selectedMovies.length > 0 
-    ? `Based on these movies you liked: ${selectedMovies.map(m => m.title).join(', ')}\n`
+    ? `User has indicated they like these movies: ${selectedMovies.map(m => m.title).join(', ')}. Use this to understand their taste and recommend similar movies.\n`
     : '';
 
-  const aiPrompt = `You are a movie recommendation expert. ${movieContext}
-  Based on this input: ${input}
-  
-  Please suggest 6 highly relevant and popular movies from TMDB database. Focus on well-known movies that match the preferences.
-  
-  IMPORTANT: Respond with ONLY a JSON array of TMDB movie IDs, like this: [123, 456, 789, 101112, 131415, 161718]
-  Do not include any other text, explanations, or formatting - just the array.`;
+  // Create a more detailed and specific prompt
+  const aiPrompt = `You are an expert movie recommendation system. Your task is to recommend 6 specific movies based on the user's request.
+
+${movieContext}User request: "${input}"
+
+IMPORTANT INSTRUCTIONS:
+- Analyze the user's request carefully and recommend movies that specifically match their criteria
+- If they mention a style (like "Wolf of Wall Street"), recommend movies with similar themes, tone, or genre
+- If they mention specific genres, directors, actors, or themes, focus on those
+- Recommend popular, well-known movies that have TMDB IDs
+- Each recommendation should be different and relevant to the specific request
+- Consider the language of the request (Polish/English) but recommend internationally known films
+
+Respond with ONLY a JSON array of 6 TMDB movie IDs that match the user's specific request.
+Format: [123, 456, 789, 101112, 131415, 161718]
+
+Do not include any other text, explanations, or formatting - just the JSON array.`;
 
   console.log('Sending prompt to Gemini:', aiPrompt);
 
@@ -51,8 +62,10 @@ export async function getMovieRecommendations(
       // Clean the response and extract array
       let cleanText = text.trim();
       
-      // Remove any markdown formatting
+      // Remove any markdown formatting or extra text
       cleanText = cleanText.replace(/```json/g, '').replace(/```/g, '');
+      cleanText = cleanText.replace(/^[^[]*/, ''); // Remove text before first [
+      cleanText = cleanText.replace(/[^\]]*$/, ']'); // Keep only until last ]
       
       // Extract array pattern from response
       const arrayMatch = cleanText.match(/\[[\d,\s]+\]/);
@@ -65,14 +78,14 @@ export async function getMovieRecommendations(
         throw new Error('Invalid movie IDs array from Gemini');
       }
 
-      // Validate that all elements are numbers
-      const validIds = movieIds.filter(id => typeof id === 'number' && id > 0);
+      // Validate that all elements are numbers and remove duplicates
+      const validIds = [...new Set(movieIds.filter(id => typeof id === 'number' && id > 0))];
       if (validIds.length === 0) {
         throw new Error('No valid movie IDs found in response');
       }
 
       console.log('Successfully received movie IDs:', validIds);
-      return { data: validIds };
+      return { data: validIds.slice(0, 8) }; // Return up to 8 movies
     } catch (error) {
       lastError = error as Error;
       console.error(`Attempt ${attempt} failed:`, error);
