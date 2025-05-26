@@ -19,18 +19,20 @@ export async function getMovieRecommendations(
 
   console.log("Initializing Gemini with API key");
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro" }); // Using the stable model
+  // Using gemini-pro instead of gemini-1.0-pro which doesn't exist
+  const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
   const movieContext = selectedMovies.length > 0 
-    ? `Based on these movies: ${selectedMovies.map(m => m.title).join(', ')}\n`
+    ? `Based on these movies you liked: ${selectedMovies.map(m => m.title).join(', ')}\n`
     : '';
 
   const aiPrompt = `You are a movie recommendation expert. ${movieContext}
   Based on this input: ${input}
   
-  Please suggest 6 highly relevant movies. Focus on popular, well-rated movies that match the preferences.
-  Format your response as a JSON array of TMDB movie IDs only, like this: [123, 456, 789]
-  Only include the JSON array in your response, no other text.`;
+  Please suggest 6 highly relevant and popular movies from TMDB database. Focus on well-known movies that match the preferences.
+  
+  IMPORTANT: Respond with ONLY a JSON array of TMDB movie IDs, like this: [123, 456, 789, 101112, 131415, 161718]
+  Do not include any other text, explanations, or formatting - just the array.`;
 
   console.log('Sending prompt to Gemini:', aiPrompt);
 
@@ -46,10 +48,16 @@ export async function getMovieRecommendations(
       
       console.log("Raw Gemini response:", text);
       
+      // Clean the response and extract array
+      let cleanText = text.trim();
+      
+      // Remove any markdown formatting
+      cleanText = cleanText.replace(/```json/g, '').replace(/```/g, '');
+      
       // Extract array pattern from response
-      const arrayMatch = text.match(/\[[\d,\s]+\]/);
+      const arrayMatch = cleanText.match(/\[[\d,\s]+\]/);
       if (!arrayMatch) {
-        throw new Error('Could not find array in Gemini response');
+        throw new Error('Could not find valid movie IDs array in Gemini response');
       }
       
       const movieIds = JSON.parse(arrayMatch[0]);
@@ -57,8 +65,14 @@ export async function getMovieRecommendations(
         throw new Error('Invalid movie IDs array from Gemini');
       }
 
-      console.log('Successfully received movie IDs:', movieIds);
-      return { data: movieIds };
+      // Validate that all elements are numbers
+      const validIds = movieIds.filter(id => typeof id === 'number' && id > 0);
+      if (validIds.length === 0) {
+        throw new Error('No valid movie IDs found in response');
+      }
+
+      console.log('Successfully received movie IDs:', validIds);
+      return { data: validIds };
     } catch (error) {
       lastError = error as Error;
       console.error(`Attempt ${attempt} failed:`, error);

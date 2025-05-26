@@ -16,30 +16,43 @@ serve(async (req) => {
     const TMDB_API_KEY = Deno.env.get('TMDB_API_KEY');
     const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
 
-    if (!TMDB_API_KEY || !GEMINI_API_KEY) {
-      throw new Error('Missing required API keys');
+    if (!TMDB_API_KEY) {
+      console.error('Missing TMDB_API_KEY');
+      throw new Error('TMDB API key is not configured');
+    }
+
+    if (!GEMINI_API_KEY) {
+      console.error('Missing GEMINI_API_KEY');
+      throw new Error('Gemini API key is not configured. Please add it in Supabase Edge Function Secrets.');
     }
 
     const requestData: RequestData = await req.json();
     console.log('Raw request data:', requestData);
 
     // Handle personalized recommendations based on prompt and selected movies
-    if (requestData.prompt && requestData.selectedMovies) {
+    if (requestData.prompt || requestData.selectedMovies) {
       console.log('Processing personalized recommendations with prompt:', requestData.prompt);
       
       try {
+        const input = requestData.prompt || 'Recommend popular movies';
         const { data: recommendations } = await getMovieRecommendations(
-          requestData.prompt,
-          requestData.selectedMovies,
+          input,
+          requestData.selectedMovies || [],
           GEMINI_API_KEY
         );
 
-        const movieDetailsPromises = recommendations.slice(0, 5).map(movieId => 
+        console.log('AI recommended movie IDs:', recommendations);
+
+        const movieDetailsPromises = recommendations.slice(0, 8).map(movieId => 
           getMovieDetails(movieId, TMDB_API_KEY)
         );
 
         const movies = (await Promise.all(movieDetailsPromises))
           .filter((movie): movie is MovieRecommendation => movie !== null);
+
+        if (movies.length === 0) {
+          throw new Error('No valid movies found for the given recommendations');
+        }
 
         console.log('Successfully processed personalized recommendations:', movies.length);
         
@@ -48,19 +61,32 @@ serve(async (req) => {
         });
       } catch (error) {
         console.error('Error processing personalized recommendations:', error);
-        throw error;
+        
+        // Fallback to popular movies if AI fails
+        console.log('Falling back to popular movies due to AI error');
+        const fallbackMovies = await getMoviesByGenre(35, TMDB_API_KEY); // Comedy as fallback
+        const movieDetailsPromises = fallbackMovies.slice(0, 6).map(movie => 
+          getMovieDetails(movie.id, TMDB_API_KEY)
+        );
+
+        const movies = (await Promise.all(movieDetailsPromises))
+          .filter((movie): movie is MovieRecommendation => movie !== null);
+
+        return new Response(JSON.stringify(movies), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
       }
     }
 
     // Handle quiz-based recommendations
     if (!requestData?.answers || !Array.isArray(requestData.answers)) {
-      throw new Error('Invalid request format: answers array must be provided for quiz recommendations');
+      throw new Error('Invalid request format: either prompt/selectedMovies or answers array must be provided');
     }
 
     const cleanedAnswers = cleanAnswers(requestData.answers);
     console.log('Cleaned answers:', cleanedAnswers);
 
-    // Find genre from answers - updated to handle new question IDs
+    // Find genre from answers
     const genreAnswer = cleanedAnswers.find(answer => 
       answer.questionId === 'genres' || 
       answer.questionId === 'genre' || 
@@ -75,8 +101,7 @@ serve(async (req) => {
       const moodAnswer = cleanedAnswers.find(answer => answer.questionId === 'mood');
       if (moodAnswer) {
         console.log('Using mood as genre fallback:', moodAnswer.answer);
-        // Map mood to genre
-        let fallbackGenre = 'comedy'; // default
+        let fallbackGenre = 'comedy';
         const mood = moodAnswer.answer.toString().toLowerCase();
         if (mood.includes('laugh') || mood.includes('śmiać')) fallbackGenre = 'comedy';
         else if (mood.includes('adrenaline') || mood.includes('exciting')) fallbackGenre = 'action';
@@ -174,7 +199,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         error: error.message,
-        details: error.stack 
+        details: 'Check the edge function logs for more information'
       }), 
       { 
         status: 500,
