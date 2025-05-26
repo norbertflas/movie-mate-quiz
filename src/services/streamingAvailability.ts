@@ -3,9 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import type { StreamingPlatformData, StreamingAvailabilityCache } from "@/types/streaming";
 
 const RETRY_DELAY = 2000;
-const MAX_RETRIES = 2;
+const MAX_RETRIES = 3;
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
-const ERROR_CACHE_DURATION = 60 * 60 * 1000; // 1 hour for errors
+const ERROR_CACHE_DURATION = 30 * 60 * 1000; // 30 minutes for errors
 
 // In-memory cache for the current session
 const localCache: Record<string, StreamingAvailabilityCache> = {};

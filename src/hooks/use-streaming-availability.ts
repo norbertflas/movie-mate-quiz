@@ -42,6 +42,7 @@ export function useStreamingAvailability(tmdbId: number, title?: string, year?: 
     }
 
     if (state.isLoading) {
+      console.log('[useStreamingAvailability] Already loading, skipping...');
       return;
     }
 
@@ -56,7 +57,7 @@ export function useStreamingAvailability(tmdbId: number, title?: string, year?: 
       
       const links: Record<string, string> = {};
       services.forEach(service => {
-        if (service.link) {
+        if (service.link && service.link !== '#') {
           links[service.service] = service.link;
         }
       });
@@ -94,13 +95,15 @@ export function useStreamingAvailability(tmdbId: number, title?: string, year?: 
         links: {}
       });
     }
-  }, [tmdbId, title, year, forceRegion]);
+  }, [tmdbId, title, year, forceRegion, state.isLoading]);
 
   const refetch = useCallback(() => {
+    console.log('[useStreamingAvailability] Refetching data...');
     setState(prev => ({
       ...prev,
       requested: false,
-      error: null
+      error: null,
+      isLoading: false
     }));
     fetchStreamingData();
   }, [fetchStreamingData]);

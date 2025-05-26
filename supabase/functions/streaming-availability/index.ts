@@ -6,6 +6,67 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Enhanced service name mapping for consistency
+function normalizeServiceName(serviceName: string): string {
+  if (!serviceName) return 'Unknown'
+  
+  const serviceMap: Record<string, string> = {
+    'netflix': 'Netflix',
+    'amazon': 'Prime Video',
+    'amazonprime': 'Prime Video',
+    'prime': 'Prime Video',
+    'primevideo': 'Prime Video',
+    'disney': 'Disney+',
+    'disneyplus': 'Disney+',
+    'hulu': 'Hulu',
+    'hbo': 'HBO Max',
+    'hbomax': 'HBO Max',
+    'max': 'Max',
+    'apple': 'Apple TV+',
+    'appletv': 'Apple TV+',
+    'appletv+': 'Apple TV+',
+    'paramount': 'Paramount+',
+    'paramountplus': 'Paramount+',
+    'peacock': 'Peacock',
+    'showtime': 'Showtime',
+    'starz': 'Starz',
+    'cinemax': 'Cinemax',
+    'crunchyroll': 'Crunchyroll',
+    'funimation': 'Funimation'
+  }
+  
+  const normalized = serviceName.toLowerCase().trim().replace(/[\s\-_]/g, '')
+  return serviceMap[normalized] || serviceName
+}
+
+// Enhanced link generation
+function generateDefaultLink(serviceName: string): string {
+  if (!serviceName) return ''
+  
+  const normalized = serviceName.toLowerCase().replace(/[\s+]/g, '')
+  
+  const linkMap: Record<string, string> = {
+    'netflix': 'https://www.netflix.com',
+    'primevideo': 'https://www.primevideo.com',
+    'amazon': 'https://www.primevideo.com',
+    'prime': 'https://www.primevideo.com',
+    'disney': 'https://www.disneyplus.com',
+    'disneyplus': 'https://www.disneyplus.com',
+    'hulu': 'https://www.hulu.com',
+    'hbomax': 'https://play.max.com',
+    'max': 'https://play.max.com',
+    'apple': 'https://tv.apple.com',
+    'appletv': 'https://tv.apple.com',
+    'paramount': 'https://www.paramountplus.com',
+    'paramountplus': 'https://www.paramountplus.com',
+    'peacock': 'https://www.peacocktv.com',
+    'showtime': 'https://www.showtime.com',
+    'starz': 'https://www.starz.com'
+  }
+  
+  return linkMap[normalized] || `https://www.${normalized}.com`
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -191,14 +252,24 @@ serve(async (req) => {
       }
     }
     
+    // Deduplikacja serwisów
+    const uniqueServices = streamingServices.reduce((acc, current) => {
+      const existing = acc.find(item => item.service === current.service)
+      if (!existing) {
+        acc.push(current)
+      }
+      return acc
+    }, [])
+    
     return new Response(
       JSON.stringify({ 
-        result: streamingServices,
+        result: uniqueServices,
         timestamp: new Date().toISOString(),
-        source: streamingServices.length > 0 ? streamingServices[0].source || 'api' : 'not-found',
-        apiError: streamingServices.length === 0 ? apiError : null,
+        source: uniqueServices.length > 0 ? uniqueServices[0].source || 'api' : 'not-found',
+        apiError: uniqueServices.length === 0 ? apiError : null,
         region: forceRegion,
-        tmdbId: tmdbId
+        tmdbId: tmdbId,
+        totalFound: uniqueServices.length
       }),
       { 
         headers: { 
@@ -226,64 +297,3 @@ serve(async (req) => {
     )
   }
 })
-
-// Enhanced service name normalization for v2 API
-function normalizeServiceName(serviceName: string): string {
-  if (!serviceName) return 'Unknown'
-  
-  const serviceMap: Record<string, string> = {
-    'netflix': 'Netflix',
-    'amazon': 'Prime Video',
-    'amazonprime': 'Prime Video',
-    'prime': 'Prime Video',
-    'primevideo': 'Prime Video',
-    'disney': 'Disney+',
-    'disneyplus': 'Disney+',
-    'hulu': 'Hulu',
-    'hbo': 'HBO Max',
-    'hbomax': 'HBO Max',
-    'max': 'Max',
-    'apple': 'Apple TV+',
-    'appletv': 'Apple TV+',
-    'appletv+': 'Apple TV+',
-    'paramount': 'Paramount+',
-    'paramountplus': 'Paramount+',
-    'peacock': 'Peacock',
-    'showtime': 'Showtime',
-    'starz': 'Starz',
-    'cinemax': 'Cinemax',
-    'crunchyroll': 'Crunchyroll',
-    'funimation': 'Funimation'
-  }
-  
-  const normalized = serviceName.toLowerCase().trim().replace(/[\s\-_]/g, '')
-  return serviceMap[normalized] || serviceName
-}
-
-// Enhanced link generation
-function generateDefaultLink(serviceName: string): string {
-  if (!serviceName) return ''
-  
-  const normalized = serviceName.toLowerCase().replace(/[\s+]/g, '')
-  
-  const linkMap: Record<string, string> = {
-    'netflix': 'https://www.netflix.com',
-    'primevideo': 'https://www.primevideo.com',
-    'amazon': 'https://www.primevideo.com',
-    'prime': 'https://www.primevideo.com',
-    'disney': 'https://www.disneyplus.com',
-    'disneyplus': 'https://www.disneyplus.com',
-    'hulu': 'https://www.hulu.com',
-    'hbomax': 'https://play.max.com',
-    'max': 'https://play.max.com',
-    'apple': 'https://tv.apple.com',
-    'appletv': 'https://tv.apple.com',
-    'paramount': 'https://www.paramountplus.com',
-    'paramountplus': 'https://www.paramountplus.com',
-    'peacock': 'https://www.peacocktv.com',
-    'showtime': 'https://www.showtime.com',
-    'starz': 'https://www.starz.com'
-  }
-  
-  return linkMap[normalized] || `https://www.${normalized}.com`
-}
