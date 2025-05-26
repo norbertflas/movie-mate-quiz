@@ -1,16 +1,18 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import type { StreamingPlatformData, StreamingService } from "@/types/streaming";
 
 // Function to get streaming availability from Supabase
 export const getStreamingAvailability = async (tmdbId: number, type: 'movie' | 'tv', countryCode: string = 'US'): Promise<StreamingPlatformData[]> => {
   try {
+    // FORCE ENGLISH REGION ONLY - CRITICAL FIX
+    const forceEnglishRegion = 'US'; // Always use US/English region
+    
     // Use the correct table name "movie_streaming_availability" instead of "streaming_availability"
     const { data, error } = await supabase
       .from('movie_streaming_availability')
       .select('*')
       .eq('tmdb_id', tmdbId)
-      .eq('region', countryCode);
+      .eq('region', forceEnglishRegion);
 
     if (error) {
       console.error("Error fetching streaming availability:", error);
@@ -18,7 +20,7 @@ export const getStreamingAvailability = async (tmdbId: number, type: 'movie' | '
     }
 
     if (!data || data.length === 0) {
-      console.log(`No streaming data found for TMDB ID ${tmdbId} in region ${countryCode}`);
+      console.log(`No streaming data found for TMDB ID ${tmdbId} in region ${forceEnglishRegion}`);
       return [];
     }
 
@@ -157,13 +159,16 @@ export const getFriendlyServiceName = (providerName: string): string => {
   }
 };
 
-// Function to get streaming services by region
+// Function to get streaming services by region - FORCE ENGLISH ONLY
 export const getStreamingServicesByRegion = async (region: string): Promise<StreamingService[]> => {
   try {
+    // CRITICAL FIX: Always use 'us' region regardless of input
+    const forceEnglishRegion = 'us';
+    
     const { data, error } = await supabase
       .from('streaming_services')
       .select('*')
-      .contains('regions', [region]);
+      .contains('regions', [forceEnglishRegion]);
 
     if (error) {
       console.error("Error fetching streaming services:", error);
@@ -177,16 +182,16 @@ export const getStreamingServicesByRegion = async (region: string): Promise<Stre
   }
 };
 
-// Map language codes to region codes
+// Map language codes to region codes - FORCE ENGLISH ONLY
 export const languageToRegion: Record<string, string> = {
   'en': 'us',
-  'es': 'es',
-  'fr': 'fr',
-  'de': 'de',
-  'it': 'it',
-  'pl': 'pl',
+  'pl': 'us', // CRITICAL FIX: Force Polish to use US region
+  'es': 'us', // Force all to US
+  'fr': 'us', // Force all to US
+  'de': 'us', // Force all to US
+  'it': 'us', // Force all to US
   'en-US': 'us',
-  'en-GB': 'gb'
+  'en-GB': 'us' // Force GB to US as well
 };
 
 // Function to get service icon path

@@ -20,8 +20,9 @@ interface CacheEntry {
   version: string;
 }
 
+// CRITICAL FIX: Always use US region for cache keys
 const getCacheKey = (tmdbId: number, country: string) => 
-  `streaming_${tmdbId}_${country}_${CACHE_VERSION}`;
+  `streaming_${tmdbId}_us_${CACHE_VERSION}`; // Force 'us' instead of country
 
 const getFromCache = (key: string): StreamingPlatformData[] | null => {
   try {
@@ -71,8 +72,9 @@ export function useOptimizedStreaming(
 
   const { fetchStreamingData } = useBatchStreamingAvailability();
   
+  // CRITICAL FIX: Always use 'us' for cache key regardless of country input
   const cacheKey = useMemo(() => 
-    getCacheKey(tmdbId, country), [tmdbId, country]
+    getCacheKey(tmdbId, 'us'), [tmdbId]
   );
 
   const fetchData = useCallback(async () => {

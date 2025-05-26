@@ -24,9 +24,10 @@ export const PlatformFilter = ({
     const fetchStreamingServices = async () => {
       setIsLoading(true);
       try {
-        const region = languageToRegion[i18n.language] || 'us';
-        console.log(`Fetching streaming services for region: ${region}`);
-        const services = await getStreamingServicesByRegion(region);
+        // CRITICAL FIX: Always use 'us' region regardless of language
+        const forceEnglishRegion = 'us';
+        console.log(`Fetching streaming services for forced region: ${forceEnglishRegion} (language was: ${i18n.language})`);
+        const services = await getStreamingServicesByRegion(forceEnglishRegion);
         setStreamingServices(services);
       } catch (error) {
         console.error('Error fetching streaming services:', error);
@@ -41,7 +42,7 @@ export const PlatformFilter = ({
     };
 
     fetchStreamingServices();
-  }, [i18n.language, t, toast]);
+  }, [t, toast]); // Removed i18n.language dependency to prevent refetching
 
   // Create translated options for the filter
   const translatedOptions = streamingServices.map(service => ({
