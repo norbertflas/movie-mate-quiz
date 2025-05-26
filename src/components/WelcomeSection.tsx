@@ -4,7 +4,6 @@ import { Button } from "./ui/button";
 import { PlayCircle, Film, Search, User } from "lucide-react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
 import { DynamicMovieBackground } from "./movie/DynamicMovieBackground";
 
 interface WelcomeSectionProps {
@@ -13,7 +12,6 @@ interface WelcomeSectionProps {
 
 export const WelcomeSection = ({ onStartQuiz }: WelcomeSectionProps) => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
 
   // Auto-rotate featured steps
@@ -49,10 +47,6 @@ export const WelcomeSection = ({ onStartQuiz }: WelcomeSectionProps) => {
     }
   ];
 
-  const handleCreatorSearch = () => {
-    navigate("/search?type=creators");
-  };
-
   return (
     <DynamicMovieBackground 
       className="rounded-xl min-h-[600px]" 
@@ -78,7 +72,7 @@ export const WelcomeSection = ({ onStartQuiz }: WelcomeSectionProps) => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.5 }}
-          className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-center text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-primary to-purple-400 mb-4 whitespace-normal"
+          className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-center text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-primary to-purple-400 mb-4 leading-tight"
         >
           {t("site.findYourMovie")}
         </motion.h1>
@@ -124,22 +118,6 @@ export const WelcomeSection = ({ onStartQuiz }: WelcomeSectionProps) => {
                 <h3 className="text-xl font-semibold text-white whitespace-normal">{step.title}</h3>
                 <p className="text-gray-400 whitespace-normal">{step.subtitle}</p>
               </div>
-              {index === 2 && (
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleCreatorSearch}
-                    className="whitespace-nowrap"
-                  >
-                    {step.icon}
-                    <span className="ml-2">Try it</span>
-                  </Button>
-                </motion.div>
-              )}
             </motion.div>
           ))}
         </motion.div>

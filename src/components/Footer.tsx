@@ -3,7 +3,6 @@ import { Logo } from "./Logo";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { Heart, Github, Mail, Copyright, Link, Globe, MessageSquare, ShieldCheck, Facebook, Twitter, Instagram } from "lucide-react";
-import { LanguageSwitcher } from "./LanguageSwitcher";
 import { Link as RouterLink } from "react-router-dom";
 import { Separator } from "./ui/separator";
 import { Button } from "./ui/button";
@@ -63,6 +62,11 @@ export const Footer = () => {
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0 }
+  };
+
+  const handleContactClick = () => {
+    // For now, just scroll to top or show a simple message
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -153,38 +157,6 @@ export const Footer = () => {
             </motion.div>
           </div>
 
-          <div className="rounded-lg border border-border/30 bg-card/30 backdrop-blur-sm p-6">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="flex flex-col items-center md:items-start space-y-2">
-                <div className="flex items-center gap-2">
-                  <motion.div
-                    animate={{ rotate: [0, 10, 0] }}
-                    transition={{ duration: 2, repeat: Infinity, repeatType: "mirror" }}
-                  >
-                    <Globe className="h-4 w-4 text-primary" />
-                  </motion.div>
-                  <h4 className="text-sm font-medium">{t("footer.language")}</h4>
-                </div>
-                <p className="text-xs text-muted-foreground">{t("footer.selectLanguage")}</p>
-              </div>
-              
-              <div className="grid grid-cols-3 gap-2">
-                {languages.slice(0, 6).map((lang) => (
-                  <motion.button
-                    key={lang.code}
-                    className="px-3 py-2 text-sm rounded-md hover:bg-primary/10 transition-colors flex items-center gap-2"
-                    onClick={() => handleLanguageChange(lang.code)}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <span>{lang.flag}</span>
-                    <span>{lang.label}</span>
-                  </motion.button>
-                ))}
-              </div>
-            </div>
-          </div>
-
           <Separator className="my-6 opacity-20" />
 
           {/* Language selector and copyright section */}
@@ -205,7 +177,12 @@ export const Footer = () => {
                 <Heart className="h-3.5 w-3.5 text-red-500 mr-1" />{" "}
                 {t("footer.madeWith")} {t("footer.by")} MovieFinder Team
               </span>
-              <Button variant="outline" size="sm" className="text-xs h-8">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-xs h-8"
+                onClick={handleContactClick}
+              >
                 <MessageSquare className="h-3 w-3 mr-1.5" />
                 {t("footer.contactUs")}
               </Button>
@@ -215,19 +192,4 @@ export const Footer = () => {
       </div>
     </motion.footer>
   );
-};
-
-// We need this for the Footer's language buttons to work
-const languages = [
-  { code: "en", label: "English", flag: "🇺🇸" },
-  { code: "pl", label: "Polski", flag: "🇵🇱" },
-  { code: "fr", label: "Français", flag: "🇫🇷" },
-  { code: "de", label: "Deutsch", flag: "🇩🇪" },
-  { code: "es", label: "Español", flag: "🇪🇸" },
-  { code: "it", label: "Italiano", flag: "🇮🇹" },
-];
-
-const handleLanguageChange = (langCode: string) => {
-  localStorage.setItem("language", langCode);
-  window.location.reload();
 };

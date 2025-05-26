@@ -17,6 +17,9 @@ export const OptimizedPopularMoviesSection = memo(({ movies }: OptimizedPopularM
   const isInView = useInView(ref, { once: false, amount: 0.1 });
   const [selectedMovie, setSelectedMovie] = useState<TMDBMovie | null>(null);
 
+  // Limit to first 20 movies as suggested in the bug report
+  const limitedMovies = movies.slice(0, 20);
+
   const handleMovieClick = useCallback((movie: TMDBMovie) => {
     setSelectedMovie(movie);
   }, []);
@@ -62,14 +65,14 @@ export const OptimizedPopularMoviesSection = memo(({ movies }: OptimizedPopularM
         </motion.div>
       </div>
       
-      {movies && movies.length > 0 ? (
+      {limitedMovies && limitedMovies.length > 0 ? (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
           transition={{ duration: 0.5 }}
         >
           <OptimizedMovieGrid 
-            movies={movies}
+            movies={limitedMovies}
             onMovieClick={handleMovieClick}
             className="w-full"
           />

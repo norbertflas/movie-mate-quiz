@@ -116,13 +116,27 @@ export default {
       canal: "Canal+"
     },
     footer: {
-      about: "About",
+      companyInfo: "Company",
+      support: "Support", 
+      legal: "Legal",
+      about: "About Us",
       contact: "Contact",
-      terms: "Terms",
-      privacy: "Privacy",
-      copyright: "© 2025 MovieFinder. All rights reserved.",
-      madeWith: "Made with ❤️",
-      language: "Language"
+      careers: "Careers",
+      press: "Press",
+      help: "Help Center",
+      faq: "FAQ",
+      refunds: "Refunds",
+      terms: "Terms of Service",
+      privacy: "Privacy Policy",
+      copyright: "Copyright",
+      cookies: "Cookie Policy",
+      language: "Language",
+      selectLanguage: "Select Language",
+      contactUs: "Contact Us",
+      allRightsReserved: "All rights reserved",
+      madeWith: "Made with",
+      by: "by",
+      description: "MovieFinder helps you discover your next favorite movie across all streaming platforms. Find what to watch next with personalized recommendations."
     },
     movie: {
       action: "Action",
@@ -275,6 +289,19 @@ export default {
         },
         noSubscriptions: "I don't have any subscriptions"
       }
+    },
+    navigation: {
+      home: "Home",
+      search: "Search", 
+      movies: "Movies",
+      favorites: "Favorites",
+      ratings: "Ratings",
+      streamingServices: "Streaming Services",
+      creators: "Creators",
+      settings: "Settings",
+      login: "Login",
+      logout: "Logout",
+      profile: "Profile"
     }
   }
 };
