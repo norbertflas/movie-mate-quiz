@@ -115,6 +115,7 @@ export function generateFallbackRecommendations(filters: QuizFilters): MovieReco
       vote_average: 8.4,
       genre: "Drama",
       platform: "Netflix",
+      trailer_url: "https://www.youtube.com/watch?v=SUXWAEX2jlg",
       explanations: ["Intense drama perfect for serious viewing"]
     },
     {
@@ -126,6 +127,7 @@ export function generateFallbackRecommendations(filters: QuizFilters): MovieReco
       vote_average: 8.5,
       genre: "Drama",
       platform: "Amazon Prime",
+      trailer_url: "https://www.youtube.com/watch?v=bLvqoHBptjg",
       explanations: ["Heartwarming story that touches the soul"]
     },
     {
@@ -137,6 +139,7 @@ export function generateFallbackRecommendations(filters: QuizFilters): MovieReco
       vote_average: 7.6,
       genre: "Action",
       platform: "Disney+",
+      trailer_url: "https://www.youtube.com/watch?v=5PSNL1qE6VY",
       explanations: ["Epic adventure with stunning visuals"]
     },
     {
@@ -148,6 +151,7 @@ export function generateFallbackRecommendations(filters: QuizFilters): MovieReco
       vote_average: 8.8,
       genre: "Fantasy",
       platform: "HBO Max",
+      trailer_url: "https://www.youtube.com/watch?v=V75dMMIW2B4",
       explanations: ["Epic fantasy adventure"]
     }
   ];
@@ -163,6 +167,7 @@ export function generateFallbackRecommendations(filters: QuizFilters): MovieReco
       genre: "Drama",
       platform: "HBO Max",
       type: "series",
+      trailer_url: "https://www.youtube.com/watch?v=rlR4PJn8b8I",
       explanations: ["Epic fantasy series with complex characters"]
     },
     {
@@ -175,6 +180,7 @@ export function generateFallbackRecommendations(filters: QuizFilters): MovieReco
       genre: "Crime",
       platform: "Netflix",
       type: "series",
+      trailer_url: "https://www.youtube.com/watch?v=HhesaQXLuRY",
       explanations: ["Intense crime drama with masterful storytelling"]
     },
     {
@@ -187,6 +193,7 @@ export function generateFallbackRecommendations(filters: QuizFilters): MovieReco
       genre: "Action",
       platform: "Netflix",
       type: "series",
+      trailer_url: "https://www.youtube.com/watch?v=Yj0l7iGKh8g",
       explanations: ["Exciting superhero action series"]
     }
   ];

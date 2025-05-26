@@ -11,7 +11,8 @@ import type { TMDBMovie } from "@/services/tmdb";
 
 const Ratings = () => {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { session } = useAuth();
+  const user = session?.user;
   const [ratedMovies, setRatedMovies] = useState<TMDBMovie[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedMovie, setSelectedMovie] = useState<TMDBMovie | null>(null);
