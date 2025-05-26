@@ -114,17 +114,20 @@ const Search = () => {
           onValueChange={(val) => setSearchType(val as SearchType)} 
           className="mt-12"
         >
-          <TabsList className="grid w-full grid-cols-3 max-w-xl mx-auto mb-8">
-            <TabsTrigger value="movies" className="flex items-center gap-2">
+          <TabsList className="grid w-full grid-cols-3 max-w-2xl mx-auto mb-8">
+            <TabsTrigger value="movies" className="flex items-center gap-2 text-sm">
               <Film className="h-4 w-4" />
               {t("search.movies")}
             </TabsTrigger>
-            <TabsTrigger value="creators" className="flex items-center gap-2">
+            <TabsTrigger value="creators" className="flex items-center gap-2 text-sm">
               <User className="h-4 w-4" />
               {t("search.creators")}
             </TabsTrigger>
-            <TabsTrigger value="personalized">
-              {t("recommendations.personalized")}
+            <TabsTrigger value="personalized" className="flex items-center gap-2 text-xs px-2 py-1">
+              <SearchIcon className="h-3 w-3" />
+              <span className="whitespace-nowrap">
+                {t("recommendations.personalized")}
+              </span>
             </TabsTrigger>
           </TabsList>
 
@@ -161,8 +164,16 @@ const Search = () => {
           </TabsContent>
 
           <TabsContent value="personalized" className="animate-in fade-in-50 duration-300">
-            <div className="max-w-3xl mx-auto">
-              <PersonalizedRecommendationsForm />
+            <div className="max-w-4xl mx-auto">
+              <div className="bg-card/50 backdrop-blur-sm p-6 rounded-xl border border-border/50">
+                <h2 className="text-2xl font-bold mb-4 text-center">
+                  {t("recommendations.personalized")}
+                </h2>
+                <p className="text-muted-foreground text-center mb-6">
+                  Wypełnij quiz, aby otrzymać spersonalizowane rekomendacje filmów
+                </p>
+                <PersonalizedRecommendationsForm />
+              </div>
             </div>
           </TabsContent>
         </Tabs>

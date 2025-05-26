@@ -1,154 +1,280 @@
 
 import { useState } from "react";
-import { MovieCard } from "../MovieCard";
-import { Button } from "../ui/button";
-import { Textarea } from "../ui/textarea";
-import { useTranslation } from "react-i18next";
-import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from "lucide-react";
-import { useToast } from "../ui/use-toast";
-import { motion } from "framer-motion";
-import type { TMDBMovie } from "@/services/tmdb";
-import { VOD_SERVICES } from "@/components/quiz/constants/streamingServices";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Progress } from "@/components/ui/progress";
-import { Card } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Check } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2, Sparkles, Play, Star, Calendar } from "lucide-react";
+import { motion } from "framer-motion";
+
+interface Movie {
+  id: number;
+  title: string;
+  overview: string;
+  poster_path: string;
+  release_date: string;
+  vote_average: number;
+  genre: string;
+  trailer_url?: string;
+  explanations?: string[];
+}
+
+const POPULAR_MOVIES = [
+  { id: 550, title: "Fight Club", genres: [18, 53] },
+  { id: 13, title: "Forrest Gump", genres: [35, 18, 10749] },
+  { id: 155, title: "The Dark Knight", genres: [18, 28, 80, 53] },
+  { id: 122, title: "The Lord of the Rings: The Return of the King", genres: [12, 18, 14] },
+  { id: 680, title: "Pulp Fiction", genres: [53, 80] },
+  { id: 389, title: "12 Angry Men", genres: [18] },
+  { id: 19404, title: "Dilwale Dulhania Le Jayenge", genres: [35, 18, 10749] },
+  { id: 278, title: "The Shawshank Redemption", genres: [18, 80] },
+  { id: 424, title: "Schindler's List", genres: [18, 36, 10752] },
+  { id: 372058, title: "Your Name.", genres: [10749, 16, 18] }
+];
 
 export const PersonalizedRecommendationsForm = () => {
   const [prompt, setPrompt] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [recommendations, setRecommendations] = useState<TMDBMovie[]>([]);
-  const { t, i18n } = useTranslation();
+  const [selectedMovies, setSelectedMovies] = useState<typeof POPULAR_MOVIES>([]);
+  const [recommendations, setRecommendations] = useState<Movie[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [streamingFilter, setStreamingFilter] = useState<string>("");
   const { toast } = useToast();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  const handleMovieToggle = (movie: typeof POPULAR_MOVIES[0]) => {
+    setSelectedMovies(prev => {
+      const isSelected = prev.some(m => m.id === movie.id);
+      if (isSelected) {
+        return prev.filter(m => m.id !== movie.id);
+      } else if (prev.length < 5) {
+        return [...prev, movie];
+      } else {
+        toast({
+          title: "Limit osiągnięty",
+          description: "Możesz wybrać maksymalnie 5 filmów",
+          variant: "destructive"
+        });
+        return prev;
+      }
+    });
+  };
 
+  const handleSubmit = async () => {
+    if (!prompt.trim() && selectedMovies.length === 0) {
+      toast({
+        title: "Błąd",
+        description: "Wpisz opis tego czego szukasz lub wybierz filmy które lubisz",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('get-ai-recommendations', {
-        body: { 
-          prompt,
-          filters: {
-            platforms: VOD_SERVICES
-          },
-          language: i18n.language
+      console.log('Wysyłanie żądania rekomendacji:', { prompt, selectedMovies });
+      
+      const { data, error } = await supabase.functions.invoke('get-personalized-recommendations', {
+        body: {
+          prompt: prompt.trim(),
+          selectedMovies: selectedMovies
         }
       });
 
-      if (error) throw error;
-
-      if (data.recommendations) {
-        setRecommendations(data.recommendations.map((rec: any) => ({
-          ...rec,
-          explanations: rec.reason ? [rec.reason] : []
-        })));
-
-        toast({
-          title: t("recommendations.success"),
-          description: t("recommendations.aiGenerated"),
-          className: "bg-green-500 text-white"
-        });
+      if (error) {
+        console.error('Błąd funkcji edge:', error);
+        throw new Error(error.message || 'Błąd podczas pobierania rekomendacji');
       }
-    } catch (error) {
-      console.error('Error getting recommendations:', error);
+
+      console.log('Otrzymane rekomendacje:', data);
+
+      if (!data || !Array.isArray(data) || data.length === 0) {
+        throw new Error('Brak rekomendacji w odpowiedzi');
+      }
+
+      setRecommendations(data);
       toast({
-        title: t("errors.recommendationError"),
-        description: t("errors.tryAgain"),
-        variant: "destructive",
+        title: "Sukces!",
+        description: `Znaleziono ${data.length} rekomendacji dla Ciebie`,
+      });
+
+    } catch (error) {
+      console.error('Błąd podczas pobierania rekomendacji:', error);
+      toast({
+        title: "Błąd",
+        description: error instanceof Error ? error.message : "Nie udało się pobrać rekomendacji. Spróbuj ponownie.",
+        variant: "destructive"
       });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
+  const streamingServices = ["Netflix", "Disney+", "Amazon Prime", "HBO Max", "Apple TV+"];
+  
+  const filteredRecommendations = streamingFilter 
+    ? recommendations.filter(movie => 
+        movie.explanations?.some(exp => 
+          exp.toLowerCase().includes(streamingFilter.toLowerCase())
+        )
+      )
+    : recommendations;
+
   return (
-    <div className="space-y-6 max-w-7xl mx-auto px-4">
-      <Card className="p-6 bg-card">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <h2 className="text-2xl font-bold">{t("recommendations.personalized")}</h2>
-            <p className="text-muted-foreground">
-              {t("recommendations.prompt")}
-            </p>
-          </div>
-          
+    <div className="space-y-6">
+      {/* Input Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary" />
+            Opisz czego szukasz
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
           <Textarea
-            placeholder={t("recommendations.promptPlaceholder")}
+            placeholder="Np. 'Chcę obejrzeć coś podobnego do Incepcji, ale z lepszym humorem' lub 'Szukam filmu akcji z lat 90' lub 'Coś romantycznego na wieczór'"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            className="min-h-[100px] resize-none"
+            className="min-h-[100px]"
           />
           
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium">{t("streaming.availableOn", "Available on")}</h3>
-            <div className="flex flex-wrap gap-2">
-              {VOD_SERVICES.map((service) => (
-                <Badge key={service} variant="secondary">
-                  <Check className="w-3 h-3 mr-1" />
-                  {service}
-                </Badge>
+          <div>
+            <p className="text-sm font-medium mb-3">
+              Lub wybierz filmy które lubisz ({selectedMovies.length}/5):
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
+              {POPULAR_MOVIES.map((movie) => (
+                <Button
+                  key={movie.id}
+                  variant={selectedMovies.some(m => m.id === movie.id) ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handleMovieToggle(movie)}
+                  className="text-xs h-auto p-2 text-center"
+                >
+                  {movie.title}
+                </Button>
               ))}
             </div>
           </div>
 
           <Button 
-            type="submit" 
-            disabled={loading || !prompt.trim()}
+            onClick={handleSubmit}
+            disabled={isLoading || (!prompt.trim() && selectedMovies.length === 0)}
             className="w-full"
+            size="lg"
           >
-            {loading ? (
+            {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {t("common.loading")}
+                Szukam rekomendacji...
               </>
             ) : (
-              t("recommendations.submit", "Get Recommendations")
+              <>
+                <Sparkles className="mr-2 h-4 w-4" />
+                Pokaż rekomendacje
+              </>
             )}
           </Button>
-        </form>
+        </CardContent>
       </Card>
 
+      {/* Streaming Filter */}
       {recommendations.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="space-y-6"
-        >
-          <Separator />
-          <div className="space-y-2">
-            <h2 className="text-2xl font-bold">{t("recommendations.forYou")}</h2>
-            <p className="text-muted-foreground">{t("recommendations.basedOn")}</p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {recommendations.map((movie, index) => (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Filtruj według serwisu</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant={streamingFilter === "" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setStreamingFilter("")}
+              >
+                Wszystkie
+              </Button>
+              {streamingServices.map((service) => (
+                <Button
+                  key={service}
+                  variant={streamingFilter === service ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setStreamingFilter(service)}
+                >
+                  {service}
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Results */}
+      {filteredRecommendations.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-xl font-semibold">
+            Twoje rekomendacje ({filteredRecommendations.length})
+          </h3>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {filteredRecommendations.map((movie, index) => (
               <motion.div
-                key={movie.id || index}
+                key={movie.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <MovieCard
-                  title={movie.title}
-                  year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "N/A"}
-                  platform="TMDB"
-                  genre={movie.genres?.[0]?.name || t("movie.genre")}
-                  imageUrl={movie.poster_path || "/placeholder.svg"}
-                  description={movie.overview || ""}
-                  trailerUrl=""
-                  rating={movie.vote_average * 10}
-                  tmdbId={movie.id}
-                  explanations={movie.explanations}
-                  streamingServices={VOD_SERVICES}
-                />
+                <Card className="h-full">
+                  <CardContent className="p-4">
+                    <div className="flex gap-3">
+                      {movie.poster_path && (
+                        <img
+                          src={`https://image.tmdb.org/t/p/w200${movie.poster_path}`}
+                          alt={movie.title}
+                          className="w-16 h-24 object-cover rounded flex-shrink-0"
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-sm line-clamp-2 mb-1">
+                          {movie.title}
+                        </h4>
+                        
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
+                          {movie.release_date && (
+                            <div className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {new Date(movie.release_date).getFullYear()}
+                            </div>
+                          )}
+                          <div className="flex items-center gap-1">
+                            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                            {Math.round(movie.vote_average * 10) / 10}
+                          </div>
+                        </div>
+
+                        <p className="text-xs text-muted-foreground line-clamp-3 mb-2">
+                          {movie.overview}
+                        </p>
+                        
+                        {movie.explanations && movie.explanations.length > 0 && (
+                          <div className="space-y-1">
+                            {movie.explanations.slice(0, 2).map((explanation, idx) => (
+                              <Badge 
+                                key={idx} 
+                                variant="secondary" 
+                                className="text-xs py-0.5 px-1.5"
+                              >
+                                {explanation}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </motion.div>
             ))}
           </div>
-        </motion.div>
+        </div>
       )}
     </div>
   );
