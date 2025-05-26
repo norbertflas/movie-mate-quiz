@@ -4,6 +4,7 @@ import type { QuizAnswer, MovieRecommendation, QuizLogicHook } from "./QuizTypes
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
+import { parseQuizAnswers, getPersonalizedRecommendations, generateFallbackRecommendations } from "./utils/quizRecommendationLogic";
 
 export const useQuizLogic = (): QuizLogicHook => {
   const [showQuiz, setShowQuiz] = useState(false);
@@ -39,54 +40,40 @@ export const useQuizLogic = (): QuizLogicHook => {
         }
       }
 
-      // Convert answers array to a structured format for easier processing
-      const answers = quizAnswers.reduce((map, answer) => {
+      // Parse the quiz answers into structured filters
+      const filters = parseQuizAnswers(quizAnswers);
+      console.log('Parsed filters:', filters);
+
+      // Update answer map for UI consistency
+      const answerMap = quizAnswers.reduce((map, answer) => {
         map[answer.questionId] = answer.answer;
         return map;
       }, {} as Record<string, string>);
-      
-      setAnswerMap(answers);
-      console.log('Answer map for processing:', answers);
-      
-      // Ensure we have a genre preference in the answers
-      const hasGenre = quizAnswers.some(a => a.questionId === 'genre' || a.questionId === 'preferredGenre');
-      if (!hasGenre) {
-        // Add a default genre preference if none exists
-        quizAnswers.push({
-          questionId: 'preferredGenre',
-          answer: 'Action' // Default to action if no genre specified
-        });
+      setAnswerMap(answerMap);
+
+      try {
+        // Try to get personalized recommendations from the edge function
+        const personalizedRecommendations = await getPersonalizedRecommendations(filters);
+        setAnswers(quizAnswers);
+        setRecommendations(personalizedRecommendations);
+        setShowResults(true);
+        return personalizedRecommendations;
+      } catch (edgeFunctionError) {
+        console.error('Edge function failed, using fallback:', edgeFunctionError);
+        
+        // If edge function fails, use fallback logic
+        const fallbackRecommendations = generateFallbackRecommendations(filters);
+        setAnswers(quizAnswers);
+        setRecommendations(fallbackRecommendations);
+        setShowResults(true);
+        return fallbackRecommendations;
       }
-
-      // Get recommendations from Edge Function
-      const { data, error } = await supabase.functions.invoke('get-personalized-recommendations', {
-        body: { 
-          answers: quizAnswers,
-          userId: user?.id,
-          includeExplanations: true,
-        }
-      });
-
-      if (error) {
-        console.error('Error invoking edge function:', error);
-        throw error;
-      }
-
-      if (!data || !Array.isArray(data)) {
-        console.error('Invalid response from recommendations service:', data);
-        throw new Error('Invalid response from recommendations service');
-      }
-
-      console.log('Received recommendations:', data);
-      setAnswers(quizAnswers);
-      setRecommendations(data);
-      setShowResults(true);
-      return data as MovieRecommendation[];
     } catch (error) {
       console.error('Error processing quiz answers:', error);
       
-      // Fallback recommendations if the edge function fails
-      const fallbackRecommendations = generateFallbackRecommendations(quizAnswers);
+      // Final fallback - use basic recommendations
+      const basicFilters = parseQuizAnswers(quizAnswers);
+      const fallbackRecommendations = generateFallbackRecommendations(basicFilters);
       setRecommendations(fallbackRecommendations);
       setShowResults(true);
       return fallbackRecommendations;
@@ -101,109 +88,6 @@ export const useQuizLogic = (): QuizLogicHook => {
       console.error('Error completing quiz:', error);
       throw error;
     }
-  };
-
-  // Fallback method to generate recommendations if the API fails
-  const generateFallbackRecommendations = (quizAnswers: QuizAnswer[]): MovieRecommendation[] => {
-    // Create a map of the answers for easier access
-    const answerMap = quizAnswers.reduce((map, answer) => {
-      map[answer.questionId] = answer.answer;
-      return map;
-    }, {} as Record<string, string>);
-
-    // Basic fallback recommendations
-    const fallbacks: MovieRecommendation[] = [
-      {
-        id: 1,
-        title: "The Avengers",
-        overview: "Earth's mightiest heroes must come together to save the world.",
-        poster_path: "/cezWGskPY5x7GaglTTRN4Fugfb8.jpg",
-        release_date: "2012-04-25",
-        vote_average: 7.7,
-        genre: "Action",
-        trailer_url: null,
-        platform: "Disney+",
-        explanations: ["Popular superhero movie with great action sequences"]
-      },
-      {
-        id: 2,
-        title: "The Office",
-        overview: "A mockumentary on a group of office workers.",
-        poster_path: "/qWnJzyZhyy74gjpSjIXWmuk0ifX.jpg",
-        release_date: "2005-03-24",
-        vote_average: 8.5,
-        genre: "Comedy",
-        trailer_url: null,
-        platform: "Netflix",
-        type: "series",
-        explanations: ["Highly rated comedy series with multiple seasons"]
-      },
-      {
-        id: 3,
-        title: "Stranger Things",
-        overview: "When a young boy disappears, his mother and friends must confront terrifying forces.",
-        poster_path: "/x2LSRK2Cm7MZhjluni1msVJ3wDF.jpg",
-        release_date: "2016-07-15",
-        vote_average: 8.3,
-        genre: "Sci-Fi & Fantasy",
-        trailer_url: null,
-        platform: "Netflix",
-        type: "series",
-        explanations: ["Popular sci-fi series with supernatural elements"]
-      },
-      {
-        id: 4, 
-        title: "Inception",
-        overview: "A thief who steals corporate secrets through the use of dream-sharing technology.",
-        poster_path: "/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg",
-        release_date: "2010-07-16",
-        vote_average: 8.4,
-        genre: "Sci-Fi",
-        trailer_url: null,
-        platform: "HBO Max",
-        explanations: ["Mind-bending sci-fi thriller with complex plot"]
-      },
-      {
-        id: 5,
-        title: "The Shawshank Redemption",
-        overview: "Two imprisoned men bond over a number of years, finding solace and eventual redemption.",
-        poster_path: "/q6y0Go1tsGEsmtFryDOJo3dEmqu.jpg",
-        release_date: "1994-09-23",
-        vote_average: 8.7,
-        genre: "Drama",
-        trailer_url: null,
-        platform: "HBO Max",
-        explanations: ["Classic prison drama with powerful performances"]
-      }
-    ];
-
-    // Return filtered recommendations based on user preferences if possible
-    const contentType = answerMap.contentType;
-    const mood = answerMap.mood;
-    const platforms = answerMap.platforms || "";
-
-    // Simple filtering logic
-    return fallbacks.filter(rec => {
-      // Filter by content type if specified
-      if (contentType && contentType !== t("quiz.options.notSure")) {
-        if (contentType === t("quiz.options.movie") && rec.type === "series") return false;
-        if (contentType === t("quiz.options.series") && !rec.type) return false;
-      }
-      
-      // Filter by platform if specified and not empty
-      if (platforms && platforms !== "" && platforms !== "[]") {
-        try {
-          const userPlatforms = JSON.parse(platforms);
-          if (Array.isArray(userPlatforms) && userPlatforms.length > 0 && rec.platform) {
-            if (!userPlatforms.includes(rec.platform)) return false;
-          }
-        } catch (e) {
-          console.error("Error parsing platforms:", e);
-        }
-      }
-      
-      return true;
-    }).slice(0, 5);
   };
 
   return {

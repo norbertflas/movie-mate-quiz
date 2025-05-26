@@ -46,7 +46,11 @@ export default {
       passwordMismatch: "Passwords do not match",
       invalidUrl: "Invalid URL",
       networkError: "Network error. Please check your connection",
-      serverError: "Server error. Please try again later"
+      serverError: "Server error. Please try again later",
+      missingAnswer: "Missing answer",
+      pleaseSelectOption: "Please select at least one option before continuing",
+      quizError: "Quiz Error",
+      recommendationError: "Error fetching recommendations"
     },
     filters: {
       rating: "Rating",
@@ -138,6 +142,26 @@ export default {
       by: "by",
       description: "MovieFinder helps you discover your next favorite movie across all streaming platforms. Find what to watch next with personalized recommendations."
     },
+    favorites: {
+      empty: {
+        title: "No favorites yet",
+        description: "Start building your personal movie collection by adding films you love.",
+        howTo: "Click the heart icon on any movie to add it to your favorites.",
+        searchMovies: "Search Movies",
+        browsePopular: "Browse Popular"
+      },
+      subtitle: "You have {{count}} favorite movies"
+    },
+    ratings: {
+      empty: {
+        title: "No ratings yet",
+        description: "Rate movies to keep track of what you've watched and help improve recommendations.",
+        howTo: "Click on any movie and give it a star rating.",
+        searchMovies: "Search Movies",
+        browsePopular: "Browse Popular"
+      },
+      subtitle: "You have rated {{count}} movies"
+    },
     movie: {
       action: "Action",
       comedy: "Comedy",
@@ -174,7 +198,7 @@ export default {
     },
     discover: {
       popular: "Popular movies",
-      trending: "Trending this week",
+      trending: "Popular this week",
       newest: "Latest releases",
       recommended: "Recommended for you",
       upcoming: "Coming soon",
