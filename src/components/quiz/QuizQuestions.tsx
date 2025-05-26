@@ -1,4 +1,3 @@
-
 import { SurveyStep } from "@/components/SurveyStep";
 import type { QuizQuestionsProps } from "./QuizTypes";
 import { useTranslation } from "react-i18next";
@@ -22,8 +21,14 @@ export const QuizQuestions = ({ questions, currentStep, onAnswer, answers, answe
     return null;
   }
 
+  // Get dynamic options if available
+  let optionsToUse = currentQuestion.options;
+  if (currentQuestion.getDynamicOptions && currentQuestion.options.length === 0) {
+    optionsToUse = currentQuestion.getDynamicOptions(answerMap);
+  }
+
   // Translate options before passing them to SurveyStep
-  const translatedOptions = currentQuestion.options.map(option => {
+  const translatedOptions = optionsToUse.map(option => {
     // For platform names which shouldn't be translated
     if (currentQuestion.id === "platforms") {
       return option;

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import type { QuizAnswer, MovieRecommendation, QuizLogicHook } from "./QuizTypes";
 import { useToast } from "@/hooks/use-toast";
@@ -12,6 +11,7 @@ export const useQuizLogic = (): QuizLogicHook => {
   const [answers, setAnswers] = useState<QuizAnswer[]>([]);
   const [answerMap, setAnswerMap] = useState<Record<string, string>>({});
   const [recommendations, setRecommendations] = useState<MovieRecommendation[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { t } = useTranslation();
 
@@ -24,6 +24,8 @@ export const useQuizLogic = (): QuizLogicHook => {
   };
 
   const processAnswers = async (quizAnswers: QuizAnswer[]): Promise<MovieRecommendation[]> => {
+    setIsLoading(true);
+    
     try {
       console.log('Processing quiz answers:', quizAnswers);
       
@@ -77,6 +79,8 @@ export const useQuizLogic = (): QuizLogicHook => {
       setRecommendations(fallbackRecommendations);
       setShowResults(true);
       return fallbackRecommendations;
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -96,6 +100,7 @@ export const useQuizLogic = (): QuizLogicHook => {
     answers,
     answerMap,
     recommendations,
+    isLoading,
     handleStartQuiz,
     handleQuizComplete,
     processAnswers
