@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MovieDetailsSection } from "./MovieDetailsSection";
 import { MovieActions } from "./MovieActions";
@@ -189,7 +188,7 @@ export const UnifiedMovieDetails = ({
         return;
       }
       
-      availabilityData.fetchStreamingData();
+      availabilityData.fetchData(); // Fixed: was fetchStreamingData, now fetchData
       
       toast({
         title: t("streaming.checking"),
