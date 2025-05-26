@@ -30,6 +30,14 @@ export const translations = {
       finish: "Get Recommendations",
       processing: "Processing...",
       completed: "Quiz Completed",
+      success: {
+        title: "Quiz completed!",
+        regionDetected: "Recommendations for {{region}}"
+      },
+      error: {
+        title: "Error",
+        fallback: "Using fallback recommendations"
+      },
       recommendations: {
         ready: "Your recommendations are ready!",
         title: "Your Personalized Recommendations",
@@ -99,6 +107,115 @@ export const translations = {
       quizError: "Quiz Error",
       tryAgain: "Please try again",
       recommendationError: "Error fetching recommendations"
+    }
+  },
+  pl: {
+    site: {
+      findYourMovie: "Znajdź Swój Idealny Film",
+      exploreCollections: "Rozwiąż nasz szybki quiz, aby odkryć filmy i seriale dopasowane specjalnie dla Ciebie"
+    },
+    discover: {
+      trending: "Popularne w tym tygodniu",
+      popular: "Popularne filmy",
+      noMoviesFound: "Nie znaleziono filmów"
+    },
+    movie: {
+      genre: "Dramat",
+      action: "Akcja",
+      comedy: "Komedia",
+      drama: "Dramat",
+      sciFi: "Sci-Fi",
+      horror: "Horror",
+      romance: "Romans",
+      thriller: "Thriller",
+      documentary: "Dokumentalny"
+    },
+    quiz: {
+      title: "Znajdź Swój Idealny Film",
+      subtitle: "Rozwiąż nasz szybki quiz, aby odkryć filmy i seriale dopasowane specjalnie dla Ciebie",
+      start: "Rozpocznij Quiz",
+      next: "Dalej",
+      previous: "Wstecz",
+      finish: "Pokaż Rekomendacje",
+      processing: "Przetwarzanie...",
+      completed: "Quiz Ukończony",
+      success: {
+        title: "Quiz ukończony!",
+        regionDetected: "Rekomendacje dla {{region}}"
+      },
+      error: {
+        title: "Błąd",
+        fallback: "Używam podstawowych rekomendacji"
+      },
+      recommendations: {
+        ready: "Twoje rekomendacje są gotowe!",
+        title: "Twoje Spersonalizowane Rekomendacje",
+        subtitle: "Na podstawie Twoich preferencji myślimy, że pokochasz te tytuły",
+        explore: "Chcesz odkryć więcej opcji?",
+        tryAgain: "Spróbuj quiz ponownie"
+      },
+      step: "Krok {{current}} z {{total}}",
+      complete: "{{percent}}% Ukończone",
+      questions: {
+        platforms: "Których serwisów streamingowych używasz?",
+        platformsSubtitle: "Wybierz wszystkie serwisy, które obecnie subskrybujesz",
+        contentType: "Co chciałbyś obejrzeć?",
+        contentTypeSubtitle: "Wybierz, jakiego typu treści masz ochotę",
+        movieLength: "Jak długi film Cię interesuje?",
+        movieLengthSubtitle: "Wybierz preferowaną długość filmu",
+        seasonCount: "Ile sezonów wolałbyś?",
+        seasonCountSubtitle: "Wybierz preferowaną liczbę sezonów",
+        episodesPerSeason: "Ile odcinków na sezon?",
+        episodesPerSeasonSubtitle: "Wybierz preferowaną liczbę odcinków na sezon",
+        episodeLength: "Jak długi powinien być każdy odcinek?",
+        episodeLengthSubtitle: "Wybierz preferowaną długość odcinka",
+        mood: "W jakim nastroju jesteś dzisiaj?",
+        moodSubtitle: "Wybierz typ doświadczenia, którego szukasz"
+      },
+      options: {
+        movie: "Filmy",
+        series: "Seriale",
+        notSure: "Nie jestem pewny",
+        movieLength: {
+          short: "Krótki (do 90 minut)",
+          standard: "Standardowy (90-120 minut)",
+          long: "Długi (ponad 120 minut)",
+          noPreference: "Bez preferencji"
+        },
+        seasonCount: {
+          short: "Krótki (1-2 sezony)",
+          medium: "Średni (3-5 sezonów)",
+          long: "Długi (6+ sezonów)",
+          noPreference: "Bez preferencji"
+        },
+        episodesPerSeason: {
+          few: "Do 10",
+          medium: "10-20",
+          many: "20+",
+          noPreference: "Bez preferencji"
+        },
+        episodeLength: {
+          short: "Krótki (do 30 minut)",
+          standard: "Standardowy (30-60 minut)",
+          long: "Długi (ponad 60 minut)",
+          noPreference: "Bez preferencji"
+        },
+        mood: {
+          laugh: "Chcę się śmiać",
+          touching: "Coś wzruszającego",
+          adrenaline: "Coś ekscytującego",
+          relax: "Coś relaksującego",
+          notSure: "Nie jestem pewny"
+        },
+        noSubscriptions: "Nie mam żadnych subskrypcji"
+      }
+    },
+    errors: {
+      missingAnswer: "Brakująca odpowiedź",
+      pleaseSelectOption: "Proszę wybierz przynajmniej jedną opcję przed kontynuowaniem",
+      quizError: "Błąd Quiz",
+      tryAgain: "Spróbuj ponownie",
+      recommendationError: "Błąd pobierania rekomendacji"
     }
   }
 };

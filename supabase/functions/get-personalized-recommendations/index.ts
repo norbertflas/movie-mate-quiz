@@ -60,14 +60,46 @@ serve(async (req) => {
     const cleanedAnswers = cleanAnswers(requestData.answers);
     console.log('Cleaned answers:', cleanedAnswers);
 
-    // Find genre from answers - could be either "genre" or "preferredGenre"
+    // Find genre from answers - updated to handle new question IDs
     const genreAnswer = cleanedAnswers.find(answer => 
-      answer.questionId === 'genre' || answer.questionId === 'preferredGenre'
+      answer.questionId === 'genres' || 
+      answer.questionId === 'genre' || 
+      answer.questionId === 'preferredGenre' ||
+      answer.questionId === 'preferredGenres'
     );
 
     if (!genreAnswer) {
       console.error('Available answers:', cleanedAnswers);
-      throw new Error('Genre preference not found in answers');
+      
+      // Try to determine genre from mood as fallback
+      const moodAnswer = cleanedAnswers.find(answer => answer.questionId === 'mood');
+      if (moodAnswer) {
+        console.log('Using mood as genre fallback:', moodAnswer.answer);
+        // Map mood to genre
+        let fallbackGenre = 'comedy'; // default
+        const mood = moodAnswer.answer.toString().toLowerCase();
+        if (mood.includes('laugh') || mood.includes('śmiać')) fallbackGenre = 'comedy';
+        else if (mood.includes('adrenaline') || mood.includes('exciting')) fallbackGenre = 'action';
+        else if (mood.includes('touching') || mood.includes('heartfelt')) fallbackGenre = 'drama';
+        else if (mood.includes('relax')) fallbackGenre = 'documentary';
+        
+        const genreId = getGenreId(fallbackGenre);
+        console.log('Fallback genre ID from mood:', genreId);
+        
+        const genreMovies = await getMoviesByGenre(genreId, TMDB_API_KEY);
+        const movieDetailsPromises = genreMovies.slice(0, 8).map(movie => 
+          getMovieDetails(movie.id, TMDB_API_KEY)
+        );
+
+        const movies = (await Promise.all(movieDetailsPromises))
+          .filter((movie): movie is MovieRecommendation => movie !== null);
+
+        return new Response(JSON.stringify(movies), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
+      throw new Error('Genre preference not found in answers and no mood fallback available');
     }
 
     const genreId = getGenreId(genreAnswer.answer.toString());
@@ -81,6 +113,7 @@ serve(async (req) => {
     }
 
     const formattedAnswers = formatAnswersForPrompt(cleanedAnswers);
+    console.log('Formatted answers for AI:', formattedAnswers);
     
     try {
       const { data: recommendedIds } = await getMovieRecommendations(formattedAnswers, [], GEMINI_API_KEY);
@@ -96,7 +129,7 @@ serve(async (req) => {
         ...prioritizedMovies,
         ...genreMovies
           .filter(movie => !prioritizedMovies.some(pm => pm.id === movie.id))
-          .slice(0, 5 - prioritizedMovies.length)
+          .slice(0, 8 - prioritizedMovies.length)
       ];
 
       const movieDetailsPromises = finalMovies.map(movie => 
@@ -119,9 +152,9 @@ serve(async (req) => {
     } catch (aiError) {
       console.error('AI recommendations failed, falling back to genre-based:', aiError);
       
-      // Fallback to just using the top 5 movies by genre if AI recommendations fail
+      // Fallback to just using the top movies by genre if AI recommendations fail
       const fallbackMovies = genreMovies
-        .slice(0, 5)
+        .slice(0, 8)
         .map(movie => getMovieDetails(movie.id, TMDB_API_KEY));
 
       const movies = (await Promise.all(fallbackMovies))

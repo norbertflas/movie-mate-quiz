@@ -1,286 +1,135 @@
 
 import { useTranslation } from "react-i18next";
-import type { SurveyStepType, QuizAnswer } from "../QuizTypes";
+import type { SurveyStepType } from "../QuizTypes";
 
-// Rozszerzona lista serwisów VOD z regionalnymi opcjami
-export const VOD_SERVICES_BY_REGION = {
-  US: [
-    'Netflix', 'Amazon Prime Video', 'Disney+', 'HBO Max', 'Hulu', 
-    'Apple TV+', 'Paramount+', 'Peacock', 'Showtime', 'Starz'
-  ],
-  PL: [
-    'Netflix', 'Amazon Prime Video', 'Disney+', 'HBO Max', 'Apple TV+',
-    'Canal+', 'Player.pl', 'TVP VOD', 'Polsat Box Go', 'nc+', 'Cineman VOD'
-  ],
-  GB: [
-    'Netflix', 'Amazon Prime Video', 'Disney+', 'Now TV', 'BBC iPlayer',
-    'ITV Hub', 'All 4', 'Apple TV+', 'Paramount+', 'BritBox'
-  ]
-};
-
-export const getVODServicesForRegion = (region: string): string[] => {
-  return VOD_SERVICES_BY_REGION[region as keyof typeof VOD_SERVICES_BY_REGION] || VOD_SERVICES_BY_REGION.US;
-};
-
-export const useEnhancedSurveySteps = (region: string = 'US'): SurveyStepType[] => {
+export const useEnhancedSurveySteps = (): SurveyStepType[] => {
   const { t } = useTranslation();
-  
-  return [
-    // Krok 1: Wybór regionu
-    {
-      id: "region",
-      question: "quiz.questions.region",
-      subtitle: "quiz.questions.regionSubtitle",
-      type: "single",
-      options: [
-        "quiz.options.region.poland",
-        "quiz.options.region.usa", 
-        "quiz.options.region.uk",
-        "quiz.options.region.germany",
-        "quiz.options.region.auto"
-      ],
-    },
 
-    // Krok 2: Platformy streamingowe (dynamiczne na podstawie regionu)
+  return [
     {
       id: "platforms",
-      question: "quiz.questions.platforms",
-      subtitle: "quiz.questions.platformsSubtitle",
+      question: t("quiz.questions.platforms"),
+      subtitle: t("quiz.questions.platformsSubtitle"),
       type: "multiple",
-      options: [], // Będzie wypełnione dynamicznie
-      getDynamicOptions: (answers) => {
-        const selectedRegion = answers.region;
-        let regionCode = 'US';
-        
-        if (selectedRegion?.includes('Poland') || selectedRegion?.includes('polska')) {
-          regionCode = 'PL';
-        } else if (selectedRegion?.includes('UK') || selectedRegion?.includes('Britain')) {
-          regionCode = 'GB';
-        }
-        
-        return getVODServicesForRegion(regionCode);
-      }
+      options: [
+        'Netflix', 
+        'Amazon Prime Video', 
+        'Disney+', 
+        'HBO Max', 
+        'Hulu',
+        'Apple TV+', 
+        'Paramount+', 
+        'Peacock', 
+        'Showtime', 
+        'Starz',
+        t("quiz.options.noSubscriptions")
+      ]
     },
-
-    // Krok 3: Typ treści
     {
       id: "contentType",
-      question: "quiz.questions.contentType",
-      subtitle: "quiz.questions.contentTypeSubtitle",
+      question: t("quiz.questions.contentType"),
+      subtitle: t("quiz.questions.contentTypeSubtitle"),
       type: "single",
       options: [
-        "quiz.options.movie",
-        "quiz.options.series",
-        "quiz.options.documentary",
-        "quiz.options.animation",
-        "quiz.options.notSure"
-      ],
+        t("quiz.options.movie"),
+        t("quiz.options.series"),
+        t("quiz.options.notSure")
+      ]
     },
-
-    // Krok 4: Długość filmu (tylko dla filmów)
     {
       id: "movieLength",
-      question: "quiz.questions.movieLength",
-      subtitle: "quiz.questions.movieLengthSubtitle",
+      question: t("quiz.questions.movieLength"),
+      subtitle: t("quiz.questions.movieLengthSubtitle"),
       type: "single",
       options: [
-        "quiz.options.movieLength.short",
-        "quiz.options.movieLength.standard", 
-        "quiz.options.movieLength.long",
-        "quiz.options.movieLength.noPreference"
+        t("quiz.options.movieLength.short"),
+        t("quiz.options.movieLength.standard"),
+        t("quiz.options.movieLength.long"),
+        t("quiz.options.movieLength.noPreference")
       ],
-      shouldShow: (answers) => answers.contentType === t("quiz.options.movie"),
+      shouldShow: (answers) => {
+        const contentType = answers.contentType;
+        return contentType === t("quiz.options.movie") || contentType === "Movies";
+      }
     },
-
-    // Krok 5: Preferencje dotyczące seriali (tylko dla seriali)
     {
-      id: "seriesPreferences",
-      question: "quiz.questions.seriesPreferences",
-      subtitle: "quiz.questions.seriesPreferencesSubtitle",
+      id: "seasonCount",
+      question: t("quiz.questions.seasonCount"),
+      subtitle: t("quiz.questions.seasonCountSubtitle"),
       type: "single",
       options: [
-        "quiz.options.series.finished",
-        "quiz.options.series.ongoing",
-        "quiz.options.series.shortSeason",
-        "quiz.options.series.longSeason",
-        "quiz.options.series.noPreference"
+        t("quiz.options.seasonCount.short"),
+        t("quiz.options.seasonCount.medium"),
+        t("quiz.options.seasonCount.long"),
+        t("quiz.options.seasonCount.noPreference")
       ],
-      shouldShow: (answers) => answers.contentType === t("quiz.options.series"),
+      shouldShow: (answers) => {
+        const contentType = answers.contentType;
+        return contentType === t("quiz.options.series") || contentType === "TV Series";
+      }
     },
-
-    // Krok 6: Nastrój
+    {
+      id: "episodesPerSeason",
+      question: t("quiz.questions.episodesPerSeason"),
+      subtitle: t("quiz.questions.episodesPerSeasonSubtitle"),
+      type: "single",
+      options: [
+        t("quiz.options.episodesPerSeason.few"),
+        t("quiz.options.episodesPerSeason.medium"),
+        t("quiz.options.episodesPerSeason.many"),
+        t("quiz.options.episodesPerSeason.noPreference")
+      ],
+      shouldShow: (answers) => {
+        const contentType = answers.contentType;
+        return contentType === t("quiz.options.series") || contentType === "TV Series";
+      }
+    },
+    {
+      id: "episodeLength",
+      question: t("quiz.questions.episodeLength"),
+      subtitle: t("quiz.questions.episodeLengthSubtitle"),
+      type: "single",
+      options: [
+        t("quiz.options.episodeLength.short"),
+        t("quiz.options.episodeLength.standard"),
+        t("quiz.options.episodeLength.long"),
+        t("quiz.options.episodeLength.noPreference")
+      ],
+      shouldShow: (answers) => {
+        const contentType = answers.contentType;
+        return contentType === t("quiz.options.series") || contentType === "TV Series";
+      }
+    },
     {
       id: "mood",
-      question: "quiz.questions.mood",
-      subtitle: "quiz.questions.moodSubtitle",
+      question: t("quiz.questions.mood"),
+      subtitle: t("quiz.questions.moodSubtitle"),
       type: "single",
       options: [
-        "quiz.options.mood.laugh",
-        "quiz.options.mood.touching",
-        "quiz.options.mood.adrenaline",
-        "quiz.options.mood.relax",
-        "quiz.options.mood.think",
-        "quiz.options.mood.escape",
-        "quiz.options.mood.notSure"
-      ],
+        t("quiz.options.mood.laugh"),
+        t("quiz.options.mood.touching"),
+        t("quiz.options.mood.adrenaline"),
+        t("quiz.options.mood.relax"),
+        t("quiz.options.mood.notSure")
+      ]
     },
-
-    // Krok 7: Gatunki (wielokrotny wybór)
     {
-      id: "preferredGenres",
-      question: "quiz.questions.preferredGenres",
-      subtitle: "quiz.questions.preferredGenresSubtitle", 
+      id: "genres",
+      question: "What genres do you enjoy?",
+      subtitle: "Select your favorite movie or TV genres",
       type: "multiple",
       options: [
-        "quiz.options.genres.action",
-        "quiz.options.genres.comedy",
-        "quiz.options.genres.drama",
-        "quiz.options.genres.horror",
-        "quiz.options.genres.thriller",
-        "quiz.options.genres.romance",
-        "quiz.options.genres.scifi",
-        "quiz.options.genres.fantasy",
-        "quiz.options.genres.documentary",
-        "quiz.options.genres.animation",
-        "quiz.options.genres.crime",
-        "quiz.options.genres.history"
-      ],
-    },
-
-    // Krok 8: Okres wydania
-    {
-      id: "releaseYear",
-      question: "quiz.questions.releaseYear",
-      subtitle: "quiz.questions.releaseYearSubtitle",
-      type: "single",
-      options: [
-        "quiz.options.releaseYear.latest",
-        "quiz.options.releaseYear.recent",
-        "quiz.options.releaseYear.modern",
-        "quiz.options.releaseYear.classic",
-        "quiz.options.releaseYear.vintage",
-        "quiz.options.releaseYear.noPreference"
-      ],
-    },
-
-    // Krok 9: Język i napisy
-    {
-      id: "languagePreference",
-      question: "quiz.questions.languagePreference",
-      subtitle: "quiz.questions.languagePreferenceSubtitle",
-      type: "single",
-      options: [
-        "quiz.options.language.original",
-        "quiz.options.language.dubbed",
-        "quiz.options.language.subtitles",
-        "quiz.options.language.localLanguage",
-        "quiz.options.language.noPreference"
-      ],
-    },
-
-    // Krok 10: Jakość i oceny
-    {
-      id: "qualityPreference",
-      question: "quiz.questions.qualityPreference", 
-      subtitle: "quiz.questions.qualityPreferenceSubtitle",
-      type: "single",
-      options: [
-        "quiz.options.quality.onlyHighRated",
-        "quiz.options.quality.mixed",
-        "quiz.options.quality.hidden",
-        "quiz.options.quality.noPreference"
-      ],
-    },
-
-    // Krok 11: Czas oglądania
-    {
-      id: "watchingTime",
-      question: "quiz.questions.watchingTime",
-      subtitle: "quiz.questions.watchingTimeSubtitle",
-      type: "single", 
-      options: [
-        "quiz.options.watchingTime.now",
-        "quiz.options.watchingTime.tonight",
-        "quiz.options.watchingTime.weekend",
-        "quiz.options.watchingTime.planning",
-        "quiz.options.watchingTime.noPreference"
-      ],
-    },
-
-    // Krok 12: Towarzystwo (nowe)
-    {
-      id: "watchingCompany",
-      question: "quiz.questions.watchingCompany",
-      subtitle: "quiz.questions.watchingCompanySubtitle",
-      type: "single",
-      options: [
-        "quiz.options.company.alone",
-        "quiz.options.company.partner",
-        "quiz.options.company.family",
-        "quiz.options.company.friends",
-        "quiz.options.company.kids",
-        "quiz.options.company.noPreference"
-      ],
+        "Action",
+        "Comedy", 
+        "Drama",
+        "Horror",
+        "Romance",
+        "Thriller",
+        "Sci-Fi",
+        "Fantasy",
+        "Animation",
+        "Documentary"
+      ]
     }
   ];
-};
-
-// Dodatkowe typy dla rozszerzonych odpowiedzi
-export interface EnhancedQuizAnswer extends QuizAnswer {
-  metadata?: {
-    region?: string;
-    timestamp?: string;
-    sessionId?: string;
-  };
-}
-
-// Funkcja pomocnicza do mapowania odpowiedzi na filtry
-export const mapAnswersToAdvancedFilters = (answers: QuizAnswer[], t: any) => {
-  const answerMap = answers.reduce((acc, answer) => {
-    acc[answer.questionId] = answer.answer;
-    return acc;
-  }, {} as Record<string, string>);
-
-  const filters: any = {
-    platforms: answerMap.platforms?.split(',') || [],
-    contentType: answerMap.contentType || 'notSure',
-    mood: answerMap.mood || 'notSure',
-    genres: answerMap.preferredGenres?.split(',') || [],
-    region: 'us', // domyślnie
-    languages: ['en'],
-    minRating: 0,
-    maxResults: 15
-  };
-
-  // Mapowanie regionu
-  if (answerMap.region?.includes('Poland') || answerMap.region?.includes('polska')) {
-    filters.region = 'pl';
-    filters.languages = ['pl', 'en'];
-  }
-
-  // Mapowanie roku wydania na filtry czasowe
-  const releaseYearMapping = {
-    [t("quiz.options.releaseYear.latest")]: { min: new Date().getFullYear() - 1 },
-    [t("quiz.options.releaseYear.recent")]: { min: new Date().getFullYear() - 5 },
-    [t("quiz.options.releaseYear.modern")]: { min: 2000, max: 2020 },
-    [t("quiz.options.releaseYear.classic")]: { min: 1980, max: 1999 },
-    [t("quiz.options.releaseYear.vintage")]: { max: 1979 }
-  };
-
-  if (answerMap.releaseYear && releaseYearMapping[answerMap.releaseYear]) {
-    filters.releaseYear = releaseYearMapping[answerMap.releaseYear];
-  }
-
-  // Mapowanie preferencji jakości na minimalne oceny
-  const qualityMapping = {
-    [t("quiz.options.quality.onlyHighRated")]: 7.5,
-    [t("quiz.options.quality.mixed")]: 6.0,
-    [t("quiz.options.quality.hidden")]: 0,
-  };
-
-  if (answerMap.qualityPreference && qualityMapping[answerMap.qualityPreference]) {
-    filters.minRating = qualityMapping[answerMap.qualityPreference];
-  }
-
-  return filters;
 };
