@@ -10,7 +10,7 @@ export const useEnhancedQuizLogic = (): QuizLogicHook => {
   const [showQuiz, setShowQuiz] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [answers, setAnswers] = useState<QuizAnswer[]>([]);
-  const [answerMap, setAnswerMap] = useState<Record<string, string>>({]);
+  const [answerMap, setAnswerMap] = useState<Record<string, string>>({});
   const [recommendations, setRecommendations] = useState<EnhancedMovieRecommendation[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [region, setRegion] = useState<string>('us');
