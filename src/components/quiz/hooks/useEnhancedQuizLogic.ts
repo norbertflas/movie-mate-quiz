@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from "react";
 import type { QuizAnswer, MovieRecommendation, QuizLogicHook, EnhancedQuizFilters, EnhancedMovieRecommendation, StreamingAvailability } from "../QuizTypes";
 import { useToast } from "@/hooks/use-toast";
@@ -259,10 +258,10 @@ export const useEnhancedQuizLogic = (): QuizLogicHook => {
       setRecommendations(finalRecommendations);
       setShowResults(true);
       
-      // Wyświetl toast z informacją o regionie
+      // Wyświetl toast z informacją o regionie - fix the translation call
       toast({
-        title: t('quiz.success.title', 'Quiz completed!'),
-        description: t('quiz.success.regionDetected', { region: detectedRegion.toUpperCase() }, `Recommendations for ${detectedRegion.toUpperCase()}`),
+        title: t('quiz.success.title') || 'Quiz completed!',
+        description: t('quiz.success.regionDetected', { region: detectedRegion.toUpperCase() }) || `Recommendations for ${detectedRegion.toUpperCase()}`,
       });
 
       return finalRecommendations;
@@ -284,8 +283,8 @@ export const useEnhancedQuizLogic = (): QuizLogicHook => {
       setShowResults(true);
       
       toast({
-        title: t('quiz.error.title', 'Error'),
-        description: t('quiz.error.fallback', 'Using fallback recommendations'),
+        title: t('quiz.error.title') || 'Error',
+        description: t('quiz.error.fallback') || 'Using fallback recommendations',
         variant: 'destructive'
       });
 
