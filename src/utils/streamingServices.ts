@@ -1,18 +1,19 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { StreamingPlatformData, StreamingService } from "@/types/streaming";
 
-// Function to get streaming availability from Supabase
+// CRITICAL FIX: Always use US region for all queries
+const FORCE_REGION = 'US';
+
+// Function to get streaming availability from Supabase - FORCE US REGION
 export const getStreamingAvailability = async (tmdbId: number, type: 'movie' | 'tv', countryCode: string = 'US'): Promise<StreamingPlatformData[]> => {
   try {
-    // FORCE ENGLISH REGION ONLY - CRITICAL FIX
-    const forceEnglishRegion = 'US'; // Always use US/English region
+    console.log(`[getStreamingAvailability] TMDB ID: ${tmdbId}, forced region: ${FORCE_REGION}`);
     
-    // Use the correct table name "movie_streaming_availability" instead of "streaming_availability"
     const { data, error } = await supabase
       .from('movie_streaming_availability')
       .select('*')
       .eq('tmdb_id', tmdbId)
-      .eq('region', forceEnglishRegion);
+      .eq('region', FORCE_REGION);
 
     if (error) {
       console.error("Error fetching streaming availability:", error);
@@ -20,15 +21,13 @@ export const getStreamingAvailability = async (tmdbId: number, type: 'movie' | '
     }
 
     if (!data || data.length === 0) {
-      console.log(`No streaming data found for TMDB ID ${tmdbId} in region ${forceEnglishRegion}`);
+      console.log(`No streaming data found for TMDB ID ${tmdbId} in region ${FORCE_REGION}`);
       return [];
     }
 
-    // Transform the data to match StreamingPlatformData structure
     const streamingData: StreamingPlatformData[] = data.map(item => ({
       service: item.service_id || 'unknown',
       available: true,
-      // Since 'link' doesn't exist in the table, we'll use null as a fallback
       link: null,
       type: 'subscription'
     }));
@@ -159,16 +158,15 @@ export const getFriendlyServiceName = (providerName: string): string => {
   }
 };
 
-// Function to get streaming services by region - FORCE ENGLISH ONLY
+// Function to get streaming services by region - FORCE US ONLY
 export const getStreamingServicesByRegion = async (region: string): Promise<StreamingService[]> => {
   try {
-    // CRITICAL FIX: Always use 'us' region regardless of input
-    const forceEnglishRegion = 'us';
+    console.log(`[getStreamingServicesByRegion] Forced to use region: ${FORCE_REGION.toLowerCase()} (requested: ${region})`);
     
     const { data, error } = await supabase
       .from('streaming_services')
       .select('*')
-      .contains('regions', [forceEnglishRegion]);
+      .contains('regions', [FORCE_REGION.toLowerCase()]);
 
     if (error) {
       console.error("Error fetching streaming services:", error);
@@ -182,16 +180,16 @@ export const getStreamingServicesByRegion = async (region: string): Promise<Stre
   }
 };
 
-// Map language codes to region codes - FORCE ENGLISH ONLY
+// CRITICAL FIX: Force all languages to use US region
 export const languageToRegion: Record<string, string> = {
   'en': 'us',
-  'pl': 'us', // CRITICAL FIX: Force Polish to use US region
-  'es': 'us', // Force all to US
-  'fr': 'us', // Force all to US
-  'de': 'us', // Force all to US
-  'it': 'us', // Force all to US
+  'pl': 'us', // CRITICAL: Force Polish to use US region
+  'es': 'us',
+  'fr': 'us',
+  'de': 'us',
+  'it': 'us',
   'en-US': 'us',
-  'en-GB': 'us' // Force GB to US as well
+  'en-GB': 'us'
 };
 
 // Function to get service icon path

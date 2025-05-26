@@ -1,19 +1,19 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import type { StreamingPlatformData, StreamingAvailabilityCache } from "@/types/streaming";
-import axios from 'axios';
-import i18n from "@/i18n";
 
 const RETRY_DELAY = 2000;
-const MAX_RETRIES = 3;
+const MAX_RETRIES = 2;
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
-
-// Get API key from environment variables
-const RAPIDAPI_KEY = import.meta.env.VITE_RAPIDAPI_KEY;
-
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const ERROR_CACHE_DURATION = 60 * 60 * 1000; // 1 hour for errors
 
 // In-memory cache for the current session
 const localCache: Record<string, StreamingAvailabilityCache> = {};
+
+// CRITICAL FIX: Always use US region
+const FORCE_REGION = 'us';
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Enhanced service name mapping for consistency
 const serviceNameMap: Record<string, string> = {
@@ -65,26 +65,15 @@ async function retryWithBackoff<T>(
       throw error;
     }
 
-    const errorBody = typeof error.body === 'string' ? JSON.parse(error.body) : error.body;
-    
-    if (error?.status === 429 || error?.message?.includes('429')) {
-      const retryAfter = (errorBody?.retryAfter || 60) * 1000;
-      console.log(`Rate limit hit, waiting ${retryAfter}ms before retry`);
-      await sleep(retryAfter);
-      return retryWithBackoff(fn, retries - 1, delay * 2);
-    }
-
     await sleep(delay);
-    return retryWithBackoff(fn, retries - 1, delay * 2);
+    return retryWithBackoff(fn, retries - 1, delay * 1.5);
   }
 }
 
-// Fetch from Supabase database first - FORCE ENGLISH REGION
-async function fetchFromDatabase(tmdbId: number, country: string): Promise<StreamingPlatformData[]> {
+// Fetch from Supabase database first - FORCE US REGION
+async function fetchFromDatabase(tmdbId: number): Promise<StreamingPlatformData[]> {
   try {
-    // CRITICAL FIX: Always use US region regardless of input
-    const forceEnglishRegion = 'US';
-    console.log(`[DB] Checking database for TMDB ID: ${tmdbId} in region: ${forceEnglishRegion} (was ${country})`);
+    console.log(`[DB] Checking database for TMDB ID: ${tmdbId} in region: ${FORCE_REGION}`);
     
     const { data, error } = await supabase
       .from('movie_streaming_availability')
@@ -93,7 +82,7 @@ async function fetchFromDatabase(tmdbId: number, country: string): Promise<Strea
         streaming_services!inner(name, logo_url)
       `)
       .eq('tmdb_id', tmdbId)
-      .eq('region', forceEnglishRegion);
+      .eq('region', FORCE_REGION.toUpperCase());
 
     if (error) {
       console.error('[DB] Database error:', error);
@@ -144,27 +133,34 @@ function generateServiceLink(serviceName: string): string {
   return linkMap[normalized] || `https://www.${normalized}.com`;
 }
 
-// Main function to get streaming availability - FORCE ENGLISH REGION
+// Main function to get streaming availability - FORCE US REGION
 export async function getStreamingAvailability(
   tmdbId: number,
   title?: string,
   year?: string,
-  country: string = 'us'
+  country: string = 'us' // This parameter is ignored - we always use US
 ): Promise<StreamingPlatformData[]> {
   try {
-    // CRITICAL FIX: Always use US region regardless of input
-    const forceEnglishRegion = 'us';
-    console.log(`[MAIN] Getting streaming availability for TMDB ID: ${tmdbId}, forced country: ${forceEnglishRegion} (was: ${country}), title: ${title}, year: ${year}`);
+    console.log(`[MAIN] Getting streaming availability for TMDB ID: ${tmdbId}, forced region: ${FORCE_REGION}, title: ${title}, year: ${year}`);
     
     // Check local memory cache first
-    const cacheKey = `${tmdbId}-${forceEnglishRegion}`;
-    if (localCache[cacheKey] && (Date.now() - localCache[cacheKey].timestamp) < CACHE_DURATION) {
-      console.log('[MAIN] Using memory cached streaming data for:', tmdbId);
-      return localCache[cacheKey].data;
+    const cacheKey = `${tmdbId}-${FORCE_REGION}`;
+    if (localCache[cacheKey]) {
+      const cached = localCache[cacheKey];
+      const age = Date.now() - cached.timestamp;
+      const maxAge = cached.data.length > 0 ? CACHE_DURATION : ERROR_CACHE_DURATION;
+      
+      if (age < maxAge) {
+        console.log('[MAIN] Using memory cached streaming data for:', tmdbId);
+        return cached.data;
+      } else {
+        // Remove expired cache
+        delete localCache[cacheKey];
+      }
     }
     
     // First try database
-    const dbResults = await fetchFromDatabase(tmdbId, forceEnglishRegion);
+    const dbResults = await fetchFromDatabase(tmdbId);
     if (dbResults.length > 0) {
       console.log(`[MAIN] Found ${dbResults.length} services in database`);
       // Cache the result
@@ -178,8 +174,10 @@ export async function getStreamingAvailability(
     // Try Supabase edge function with enhanced error handling
     try {
       console.log('[MAIN] Trying Supabase edge function');
-      const { data, error } = await supabase.functions.invoke('streaming-availability', {
-        body: { tmdbId, country: forceEnglishRegion, title, year }
+      const { data, error } = await retryWithBackoff(async () => {
+        return await supabase.functions.invoke('streaming-availability', {
+          body: { tmdbId, country: FORCE_REGION, title, year }
+        });
       });
       
       if (!error && data?.result && Array.isArray(data.result) && data.result.length > 0) {
@@ -206,225 +204,17 @@ export async function getStreamingAvailability(
       console.error('[MAIN] Edge function error:', error);
     }
     
-    // Try RapidAPI directly as fallback
-    if (RAPIDAPI_KEY) {
-      try {
-        console.log('[MAIN] Trying RapidAPI directly');
-        const apiResults = await fetchStreamingAvailabilityAPI(tmdbId, title, year, forceEnglishRegion);
-        if (apiResults.length > 0) {
-          console.log(`[MAIN] Found ${apiResults.length} services via RapidAPI`);
-          // Cache the result
-          localCache[cacheKey] = {
-            data: apiResults,
-            timestamp: Date.now()
-          };
-          return apiResults;
-        }
-      } catch (error) {
-        console.error('[MAIN] RapidAPI error:', error);
-      }
-    }
-    
-    // Try Watchmode API as last resort
-    try {
-      console.log('[MAIN] Trying Watchmode API');
-      const { data, error } = await supabase.functions.invoke('watchmode-availability', {
-        body: { tmdbId, region: forceEnglishRegion.toUpperCase() }
-      });
-      
-      if (!error && data?.sources && Array.isArray(data.sources) && data.sources.length > 0) {
-        console.log(`[MAIN] Found ${data.sources.length} services via Watchmode`);
-        
-        const watchmodeResults = data.sources.map((source: any) => ({
-          service: normalizeServiceName(source.service),
-          available: true,
-          link: source.link || generateServiceLink(source.service),
-          logo: source.logo || `/streaming-icons/default.svg`,
-          type: source.type || 'subscription',
-          source: 'watchmode'
-        }));
-        
-        // Cache the result
-        localCache[cacheKey] = {
-          data: watchmodeResults,
-          timestamp: Date.now()
-        };
-        
-        return watchmodeResults;
-      }
-    } catch (error) {
-      console.error('[MAIN] Watchmode error:', error);
-    }
-    
     console.log('[MAIN] No streaming services found from any source');
+    
+    // Cache empty result with shorter TTL
+    localCache[cacheKey] = {
+      data: [],
+      timestamp: Date.now()
+    };
+    
     return [];
   } catch (error) {
     console.error('[MAIN] Error in getStreamingAvailability:', error);
-    return [];
-  }
-}
-
-// Implementation using the Streaming Availability API directly - FORCE ENGLISH REGION
-async function fetchStreamingAvailabilityAPI(
-  tmdbId: number,
-  title?: string,
-  year?: string,
-  country: string = 'us'
-): Promise<StreamingPlatformData[]> {
-  try {
-    // CRITICAL FIX: Always use US region
-    const forceEnglishRegion = 'us';
-    console.log(`[API] Fetching from Streaming Availability API for TMDB ID: ${tmdbId} (forced region: ${forceEnglishRegion})`);
-    
-    if (!RAPIDAPI_KEY) {
-      console.log('[API] No RapidAPI key available');
-      return [];
-    }
-    
-    // Try multiple API versions and endpoints
-    const endpoints = [
-      {
-        name: 'v4-direct',
-        url: `https://streaming-availability.p.rapidapi.com/v4/shows/movie/${tmdbId}`,
-        params: { country: forceEnglishRegion }
-      },
-      {
-        name: 'v3-direct', 
-        url: `https://streaming-availability.p.rapidapi.com/v3/movie/${tmdbId}`,
-        params: { country: forceEnglishRegion }
-      }
-    ];
-    
-    for (const endpoint of endpoints) {
-      try {
-        const queryParams = new URLSearchParams(endpoint.params);
-        const fullUrl = `${endpoint.url}?${queryParams.toString()}`;
-        
-        const options = {
-          method: 'GET',
-          url: fullUrl,
-          headers: {
-            'X-RapidAPI-Key': RAPIDAPI_KEY,
-            'X-RapidAPI-Host': 'streaming-availability.p.rapidapi.com'
-          }
-        };
-        
-        const response = await retryWithBackoff(() => axios.request(options));
-        
-        if (response.data) {
-          console.log(`[API] Got response from ${endpoint.name}`);
-          
-          let streamingInfo = null;
-          if (response.data.streamingInfo) {
-            streamingInfo = response.data.streamingInfo;
-          } else if (response.data.result?.streamingInfo) {
-            streamingInfo = response.data.result.streamingInfo;
-          }
-          
-          if (streamingInfo?.[forceEnglishRegion.toLowerCase()]) {
-            const services: StreamingPlatformData[] = [];
-            const countryServices = streamingInfo[forceEnglishRegion.toLowerCase()];
-            
-            for (const [service, options] of Object.entries(countryServices)) {
-              if (Array.isArray(options) && options.length > 0) {
-                services.push({
-                  service: normalizeServiceName(service),
-                  available: true,
-                  link: options[0].link || generateServiceLink(service),
-                  logo: `/streaming-icons/${service.toLowerCase()}.svg`,
-                  type: options[0].type || 'subscription',
-                  source: endpoint.name
-                });
-              }
-            }
-            
-            if (services.length > 0) {
-              console.log(`[API] Found ${services.length} services via ${endpoint.name}`);
-              return services;
-            }
-          }
-        }
-      } catch (error) {
-        console.error(`[API] Error with ${endpoint.name}:`, error);
-        continue;
-      }
-    }
-    
-    // If direct lookups failed and we have title, try title search
-    if (title) {
-      try {
-        console.log('[API] Trying title search with:', title);
-        
-        // Define proper interface for search parameters
-        interface SearchParams {
-          query: string;
-          country: string;
-          type: string;
-          output_language: string;
-          year?: string;
-        }
-        
-        const searchParams: SearchParams = {
-          query: title,
-          country: forceEnglishRegion,
-          type: 'movie',
-          output_language: 'en'
-        };
-
-        if (year) {
-          searchParams.year = year;
-        }
-
-        const searchOptions = {
-          method: 'GET',
-          url: 'https://streaming-availability.p.rapidapi.com/v4/search',
-          params: searchParams,
-          headers: {
-            'X-RapidAPI-Key': RAPIDAPI_KEY,
-            'X-RapidAPI-Host': 'streaming-availability.p.rapidapi.com'
-          }
-        };
-
-        const response = await retryWithBackoff(() => axios.request(searchOptions));
-        
-        if (response.data?.matches && Array.isArray(response.data.matches)) {
-          const matchingMovie = response.data.matches.find((movie: any) => {
-            return movie.tmdbId === tmdbId || String(movie.tmdbId) === String(tmdbId);
-          }) || response.data.matches[0];
-          
-          if (matchingMovie?.streamingInfo?.[forceEnglishRegion.toLowerCase()]) {
-            console.log('[API] Found matching movie in search results');
-            
-            const services: StreamingPlatformData[] = [];
-            const streamingOptions = matchingMovie.streamingInfo[forceEnglishRegion.toLowerCase()];
-            
-            for (const [service, options] of Object.entries(streamingOptions)) {
-              if (Array.isArray(options) && options.length > 0) {
-                services.push({
-                  service: normalizeServiceName(service),
-                  available: true,
-                  link: options[0].link || generateServiceLink(service),
-                  logo: `/streaming-icons/${service.toLowerCase()}.svg`,
-                  type: options[0].type || 'subscription',
-                  source: 'api-search'
-                });
-              }
-            }
-            
-            if (services.length > 0) {
-              console.log(`[API] Found ${services.length} services via title search`);
-              return services;
-            }
-          }
-        }
-      } catch (error) {
-        console.error('[API] Error with title search:', error);
-      }
-    }
-    
-    return [];
-  } catch (error) {
-    console.error('[API] Error fetching streaming availability:', error);
     return [];
   }
 }

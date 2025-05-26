@@ -11,18 +11,20 @@ interface OptimizedStreamingState {
 }
 
 // Enhanced caching with compression and TTL
-const CACHE_VERSION = '1.0';
+const CACHE_VERSION = '2.0'; // Updated cache version
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+const ERROR_CACHE_TTL = 60 * 60 * 1000; // 1 hour for errors
 
 interface CacheEntry {
   data: StreamingPlatformData[];
   timestamp: number;
   version: string;
+  hasData: boolean;
 }
 
 // CRITICAL FIX: Always use US region for cache keys
-const getCacheKey = (tmdbId: number, country: string) => 
-  `streaming_${tmdbId}_us_${CACHE_VERSION}`; // Force 'us' instead of country
+const getCacheKey = (tmdbId: number) => 
+  `streaming_${tmdbId}_us_${CACHE_VERSION}`;
 
 const getFromCache = (key: string): StreamingPlatformData[] | null => {
   try {
@@ -31,9 +33,15 @@ const getFromCache = (key: string): StreamingPlatformData[] | null => {
     
     const entry: CacheEntry = JSON.parse(cached);
     
-    // Check version and TTL
-    if (entry.version !== CACHE_VERSION || 
-        Date.now() - entry.timestamp > CACHE_TTL) {
+    // Check version
+    if (entry.version !== CACHE_VERSION) {
+      localStorage.removeItem(key);
+      return null;
+    }
+    
+    // Check TTL based on whether we have data or not
+    const maxAge = entry.hasData ? CACHE_TTL : ERROR_CACHE_TTL;
+    if (Date.now() - entry.timestamp > maxAge) {
       localStorage.removeItem(key);
       return null;
     }
@@ -49,7 +57,8 @@ const setToCache = (key: string, data: StreamingPlatformData[]) => {
     const entry: CacheEntry = {
       data,
       timestamp: Date.now(),
-      version: CACHE_VERSION
+      version: CACHE_VERSION,
+      hasData: data.length > 0
     };
     localStorage.setItem(key, JSON.stringify(entry));
   } catch (error) {
@@ -61,7 +70,7 @@ export function useOptimizedStreaming(
   tmdbId: number, 
   title?: string, 
   year?: string,
-  country: string = 'us'
+  country: string = 'us' // This parameter is ignored - we always use US
 ) {
   const [state, setState] = useState<OptimizedStreamingState>({
     services: [],
@@ -72,9 +81,9 @@ export function useOptimizedStreaming(
 
   const { fetchStreamingData } = useBatchStreamingAvailability();
   
-  // CRITICAL FIX: Always use 'us' for cache key regardless of country input
+  // Always use US for cache key
   const cacheKey = useMemo(() => 
-    getCacheKey(tmdbId, 'us'), [tmdbId]
+    getCacheKey(tmdbId), [tmdbId]
   );
 
   const fetchData = useCallback(async () => {
@@ -82,7 +91,8 @@ export function useOptimizedStreaming(
 
     // Check cache first
     const cached = getFromCache(cacheKey);
-    if (cached) {
+    if (cached !== null) {
+      console.log(`[useOptimizedStreaming] Using cached data for TMDB ID: ${tmdbId}, found ${cached.length} services`);
       setState({
         services: cached,
         isLoading: false,
@@ -95,12 +105,13 @@ export function useOptimizedStreaming(
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
+      console.log(`[useOptimizedStreaming] Fetching streaming data for TMDB ID: ${tmdbId}, title: ${title}, year: ${year}`);
       const services = await fetchStreamingData(tmdbId, title, year);
       
-      // Cache the result
-      if (services.length > 0) {
-        setToCache(cacheKey, services);
-      }
+      console.log(`[useOptimizedStreaming] Received ${services.length} services`);
+      
+      // Always cache the result (even if empty) with appropriate TTL
+      setToCache(cacheKey, services);
 
       setState({
         services,
@@ -109,12 +120,16 @@ export function useOptimizedStreaming(
         source: services.length > 0 ? 'api' : 'none'
       });
     } catch (error) {
+      console.error('[useOptimizedStreaming] Error fetching streaming data:', error);
       setState({
         services: [],
         isLoading: false,
         error: error as Error,
         source: 'error'
       });
+      
+      // Cache empty result with shorter TTL
+      setToCache(cacheKey, []);
     }
   }, [tmdbId, title, year, cacheKey, fetchStreamingData]);
 
@@ -125,14 +140,13 @@ export function useOptimizedStreaming(
       keys.forEach(key => {
         if (key.startsWith('streaming_')) {
           const cached = getFromCache(key);
-          if (!cached) {
+          if (cached === null) {
             localStorage.removeItem(key);
           }
         }
       });
     };
 
-    // Run cleanup once when component mounts
     cleanupCache();
   }, []);
 

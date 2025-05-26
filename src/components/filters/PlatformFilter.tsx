@@ -2,7 +2,7 @@
 import { MovieFilterSection } from "../movie/MovieFilterSection";
 import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
-import { getStreamingServicesByRegion, languageToRegion } from "@/utils/streamingServices";
+import { getStreamingServicesByRegion } from "@/utils/streamingServices";
 import type { StreamingService } from "@/types/streaming";
 import { useToast } from "@/hooks/use-toast";
 
@@ -17,7 +17,7 @@ export const PlatformFilter = ({
 }: PlatformFilterProps) => {
   const [streamingServices, setStreamingServices] = useState<StreamingService[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const { i18n, t } = useTranslation();
+  const { t } = useTranslation();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -25,12 +25,13 @@ export const PlatformFilter = ({
       setIsLoading(true);
       try {
         // CRITICAL FIX: Always use 'us' region regardless of language
-        const forceEnglishRegion = 'us';
-        console.log(`Fetching streaming services for forced region: ${forceEnglishRegion} (language was: ${i18n.language})`);
-        const services = await getStreamingServicesByRegion(forceEnglishRegion);
+        const forceRegion = 'us';
+        console.log(`[PlatformFilter] Fetching streaming services for forced region: ${forceRegion}`);
+        const services = await getStreamingServicesByRegion(forceRegion);
+        console.log(`[PlatformFilter] Retrieved ${services.length} streaming services`);
         setStreamingServices(services);
       } catch (error) {
-        console.error('Error fetching streaming services:', error);
+        console.error('[PlatformFilter] Error fetching streaming services:', error);
         toast({
           title: t("errors.loadingServices"),
           description: t("errors.tryAgain"),
@@ -42,7 +43,7 @@ export const PlatformFilter = ({
     };
 
     fetchStreamingServices();
-  }, [t, toast]); // Removed i18n.language dependency to prevent refetching
+  }, [t, toast]); // Removed dependency on language to prevent refetching
 
   // Create translated options for the filter
   const translatedOptions = streamingServices.map(service => ({
