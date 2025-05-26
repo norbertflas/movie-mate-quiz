@@ -6,65 +6,41 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Enhanced service name mapping for consistency
+// Mapeowanie nazw serwisów na standardowe nazwy
 function normalizeServiceName(serviceName: string): string {
-  if (!serviceName) return 'Unknown'
-  
   const serviceMap: Record<string, string> = {
     'netflix': 'Netflix',
-    'amazon': 'Prime Video',
-    'amazonprime': 'Prime Video',
-    'prime': 'Prime Video',
-    'primevideo': 'Prime Video',
+    'prime': 'Amazon Prime Video',
     'disney': 'Disney+',
-    'disneyplus': 'Disney+',
     'hulu': 'Hulu',
     'hbo': 'HBO Max',
-    'hbomax': 'HBO Max',
-    'max': 'Max',
     'apple': 'Apple TV+',
-    'appletv': 'Apple TV+',
-    'appletv+': 'Apple TV+',
     'paramount': 'Paramount+',
-    'paramountplus': 'Paramount+',
     'peacock': 'Peacock',
     'showtime': 'Showtime',
     'starz': 'Starz',
-    'cinemax': 'Cinemax',
     'crunchyroll': 'Crunchyroll',
     'funimation': 'Funimation'
   }
   
-  const normalized = serviceName.toLowerCase().trim().replace(/[\s\-_]/g, '')
-  return serviceMap[normalized] || serviceName
+  const normalized = serviceName?.toLowerCase() || ''
+  return serviceMap[normalized] || serviceName || 'Unknown'
 }
 
-// Enhanced link generation
+// Generowanie domyślnych linków
 function generateDefaultLink(serviceName: string): string {
-  if (!serviceName) return ''
-  
-  const normalized = serviceName.toLowerCase().replace(/[\s+]/g, '')
-  
   const linkMap: Record<string, string> = {
     'netflix': 'https://www.netflix.com',
-    'primevideo': 'https://www.primevideo.com',
-    'amazon': 'https://www.primevideo.com',
-    'prime': 'https://www.primevideo.com',
+    'prime': 'https://www.amazon.com/prime-video',
     'disney': 'https://www.disneyplus.com',
-    'disneyplus': 'https://www.disneyplus.com',
     'hulu': 'https://www.hulu.com',
-    'hbomax': 'https://play.max.com',
-    'max': 'https://play.max.com',
+    'hbo': 'https://www.hbomax.com',
     'apple': 'https://tv.apple.com',
-    'appletv': 'https://tv.apple.com',
-    'paramount': 'https://www.paramountplus.com',
-    'paramountplus': 'https://www.paramountplus.com',
-    'peacock': 'https://www.peacocktv.com',
-    'showtime': 'https://www.showtime.com',
-    'starz': 'https://www.starz.com'
+    'paramount': 'https://www.paramountplus.com'
   }
   
-  return linkMap[normalized] || `https://www.${normalized}.com`
+  const key = serviceName?.toLowerCase() || ''
+  return linkMap[key] || '#'
 }
 
 serve(async (req) => {
@@ -94,38 +70,51 @@ serve(async (req) => {
       )
     }
 
-    // FORCE US REGION - CRITICAL FIX
     const forceRegion = 'us'
-    console.log(`Fetching streaming availability for movie: ${tmdbId} in FORCED region: ${forceRegion}, title: ${title}, year: ${year}`)
+    console.log(`Fetching streaming availability for movie: ${tmdbId} in region: ${forceRegion}`)
 
     let streamingServices = []
     let apiError = null
     
-    // Use latest API v2 endpoints from documentation
+    // POPRAWIONE ENDPOINTY API V3
     const apiEndpoints = [
-      // Latest v2 API - primary endpoint
+      // Główny endpoint dla filmów
       {
-        name: 'v2-direct',
+        name: 'v3-movie-direct',
         url: `https://streaming-availability.p.rapidapi.com/shows/movie/${tmdbId}`,
         params: { country: forceRegion }
       },
-      // Alternative v2 search endpoint
+      // Wyszukiwanie po tytule
       {
-        name: 'v2-search',
-        url: 'https://streaming-availability.p.rapidapi.com/shows/search/filters',
+        name: 'v3-title-search',
+        url: 'https://streaming-availability.p.rapidapi.com/shows/search/title',
         params: { 
           country: forceRegion,
-          catalogs: 'netflix,prime,disney,hulu,hbo,apple,paramount',
+          title: title || '',
           show_type: 'movie',
-          tmdb_id: tmdbId.toString()
+          output_language: 'en'
         }
       }
     ]
 
-    // Try each endpoint with proper error handling
+    // Dodaj rok do wyszukiwania po tytule jeśli dostępny
+    if (year && apiEndpoints[1]) {
+      apiEndpoints[1].params.year = year
+    }
+
+    // Próbuj każdy endpoint
     for (const endpoint of apiEndpoints) {
       try {
-        const queryParams = new URLSearchParams(endpoint.params)
+        // Pomiń wyszukiwanie po tytule jeśli nie ma tytułu
+        if (endpoint.name === 'v3-title-search' && !title) {
+          continue
+        }
+
+        const queryParams = new URLSearchParams()
+        Object.entries(endpoint.params).forEach(([key, value]) => {
+          if (value) queryParams.set(key, String(value))
+        })
+        
         const fullUrl = `${endpoint.url}?${queryParams.toString()}`
         console.log(`Trying ${endpoint.name}: ${fullUrl}`)
 
@@ -141,35 +130,51 @@ serve(async (req) => {
         
         if (response.ok) {
           const data = await response.json()
-          console.log(`${endpoint.name} - Response received:`, data ? 'Success' : 'Empty')
+          console.log(`${endpoint.name} - Response status: ${response.status}`)
           
-          // Handle v2 API response structure
           let shows = []
           
-          if (endpoint.name === 'v2-direct' && data) {
-            // Direct lookup response
+          // Obsługa różnych struktur odpowiedzi
+          if (endpoint.name === 'v3-movie-direct' && data) {
             shows = [data]
-          } else if (endpoint.name === 'v2-search' && data && data.shows) {
-            // Search response
+          } else if (endpoint.name === 'v3-title-search' && data && Array.isArray(data)) {
+            shows = data
+          } else if (data && data.shows && Array.isArray(data.shows)) {
             shows = data.shows
           }
           
           if (shows && shows.length > 0) {
-            const show = shows[0]
+            console.log(`Found ${shows.length} shows`)
             
-            // Extract streaming options from v2 API structure
-            if (show.streamingOptions && show.streamingOptions[forceRegion]) {
-              const countryStreamingOptions = show.streamingOptions[forceRegion]
+            // Znajdź najlepsze dopasowanie
+            let bestMatch = shows[0]
+            if (shows.length > 1 && tmdbId) {
+              const exactMatch = shows.find(show => 
+                show.tmdbId === tmdbId || 
+                String(show.tmdbId) === String(tmdbId)
+              )
+              if (exactMatch) bestMatch = exactMatch
+            }
+            
+            // Wyciągnij informacje o streamingu
+            if (bestMatch.streamingOptions && bestMatch.streamingOptions[forceRegion]) {
+              const countryOptions = bestMatch.streamingOptions[forceRegion]
               
-              streamingServices = countryStreamingOptions.map(option => ({
-                service: normalizeServiceName(option.service?.name || 'Unknown'),
-                link: option.link || generateDefaultLink(option.service?.name || ''),
+              streamingServices = countryOptions.map(option => ({
+                service: normalizeServiceName(option.service?.id || option.service?.name || 'Unknown'),
+                link: option.link || generateDefaultLink(option.service?.id || option.service?.name || ''),
                 available: true,
                 type: option.type || 'subscription',
                 source: endpoint.name,
                 quality: option.quality || 'hd',
-                price: option.price ? `${option.price.amount} ${option.price.currency}` : null
-              })).filter(service => service.service && service.service !== 'Unknown')
+                price: option.price ? `${option.price.amount} ${option.price.currency}` : null,
+                audios: option.audios || [],
+                subtitles: option.subtitles || []
+              })).filter(service => 
+                service.service && 
+                service.service !== 'Unknown' && 
+                service.service !== 'unknown'
+              )
               
               if (streamingServices.length > 0) {
                 console.log(`Found ${streamingServices.length} services via ${endpoint.name}`)
@@ -179,76 +184,19 @@ serve(async (req) => {
           }
         } else {
           const errorText = await response.text()
-          console.log(`${endpoint.name} failed: ${response.status} ${response.statusText} - ${errorText}`)
+          console.log(`${endpoint.name} failed: ${response.status} ${response.statusText}`)
+          console.log(`Error details: ${errorText}`)
           apiError = `${response.status} ${response.statusText}`
+          
+          // Jeśli 404, to znaczy że film nie istnieje w bazie
+          if (response.status === 404) {
+            console.log('Movie not found in streaming database')
+            break
+          }
         }
       } catch (error) {
         console.log(`${endpoint.name} error:`, error.message)
         apiError = error.message
-      }
-    }
-    
-    // If direct lookups failed, try title search as fallback
-    if (streamingServices.length === 0 && title) {
-      try {
-        console.log('Attempting title search fallback')
-        
-        const searchParams = new URLSearchParams({
-          country: forceRegion,
-          title: title,
-          show_type: 'movie',
-          output_language: 'en'
-        })
-        
-        if (year) {
-          searchParams.set('year', year)
-        }
-        
-        const searchUrl = `https://streaming-availability.p.rapidapi.com/shows/search/title?${searchParams.toString()}`
-        console.log(`Trying title search: ${searchUrl}`)
-        
-        const searchResponse = await fetch(searchUrl, {
-          method: 'GET',
-          headers: {
-            'X-RapidAPI-Key': rapidApiKey,
-            'X-RapidAPI-Host': 'streaming-availability.p.rapidapi.com'
-          }
-        })
-        
-        if (searchResponse.ok) {
-          const searchData = await searchResponse.json()
-          
-          if (searchData && searchData.shows && searchData.shows.length > 0) {
-            console.log(`Title search found ${searchData.shows.length} matches`)
-            
-            // Find best match by TMDB ID or first result
-            let bestMatch = searchData.shows.find(show => 
-              show.tmdbId === tmdbId || String(show.tmdbId) === String(tmdbId)
-            ) || searchData.shows[0]
-            
-            if (bestMatch && bestMatch.streamingOptions && bestMatch.streamingOptions[forceRegion]) {
-              const countryStreamingOptions = bestMatch.streamingOptions[forceRegion]
-              
-              streamingServices = countryStreamingOptions.map(option => ({
-                service: normalizeServiceName(option.service?.name || 'Unknown'),
-                link: option.link || generateDefaultLink(option.service?.name || ''),
-                available: true,
-                type: option.type || 'subscription',
-                source: 'title-search',
-                quality: option.quality || 'hd',
-                price: option.price ? `${option.price.amount} ${option.price.currency}` : null
-              })).filter(service => service.service && service.service !== 'Unknown')
-              
-              if (streamingServices.length > 0) {
-                console.log(`Found ${streamingServices.length} services via title search`)
-              }
-            }
-          }
-        } else {
-          console.log(`Title search failed: ${searchResponse.status}`)
-        }
-      } catch (titleError) {
-        console.log('Title search failed:', titleError.message)
       }
     }
     
@@ -261,16 +209,20 @@ serve(async (req) => {
       return acc
     }, [])
     
+    const result = {
+      result: uniqueServices,
+      timestamp: new Date().toISOString(),
+      source: uniqueServices.length > 0 ? uniqueServices[0].source || 'api' : 'not-found',
+      apiError: uniqueServices.length === 0 ? apiError : null,
+      region: forceRegion,
+      tmdbId: tmdbId,
+      totalFound: uniqueServices.length
+    }
+    
+    console.log(`Final result: ${uniqueServices.length} unique services`)
+    
     return new Response(
-      JSON.stringify({ 
-        result: uniqueServices,
-        timestamp: new Date().toISOString(),
-        source: uniqueServices.length > 0 ? uniqueServices[0].source || 'api' : 'not-found',
-        apiError: uniqueServices.length === 0 ? apiError : null,
-        region: forceRegion,
-        tmdbId: tmdbId,
-        totalFound: uniqueServices.length
-      }),
+      JSON.stringify(result),
       { 
         headers: { 
           ...corsHeaders,

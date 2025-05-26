@@ -24,7 +24,6 @@ export function useStreamingAvailability(tmdbId: number, title?: string, year?: 
     links: {}
   });
 
-  // CRITICAL FIX: Always use US region
   const forceRegion = 'us';
 
   const fetchStreamingData = useCallback(async () => {
@@ -48,7 +47,7 @@ export function useStreamingAvailability(tmdbId: number, title?: string, year?: 
 
     setState(prev => ({ ...prev, isLoading: true, requested: true, error: null }));
     
-    console.log(`[useStreamingAvailability] Fetching for TMDB ID: ${tmdbId}, forced region: ${forceRegion}, title: ${title}, year: ${year}`);
+    console.log(`[useStreamingAvailability] Fetching for TMDB ID: ${tmdbId}, region: ${forceRegion}`);
     
     try {
       const services = await getStreamingAvailability(tmdbId, title, year, forceRegion);
@@ -62,7 +61,7 @@ export function useStreamingAvailability(tmdbId: number, title?: string, year?: 
         }
       });
       
-      const newState = {
+      setState({
         services,
         isLoading: false,
         error: null,
@@ -70,20 +69,17 @@ export function useStreamingAvailability(tmdbId: number, title?: string, year?: 
         source: services.length > 0 ? services[0].source || 'api' : 'none',
         requested: true,
         links
-      };
-      
-      setState(newState);
-      console.log(`[useStreamingAvailability] Final result: ${services.length} services from source: ${services.length > 0 ? services[0].source || 'api' : 'none'}`);
+      });
       
       if (services.length > 0) {
-        console.log('[useStreamingAvailability] Service details:', services.map(s => ({
-          name: s.service,
-          link: s.link,
-          source: s.source
-        })));
+        console.log('[useStreamingAvailability] Services found:', 
+          services.map(s => `${s.service} (${s.type})`).join(', ')
+        );
+      } else {
+        console.log('[useStreamingAvailability] No streaming services found');
       }
     } catch (error: any) {
-      console.error('[useStreamingAvailability] Error:', error.message);
+      console.error('[useStreamingAvailability] Error:', error);
       
       setState({
         services: [],
