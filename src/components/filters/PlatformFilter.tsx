@@ -1,4 +1,3 @@
-
 import { MovieFilterSection } from "../movie/MovieFilterSection";
 import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
@@ -17,18 +16,18 @@ export const PlatformFilter = ({
 }: PlatformFilterProps) => {
   const [streamingServices, setStreamingServices] = useState<StreamingService[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { toast } = useToast();
 
   useEffect(() => {
     const fetchStreamingServices = async () => {
       setIsLoading(true);
       try {
-        // CRITICAL FIX: Always use 'us' region regardless of language
-        const forceRegion = 'us';
-        console.log(`[PlatformFilter] Fetching streaming services for forced region: ${forceRegion}`);
-        const services = await getStreamingServicesByRegion(forceRegion);
-        console.log(`[PlatformFilter] Retrieved ${services.length} streaming services`);
+        // Use the actual language-to-region mapping instead of forcing 'us'
+        const userRegion = languageToRegion[i18n.language] || 'us';
+        console.log(`[PlatformFilter] Fetching streaming services for user region: ${userRegion} (language: ${i18n.language})`);
+        const services = await getStreamingServicesByRegion(userRegion);
+        console.log(`[PlatformFilter] Retrieved ${services.length} streaming services for ${userRegion.toUpperCase()}`);
         setStreamingServices(services);
       } catch (error) {
         console.error('[PlatformFilter] Error fetching streaming services:', error);
@@ -43,7 +42,7 @@ export const PlatformFilter = ({
     };
 
     fetchStreamingServices();
-  }, [t, toast]); // Removed dependency on language to prevent refetching
+  }, [t, toast, i18n.language]); // Now includes language dependency
 
   // Create translated options for the filter
   const translatedOptions = streamingServices.map(service => ({

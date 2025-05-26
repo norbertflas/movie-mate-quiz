@@ -6,25 +6,50 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Mapeowanie nazw serwisów na standardowe nazwy
-function normalizeServiceName(serviceName: string): string {
-  const serviceMap: Record<string, string> = {
-    'netflix': 'Netflix',
-    'prime': 'Amazon Prime Video',
-    'disney': 'Disney+',
-    'hulu': 'Hulu',
-    'hbo': 'HBO Max',
-    'apple': 'Apple TV+',
-    'paramount': 'Paramount+',
-    'peacock': 'Peacock',
-    'showtime': 'Showtime',
-    'starz': 'Starz',
-    'crunchyroll': 'Crunchyroll',
-    'funimation': 'Funimation'
-  }
+// Mapowanie krajów na kody ISO
+const COUNTRY_CODES = {
+  'poland': 'PL',
+  'polska': 'PL', 
+  'pl': 'PL',
+  'us': 'US',
+  'usa': 'US',
+  'united-states': 'US'
+};
+
+// Mapowanie serwisów streamingowych z obsługą regionów
+function normalizeServiceName(serviceName: string, region: string = 'US'): string {
+  if (!serviceName) return 'Unknown';
   
-  const normalized = serviceName?.toLowerCase() || ''
-  return serviceMap[normalized] || serviceName || 'Unknown'
+  const serviceMap: Record<string, Record<string, string>> = {
+    'US': {
+      'netflix': 'Netflix',
+      'prime': 'Amazon Prime Video', 
+      'disney': 'Disney+',
+      'hulu': 'Hulu',
+      'hbo': 'HBO Max',
+      'apple': 'Apple TV+',
+      'paramount': 'Paramount+',
+      'peacock': 'Peacock',
+      'showtime': 'Showtime',
+      'starz': 'Starz'
+    },
+    'PL': {
+      'netflix': 'Netflix',
+      'prime': 'Amazon Prime Video',
+      'disney': 'Disney+',
+      'hbo': 'HBO Max', 
+      'apple': 'Apple TV+',
+      'canalplus': 'Canal+',
+      'player': 'Player.pl',
+      'tvp': 'TVP VOD',
+      'polsat': 'Polsat Box Go',
+      'nc': 'nc+'
+    }
+  };
+  
+  const normalized = serviceName.toLowerCase().trim();
+  const regionMap = serviceMap[region] || serviceMap['US'];
+  return regionMap[normalized] || serviceName;
 }
 
 // Generowanie domyślnych linków
@@ -36,207 +61,213 @@ function generateDefaultLink(serviceName: string): string {
     'hulu': 'https://www.hulu.com',
     'hbo': 'https://www.hbomax.com',
     'apple': 'https://tv.apple.com',
-    'paramount': 'https://www.paramountplus.com'
-  }
+    'paramount': 'https://www.paramountplus.com',
+    'canalplus': 'https://www.canalplus.com',
+    'player': 'https://player.pl',
+    'tvp': 'https://vod.tvp.pl',
+    'polsat': 'https://polsatboxgo.pl',
+    'nc': 'https://ncplus.pl'
+  };
   
-  const key = serviceName?.toLowerCase() || ''
-  return linkMap[key] || '#'
+  const key = serviceName?.toLowerCase() || '';
+  return linkMap[key] || '#';
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
     const { tmdbId, country = 'us', title, year } = await req.json()
+    const watchmodeKey = Deno.env.get('WATCHMODE_API_KEY')
     const rapidApiKey = Deno.env.get('RAPIDAPI_KEY')
     
-    if (!rapidApiKey) {
-      console.error('RAPIDAPI_KEY not configured')
-      return new Response(
-        JSON.stringify({ 
-          error: 'RAPIDAPI_KEY not configured',
-          result: [] 
-        }),
-        { 
-          headers: { 
-            ...corsHeaders,
-            'Content-Type': 'application/json'
-          },
-          status: 200
-        }
-      )
-    }
-
-    const forceRegion = 'us'
-    console.log(`Fetching streaming availability for movie: ${tmdbId} in region: ${forceRegion}`)
+    // Normalizuj kod kraju
+    const normalizedCountry = COUNTRY_CODES[country.toLowerCase()] || country.toUpperCase();
+    console.log(`Fetching for TMDB ID: ${tmdbId}, Country: ${normalizedCountry}`);
 
     let streamingServices = []
     let apiError = null
     
-    // POPRAWIONE ENDPOINTY API V3
-    const apiEndpoints = [
-      // Główny endpoint dla filmów
-      {
-        name: 'v3-movie-direct',
-        url: `https://streaming-availability.p.rapidapi.com/shows/movie/${tmdbId}`,
-        params: { country: forceRegion }
-      },
-      // Wyszukiwanie po tytule
-      {
-        name: 'v3-title-search',
-        url: 'https://streaming-availability.p.rapidapi.com/shows/search/title',
-        params: { 
-          country: forceRegion,
-          title: title || '',
-          show_type: 'movie',
-          output_language: 'en'
-        }
-      }
-    ]
-
-    // Dodaj rok do wyszukiwania po tytule jeśli dostępny
-    if (year && apiEndpoints[1]) {
-      apiEndpoints[1].params.year = year
-    }
-
-    // Próbuj każdy endpoint
-    for (const endpoint of apiEndpoints) {
+    // STRATEGIA 1: Użyj Watchmode API (lepsze dla międzynarodowych regionów)
+    if (watchmodeKey) {
       try {
-        // Pomiń wyszukiwanie po tytule jeśli nie ma tytułu
-        if (endpoint.name === 'v3-title-search' && !title) {
-          continue
-        }
-
-        const queryParams = new URLSearchParams()
-        Object.entries(endpoint.params).forEach(([key, value]) => {
-          if (value) queryParams.set(key, String(value))
-        })
+        console.log('Trying Watchmode API...');
         
-        const fullUrl = `${endpoint.url}?${queryParams.toString()}`
-        console.log(`Trying ${endpoint.name}: ${fullUrl}`)
-
-        const options = {
-          method: 'GET',
-          headers: {
-            'X-RapidAPI-Key': rapidApiKey,
-            'X-RapidAPI-Host': 'streaming-availability.p.rapidapi.com'
-          }
-        }
+        // Najpierw znajdź film w Watchmode po TMDB ID
+        const searchUrl = `https://api.watchmode.com/v1/search/?apiKey=${watchmodeKey}&search_field=tmdb_id&search_value=${tmdbId}`;
+        const searchResponse = await fetch(searchUrl);
         
-        const response = await fetch(fullUrl, options)
-        
-        if (response.ok) {
-          const data = await response.json()
-          console.log(`${endpoint.name} - Response status: ${response.status}`)
+        if (searchResponse.ok) {
+          const searchData = await searchResponse.json();
           
-          let shows = []
-          
-          // Obsługa różnych struktur odpowiedzi
-          if (endpoint.name === 'v3-movie-direct' && data) {
-            shows = [data]
-          } else if (endpoint.name === 'v3-title-search' && data && Array.isArray(data)) {
-            shows = data
-          } else if (data && data.shows && Array.isArray(data.shows)) {
-            shows = data.shows
-          }
-          
-          if (shows && shows.length > 0) {
-            console.log(`Found ${shows.length} shows`)
+          if (searchData.title_results && searchData.title_results.length > 0) {
+            const watchmodeId = searchData.title_results[0].id;
             
-            // Znajdź najlepsze dopasowanie
-            let bestMatch = shows[0]
-            if (shows.length > 1 && tmdbId) {
-              const exactMatch = shows.find(show => 
-                show.tmdbId === tmdbId || 
-                String(show.tmdbId) === String(tmdbId)
-              )
-              if (exactMatch) bestMatch = exactMatch
-            }
+            // Pobierz szczegóły streamingu dla znalezionego filmu
+            const detailsUrl = `https://api.watchmode.com/v1/title/${watchmodeId}/details/?apiKey=${watchmodeKey}&append_to_response=sources`;
+            const detailsResponse = await fetch(detailsUrl);
             
-            // Wyciągnij informacje o streamingu
-            if (bestMatch.streamingOptions && bestMatch.streamingOptions[forceRegion]) {
-              const countryOptions = bestMatch.streamingOptions[forceRegion]
+            if (detailsResponse.ok) {
+              const detailsData = await detailsResponse.json();
               
-              streamingServices = countryOptions.map(option => ({
-                service: normalizeServiceName(option.service?.id || option.service?.name || 'Unknown'),
-                link: option.link || generateDefaultLink(option.service?.id || option.service?.name || ''),
-                available: true,
-                type: option.type || 'subscription',
-                source: endpoint.name,
-                quality: option.quality || 'hd',
-                price: option.price ? `${option.price.amount} ${option.price.currency}` : null,
-                audios: option.audios || [],
-                subtitles: option.subtitles || []
-              })).filter(service => 
-                service.service && 
-                service.service !== 'Unknown' && 
-                service.service !== 'unknown'
-              )
-              
-              if (streamingServices.length > 0) {
-                console.log(`Found ${streamingServices.length} services via ${endpoint.name}`)
-                break
+              if (detailsData.sources) {
+                // Filtruj źródła dla wybranego regionu
+                const regionSources = detailsData.sources.filter(source => 
+                  source.region === normalizedCountry && 
+                  (source.type === 'sub' || source.type === 'free' || source.type === 'buy' || source.type === 'rent')
+                );
+                
+                streamingServices = regionSources.map(source => ({
+                  service: normalizeServiceName(source.name, normalizedCountry),
+                  link: source.web_url || generateDefaultLink(source.name),
+                  available: true,
+                  type: source.type === 'sub' ? 'subscription' : source.type,
+                  source: 'watchmode',
+                  quality: 'hd',
+                  price: source.price || null,
+                  region: normalizedCountry
+                }));
+                
+                console.log(`Watchmode found ${streamingServices.length} services`);
               }
             }
           }
-        } else {
-          const errorText = await response.text()
-          console.log(`${endpoint.name} failed: ${response.status} ${response.statusText}`)
-          console.log(`Error details: ${errorText}`)
-          apiError = `${response.status} ${response.statusText}`
+        }
+      } catch (watchmodeError) {
+        console.log('Watchmode API error:', watchmodeError.message);
+      }
+    }
+    
+    // STRATEGIA 2: Użyj Streaming Availability API jako fallback
+    if (streamingServices.length === 0 && rapidApiKey) {
+      try {
+        console.log('Trying Streaming Availability API v4...');
+        
+        const endpoints = [
+          {
+            name: 'v4-show-direct',
+            url: `https://streaming-availability.p.rapidapi.com/shows/movie/${tmdbId}`,
+            params: { country: normalizedCountry.toLowerCase() }
+          },
+          {
+            name: 'v4-search-title', 
+            url: 'https://streaming-availability.p.rapidapi.com/shows/search/title',
+            params: {
+              country: normalizedCountry.toLowerCase(),
+              title: title || '',
+              show_type: 'movie',
+              output_language: 'en'
+            }
+          }
+        ];
+        
+        if (year && endpoints[1]) {
+          endpoints[1].params.year = year;
+        }
+        
+        for (const endpoint of endpoints) {
+          if (endpoint.name === 'v4-search-title' && !title) continue;
           
-          // Jeśli 404, to znaczy że film nie istnieje w bazie
-          if (response.status === 404) {
-            console.log('Movie not found in streaming database')
-            break
+          const queryParams = new URLSearchParams();
+          Object.entries(endpoint.params).forEach(([key, value]) => {
+            if (value) queryParams.set(key, String(value));
+          });
+          
+          const fullUrl = `${endpoint.url}?${queryParams.toString()}`;
+          console.log(`Trying ${endpoint.name}: ${fullUrl}`);
+          
+          const response = await fetch(fullUrl, {
+            method: 'GET',
+            headers: {
+              'X-RapidAPI-Key': rapidApiKey,
+              'X-RapidAPI-Host': 'streaming-availability.p.rapidapi.com'
+            }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            
+            let shows = [];
+            if (endpoint.name === 'v4-show-direct' && data) {
+              shows = [data];
+            } else if (data && Array.isArray(data)) {
+              shows = data;
+            } else if (data && data.shows && Array.isArray(data.shows)) {
+              shows = data.shows;
+            }
+            
+            if (shows.length > 0) {
+              const show = shows[0];
+              const countryKey = normalizedCountry.toLowerCase();
+              
+              if (show.streamingOptions && show.streamingOptions[countryKey]) {
+                streamingServices = show.streamingOptions[countryKey].map(option => ({
+                  service: normalizeServiceName(option.service?.name || option.service?.id, normalizedCountry),
+                  link: option.link || generateDefaultLink(option.service?.name || option.service?.id),
+                  available: true,
+                  type: option.type || 'subscription',
+                  source: endpoint.name,
+                  quality: option.quality || 'hd',
+                  price: option.price ? `${option.price.amount} ${option.price.currency}` : null,
+                  region: normalizedCountry
+                })).filter(service => 
+                  service.service && 
+                  service.service !== 'Unknown' && 
+                  service.service !== 'unknown'
+                );
+                
+                console.log(`Found ${streamingServices.length} services via ${endpoint.name}`);
+                break;
+              }
+            }
+          } else {
+            const errorText = await response.text();
+            console.log(`${endpoint.name} failed: ${response.status} - ${errorText}`);
+            apiError = `${response.status} ${response.statusText}`;
           }
         }
-      } catch (error) {
-        console.log(`${endpoint.name} error:`, error.message)
-        apiError = error.message
+      } catch (rapidError) {
+        console.log('RapidAPI error:', rapidError.message);
+        apiError = rapidError.message;
       }
     }
     
-    // Deduplikacja serwisów
+    // Usuń duplikaty
     const uniqueServices = streamingServices.reduce((acc, current) => {
-      const existing = acc.find(item => item.service === current.service)
+      const existing = acc.find(item => item.service === current.service);
       if (!existing) {
-        acc.push(current)
+        acc.push(current);
       }
-      return acc
-    }, [])
-    
-    const result = {
-      result: uniqueServices,
-      timestamp: new Date().toISOString(),
-      source: uniqueServices.length > 0 ? uniqueServices[0].source || 'api' : 'not-found',
-      apiError: uniqueServices.length === 0 ? apiError : null,
-      region: forceRegion,
-      tmdbId: tmdbId,
-      totalFound: uniqueServices.length
-    }
-    
-    console.log(`Final result: ${uniqueServices.length} unique services`)
+      return acc;
+    }, []);
     
     return new Response(
-      JSON.stringify(result),
+      JSON.stringify({
+        result: uniqueServices,
+        timestamp: new Date().toISOString(),
+        region: normalizedCountry,
+        tmdbId: tmdbId,
+        totalFound: uniqueServices.length,
+        source: uniqueServices.length > 0 ? uniqueServices[0].source : 'not-found',
+        apiError: uniqueServices.length === 0 ? apiError : null
+      }),
       { 
         headers: { 
           ...corsHeaders,
           'Content-Type': 'application/json'
         } 
       }
-    )
+    );
+    
   } catch (error) {
-    console.error('Error in streaming-availability function:', error)
+    console.error('Error:', error);
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'Internal server error',
+        error: error.message,
         result: [],
-        region: 'us',
+        region: 'unknown',
         source: 'error'
       }),
       { 
@@ -246,6 +277,6 @@ serve(async (req) => {
           'Content-Type': 'application/json'
         } 
       }
-    )
+    );
   }
 })

@@ -7,9 +7,8 @@ const MAX_RETRIES = 3;
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 godziny
 const ERROR_CACHE_DURATION = 30 * 60 * 1000; // 30 minut dla błędów
 
-// Cache w pamięci
+// Cache w pamięci z obsługą regionów
 const localCache: Record<string, StreamingAvailabilityCache> = {};
-const FORCE_REGION = 'us';
 
 // Funkcja retry z exponential backoff
 async function retryWithBackoff<T>(
@@ -38,60 +37,75 @@ async function retryWithBackoff<T>(
   throw lastError!;
 }
 
-// Normalizacja nazw serwisów
-function normalizeServiceName(serviceName: string): string {
+// Normalizacja nazw serwisów z obsługą regionów
+function normalizeServiceName(serviceName: string, region: string = 'US'): string {
   if (!serviceName) return 'Unknown';
   
-  const serviceMap: Record<string, string> = {
-    'netflix': 'Netflix',
-    'prime': 'Amazon Prime Video',
-    'disney': 'Disney+',
-    'hulu': 'Hulu',
-    'hbo': 'HBO Max',
-    'apple': 'Apple TV+',
-    'paramount': 'Paramount+',
-    'peacock': 'Peacock',
-    'showtime': 'Showtime',
-    'starz': 'Starz'
+  const serviceMap: Record<string, Record<string, string>> = {
+    'US': {
+      'netflix': 'Netflix',
+      'prime': 'Amazon Prime Video',
+      'disney': 'Disney+',
+      'hulu': 'Hulu',
+      'hbo': 'HBO Max',
+      'apple': 'Apple TV+',
+      'paramount': 'Paramount+',
+      'peacock': 'Peacock',
+      'showtime': 'Showtime',
+      'starz': 'Starz'
+    },
+    'PL': {
+      'netflix': 'Netflix',
+      'prime': 'Amazon Prime Video',
+      'disney': 'Disney+',
+      'hbo': 'HBO Max',
+      'apple': 'Apple TV+',
+      'canalplus': 'Canal+',
+      'player': 'Player.pl',
+      'tvp': 'TVP VOD',
+      'polsat': 'Polsat Box Go',
+      'nc': 'nc+'
+    }
   };
   
   const normalized = serviceName.toLowerCase().trim();
-  return serviceMap[normalized] || serviceName;
+  const regionMap = serviceMap[region.toUpperCase()] || serviceMap['US'];
+  return regionMap[normalized] || serviceName;
 }
 
-// Główna funkcja
+// Główna funkcja z obsługą regionów
 export async function getStreamingAvailability(
   tmdbId: number,
   title?: string,
   year?: string,
-  country: string = 'us'
+  region: string = 'us'
 ): Promise<StreamingPlatformData[]> {
   try {
-    console.log(`[getStreamingAvailability] TMDB ID: ${tmdbId}, region: ${FORCE_REGION}`);
+    console.log(`[getStreamingAvailability] TMDB ID: ${tmdbId}, region: ${region.toUpperCase()}`);
     
-    // Sprawdź cache
-    const cacheKey = `${tmdbId}-${FORCE_REGION}`;
+    // Cache key uwzględnia region
+    const cacheKey = `${tmdbId}-${region.toLowerCase()}`;
     if (localCache[cacheKey]) {
       const cached = localCache[cacheKey];
       const age = Date.now() - cached.timestamp;
       const maxAge = cached.data.length > 0 ? CACHE_DURATION : ERROR_CACHE_DURATION;
       
       if (age < maxAge) {
-        console.log(`[getStreamingAvailability] Using cached data (age: ${Math.round(age / 1000 / 60)}min)`);
+        console.log(`[getStreamingAvailability] Using cached data for ${region.toUpperCase()} (age: ${Math.round(age / 1000 / 60)}min)`);
         return cached.data;
       } else {
         delete localCache[cacheKey];
       }
     }
     
-    // Wywołaj Supabase Edge Function
+    // Wywołaj Supabase Edge Function z regionem
     console.log('[getStreamingAvailability] Calling Supabase edge function');
     
     const { data, error } = await retryWithBackoff(async () => {
       return await supabase.functions.invoke('streaming-availability', {
         body: { 
           tmdbId, 
-          country: FORCE_REGION, 
+          country: region.toLowerCase(),
           title: title?.trim(), 
           year: year?.trim() 
         }
@@ -111,22 +125,21 @@ export async function getStreamingAvailability(
     
     if (data.error) {
       console.error('[getStreamingAvailability] API error:', data.error);
-      // Nie cachuj błędów API
       return [];
     }
     
     const services = data.result || [];
-    console.log(`[getStreamingAvailability] Received ${services.length} services`);
+    console.log(`[getStreamingAvailability] Received ${services.length} services for ${region.toUpperCase()}`);
     
     if (!Array.isArray(services)) {
       console.error('[getStreamingAvailability] Invalid response format');
       return [];
     }
     
-    // Przetwórz i znormalizuj wyniki
+    // Przetwórz i znormalizuj wyniki z uwzględnieniem regionu
     const processedServices: StreamingPlatformData[] = services
       .map((service: any) => ({
-        service: normalizeServiceName(service.service),
+        service: normalizeServiceName(service.service, region.toUpperCase()),
         link: service.link || '#',
         available: true,
         type: service.type || 'subscription',
@@ -141,20 +154,18 @@ export async function getStreamingAvailability(
         service.service.trim() !== ''
       );
     
-    // Cachuj wynik
+    // Cache result with region
     localCache[cacheKey] = {
       data: processedServices,
       timestamp: Date.now()
     };
     
-    console.log(`[getStreamingAvailability] Final result: ${processedServices.length} services`);
+    console.log(`[getStreamingAvailability] Final result: ${processedServices.length} services for ${region.toUpperCase()}`);
     
     return processedServices;
     
   } catch (error) {
     console.error('[getStreamingAvailability] Error:', error);
-    
-    // Zwróć pusty wynik zamiast rzucać błąd
     return [];
   }
 }

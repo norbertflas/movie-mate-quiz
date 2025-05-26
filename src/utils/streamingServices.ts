@@ -158,15 +158,27 @@ export const getFriendlyServiceName = (providerName: string): string => {
   }
 };
 
-// Function to get streaming services by region - FORCE US ONLY
+// CRITICAL FIX: Update language to region mapping to include Poland
+export const languageToRegion: Record<string, string> = {
+  'en': 'us',
+  'en-US': 'us',
+  'en-GB': 'us',
+  'pl': 'pl', // CRITICAL: Polish language now maps to Polish region
+  'es': 'us',
+  'fr': 'us',
+  'de': 'us',
+  'it': 'us'
+};
+
+// Function to get streaming services by region - now supports multiple regions
 export const getStreamingServicesByRegion = async (region: string): Promise<StreamingService[]> => {
   try {
-    console.log(`[getStreamingServicesByRegion] Forced to use region: ${FORCE_REGION.toLowerCase()} (requested: ${region})`);
+    console.log(`[getStreamingServicesByRegion] Fetching for region: ${region.toUpperCase()}`);
     
     const { data, error } = await supabase
       .from('streaming_services')
       .select('*')
-      .contains('regions', [FORCE_REGION.toLowerCase()]);
+      .contains('regions', [region.toLowerCase()]);
 
     if (error) {
       console.error("Error fetching streaming services:", error);
@@ -178,18 +190,6 @@ export const getStreamingServicesByRegion = async (region: string): Promise<Stre
     console.error("Error in getStreamingServicesByRegion:", error);
     return [];
   }
-};
-
-// CRITICAL FIX: Force all languages to use US region
-export const languageToRegion: Record<string, string> = {
-  'en': 'us',
-  'pl': 'us', // CRITICAL: Force Polish to use US region
-  'es': 'us',
-  'fr': 'us',
-  'de': 'us',
-  'it': 'us',
-  'en-US': 'us',
-  'en-GB': 'us'
 };
 
 // Function to get service icon path
