@@ -1,7 +1,7 @@
 import { MovieFilterSection } from "../movie/MovieFilterSection";
 import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
-import { getStreamingServicesByRegion } from "@/utils/streamingServices";
+import { getStreamingServicesByRegion, languageToRegion } from "@/utils/streamingServices";
 import type { StreamingService } from "@/types/streaming";
 import { useToast } from "@/hooks/use-toast";
 
