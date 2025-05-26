@@ -35,11 +35,11 @@ const Favorites = () => {
 
       if (error) throw error;
 
-      // Convert saved movies to TMDBMovie format
+      // Convert saved movies to TMDBMovie format with proper poster handling
       const movieData: TMDBMovie[] = data?.map(movie => ({
         id: movie.tmdb_id,
         title: movie.title,
-        poster_path: movie.poster_path,
+        poster_path: movie.poster_path || null,
         overview: "",
         release_date: "",
         vote_average: 0,

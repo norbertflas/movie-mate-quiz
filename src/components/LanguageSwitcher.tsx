@@ -16,10 +16,6 @@ import { cn } from "@/lib/utils";
 const languages = [
   { code: "en", label: "English", flag: "🇺🇸" },
   { code: "pl", label: "Polski", flag: "🇵🇱" },
-  { code: "fr", label: "Français", flag: "🇫🇷" },
-  { code: "de", label: "Deutsch", flag: "🇩🇪" },
-  { code: "es", label: "Español", flag: "🇪🇸" },
-  { code: "it", label: "Italiano", flag: "🇮🇹" },
 ];
 
 interface LanguageSwitcherProps {

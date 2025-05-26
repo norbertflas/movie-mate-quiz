@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useCallback, memo } from "react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { Film } from "lucide-react";
 
 interface LazyMovieImageProps {
   src: string;
@@ -73,18 +74,19 @@ export const LazyMovieImage = memo(({
     onError?.();
   }, [onError]);
 
-  const imageSrc = isError ? placeholder : src;
-  const srcSet = !isError ? generateSrcSet() : '';
+  // Determine the image source - handle empty/null/undefined src
+  const imageSrc = isError || !src || src === 'null' || src === '' ? placeholder : src;
+  const srcSet = !isError && src && src !== 'null' && src !== '' ? generateSrcSet() : '';
 
   return (
     <div ref={imgRef} className={cn("relative overflow-hidden bg-muted", className)}>
       {/* Loading skeleton */}
-      {!isLoaded && (
+      {!isLoaded && !isError && (
         <div className="absolute inset-0 bg-gradient-to-r from-muted via-muted/50 to-muted animate-pulse" />
       )}
 
       {/* Image */}
-      {isInView && (
+      {isInView && imageSrc && (
         <motion.img
           src={imageSrc}
           srcSet={srcSet}
@@ -107,10 +109,11 @@ export const LazyMovieImage = memo(({
         />
       )}
 
-      {/* Error state */}
-      {isError && (
-        <div className="absolute inset-0 flex items-center justify-center bg-muted text-muted-foreground">
-          <span className="text-sm">Image unavailable</span>
+      {/* Error state with movie icon */}
+      {(isError || !src || src === 'null' || src === '') && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-muted text-muted-foreground">
+          <Film className="w-8 h-8 mb-2 opacity-50" />
+          <span className="text-xs text-center px-2">No poster available</span>
         </div>
       )}
     </div>
