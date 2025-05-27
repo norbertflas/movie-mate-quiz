@@ -17,10 +17,10 @@ export class Analytics {
   static init() {
     // Initialize analytics services
     if (typeof window !== 'undefined') {
-      // Google Analytics 4
-      if (process.env.NEXT_PUBLIC_GA_ID) {
+      // Google Analytics 4 - using Vite environment variables
+      if (import.meta.env.VITE_GA_ID) {
         const script = document.createElement('script');
-        script.src = `https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`;
+        script.src = `https://www.googletagmanager.com/gtag/js?id=${import.meta.env.VITE_GA_ID}`;
         script.async = true;
         document.head.appendChild(script);
         
@@ -30,7 +30,7 @@ export class Analytics {
         }
         window.gtag = gtag;
         gtag('js', new Date());
-        gtag('config', process.env.NEXT_PUBLIC_GA_ID, {
+        gtag('config', import.meta.env.VITE_GA_ID, {
           page_title: document.title,
           page_location: window.location.href,
         });
@@ -73,8 +73,8 @@ export class Analytics {
     if (!this.isEnabled) return;
     
     try {
-      if (typeof window !== 'undefined' && window.gtag && process.env.NEXT_PUBLIC_GA_ID) {
-        window.gtag('config', process.env.NEXT_PUBLIC_GA_ID, {
+      if (typeof window !== 'undefined' && window.gtag && import.meta.env.VITE_GA_ID) {
+        window.gtag('config', import.meta.env.VITE_GA_ID, {
           user_id: userId,
           custom_map: traits
         });
