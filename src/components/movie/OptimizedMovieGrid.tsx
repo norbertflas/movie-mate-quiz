@@ -76,6 +76,16 @@ export const OptimizedMovieGrid = memo(({
     if (node) observerRef.current.observe(node);
   }, [enableLazyLoad]);
 
+  // Helper function to get proper image URL
+  const getImageUrl = useCallback((posterPath: string | null) => {
+    if (!posterPath) return '/placeholder.svg';
+    if (posterPath.startsWith('http')) return posterPath;
+    return `https://image.tmdb.org/t/p/w500${posterPath}`;
+  }, []);
+
+  console.log('OptimizedMovieGrid movies:', movies.length);
+  console.log('First movie poster path:', movies[0]?.poster_path);
+
   if (movies.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
@@ -96,36 +106,41 @@ export const OptimizedMovieGrid = memo(({
         transition={{ duration: 0.3 }}
       >
         <AnimatePresence mode="popLayout">
-          {visibleMovies.map((movie, index) => (
-            <motion.div
-              key={movie.id}
-              ref={index === visibleMovies.length - 1 ? lastItemRef : undefined}
-              initial={{ opacity: 0, y: 20, scale: 0.9 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -20, scale: 0.9 }}
-              transition={{ 
-                duration: 0.3, 
-                delay: index % ITEMS_PER_PAGE * 0.02,
-                type: "spring",
-                stiffness: 100
-              }}
-              whileHover={{ y: -5 }}
-              className="h-full"
-            >
-              <MovieCard
-                title={movie.title}
-                year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "N/A"}
-                platform="TMDB"
-                genre="Film"
-                imageUrl={movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : '/placeholder.svg'}
-                description={movie.overview}
-                trailerUrl=""
-                rating={movie.vote_average * 10}
-                tmdbId={movie.id}
-                onClick={() => onMovieClick?.(movie)}
-              />
-            </motion.div>
-          ))}
+          {visibleMovies.map((movie, index) => {
+            const imageUrl = getImageUrl(movie.poster_path);
+            console.log(`Movie ${movie.title} image URL:`, imageUrl);
+            
+            return (
+              <motion.div
+                key={movie.id}
+                ref={index === visibleMovies.length - 1 ? lastItemRef : undefined}
+                initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -20, scale: 0.9 }}
+                transition={{ 
+                  duration: 0.3, 
+                  delay: index % ITEMS_PER_PAGE * 0.02,
+                  type: "spring",
+                  stiffness: 100
+                }}
+                whileHover={{ y: -5 }}
+                className="h-full"
+              >
+                <MovieCard
+                  title={movie.title}
+                  year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "N/A"}
+                  platform="TMDB"
+                  genre="Film"
+                  imageUrl={imageUrl}
+                  description={movie.overview}
+                  trailerUrl=""
+                  rating={movie.vote_average * 10}
+                  tmdbId={movie.id}
+                  onClick={() => onMovieClick?.(movie)}
+                />
+              </motion.div>
+            );
+          })}
         </AnimatePresence>
       </motion.div>
 
