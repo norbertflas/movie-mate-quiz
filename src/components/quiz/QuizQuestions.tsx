@@ -9,9 +9,20 @@ export const QuizQuestions = ({ questions, currentStep, onAnswer, answers, answe
   const { t, i18n } = useTranslation();
   const currentQuestion = questions[currentStep];
 
+  console.log('QuizQuestions rendering:', {
+    currentStep,
+    questionsLength: questions.length,
+    currentQuestion: currentQuestion?.id,
+    answersLength: answers.length
+  });
+
   if (!currentQuestion) {
     console.error('No question found for step:', currentStep);
-    return null;
+    return (
+      <div className="text-center text-red-500">
+        <p>Error: No question found for step {currentStep}</p>
+      </div>
+    );
   }
 
   // Get the current answer if it exists
@@ -19,14 +30,17 @@ export const QuizQuestions = ({ questions, currentStep, onAnswer, answers, answe
   
   // Check if this question should be shown based on previous answers
   if (currentQuestion.shouldShow && !currentQuestion.shouldShow(answerMap)) {
+    console.log('Question should not be shown:', currentQuestion.id);
     return null;
   }
 
   // Get dynamic options if available
-  let optionsToUse = currentQuestion.options;
-  if (currentQuestion.getDynamicOptions && currentQuestion.options.length === 0) {
+  let optionsToUse = currentQuestion.options || [];
+  if (currentQuestion.getDynamicOptions && optionsToUse.length === 0) {
     optionsToUse = currentQuestion.getDynamicOptions(answerMap);
   }
+
+  console.log('Options to use:', optionsToUse);
 
   // Translate options before passing them to SurveyStep
   const translatedOptions = optionsToUse.map(option => {
@@ -52,6 +66,16 @@ export const QuizQuestions = ({ questions, currentStep, onAnswer, answers, answe
   console.log(`[Quiz] Current language: ${i18n.language}`);
   console.log(`[Quiz] Translated options:`, translatedOptions);
 
+  if (translatedOptions.length === 0) {
+    console.warn('No options available for question:', currentQuestion.id);
+    return (
+      <div className="text-center text-yellow-500">
+        <p>Warning: No options available for this question</p>
+        <p>Question ID: {currentQuestion.id}</p>
+      </div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -61,17 +85,14 @@ export const QuizQuestions = ({ questions, currentStep, onAnswer, answers, answe
       className="w-full bg-black text-white"
     >
       <div className="relative">
-        {/* Close button */}
-        <button className="absolute left-0 top-0 p-4 text-gray-400 hover:text-white">
-          <X className="h-6 w-6" />
-        </button>
-        
-        <div className="py-12 px-6">
+        <div className="py-8 px-4">
           {/* Question */}
-          <h2 className="text-3xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400">
+          <h2 className="text-2xl md:text-3xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400">
             {questionText}
           </h2>
-          <p className="text-gray-400 mb-8">{subtitleText}</p>
+          {subtitleText && (
+            <p className="text-gray-400 mb-6">{subtitleText}</p>
+          )}
           
           {/* Options */}
           <div className="max-w-4xl mx-auto">

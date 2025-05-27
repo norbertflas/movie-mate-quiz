@@ -71,7 +71,7 @@ export const ImprovedMinimizedMovieCard = memo(({
     >
       <Card 
         className={`
-          w-20 h-28 cursor-pointer transition-all duration-300 overflow-hidden group relative
+          w-48 h-72 cursor-pointer transition-all duration-300 overflow-hidden group relative
           ${priority ? 'ring-2 ring-yellow-400/50' : ''}
           hover:shadow-xl border-gray-700 bg-gray-800
         `}
@@ -88,22 +88,22 @@ export const ImprovedMinimizedMovieCard = memo(({
           />
 
           {/* Status indicators */}
-          <div className="absolute top-1 left-1 flex flex-col space-y-1">
+          <div className="absolute top-2 left-2 flex flex-col space-y-1">
             {isWatched && (
-              <div className="w-2 h-2 bg-green-500 rounded-full ring-1 ring-green-300/50"></div>
+              <div className="w-3 h-3 bg-green-500 rounded-full ring-1 ring-green-300/50"></div>
             )}
             {isFavorite && (
-              <div className="w-2 h-2 bg-red-500 rounded-full ring-1 ring-red-300/50"></div>
+              <div className="w-3 h-3 bg-red-500 rounded-full ring-1 ring-red-300/50"></div>
             )}
             {isWatchlisted && (
-              <div className="w-2 h-2 bg-blue-500 rounded-full ring-1 ring-blue-300/50"></div>
+              <div className="w-3 h-3 bg-blue-500 rounded-full ring-1 ring-blue-300/50"></div>
             )}
           </div>
 
           {/* Priority badge */}
           {priority && (
-            <div className="absolute top-1 right-1">
-              <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
+            <div className="absolute top-2 right-2">
+              <div className="w-3 h-3 bg-yellow-400 rounded-full animate-pulse"></div>
             </div>
           )}
 
@@ -115,24 +115,24 @@ export const ImprovedMinimizedMovieCard = memo(({
             className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/60"
           >
             {/* Top controls */}
-            <div className="absolute top-1 right-1 flex flex-col space-y-1">
+            <div className="absolute top-2 right-2 flex flex-col space-y-2">
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-5 w-5 p-0 bg-black/40 hover:bg-black/60 backdrop-blur-sm rounded-full"
+                className="h-8 w-8 p-0 bg-black/40 hover:bg-black/60 backdrop-blur-sm rounded-full"
                 onClick={handleExpand}
               >
-                <Maximize2 className="h-2.5 w-2.5 text-white" />
+                <Maximize2 className="h-4 w-4 text-white" />
               </Button>
               
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-5 w-5 p-0 bg-black/40 hover:bg-black/60 backdrop-blur-sm rounded-full"
+                className="h-8 w-8 p-0 bg-black/40 hover:bg-black/60 backdrop-blur-sm rounded-full"
                 onClick={handleToggleFavorite}
               >
                 <Heart 
-                  className={`h-2.5 w-2.5 ${isFavorite ? 'text-red-500 fill-red-500' : 'text-white'}`} 
+                  className={`h-4 w-4 ${isFavorite ? 'text-red-500 fill-red-500' : 'text-white'}`} 
                 />
               </Button>
 
@@ -140,10 +140,10 @@ export const ImprovedMinimizedMovieCard = memo(({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-5 w-5 p-0 bg-black/40 hover:bg-red-600/80 backdrop-blur-sm rounded-full"
+                  className="h-8 w-8 p-0 bg-black/40 hover:bg-red-600/80 backdrop-blur-sm rounded-full"
                   onClick={handlePlayTrailer}
                 >
-                  <Play className="h-2.5 w-2.5 text-white fill-white" />
+                  <Play className="h-4 w-4 text-white fill-white" />
                 </Button>
               )}
             </div>
@@ -154,41 +154,41 @@ export const ImprovedMinimizedMovieCard = memo(({
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: 0.1, duration: 0.2 }}
-                className="flex space-x-1"
+                className="flex space-x-2"
               >
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-4 w-4 p-0 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full"
+                  className="h-8 w-8 p-0 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full"
                   onClick={handleToggleWatched}
                 >
-                  <Eye className="h-2 w-2 text-white" />
+                  <Eye className="h-4 w-4 text-white" />
                 </Button>
                 
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-4 w-4 p-0 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full"
+                  className="h-8 w-8 p-0 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full"
                   onClick={handleToggleWatchlist}
                 >
-                  <Bookmark className="h-2 w-2 text-white" />
+                  <Bookmark className="h-4 w-4 text-white" />
                 </Button>
               </motion.div>
             </div>
 
             {/* Bottom info */}
-            <div className="absolute bottom-0 left-0 right-0 p-1">
+            <div className="absolute bottom-0 left-0 right-0 p-3">
               <motion.div
                 initial={{ y: 10, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.05, duration: 0.2 }}
               >
-                <div className="mb-1">
+                <div className="mb-2">
                   <MovieRating rating={rating} />
                 </div>
                 
-                <div className="space-y-0.5">
-                  <p className="text-white text-xs font-semibold truncate leading-tight">
+                <div className="space-y-1">
+                  <p className="text-white text-sm font-semibold truncate leading-tight">
                     {title}
                   </p>
                   <p className="text-white/80 text-xs leading-tight">
