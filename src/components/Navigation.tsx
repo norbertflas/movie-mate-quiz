@@ -32,34 +32,64 @@ export const Navigation = () => {
   
   const { scrollY, scrollDirection, scrollProgress } = useScrollContext();
 
-  // Simplified scroll handling without complex animations
+  // Bezpieczny scroll handler
   useEffect(() => {
-    const isScrolled = scrollY > 10;
-    setScrolled(isScrolled);
+    let ticking = false;
     
-    // Simple show/hide logic
-    if (scrollY > 100) {
-      setNavVisible(scrollDirection !== 'down' || scrollY < 50);
-    } else {
-      setNavVisible(true);
-    }
-  }, [scrollY, scrollDirection]);
-
-  const handleSearchClick = useCallback(() => {
-    navigate("/search");
-  }, [navigate]);
-
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        navigate("/search");
+    const handleScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          try {
+            // Bezpieczne sprawdzenia
+            if (typeof window !== 'undefined' && document.body.scrollHeight > window.innerHeight) {
+              const isScrolled = scrollY > 10;
+              setScrolled(isScrolled);
+              
+              // Simple show/hide logic
+              if (scrollY > 100) {
+                setNavVisible(scrollDirection !== 'down' || scrollY < 50);
+              } else {
+                setNavVisible(true);
+              }
+            }
+          } catch (error) {
+            console.warn('Navigation scroll error:', error);
+          }
+          
+          ticking = false;
+        });
+        ticking = true;
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    handleScroll();
+  }, [scrollY, scrollDirection]);
+
+  const handleSearchClick = useCallback(() => {
+    try {
+      navigate("/search");
+    } catch (error) {
+      console.warn('Navigation error:', error);
+    }
+  }, [navigate]);
+
+  // Keyboard shortcuts z error handling
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      try {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+          e.preventDefault();
+          navigate("/search");
+        }
+      } catch (error) {
+        console.warn('Keyboard shortcut error:', error);
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
   }, [navigate]);
 
   return (

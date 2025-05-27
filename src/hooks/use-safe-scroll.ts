@@ -15,31 +15,40 @@ export function useSafeScroll() {
     isScrolling: false
   });
 
-  const handleScroll = useCallback(
-    throttle(() => {
-      try {
-        const currentScrollY = window.scrollY;
+  const handleScroll = useCallback(() => {
+    let ticking = false;
+    
+    if (!ticking) {
+      requestAnimationFrame(() => {
+        try {
+          // Bezpieczne sprawdzenia
+          if (typeof window !== 'undefined' && document.body.scrollHeight > window.innerHeight) {
+            const currentScrollY = window.scrollY;
+            
+            setScrollState(prevState => {
+              const direction = currentScrollY > prevState.scrollY ? 'down' : 'up';
+              
+              return {
+                scrollY: currentScrollY,
+                scrollDirection: direction,
+                isScrolling: true
+              };
+            });
+          }
+        } catch (error) {
+          console.warn('Scroll handler error:', error);
+        }
         
-        setScrollState(prevState => {
-          const direction = currentScrollY > prevState.scrollY ? 'down' : 'up';
-          
-          return {
-            scrollY: currentScrollY,
-            scrollDirection: direction,
-            isScrolling: true
-          };
-        });
-      } catch (error) {
-        console.warn('Scroll handler error:', error);
-      }
-    }, 16),
-    []
-  );
+        ticking = false;
+      });
+      ticking = true;
+    }
+  }, []);
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
 
-    const throttledScroll = () => {
+    const throttledScroll = throttle(() => {
       handleScroll();
       
       // Clear existing timeout
@@ -52,18 +61,22 @@ export function useSafeScroll() {
           isScrolling: false
         }));
       }, 150);
-    };
+    }, 16);
 
     try {
-      window.addEventListener('scroll', throttledScroll, { passive: true });
+      if (typeof window !== 'undefined') {
+        window.addEventListener('scroll', throttledScroll, { passive: true });
+      }
     } catch (error) {
       console.warn('Error adding scroll listener:', error);
     }
     
     return () => {
       try {
-        window.removeEventListener('scroll', throttledScroll);
-        clearTimeout(timeoutId);
+        if (typeof window !== 'undefined') {
+          window.removeEventListener('scroll', throttledScroll);
+          clearTimeout(timeoutId);
+        }
       } catch (error) {
         console.warn('Error removing scroll listener:', error);
       }

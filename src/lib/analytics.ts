@@ -18,8 +18,8 @@ export class Analytics {
     if (!this.isEnabled) return;
     
     try {
-      // Initialize analytics services safely
-      if (import.meta.env.VITE_GA_ID && typeof window !== 'undefined') {
+      // Bezpieczne sprawdzenia
+      if (typeof window !== 'undefined' && import.meta.env.VITE_GA_ID) {
         const script = document.createElement('script');
         script.src = `https://www.googletagmanager.com/gtag/js?id=${import.meta.env.VITE_GA_ID}`;
         script.async = true;
@@ -46,11 +46,11 @@ export class Analytics {
     if (!this.isEnabled) return;
     
     try {
-      // Console logging for development
+      // Lepsze error handling
       console.log('Analytics Event:', eventName, properties);
       
-      // Google Analytics 4 - safe call
-      if (typeof window !== 'undefined' && window.gtag) {
+      // Bezpieczne sprawdzenia przed wysłaniem
+      if (typeof window !== 'undefined' && window.gtag && import.meta.env.VITE_GA_ID) {
         window.gtag('event', eventName, {
           ...properties,
           timestamp: new Date().toISOString()
@@ -62,12 +62,16 @@ export class Analytics {
   }
   
   static page(pageName: string, properties: Record<string, any> = {}) {
-    this.track('page_view', {
-      page_name: pageName,
-      page_location: typeof window !== 'undefined' ? window.location.href : '',
-      page_title: typeof document !== 'undefined' ? document.title : '',
-      ...properties
-    });
+    try {
+      this.track('page_view', {
+        page_name: pageName,
+        page_location: typeof window !== 'undefined' ? window.location.href : '',
+        page_title: typeof document !== 'undefined' ? document.title : '',
+        ...properties
+      });
+    } catch (error) {
+      console.warn('Analytics page tracking error:', error);
+    }
   }
   
   static identify(userId: string, traits: Record<string, any> = {}) {
@@ -81,7 +85,7 @@ export class Analytics {
         });
       }
     } catch (error) {
-      console.error('Analytics identify error:', error);
+      console.warn('Analytics identify error:', error);
     }
   }
   
