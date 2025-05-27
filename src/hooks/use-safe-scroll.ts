@@ -1,5 +1,6 @@
 
 import { useEffect, useState, useCallback } from 'react';
+import { throttle } from '@/utils/throttle';
 
 interface ScrollState {
   scrollY: number;
@@ -14,19 +15,26 @@ export function useSafeScroll() {
     isScrolling: false
   });
 
-  const handleScroll = useCallback(() => {
-    const currentScrollY = window.scrollY;
-    
-    setScrollState(prevState => {
-      const direction = currentScrollY > prevState.scrollY ? 'down' : 'up';
-      
-      return {
-        scrollY: currentScrollY,
-        scrollDirection: direction,
-        isScrolling: true
-      };
-    });
-  }, []);
+  const handleScroll = useCallback(
+    throttle(() => {
+      try {
+        const currentScrollY = window.scrollY;
+        
+        setScrollState(prevState => {
+          const direction = currentScrollY > prevState.scrollY ? 'down' : 'up';
+          
+          return {
+            scrollY: currentScrollY,
+            scrollDirection: direction,
+            isScrolling: true
+          };
+        });
+      } catch (error) {
+        console.warn('Scroll handler error:', error);
+      }
+    }, 16),
+    []
+  );
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
@@ -46,11 +54,19 @@ export function useSafeScroll() {
       }, 150);
     };
 
-    window.addEventListener('scroll', throttledScroll, { passive: true });
+    try {
+      window.addEventListener('scroll', throttledScroll, { passive: true });
+    } catch (error) {
+      console.warn('Error adding scroll listener:', error);
+    }
     
     return () => {
-      window.removeEventListener('scroll', throttledScroll);
-      clearTimeout(timeoutId);
+      try {
+        window.removeEventListener('scroll', throttledScroll);
+        clearTimeout(timeoutId);
+      } catch (error) {
+        console.warn('Error removing scroll listener:', error);
+      }
     };
   }, [handleScroll]);
 

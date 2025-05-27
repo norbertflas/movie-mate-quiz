@@ -12,21 +12,23 @@ declare global {
 }
 
 export class Analytics {
-  private static isEnabled = true;
+  private static isEnabled = typeof window !== 'undefined';
   
   static init() {
-    // Initialize analytics services
-    if (typeof window !== 'undefined') {
-      // Google Analytics 4 - using Vite environment variables
-      if (import.meta.env.VITE_GA_ID) {
+    if (!this.isEnabled) return;
+    
+    try {
+      // Initialize analytics services safely
+      if (import.meta.env.VITE_GA_ID && typeof window !== 'undefined') {
         const script = document.createElement('script');
         script.src = `https://www.googletagmanager.com/gtag/js?id=${import.meta.env.VITE_GA_ID}`;
         script.async = true;
+        script.onerror = () => console.warn('Failed to load Google Analytics');
         document.head.appendChild(script);
         
         window.dataLayer = window.dataLayer || [];
         function gtag(...args: any[]) {
-          window.dataLayer.push(arguments);
+          window.dataLayer.push(args);
         }
         window.gtag = gtag;
         gtag('js', new Date());
@@ -35,6 +37,8 @@ export class Analytics {
           page_location: window.location.href,
         });
       }
+    } catch (error) {
+      console.warn('Analytics initialization error:', error);
     }
   }
   
@@ -45,18 +49,15 @@ export class Analytics {
       // Console logging for development
       console.log('Analytics Event:', eventName, properties);
       
-      // Google Analytics 4
+      // Google Analytics 4 - safe call
       if (typeof window !== 'undefined' && window.gtag) {
         window.gtag('event', eventName, {
           ...properties,
           timestamp: new Date().toISOString()
         });
       }
-      
-      // Additional analytics services can be added here
-      
     } catch (error) {
-      console.error('Analytics tracking error:', error);
+      console.warn('Analytics tracking error:', error);
     }
   }
   
@@ -85,6 +86,6 @@ export class Analytics {
   }
   
   static setEnabled(enabled: boolean) {
-    this.isEnabled = enabled;
+    this.isEnabled = enabled && typeof window !== 'undefined';
   }
 }
