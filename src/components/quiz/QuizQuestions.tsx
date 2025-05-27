@@ -56,7 +56,7 @@ export const QuizQuestions = ({ questions, currentStep, onAnswer, answers, answe
     }
   }
 
-  // Enhanced fallback options based on question ID
+  // Enhanced fallback options based on question ID - always ensure we have options
   if (!optionsToUse || optionsToUse.length === 0) {
     console.log('Using fallback options for question:', currentQuestion.id);
     
@@ -92,9 +92,16 @@ export const QuizQuestions = ({ questions, currentStep, onAnswer, answers, answe
         optionsToUse = ["Morning", "Afternoon", "Evening", "Late night", "Weekend"];
         break;
       default:
+        // Force options for any unknown question type
         optionsToUse = ["Yes", "No", "Maybe", "I don't know"];
         break;
     }
+  }
+
+  // Final safety check - always ensure we have at least basic options
+  if (!optionsToUse || optionsToUse.length === 0) {
+    console.warn('Still no options! Using emergency fallback');
+    optionsToUse = ["Option 1", "Option 2", "Option 3", "Option 4"];
   }
 
   console.log('Final options to use:', optionsToUse);
@@ -122,11 +129,12 @@ export const QuizQuestions = ({ questions, currentStep, onAnswer, answers, answe
   console.log(`[Quiz] Current language: ${i18n.language}`);
   console.log(`[Quiz] Final translated options:`, translatedOptions);
 
+  // Final check before rendering - this should never happen now
   if (translatedOptions.length === 0) {
-    console.warn('No options available for question:', currentQuestion.id);
+    console.error('CRITICAL: No options after all fallbacks!');
     return (
-      <div className="text-center text-yellow-500 p-8">
-        <p className="mb-4 text-lg">⚠️ No options available for this question</p>
+      <div className="text-center text-red-500 p-8">
+        <p className="mb-4 text-lg">⚠️ Critical Error: No options available</p>
         <p className="text-sm">Question ID: {currentQuestion.id}</p>
         <p className="text-sm">Question Type: {currentQuestion.type}</p>
         <div className="mt-4 p-4 bg-gray-800 rounded text-left">
@@ -137,8 +145,17 @@ export const QuizQuestions = ({ questions, currentStep, onAnswer, answers, answe
             staticOptionsLength: currentQuestion.options?.length || 0,
             hasDynamicOptions: !!currentQuestion.getDynamicOptions,
             answerMapKeys: Object.keys(answerMap || {}),
+            originalOptions: currentQuestion.options,
+            finalOptions: optionsToUse,
+            translatedOptions
           }, null, 2)}</pre>
         </div>
+        <button 
+          onClick={() => onAnswer("Emergency Answer")}
+          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          Skip Question
+        </button>
       </div>
     );
   }
@@ -165,6 +182,8 @@ export const QuizQuestions = ({ questions, currentStep, onAnswer, answers, answe
           {process.env.NODE_ENV === 'development' && (
             <div className="mb-4 p-2 bg-gray-800 rounded text-xs text-gray-400">
               Options count: {translatedOptions.length} | Question: {currentQuestion.id} | Step: {currentStep}
+              <br />
+              Options: {translatedOptions.join(', ')}
             </div>
           )}
           
