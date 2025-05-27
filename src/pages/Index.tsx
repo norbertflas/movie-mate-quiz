@@ -1,5 +1,5 @@
 
-import { useEffect } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { PageContainer } from "@/components/home/PageContainer";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -11,7 +11,6 @@ import { OnboardingFlow } from "@/components/OnboardingFlow";
 import { NotificationPermission } from "@/components/NotificationPermission";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { PreloadManager } from "@/components/PreloadManager";
-import { PerformanceMonitor } from "@/components/PerformanceMonitor";
 import { motion, AnimatePresence } from "framer-motion";
 import { useIndexState } from "@/hooks/use-index-state";
 import { useMovieData } from "@/hooks/use-movie-data";
@@ -52,18 +51,6 @@ const Index = () => {
     hasError
   });
 
-  // Performance monitoring
-  useEffect(() => {
-    try {
-      const monitor = new PerformanceMonitor();
-      monitor.startTracking();
-      
-      return () => monitor.stopTracking();
-    } catch (error) {
-      console.error('Performance monitor error:', error);
-    }
-  }, []);
-
   // Track page view
   useEffect(() => {
     try {
@@ -91,7 +78,7 @@ const Index = () => {
     }
   }, [userPreferences.hasCompletedOnboarding, visitCount]);
 
-  const handleQuizCompleteWithToast = (results: any) => {
+  const handleQuizCompleteWithToast = useCallback((results: any) => {
     try {
       handleQuizComplete(results);
       toast.success('Quiz completed! Here are your personalized recommendations.', {
@@ -101,7 +88,7 @@ const Index = () => {
       console.error('Quiz completion error:', error);
       toast.error('Failed to complete quiz');
     }
-  };
+  }, [handleQuizComplete]);
 
   try {
     return (

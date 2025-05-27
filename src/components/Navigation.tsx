@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { motion, AnimatePresence, useTransform } from "framer-motion";
+import { useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "react-router-dom";
 import { NavLinks } from "./navigation/NavLinks";
 import { MobileNav } from "./navigation/MobileNav";
@@ -16,8 +16,6 @@ import {
 import { SearchCommandDialog } from "./navigation/SearchCommandDialog";
 import { NotificationCenter } from "./navigation/NotificationCenter";
 import { QuickSettings } from "./navigation/QuickSettings";
-import { useNavigationScroll } from "@/hooks/use-navigation-scroll";
-import { useNavigationSearch } from "@/hooks/use-navigation-search";
 import { NavigationLogo } from "./navigation/NavigationLogo";
 import { NavigationActions } from "./navigation/NavigationActions";
 import { NavigationKeyboardShortcuts } from "./navigation/NavigationKeyboardShortcuts";
@@ -29,15 +27,47 @@ export const Navigation = () => {
   
   const [showNotifications, setShowNotifications] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showSearchDialog, setShowSearchDialog] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [navVisible, setNavVisible] = useState(true);
   const [notifications, setNotifications] = useLocalStorage('moviefinder_notifications', []);
 
-  const { scrolled, navVisible, navRef, navOpacity, scrollY } = useNavigationScroll();
-  const { 
-    showSearchDialog, 
-    setShowSearchDialog, 
-    handleSearchClick, 
-    handleSearchSubmit 
-  } = useNavigationSearch();
+  // Simplified scroll handling without useRef
+  useEffect(() => {
+    let lastScrollY = 0;
+    
+    const handleScroll = () => {
+      try {
+        const currentScrollY = window.scrollY;
+        const isScrolled = currentScrollY > 10;
+        const isScrollingDown = currentScrollY > lastScrollY;
+        
+        setScrolled(isScrolled);
+        
+        if (currentScrollY > 100) {
+          setNavVisible(!isScrollingDown || currentScrollY < 50);
+        } else {
+          setNavVisible(true);
+        }
+        
+        lastScrollY = currentScrollY;
+      } catch (error) {
+        console.warn('Scroll handler error:', error);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const handleSearchClick = useCallback(() => {
+    setShowSearchDialog(true);
+  }, []);
+
+  const handleSearchSubmit = useCallback((query: string) => {
+    setShowSearchDialog(false);
+    // Handle search logic here
+  }, []);
 
   const navVariants = {
     visible: {
@@ -74,10 +104,8 @@ export const Navigation = () => {
       />
 
       <motion.nav 
-        ref={navRef}
         variants={navVariants}
         animate={navVisible ? "visible" : "hidden"}
-        style={{ opacity: navOpacity }}
         className={cn(
           "fixed top-0 z-50 w-full border-b transition-all duration-300",
           isHomePage ? "bg-background/10" : "bg-background/80",
@@ -87,24 +115,6 @@ export const Navigation = () => {
         )}
       >
         <div className="container relative mx-auto px-2 sm:px-4 md:px-6 max-w-full">
-          {/* Enhanced animated background gradient */}
-          <div className="absolute inset-0 overflow-hidden">
-            <motion.div
-              className="absolute -inset-[50%] bg-gradient-to-r from-primary/3 via-blue-500/3 to-purple-500/3 rounded-full blur-3xl opacity-60"
-              animate={{
-                rotate: [0, 360],
-                scale: [0.8, 1.2, 0.8],
-                x: [-20, 20, -20],
-              }}
-              transition={{
-                duration: 25,
-                repeat: Infinity,
-                repeatType: "mirror",
-                ease: "linear"
-              }}
-            />
-          </div>
-          
           <div className="relative flex h-16 items-center justify-between z-10">
             <NavigationLogo scrolled={scrolled} />
             
@@ -154,18 +164,6 @@ export const Navigation = () => {
             >
               <Breadcrumbs path={location.pathname} />
             </motion.div>
-          )}
-
-          {/* Progress bar for scroll progress */}
-          {scrolled && (
-            <motion.div
-              className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-primary to-blue-500 origin-left"
-              style={{
-                scaleX: useTransform(scrollY, [0, document.body.scrollHeight - window.innerHeight], [0, 1])
-              }}
-              initial={{ scaleX: 0 }}
-              animate={{ scaleX: window.scrollY / (document.body.scrollHeight - window.innerHeight) }}
-            />
           )}
         </div>
       </motion.nav>

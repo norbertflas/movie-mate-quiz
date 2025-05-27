@@ -1,6 +1,6 @@
 
 import { motion } from "framer-motion";
-import { useState, useRef } from "react";
+import { useState } from "react";
 import type { TMDBMovie } from "@/services/tmdb";
 import { MovieCardSwitcher } from "../movie/MovieCardSwitcher";
 import { useTranslation } from "react-i18next";
@@ -16,10 +16,8 @@ export const TrendingMoviesSection = ({ movies }: TrendingMoviesSectionProps) =>
   const [isHovered, setIsHovered] = useState(false);
   const [selectedMovie, setSelectedMovie] = useState<TMDBMovie | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isVisible, setIsVisible] = useState(true);
   const { t } = useTranslation();
   const isMobile = useIsMobile();
-  const sectionRef = useRef<HTMLDivElement>(null);
 
   console.log('TrendingMoviesSection rendering with movies count:', movies?.length || 0);
 
@@ -82,22 +80,19 @@ export const TrendingMoviesSection = ({ movies }: TrendingMoviesSectionProps) =>
     const animationDuration = isHovered ? 20 : 60;
     
     return (
-      <div 
-        ref={sectionRef}
-        className={`space-y-4 transition-opacity duration-500 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
-      >
+      <div className="space-y-4">
         <div className="flex items-center space-x-2">
           <motion.h2 
             className="text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-blue-500"
             initial="hidden"
-            animate={isVisible ? "visible" : "hidden"}
+            animate="visible"
             variants={titleVariants}
           >
             {t("discover.trending") || "Trending This Week"}
           </motion.h2>
           <motion.div
             initial={{ opacity: 0, scale: 0 }}
-            animate={isVisible ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0 }}
+            animate={{ opacity: 1, scale: 1 }}
             transition={{
               type: "spring",
               stiffness: 260,

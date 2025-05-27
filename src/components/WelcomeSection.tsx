@@ -1,14 +1,12 @@
 
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Button } from "./ui/button";
-import { PlayCircle, Film, Search, User, Sparkles, TrendingUp, Star, Clock, Users, ArrowRight, Zap } from "lucide-react";
-import { motion, useInView, useAnimation } from "framer-motion";
+import { PlayCircle, Film, Search, User, Sparkles, TrendingUp, Star, Clock, Users, Zap } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { DynamicMovieBackground } from "./movie/DynamicMovieBackground";
 import { Badge } from "./ui/badge";
 import { Card, CardContent } from "./ui/card";
-import { Progress } from "./ui/progress";
-import { Separator } from "./ui/separator";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { Analytics } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
@@ -36,23 +34,15 @@ export const WelcomeSection = ({
   const { t } = useTranslation();
   const [currentStep, setCurrentStep] = useState(0);
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
-  const [isVisible, setIsVisible] = useState(false);
-  const [hoveredStep, setHoveredStep] = useState<number | null>(null);
   const [userStats] = useLocalStorage<UserStats>('moviefinder_stats', {
     moviesWatched: 0,
     quizzesCompleted: 0,
     favoriteGenres: [],
     avgRating: 0
   });
-  
-  const intervalRef = useRef<NodeJS.Timeout>();
-  const testimonialIntervalRef = useRef<NodeJS.Timeout>();
-  const sectionRef = useRef<HTMLDivElement>(null);
-  const controls = useAnimation();
-  const isInView = useInView(sectionRef, { once: true, margin: "-100px" });
 
   // Enhanced testimonials data
-  const testimonials = [
+  const testimonials = useMemo(() => [
     {
       name: "Sarah M.",
       avatar: "/avatars/sarah.jpg",
@@ -74,53 +64,23 @@ export const WelcomeSection = ({
       text: "The quiz actually understands my taste better than my friends do!",
       moviesFound: 29
     }
-  ];
+  ], []);
 
-  // Safe mouse handling - no dependency on external values
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    try {
-      const rect = sectionRef.current?.getBoundingClientRect();
-      if (rect && typeof window !== 'undefined') {
-        // Simple hover effects without complex transforms
-        const x = (e.clientX - rect.left) / rect.width;
-        const y = (e.clientY - rect.top) / rect.height;
-        // Use these values for simple CSS custom properties if needed
-      }
-    } catch (error) {
-      console.warn('Mouse move handler error:', error);
-    }
-  }, []);
-
-  // Optimized auto-rotation with proper cleanup
+  // Auto-rotation
   useEffect(() => {
-    if (!isVisible) return;
-
-    intervalRef.current = setInterval(() => {
+    const stepInterval = setInterval(() => {
       setCurrentStep((prev) => (prev + 1) % 3);
     }, 4000);
 
-    testimonialIntervalRef.current = setInterval(() => {
+    const testimonialInterval = setInterval(() => {
       setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
     }, 6000);
 
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      if (testimonialIntervalRef.current) clearInterval(testimonialIntervalRef.current);
+      clearInterval(stepInterval);
+      clearInterval(testimonialInterval);
     };
-  }, [isVisible, testimonials.length]);
-
-  // Safe intersection observer
-  useEffect(() => {
-    try {
-      setIsVisible(isInView);
-      if (isInView) {
-        controls.start("visible");
-      }
-    } catch (error) {
-      console.warn('Intersection observer error:', error);
-      setIsVisible(true); // Fallback
-    }
-  }, [isInView, controls]);
+  }, [testimonials.length]);
 
   const handleQuizStart = useCallback(() => {
     try {
@@ -193,20 +153,8 @@ export const WelcomeSection = ({
     }
   };
 
-  const floatingVariants = {
-    animate: {
-      y: [-10, 10, -10],
-      rotate: [-2, 2, -2],
-      transition: {
-        duration: 4,
-        repeat: Infinity,
-        ease: "easeInOut"
-      }
-    }
-  };
-
   return (
-    <div ref={sectionRef} onMouseMove={handleMouseMove}>
+    <div>
       <DynamicMovieBackground 
         className="rounded-xl min-h-[750px] relative overflow-hidden" 
         overlayOpacity={0.88} 
@@ -214,33 +162,12 @@ export const WelcomeSection = ({
         rowCount={4} 
         speed="slow"
       >
-        {/* Enhanced floating elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <motion.div
-            className="absolute top-20 right-20 w-32 h-32 bg-gradient-to-r from-primary/20 to-blue-500/20 rounded-full blur-2xl"
-            variants={floatingVariants}
-            animate="animate"
-          />
-          <motion.div
-            className="absolute bottom-20 left-20 w-24 h-24 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-full blur-xl"
-            variants={floatingVariants}
-            animate="animate"
-            transition={{ delay: 1 }}
-          />
-          <motion.div
-            className="absolute top-1/2 left-1/3 w-16 h-16 bg-gradient-to-r from-yellow-500/15 to-orange-500/15 rounded-full blur-lg"
-            variants={floatingVariants}
-            animate="animate"
-            transition={{ delay: 2 }}
-          />
-        </div>
-
-        {/* Main container - simplified transforms */}
+        {/* Main container */}
         <motion.div 
           className="relative z-20 py-16 px-6 md:px-8 lg:px-12 flex flex-col items-center max-w-6xl mx-auto"
           variants={containerVariants}
           initial="hidden"
-          animate={controls}
+          animate="visible"
         >
           {/* Personalized greeting for returning users */}
           {showPersonalizedContent && (
@@ -254,7 +181,7 @@ export const WelcomeSection = ({
             </motion.div>
           )}
 
-          {/* Hero Icon with safe animation */}
+          {/* Hero Icon */}
           <motion.div
             variants={itemVariants}
             className="relative mb-8"
@@ -270,7 +197,7 @@ export const WelcomeSection = ({
               <Film className="h-12 w-12 text-white relative z-10" />
             </motion.div>
             
-            {/* Simplified sparkle effects */}
+            {/* Sparkle effects */}
             <motion.div
               className="absolute -top-2 -right-2"
               animate={{ 
@@ -287,7 +214,7 @@ export const WelcomeSection = ({
             </motion.div>
           </motion.div>
           
-          {/* Enhanced Title with safe gradient */}
+          {/* Enhanced Title */}
           <motion.div variants={itemVariants} className="text-center mb-6">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight">
               <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-primary to-purple-400 leading-tight">
@@ -295,7 +222,7 @@ export const WelcomeSection = ({
               </span>
             </h1>
             
-            {/* Static badges - no complex animations */}
+            {/* Badges */}
             <motion.div
               className="flex items-center justify-center gap-3 mt-6"
               initial={{ opacity: 0, scale: 0.8 }}
