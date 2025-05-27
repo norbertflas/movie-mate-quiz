@@ -1,7 +1,8 @@
+
 import { Routes, Route } from 'react-router-dom';
 import Index from './pages/Index';
 import Search from './pages/Search';
-import QuizContent from './components/home/QuizContent';
+import { QuizContent } from './components/home/QuizContent';
 import Favorites from './pages/Favorites';
 import Ratings from './pages/Ratings';
 import Services from './pages/Services';
