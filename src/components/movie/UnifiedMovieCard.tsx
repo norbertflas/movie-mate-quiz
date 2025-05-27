@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Star, Calendar, Clock, Play, Heart, Bookmark, Share2, ExternalLink } from "lucide-react";
@@ -211,80 +210,105 @@ export const MovieModal = ({
 
               {/* Content */}
               <div className="h-full overflow-y-auto">
-                {/* Hero Section */}
+                {/* Hero Section - Now can display trailer */}
                 <div className="relative h-80 md:h-96">
-                  <div
-                    className="absolute inset-0 bg-cover bg-center"
-                    style={{ backgroundImage: `url(${backdropUrl})` }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
-                  
-                  {/* Floating Poster */}
-                  <div className="absolute bottom-4 left-4 md:bottom-8 md:left-8">
-                    <motion.img
-                      src={posterUrl}
-                      alt={movie.title}
-                      className="w-32 md:w-40 lg:w-48 rounded-lg shadow-2xl"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.2 }}
-                      onError={(e) => {
-                        e.currentTarget.src = '/placeholder.svg';
-                      }}
-                    />
-                  </div>
-
-                  {/* Title and Rating */}
-                  <div className="absolute bottom-4 left-40 md:left-52 lg:left-60 right-4 md:bottom-8 md:right-8">
-                    <motion.h1
-                      className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-2"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.3 }}
-                    >
-                      {movie.title}
-                    </motion.h1>
-                    
-                    <div className="flex items-center gap-4 mb-3">
-                      {movie.vote_average && (
-                        <div className="flex items-center gap-1">
-                          <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                          <span className="text-white font-medium">
-                            {movie.vote_average.toFixed(1)}
-                          </span>
-                        </div>
-                      )}
-                      
-                      {movie.release_date && (
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4 text-gray-300" />
-                          <span className="text-gray-300">
-                            {new Date(movie.release_date).getFullYear()}
-                          </span>
-                        </div>
-                      )}
-                      
-                      {movie.runtime && (
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-4 w-4 text-gray-300" />
-                          <span className="text-gray-300">
-                            {Math.floor(movie.runtime / 60)}h {movie.runtime % 60}m
-                          </span>
-                        </div>
-                      )}
+                  {showTrailer && trailerUrl ? (
+                    // Trailer View
+                    <div className="absolute inset-0">
+                      <iframe
+                        src={trailerUrl}
+                        title={`${movie.title} - Zwiastun`}
+                        className="w-full h-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                      {/* Close trailer button */}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setShowTrailer(false)}
+                        className="absolute top-4 left-4 z-10 h-10 w-10 rounded-full bg-black/50 hover:bg-black/70 text-white border-0"
+                      >
+                        <X className="h-5 w-5" />
+                      </Button>
                     </div>
-
-                    {/* Genres */}
-                    {movie.genres && movie.genres.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
-                        {movie.genres.slice(0, 3).map((genre) => (
-                          <Badge key={genre.id} variant="secondary" className="bg-white/20 text-white border-0">
-                            {genre.name}
-                          </Badge>
-                        ))}
+                  ) : (
+                    // Poster/Backdrop View
+                    <>
+                      <div
+                        className="absolute inset-0 bg-cover bg-center"
+                        style={{ backgroundImage: `url(${backdropUrl})` }}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
+                      
+                      {/* Floating Poster */}
+                      <div className="absolute bottom-4 left-4 md:bottom-8 md:left-8">
+                        <motion.img
+                          src={posterUrl}
+                          alt={movie.title}
+                          className="w-32 md:w-40 lg:w-48 rounded-lg shadow-2xl"
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.2 }}
+                          onError={(e) => {
+                            e.currentTarget.src = '/placeholder.svg';
+                          }}
+                        />
                       </div>
-                    )}
-                  </div>
+
+                      {/* Title and Rating */}
+                      <div className="absolute bottom-4 left-40 md:left-52 lg:left-60 right-4 md:bottom-8 md:right-8">
+                        <motion.h1
+                          className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-2"
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.3 }}
+                        >
+                          {movie.title}
+                        </motion.h1>
+                        
+                        <div className="flex items-center gap-4 mb-3">
+                          {movie.vote_average && (
+                            <div className="flex items-center gap-1">
+                              <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                              <span className="text-white font-medium">
+                                {movie.vote_average.toFixed(1)}
+                              </span>
+                            </div>
+                          )}
+                          
+                          {movie.release_date && (
+                            <div className="flex items-center gap-1">
+                              <Calendar className="h-4 w-4 text-gray-300" />
+                              <span className="text-gray-300">
+                                {new Date(movie.release_date).getFullYear()}
+                              </span>
+                            </div>
+                          )}
+                          
+                          {movie.runtime && (
+                            <div className="flex items-center gap-1">
+                              <Clock className="h-4 w-4 text-gray-300" />
+                              <span className="text-gray-300">
+                                {Math.floor(movie.runtime / 60)}h {movie.runtime % 60}m
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Genres */}
+                        {movie.genres && movie.genres.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {movie.genres.slice(0, 3).map((genre) => (
+                              <Badge key={genre.id} variant="secondary" className="bg-white/20 text-white border-0">
+                                {genre.name}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {/* Content Section */}
@@ -293,7 +317,7 @@ export const MovieModal = ({
                   <div className="flex flex-wrap gap-3 mb-6">
                     <Button className="flex-1 min-w-32" onClick={handleWatchTrailer}>
                       <Play className="h-4 w-4 mr-2" />
-                      Obejrzyj zwiastun
+                      {showTrailer ? 'Ukryj zwiastun' : 'Obejrzyj zwiastun'}
                     </Button>
                     <Button variant="outline" onClick={handleAddToFavorites}>
                       <Heart className={`h-4 w-4 mr-2 ${isFavorite ? 'fill-current text-red-500' : ''}`} />
@@ -402,48 +426,6 @@ export const MovieModal = ({
               </div>
             </Card>
           </motion.div>
-
-          {/* Trailer Modal */}
-          <AnimatePresence>
-            {showTrailer && trailerUrl && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/95 flex items-center justify-center z-60 backdrop-blur-sm"
-                onClick={() => setShowTrailer(false)}
-              >
-                <motion.div
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.8, opacity: 0 }}
-                  className="relative w-full max-w-4xl mx-4"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="bg-black rounded-lg overflow-hidden shadow-2xl">
-                    <div className="aspect-video">
-                      <iframe
-                        src={trailerUrl}
-                        title={`${movie.title} - Zwiastun`}
-                        className="w-full h-full"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      />
-                    </div>
-                  </div>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    className="absolute -top-12 right-0 bg-gray-800 hover:bg-gray-700"
-                    onClick={() => setShowTrailer(false)}
-                  >
-                    <X className="h-5 w-5 mr-2" />
-                    Zamknij
-                  </Button>
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </>
       )}
     </AnimatePresence>

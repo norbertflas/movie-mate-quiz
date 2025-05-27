@@ -286,14 +286,29 @@ export const NewMainContent = ({
         </motion.div>
       )}
 
-      {/* Tabbed View */}
+      {/* Trending This Week Section - Always show as first section */}
+      <motion.div variants={sectionVariants}>
+        <MovieSection
+          title="Trending This Week"
+          movies={convertedTrendingMovies}
+          icon={<TrendingUp className="h-6 w-6" />}
+          badge="🔥 Hot"
+          description="What everyone's watching right now"
+          isLoading={isLoading}
+          hasError={hasError}
+          onRetry={onRetry}
+          limit={12}
+        />
+      </motion.div>
+
+      {/* Tabbed View for Popular and Other Content */}
       <motion.div variants={sectionVariants}>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <div className="flex items-center justify-between mb-6">
             <TabsList className="grid grid-cols-2 lg:w-fit">
               <TabsTrigger value="trending" className="flex items-center gap-2">
                 <TrendingUp className="h-4 w-4" />
-                <span className="hidden sm:inline">Trending</span>
+                <span className="hidden sm:inline">More Trending</span>
               </TabsTrigger>
               <TabsTrigger value="popular" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
@@ -313,11 +328,11 @@ export const NewMainContent = ({
           <AnimatePresence mode="wait">
             <TabsContent value="trending" className="mt-0">
               <MovieSection
-                title="Trending This Week"
-                movies={convertedTrendingMovies}
+                title="More Trending Movies"
+                movies={convertedTrendingMovies.slice(12)} // Show next batch
                 icon={<TrendingUp className="h-6 w-6" />}
-                badge="Hot"
-                description="What everyone's watching right now"
+                badge="Trending"
+                description="More trending movies to discover"
                 isLoading={isLoading}
                 hasError={hasError}
                 onRetry={onRetry}
