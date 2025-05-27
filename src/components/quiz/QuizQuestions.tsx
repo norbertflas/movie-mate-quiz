@@ -13,7 +13,9 @@ export const QuizQuestions = ({ questions, currentStep, onAnswer, answers, answe
     currentStep,
     questionsLength: questions.length,
     currentQuestion: currentQuestion?.id,
-    answersLength: answers.length
+    answersLength: answers.length,
+    currentQuestionOptions: currentQuestion?.options,
+    language: i18n.language
   });
 
   if (!currentQuestion) {
@@ -34,29 +36,65 @@ export const QuizQuestions = ({ questions, currentStep, onAnswer, answers, answe
     return null;
   }
 
-  // Get dynamic options if available
-  let optionsToUse = currentQuestion.options || [];
-  if (currentQuestion.getDynamicOptions && optionsToUse.length === 0) {
-    optionsToUse = currentQuestion.getDynamicOptions(answerMap);
+  // Get options - handle all cases
+  let optionsToUse: string[] = [];
+  
+  // First try static options
+  if (currentQuestion.options && Array.isArray(currentQuestion.options) && currentQuestion.options.length > 0) {
+    optionsToUse = currentQuestion.options;
+    console.log('Using static options:', optionsToUse);
+  }
+  // Then try dynamic options
+  else if (currentQuestion.getDynamicOptions && typeof currentQuestion.getDynamicOptions === 'function') {
+    try {
+      optionsToUse = currentQuestion.getDynamicOptions(answerMap);
+      console.log('Using dynamic options:', optionsToUse);
+    } catch (error) {
+      console.error('Error getting dynamic options:', error);
+      optionsToUse = [];
+    }
   }
 
-  console.log('Options to use:', optionsToUse);
+  // Fallback options based on question ID
+  if (!optionsToUse || optionsToUse.length === 0) {
+    console.log('Using fallback options for question:', currentQuestion.id);
+    
+    switch (currentQuestion.id) {
+      case "platforms":
+        optionsToUse = ["Netflix", "Disney+", "Amazon Prime", "HBO Max", "Hulu", "Apple TV+", "Paramount+"];
+        break;
+      case "genres":
+        optionsToUse = ["Action", "Comedy", "Drama", "Horror", "Sci-Fi", "Romance", "Thriller", "Documentary"];
+        break;
+      case "mood":
+        optionsToUse = ["Relaxed", "Excited", "Thoughtful", "Adventurous", "Romantic", "Scary"];
+        break;
+      case "decade":
+        optionsToUse = ["2020s", "2010s", "2000s", "1990s", "1980s", "1970s", "Older"];
+        break;
+      case "length":
+        optionsToUse = ["Short (< 90 min)", "Medium (90-120 min)", "Long (> 120 min)", "Any length"];
+        break;
+      case "rating":
+        optionsToUse = ["G - Family friendly", "PG - Parental guidance", "PG-13 - Teen suitable", "R - Adult content", "Any rating"];
+        break;
+      default:
+        optionsToUse = ["Yes", "No", "Maybe"];
+        break;
+    }
+  }
 
-  // Translate options before passing them to SurveyStep
-  const translatedOptions = optionsToUse.map(option => {
-    // For platform names which shouldn't be translated
-    if (currentQuestion.id === "platforms") {
-      return option;
-    }
-    
-    // For genre names which shouldn't be translated
-    if (currentQuestion.id === "genres") {
-      return option;
-    }
-    
-    // For other options, use translation keys
-    const translationKey = `quiz.options.${option}`;
-    return t(translationKey, option);
+  console.log('Final options to use:', optionsToUse);
+
+  // Skip translation for certain question types
+  const skipTranslation = ["platforms", "genres"].includes(currentQuestion.id);
+  
+  // Translate options if needed
+  const translatedOptions = skipTranslation ? optionsToUse : optionsToUse.map(option => {
+    const translationKey = `quiz.options.${option.toLowerCase().replace(/\s+/g, '')}`;
+    const translated = t(translationKey, option);
+    console.log(`Translating: ${option} -> ${translated}`);
+    return translated;
   });
   
   const questionText = t(currentQuestion.question, currentQuestion.question);
@@ -64,14 +102,25 @@ export const QuizQuestions = ({ questions, currentStep, onAnswer, answers, answe
 
   console.log(`[Quiz] Rendering question: ${currentQuestion.question} -> ${questionText}`);
   console.log(`[Quiz] Current language: ${i18n.language}`);
-  console.log(`[Quiz] Translated options:`, translatedOptions);
+  console.log(`[Quiz] Final translated options:`, translatedOptions);
 
   if (translatedOptions.length === 0) {
     console.warn('No options available for question:', currentQuestion.id);
     return (
-      <div className="text-center text-yellow-500">
-        <p>Warning: No options available for this question</p>
-        <p>Question ID: {currentQuestion.id}</p>
+      <div className="text-center text-yellow-500 p-8">
+        <p className="mb-4">Warning: No options available for this question</p>
+        <p className="text-sm">Question ID: {currentQuestion.id}</p>
+        <p className="text-sm">Question Type: {currentQuestion.type}</p>
+        <div className="mt-4 p-4 bg-gray-800 rounded text-left">
+          <p className="text-xs text-gray-400">Debug info:</p>
+          <pre className="text-xs text-gray-300">{JSON.stringify({
+            questionId: currentQuestion.id,
+            hasStaticOptions: !!currentQuestion.options,
+            staticOptionsLength: currentQuestion.options?.length || 0,
+            hasDynamicOptions: !!currentQuestion.getDynamicOptions,
+            answerMapKeys: Object.keys(answerMap || {}),
+          }, null, 2)}</pre>
+        </div>
       </div>
     );
   }
@@ -82,20 +131,27 @@ export const QuizQuestions = ({ questions, currentStep, onAnswer, answers, answe
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.3 }}
-      className="w-full bg-black text-white"
+      className="w-full bg-black text-white min-h-screen"
     >
       <div className="relative">
-        <div className="py-8 px-4">
+        <div className="py-8 px-4 max-w-4xl mx-auto">
           {/* Question */}
-          <h2 className="text-2xl md:text-3xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400">
+          <h2 className="text-2xl md:text-3xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400">
             {questionText}
           </h2>
           {subtitleText && (
-            <p className="text-gray-400 mb-6">{subtitleText}</p>
+            <p className="text-gray-400 mb-8 text-lg">{subtitleText}</p>
+          )}
+          
+          {/* Debug info in development */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mb-4 p-2 bg-gray-800 rounded text-xs text-gray-400">
+              Options count: {translatedOptions.length} | Question: {currentQuestion.id}
+            </div>
           )}
           
           {/* Options */}
-          <div className="max-w-4xl mx-auto">
+          <div className="w-full">
             <SurveyStep
               question=""
               options={translatedOptions}

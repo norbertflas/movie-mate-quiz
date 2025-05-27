@@ -59,6 +59,13 @@ export const ImprovedMinimizedMovieCard = memo(({
     }
   }, [onExpand]);
 
+  // Fix image URL - ensure it's a complete URL
+  const posterUrl = imageUrl?.startsWith('http') 
+    ? imageUrl 
+    : imageUrl?.startsWith('/') 
+      ? `https://image.tmdb.org/t/p/w500${imageUrl}`
+      : imageUrl || '/placeholder.svg';
+
   return (
     <motion.div
       whileHover={{ 
@@ -71,7 +78,7 @@ export const ImprovedMinimizedMovieCard = memo(({
     >
       <Card 
         className={`
-          w-48 h-72 cursor-pointer transition-all duration-300 overflow-hidden group relative
+          w-56 h-80 cursor-pointer transition-all duration-300 overflow-hidden group relative
           ${priority ? 'ring-2 ring-yellow-400/50' : ''}
           hover:shadow-xl border-gray-700 bg-gray-800
         `}
@@ -80,12 +87,18 @@ export const ImprovedMinimizedMovieCard = memo(({
         onMouseLeave={() => setIsHovered(false)}
       >
         <div className="relative h-full">
-          <OptimizedMovieImage
-            imageUrl={imageUrl}
-            title={title}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-            loading="lazy"
-          />
+          <div className="w-full h-64 overflow-hidden">
+            <img
+              src={posterUrl}
+              alt={title}
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+              loading="lazy"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = '/placeholder.svg';
+              }}
+            />
+          </div>
 
           {/* Status indicators */}
           <div className="absolute top-2 left-2 flex flex-col space-y-1">
@@ -177,7 +190,7 @@ export const ImprovedMinimizedMovieCard = memo(({
             </div>
 
             {/* Bottom info */}
-            <div className="absolute bottom-0 left-0 right-0 p-3">
+            <div className="absolute bottom-0 left-0 right-0 p-4">
               <motion.div
                 initial={{ y: 10, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
@@ -198,6 +211,16 @@ export const ImprovedMinimizedMovieCard = memo(({
               </motion.div>
             </div>
           </motion.div>
+
+          {/* Movie title and year - always visible */}
+          <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
+            <p className="text-white text-sm font-semibold truncate">
+              {title}
+            </p>
+            <p className="text-white/70 text-xs">
+              {year}
+            </p>
+          </div>
 
           {/* Priority glow effect */}
           {priority && (
