@@ -12,6 +12,8 @@ import { getTrendingMovies, getPopularMovies } from "@/services/tmdb/trending";
 import { QuickActions } from "@/components/QuickActions";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "@/hooks/use-toast";
+import { useLocalStorage } from "@/hooks/use-local-storage";
+import { Analytics } from "@/lib/analytics";
 
 // Enhanced types
 interface IndexState {
@@ -29,6 +31,10 @@ interface UserPreferences {
   streamingServices: string[];
   lastVisit: string | null;
   theme: string;
+  favorites: any[];
+  watchlist: any[];
+  ratings: Record<string, number>;
+  recentlyViewed: any[];
 }
 
 const Index = () => {
@@ -41,33 +47,38 @@ const Index = () => {
     currentView: 'welcome'
   });
 
-  // Simple user preferences (without localStorage hook for now)
-  const [userPreferences, setUserPreferences] = useState<UserPreferences>({
+  // User preferences with localStorage
+  const [userPreferences, setUserPreferences] = useLocalStorage<UserPreferences>('moviefinder_preferences', {
     hasCompletedOnboarding: false,
     preferredGenres: [],
     viewingHistory: [],
     favoriteActors: [],
     streamingServices: [],
     lastVisit: null,
-    theme: 'dark'
+    theme: 'dark',
+    favorites: [],
+    watchlist: [],
+    ratings: {},
+    recentlyViewed: []
   });
 
-  // Load preferences from localStorage on mount
-  useEffect(() => {
-    const stored = localStorage.getItem('moviefinder_preferences');
-    if (stored) {
-      try {
-        setUserPreferences(JSON.parse(stored));
-      } catch (error) {
-        console.error('Failed to load user preferences:', error);
-      }
-    }
-  }, []);
+  const [visitCount, setVisitCount] = useLocalStorage('moviefinder_visits', 0);
 
-  // Save preferences to localStorage when they change
+  // Track page view
   useEffect(() => {
-    localStorage.setItem('moviefinder_preferences', JSON.stringify(userPreferences));
-  }, [userPreferences]);
+    Analytics.track('page_view', {
+      page: 'home',
+      visit_count: visitCount + 1,
+      user_type: userPreferences.hasCompletedOnboarding ? 'returning' : 'new',
+      timestamp: new Date().toISOString()
+    });
+    
+    setVisitCount(prev => prev + 1);
+    setUserPreferences(prev => ({
+      ...prev,
+      lastVisit: new Date().toISOString()
+    }));
+  }, []);
 
   // Enhanced queries with better error handling and caching
   const { 
@@ -123,6 +134,12 @@ const Index = () => {
   const handleStartQuiz = useCallback(() => {
     console.log('Quiz started from welcome section');
     
+    Analytics.track('quiz_started', {
+      source: 'welcome_section',
+      user_type: userPreferences.hasCompletedOnboarding ? 'returning' : 'new',
+      timestamp: new Date().toISOString()
+    });
+    
     setState(prev => ({ ...prev, isTransitioning: true }));
     
     // Natural transition without artificial delay
@@ -134,10 +151,14 @@ const Index = () => {
         isTransitioning: false 
       }));
     });
-  }, []);
+  }, [userPreferences.hasCompletedOnboarding]);
 
   const handleBackToWelcome = useCallback(() => {
     console.log('Exiting quiz back to welcome');
+    
+    Analytics.track('quiz_exited', {
+      timestamp: new Date().toISOString()
+    });
     
     setState(prev => ({ 
       ...prev, 
@@ -148,6 +169,11 @@ const Index = () => {
 
   const handleQuizComplete = useCallback((results: any) => {
     console.log('Quiz completed with results:', results);
+
+    Analytics.track('quiz_completed', {
+      results: results,
+      timestamp: new Date().toISOString()
+    });
 
     // Update user preferences with quiz results
     setUserPreferences(prev => ({
@@ -167,7 +193,7 @@ const Index = () => {
       title: "Quiz completed!",
       description: "Here are your personalized recommendations.",
     });
-  }, [toast]);
+  }, [toast, setUserPreferences]);
 
   // Memoize loading and error states
   const isLoading = useMemo(() => 
@@ -279,6 +305,9 @@ const Index = () => {
             >
               <WelcomeSection 
                 onStartQuiz={handleStartQuiz}
+                isLoading={state.isTransitioning}
+                userPreferences={userPreferences}
+                showPersonalizedContent={userPreferences.hasCompletedOnboarding}
               />
             </motion.div>
           )}
