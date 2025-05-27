@@ -1,4 +1,3 @@
-
 import * as streamingAvailability from "streaming-availability";
 import type { StreamingPlatformData } from "@/types/streaming";
 
@@ -99,8 +98,12 @@ class OfficialStreamingService {
               currency: option.price.currency,
               formatted: option.price.formatted
             } : undefined,
-            audios: (option.audios || []).map(audio => ({ language: audio.language || 'unknown' })),
-            subtitles: (option.subtitles || []).map(subtitle => ({ language: subtitle.language || 'unknown' }))
+            audios: (option.audios || []).map(audio => ({ 
+              language: (audio as any).locale || (audio as any).language || 'unknown' 
+            })),
+            subtitles: (option.subtitles || []).map(subtitle => ({ 
+              language: (subtitle as any).locale || (subtitle as any).language || 'unknown' 
+            }))
           });
 
           const serviceName = option.service.name || option.service.id;
@@ -113,7 +116,7 @@ class OfficialStreamingService {
       const movieData: MovieStreamingData = {
         tmdbId: show.tmdbId || tmdbId,
         title: show.title || title || 'Unknown',
-        year: show.releaseYear || new Date().getFullYear(),
+        year: typeof show.releaseYear === 'number' ? show.releaseYear : new Date().getFullYear(),
         country: country,
         streamingOptions,
         availableServices,
