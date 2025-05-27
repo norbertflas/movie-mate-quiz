@@ -1,67 +1,55 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
+
+import { useEffect } from "react";
 import { PageContainer } from "@/components/home/PageContainer";
-import { QuizContent } from "@/components/home/QuizContent";
-import { WelcomeSection } from "@/components/WelcomeSection";
-import { MainContent } from "@/components/sections/MainContent";
-import { PersonalizedRecommendations } from "@/components/sections/PersonalizedRecommendations";
-import { motion, AnimatePresence } from "framer-motion";
-import { LoadingState } from "@/components/LoadingState";
-import { useQuery } from "@tanstack/react-query";
-import { getTrendingMovies, getPopularMovies } from "@/services/tmdb/trending";
-import { QuickActions } from "@/components/QuickActions";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { toast } from "@/hooks/use-toast";
-import { useLocalStorage } from "@/hooks/use-local-storage";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { SEOHead } from "@/components/SEOHead";
+import { toast } from "sonner";
 import { Analytics } from "@/lib/analytics";
-
-// Enhanced types
-interface IndexState {
-  showQuiz: boolean;
-  isTransitioning: boolean;
-  currentView: 'welcome' | 'quiz' | 'explore';
-}
-
-// User preferences type
-interface UserPreferences {
-  hasCompletedOnboarding: boolean;
-  preferredGenres: string[];
-  viewingHistory: any[];
-  favoriteActors: string[];
-  streamingServices: string[];
-  lastVisit: string | null;
-  theme: string;
-  favorites: any[];
-  watchlist: any[];
-  ratings: Record<string, number>;
-  recentlyViewed: any[];
-}
+import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
+import { OnboardingFlow } from "@/components/OnboardingFlow";
+import { NotificationPermission } from "@/components/NotificationPermission";
+import { OfflineIndicator } from "@/components/OfflineIndicator";
+import { PreloadManager } from "@/components/PreloadManager";
+import { PerformanceMonitor } from "@/components/PerformanceMonitor";
+import { motion, AnimatePresence } from "framer-motion";
+import { useIndexState } from "@/hooks/use-index-state";
+import { useMovieData } from "@/hooks/use-movie-data";
+import { IndexKeyboardShortcuts } from "@/components/home/IndexKeyboardShortcuts";
+import { IndexMainContent } from "@/components/home/IndexMainContent";
 
 const Index = () => {
   const isMobile = useIsMobile();
   
-  // Enhanced state management
-  const [state, setState] = useState<IndexState>({
-    showQuiz: false,
-    isTransitioning: false,
-    currentView: 'welcome'
-  });
+  const {
+    state,
+    userPreferences,
+    setUserPreferences,
+    visitCount,
+    setVisitCount,
+    handleStartQuiz,
+    handleBackToWelcome,
+    handleQuizComplete,
+    toggleAdvancedFilters,
+    toggleWatchlist,
+    handleOnboardingComplete
+  } = useIndexState();
 
-  // User preferences with localStorage
-  const [userPreferences, setUserPreferences] = useLocalStorage<UserPreferences>('moviefinder_preferences', {
-    hasCompletedOnboarding: false,
-    preferredGenres: [],
-    viewingHistory: [],
-    favoriteActors: [],
-    streamingServices: [],
-    lastVisit: null,
-    theme: 'dark',
-    favorites: [],
-    watchlist: [],
-    ratings: {},
-    recentlyViewed: []
-  });
+  const {
+    trendingMovies,
+    popularMovies,
+    isLoading,
+    hasError,
+    retryAll
+  } = useMovieData();
 
-  const [visitCount, setVisitCount] = useLocalStorage('moviefinder_visits', 0);
+  // Performance monitoring
+  useEffect(() => {
+    const monitor = new PerformanceMonitor();
+    monitor.startTracking();
+    
+    return () => monitor.stopTracking();
+  }, []);
 
   // Track page view
   useEffect(() => {
@@ -79,265 +67,82 @@ const Index = () => {
     }));
   }, []);
 
-  // Enhanced queries with better error handling and caching
-  const { 
-    isLoading: isTrendingLoading, 
-    data: trendingMovies = [], 
-    error: trendingError,
-    refetch: refetchTrending
-  } = useQuery({
-    queryKey: ['trendingMovies', 'US', '1'],
-    queryFn: getTrendingMovies,
-    retry: 3,
-    staleTime: 10 * 60 * 1000, // 10 minutes
-    gcTime: 30 * 60 * 1000, // 30 minutes
-    refetchOnWindowFocus: false,
-  });
-
-  const { 
-    isLoading: isPopularLoading, 
-    data: popularMovies = [], 
-    error: popularError,
-    refetch: refetchPopular
-  } = useQuery({
-    queryKey: ['popularMovies', 'US', '1'],
-    queryFn: getPopularMovies,
-    retry: 3,
-    staleTime: 10 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
-    refetchOnWindowFocus: false,
-  });
-
-  // Show error toasts when API calls fail
+  // Show onboarding for new users
   useEffect(() => {
-    if (trendingError) {
-      toast({
-        variant: "destructive",
-        title: "Failed to load trending movies",
-        description: "Please try again later.",
-      });
+    if (!userPreferences.hasCompletedOnboarding && visitCount <= 1) {
+      // setState for onboarding would be handled in the hook
     }
-  }, [trendingError, toast]);
+  }, [userPreferences.hasCompletedOnboarding, visitCount]);
 
-  useEffect(() => {
-    if (popularError) {
-      toast({
-        variant: "destructive",
-        title: "Failed to load popular movies", 
-        description: "Please try again later.",
-      });
-    }
-  }, [popularError, toast]);
-
-  // Optimized handlers with useCallback
-  const handleStartQuiz = useCallback(() => {
-    console.log('Quiz started from welcome section');
-    
-    Analytics.track('quiz_started', {
-      source: 'welcome_section',
-      user_type: userPreferences.hasCompletedOnboarding ? 'returning' : 'new',
-      timestamp: new Date().toISOString()
+  const handleQuizCompleteWithToast = (results: any) => {
+    handleQuizComplete(results);
+    toast.success('Quiz completed! Here are your personalized recommendations.', {
+      duration: 5000
     });
-    
-    setState(prev => ({ ...prev, isTransitioning: true }));
-    
-    // Natural transition without artificial delay
-    requestAnimationFrame(() => {
-      setState(prev => ({ 
-        ...prev, 
-        showQuiz: true, 
-        currentView: 'quiz',
-        isTransitioning: false 
-      }));
-    });
-  }, [userPreferences.hasCompletedOnboarding]);
-
-  const handleBackToWelcome = useCallback(() => {
-    console.log('Exiting quiz back to welcome');
-    
-    Analytics.track('quiz_exited', {
-      timestamp: new Date().toISOString()
-    });
-    
-    setState(prev => ({ 
-      ...prev, 
-      showQuiz: false, 
-      currentView: 'welcome' 
-    }));
-  }, []);
-
-  const handleQuizComplete = useCallback((results: any) => {
-    console.log('Quiz completed with results:', results);
-
-    Analytics.track('quiz_completed', {
-      results: results,
-      timestamp: new Date().toISOString()
-    });
-
-    // Update user preferences with quiz results
-    setUserPreferences(prev => ({
-      ...prev,
-      hasCompletedOnboarding: true,
-      preferredGenres: results.genres || [],
-      streamingServices: results.services || []
-    }));
-
-    setState(prev => ({ 
-      ...prev, 
-      showQuiz: false, 
-      currentView: 'explore' 
-    }));
-
-    toast({
-      title: "Quiz completed!",
-      description: "Here are your personalized recommendations.",
-    });
-  }, [toast, setUserPreferences]);
-
-  // Memoize loading and error states
-  const isLoading = useMemo(() => 
-    isTrendingLoading || isPopularLoading || state.isTransitioning,
-    [isTrendingLoading, isPopularLoading, state.isTransitioning]
-  );
-
-  const hasApiError = useMemo(() => 
-    !!trendingError || !!popularError,
-    [trendingError, popularError]
-  );
-
-  // Enhanced animation variants
-  const pageVariants = {
-    hidden: { 
-      opacity: 0, 
-      y: 20,
-      filter: "blur(4px)"
-    },
-    visible: { 
-      opacity: 1, 
-      y: 0,
-      filter: "blur(0px)",
-      transition: { 
-        duration: 0.4,
-        ease: "easeOut",
-        staggerChildren: 0.1
-      }
-    },
-    exit: { 
-      opacity: 0, 
-      y: -10,
-      filter: "blur(2px)",
-      transition: { 
-        duration: 0.3,
-        ease: "easeIn"
-      }
-    }
   };
-
-  const contentVariants = {
-    hidden: { opacity: 0, y: 30 },
-    visible: { 
-      opacity: 1, 
-      y: 0,
-      transition: {
-        delay: 0.2,
-        duration: 0.5,
-        staggerChildren: 0.1
-      }
-    }
-  };
-
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      if (e.ctrlKey || e.metaKey) {
-        switch (e.key) {
-          case 'k':
-            e.preventDefault();
-            // Open search
-            window.location.href = '/search';
-            break;
-          case 'q':
-            e.preventDefault();
-            if (!state.showQuiz) handleStartQuiz();
-            break;
-        }
-      }
-      
-      if (e.key === 'Escape') {
-        if (state.showQuiz) handleBackToWelcome();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [state, handleStartQuiz, handleBackToWelcome]);
 
   return (
-    <PageContainer>
-      <motion.div
-        initial="hidden"
-        animate="visible"
-        variants={pageVariants}
-        className={`space-y-4 sm:space-y-8 min-h-screen pb-4 sm:pb-8 ${isMobile ? 'px-1' : ''}`}
-      >
-        {/* Main content area */}
-        <AnimatePresence mode="wait" initial={false}>
-          {state.showQuiz ? (
-            <motion.div
-              key="quiz"
-              variants={pageVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-              className="w-full"
-            >
-              <QuizContent />
-            </motion.div>
-          ) : (
-            <motion.div
-              key="welcome"
-              variants={pageVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-              className="w-full"
-            >
-              <WelcomeSection 
-                onStartQuiz={handleStartQuiz}
-                isLoading={state.isTransitioning}
-                userPreferences={userPreferences}
-                showPersonalizedContent={userPreferences.hasCompletedOnboarding}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Content below welcome/quiz */}
-        <AnimatePresence>
-          {!state.showQuiz && (
-            <motion.div
-              variants={contentVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-              className="space-y-4 sm:space-y-8"
-            >
-              <motion.div variants={contentVariants}>
-                <QuickActions />
-              </motion.div>
-              
-              <motion.div variants={contentVariants}>
-                <MainContent />
-              </motion.div>
-              
-              <motion.div variants={contentVariants}>
-                <PersonalizedRecommendations />
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
-    </PageContainer>
+    <ErrorBoundary>
+      <SEOHead 
+        title="MovieFinder - Discover Your Perfect Movie Match"
+        description="Find movies tailored to your taste with our smart AI-powered recommendation quiz. Discover trending films, personalized suggestions, and build your perfect watchlist."
+        keywords="movies, recommendations, film finder, cinema, streaming, AI, personalized, quiz, watchlist"
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "WebApplication",
+          "name": "MovieFinder",
+          "description": "AI-powered movie recommendation platform",
+          "url": "https://moviefinder.io",
+          "applicationCategory": "EntertainmentApplication",
+          "operatingSystem": "Any",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          }
+        }}
+      />
+      
+      <PreloadManager />
+      <OfflineIndicator />
+      <PWAInstallPrompt />
+      <NotificationPermission />
+      
+      <IndexKeyboardShortcuts
+        onStartQuiz={handleStartQuiz}
+        onBackToWelcome={handleBackToWelcome}
+        onToggleFilters={toggleAdvancedFilters}
+        onToggleWatchlist={toggleWatchlist}
+        showQuiz={state.showQuiz}
+        showAdvancedFilters={state.showAdvancedFilters}
+        showWatchlist={state.showWatchlist}
+      />
+      
+      <AnimatePresence>
+        {state.showOnboarding && (
+          <OnboardingFlow onComplete={handleOnboardingComplete} />
+        )}
+      </AnimatePresence>
+      
+      <PageContainer>
+        <IndexMainContent
+          state={state}
+          userPreferences={userPreferences}
+          trendingMovies={trendingMovies}
+          popularMovies={popularMovies}
+          isLoading={isLoading}
+          hasError={hasError}
+          onStartQuiz={handleStartQuiz}
+          onBackToWelcome={handleBackToWelcome}
+          onQuizComplete={handleQuizCompleteWithToast}
+          onToggleFilters={toggleAdvancedFilters}
+          onToggleWatchlist={toggleWatchlist}
+          onRetry={retryAll}
+          setUserPreferences={setUserPreferences}
+          isMobile={isMobile}
+        />
+      </PageContainer>
+    </ErrorBoundary>
   );
 };
 
