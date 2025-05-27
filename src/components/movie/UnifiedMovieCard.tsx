@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Star, Calendar, Clock, Play, Heart, Bookmark, Share2, ExternalLink } from "lucide-react";
@@ -7,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { getMovieTrailer } from "@/services/youtube";
-import { useStreamingAvailability } from "@/hooks/use-streaming-availability";
+import { useStreamingAvailabilityOfficial } from "@/hooks/use-streaming-availability-official";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
@@ -53,11 +54,12 @@ export const MovieModal = ({
   const [showTrailer, setShowTrailer] = useState(false);
   const [trailerUrl, setTrailerUrl] = useState("");
 
-  // Get streaming availability
-  const streamingData = useStreamingAvailability(
+  // Use official streaming availability API
+  const streamingData = useStreamingAvailabilityOfficial(
     movie?.id || 0, 
     movie?.title, 
-    movie?.release_date ? new Date(movie.release_date).getFullYear().toString() : undefined
+    movie?.release_date ? new Date(movie.release_date).getFullYear().toString() : undefined,
+    'pl' // Default to Poland, can be made configurable
   );
 
   // Handle escape key
@@ -332,10 +334,10 @@ export const MovieModal = ({
                     </Button>
                   </div>
 
-                  {/* Streaming Availability Section */}
+                  {/* Streaming Availability Section - Using Official API */}
                   <div className="mb-6 p-4 border rounded-lg">
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-lg font-semibold">Dostępność w serwisach</h3>
+                      <h3 className="text-lg font-semibold">Dostępność w serwisach (Oficjalne API)</h3>
                       {!streamingData.requested && (
                         <Button variant="outline" size="sm" onClick={checkStreamingAvailability}>
                           Sprawdź dostępność
@@ -357,34 +359,44 @@ export const MovieModal = ({
                         </AlertDescription>
                       </Alert>
                     ) : streamingData.services && streamingData.services.length > 0 ? (
-                      <div className="flex flex-wrap gap-2">
-                        {streamingData.services.map((service, index) => (
-                          <Button
-                            key={`${service.service}-${index}`}
-                            variant="outline"
-                            className="flex items-center gap-2"
-                            onClick={() => {
-                              if (service.link) {
-                                window.open(service.link, '_blank');
-                              } else {
-                                toast({
-                                  title: "Link niedostępny",
-                                  description: `Brak bezpośredniego linku do ${service.service}`,
-                                  variant: "destructive",
-                                });
-                              }
-                            }}
-                          >
-                            <ExternalLink className="h-4 w-4" />
-                            {service.service}
-                          </Button>
-                        ))}
+                      <div className="space-y-3">
+                        <div className="flex flex-wrap gap-2">
+                          {streamingData.services.map((service, index) => (
+                            <Button
+                              key={`${service.service}-${index}`}
+                              variant="outline"
+                              className="flex items-center gap-2"
+                              onClick={() => {
+                                if (service.link) {
+                                  window.open(service.link, '_blank');
+                                } else {
+                                  toast({
+                                    title: "Link niedostępny",
+                                    description: `Brak bezpośredniego linku do ${service.service}`,
+                                    variant: "destructive",
+                                  });
+                                }
+                              }}
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                              <div className="text-left">
+                                <div className="font-medium">{service.service}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {service.type} {service.price && `- ${service.price}`}
+                                </div>
+                              </div>
+                            </Button>
+                          ))}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Dane z oficjalnego API Streaming Availability - zawsze aktualne!
+                        </div>
                       </div>
                     ) : streamingData.requested ? (
                       <Alert>
                         <AlertCircle className="h-4 w-4" />
                         <AlertDescription>
-                          Ten film nie jest obecnie dostępny w popularnych serwisach streamingowych
+                          Ten film nie jest obecnie dostępny w popularnych serwisach streamingowych w Polsce
                         </AlertDescription>
                       </Alert>
                     ) : null}
