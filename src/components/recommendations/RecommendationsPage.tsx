@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -10,6 +11,8 @@ import type { MovieFilters as MovieFiltersType } from "@/components/MovieFilters
 export const RecommendationsPage = () => {
   const { t } = useTranslation();
   const [filteredMovies, setFilteredMovies] = useState([]);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [showWatchlist, setShowWatchlist] = useState(false);
 
   const { data: movies = [], isLoading } = useQuery({
     queryKey: ['popularMovies'],
@@ -30,6 +33,18 @@ export const RecommendationsPage = () => {
     setFilteredMovies(filtered);
   };
 
+  const handleToggleFilters = () => {
+    setShowAdvancedFilters(prev => !prev);
+  };
+
+  const handleToggleWatchlist = () => {
+    setShowWatchlist(prev => !prev);
+  };
+
+  const userPreferences = {
+    watchlist: []
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 space-y-8">
       <h1 className="text-3xl font-bold mb-6">{t("recommendations.title")}</h1>
@@ -39,7 +54,13 @@ export const RecommendationsPage = () => {
       </section>
 
       <section>
-        <QuickActions />
+        <QuickActions 
+          onToggleFilters={handleToggleFilters}
+          onToggleWatchlist={handleToggleWatchlist}
+          showAdvancedFilters={showAdvancedFilters}
+          showWatchlist={showWatchlist}
+          userPreferences={userPreferences}
+        />
         <MovieSection 
           movies={filteredMovies.length > 0 ? filteredMovies : movies}
           isLoading={isLoading}

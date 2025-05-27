@@ -1,3 +1,4 @@
+
 import { WelcomeSection } from "@/components/WelcomeSection";
 import { QuickActions } from "@/components/QuickActions";
 import { Button } from "@/components/ui/button";
@@ -6,9 +7,21 @@ import { useTranslation } from "react-i18next";
 
 interface HomeHeaderProps {
   onStartQuiz: () => void;
+  onToggleFilters?: () => void;
+  onToggleWatchlist?: () => void;
+  showAdvancedFilters?: boolean;
+  showWatchlist?: boolean;
+  userPreferences?: any;
 }
 
-export const HomeHeader = ({ onStartQuiz }: HomeHeaderProps) => {
+export const HomeHeader = ({ 
+  onStartQuiz,
+  onToggleFilters = () => {},
+  onToggleWatchlist = () => {},
+  showAdvancedFilters = false,
+  showWatchlist = false,
+  userPreferences = {}
+}: HomeHeaderProps) => {
   const { t } = useTranslation();
 
   return (
@@ -26,7 +39,13 @@ export const HomeHeader = ({ onStartQuiz }: HomeHeaderProps) => {
           </span>
         </Button>
       </div>
-      <QuickActions />
+      <QuickActions 
+        onToggleFilters={onToggleFilters}
+        onToggleWatchlist={onToggleWatchlist}
+        showAdvancedFilters={showAdvancedFilters}
+        showWatchlist={showWatchlist}
+        userPreferences={userPreferences}
+      />
     </div>
   );
 };
