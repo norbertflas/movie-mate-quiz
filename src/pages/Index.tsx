@@ -76,7 +76,7 @@ const Index = () => {
             />
             <ContentSection />
             
-            {/* Show movies on welcome page too */}
+            {/* Show movies on welcome page */}
             <div className="container mx-auto px-4 py-8">
               <NewMainContent
                 trendingMovies={trendingMovies || []}
@@ -92,19 +92,33 @@ const Index = () => {
         )}
 
         {state.currentView === 'quiz' && state.showQuiz && (
-          <QuizContent 
-            onBack={handleBackToWelcome}
-            onComplete={(results) => {
-              // Handle quiz completion
-              console.log('Quiz completed with results:', results);
-              setState(prev => ({ 
-                ...prev, 
-                currentView: 'welcome',
-                showQuiz: false 
-              }));
-            }}
-            userPreferences={userPreferences}
-          />
+          <div className="space-y-8">
+            <QuizContent 
+              onBack={handleBackToWelcome}
+              onComplete={(results) => {
+                console.log('Quiz completed with results:', results);
+                setState(prev => ({ 
+                  ...prev, 
+                  currentView: 'welcome',
+                  showQuiz: false 
+                }));
+              }}
+              userPreferences={userPreferences}
+            />
+            
+            {/* Show popular movies section under quiz */}
+            <div className="container mx-auto px-4 py-8">
+              <NewMainContent
+                trendingMovies={[]}
+                popularMovies={popularMovies || []}
+                isLoading={isLoading}
+                hasError={hasError}
+                onRetry={retryAll}
+                userPreferences={userPreferences}
+                currentView={state.currentView}
+              />
+            </div>
+          </div>
         )}
 
         {state.currentView === 'explore' && (

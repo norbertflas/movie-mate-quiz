@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 interface Movie {
   id: number;
@@ -42,6 +43,11 @@ export const MovieModal = ({
   isOpen: boolean; 
   onClose: () => void; 
 }) => {
+  const { toast } = useToast();
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [isWatchlisted, setIsWatchlisted] = useState(false);
+  const [showTrailer, setShowTrailer] = useState(false);
+
   // Handle escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -60,6 +66,54 @@ export const MovieModal = ({
       document.body.style.overflow = 'unset';
     };
   }, [isOpen, onClose]);
+
+  const handleAddToFavorites = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsFavorite(prev => !prev);
+    toast({
+      title: isFavorite ? "Removed from favorites" : "Added to favorites",
+      description: `${movie?.title} has been ${isFavorite ? 'removed from' : 'added to'} your favorites.`,
+    });
+  }, [isFavorite, movie?.title, toast]);
+
+  const handleAddToWatchlist = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsWatchlisted(prev => !prev);
+    toast({
+      title: isWatchlisted ? "Removed from watchlist" : "Added to watchlist",
+      description: `${movie?.title} has been ${isWatchlisted ? 'removed from' : 'added to'} your watchlist.`,
+    });
+  }, [isWatchlisted, movie?.title, toast]);
+
+  const handleWatchTrailer = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowTrailer(true);
+    toast({
+      title: "Trailer",
+      description: `Opening trailer for ${movie?.title}`,
+    });
+  }, [movie?.title, toast]);
+
+  const handleShare = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: movie?.title,
+          text: `Check out ${movie?.title}!`,
+          url: window.location.href
+        });
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        toast({
+          title: "Link copied",
+          description: "Movie link has been copied to clipboard",
+        });
+      }
+    } catch (error) {
+      console.log('Sharing failed');
+    }
+  }, [movie?.title, toast]);
 
   if (!movie) return null;
 
@@ -186,19 +240,19 @@ export const MovieModal = ({
                 <CardContent className="p-6 md:p-8">
                   {/* Action Buttons */}
                   <div className="flex flex-wrap gap-3 mb-6">
-                    <Button className="flex-1 min-w-32">
+                    <Button className="flex-1 min-w-32" onClick={handleWatchTrailer}>
                       <Play className="h-4 w-4 mr-2" />
                       Watch Trailer
                     </Button>
-                    <Button variant="outline">
-                      <Heart className="h-4 w-4 mr-2" />
-                      Add to Favorites
+                    <Button variant="outline" onClick={handleAddToFavorites}>
+                      <Heart className={`h-4 w-4 mr-2 ${isFavorite ? 'fill-current text-red-500' : ''}`} />
+                      {isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}
                     </Button>
-                    <Button variant="outline">
-                      <Bookmark className="h-4 w-4 mr-2" />
-                      Watchlist
+                    <Button variant="outline" onClick={handleAddToWatchlist}>
+                      <Bookmark className={`h-4 w-4 mr-2 ${isWatchlisted ? 'fill-current' : ''}`} />
+                      {isWatchlisted ? 'Remove from Watchlist' : 'Add to Watchlist'}
                     </Button>
-                    <Button variant="outline" size="icon">
+                    <Button variant="outline" size="icon" onClick={handleShare}>
                       <Share2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -239,6 +293,46 @@ export const MovieModal = ({
               </div>
             </Card>
           </motion.div>
+
+          {/* Trailer Modal */}
+          <AnimatePresence>
+            {showTrailer && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/95 flex items-center justify-center z-60 backdrop-blur-sm"
+                onClick={() => setShowTrailer(false)}
+              >
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.8, opacity: 0 }}
+                  className="relative w-full max-w-4xl mx-4"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="bg-black rounded-lg overflow-hidden shadow-2xl">
+                    <div className="aspect-video bg-gray-800 flex items-center justify-center">
+                      <div className="text-center text-white">
+                        <Play className="h-20 w-20 mx-auto mb-6 text-red-500" />
+                        <h3 className="text-2xl font-bold mb-3">{movie.title} - Trailer</h3>
+                        <p className="text-gray-400">Trailer playback would be implemented here</p>
+                      </div>
+                    </div>
+                  </div>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="absolute -top-12 right-0 bg-gray-800 hover:bg-gray-700"
+                    onClick={() => setShowTrailer(false)}
+                  >
+                    <X className="h-5 w-5 mr-2" />
+                    Close
+                  </Button>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </>
       )}
     </AnimatePresence>
