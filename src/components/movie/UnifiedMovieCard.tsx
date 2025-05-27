@@ -1,12 +1,17 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Star, Calendar, Clock, Play, Heart, Bookmark, Share2 } from "lucide-react";
+import { X, Star, Calendar, Clock, Play, Heart, Bookmark, Share2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { getMovieTrailer } from "@/services/youtube";
+import { useStreamingAvailability } from "@/hooks/use-streaming-availability";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 interface Movie {
   id: number;
@@ -47,6 +52,14 @@ export const MovieModal = ({
   const [isFavorite, setIsFavorite] = useState(false);
   const [isWatchlisted, setIsWatchlisted] = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
+  const [trailerUrl, setTrailerUrl] = useState("");
+
+  // Get streaming availability
+  const streamingData = useStreamingAvailability(
+    movie?.id || 0, 
+    movie?.title, 
+    movie?.release_date ? new Date(movie.release_date).getFullYear().toString() : undefined
+  );
 
   // Handle escape key
   useEffect(() => {
@@ -71,8 +84,8 @@ export const MovieModal = ({
     e.stopPropagation();
     setIsFavorite(prev => !prev);
     toast({
-      title: isFavorite ? "Removed from favorites" : "Added to favorites",
-      description: `${movie?.title} has been ${isFavorite ? 'removed from' : 'added to'} your favorites.`,
+      title: isFavorite ? "Usunięto z ulubionych" : "Dodano do ulubionych",
+      description: `${movie?.title} zostało ${isFavorite ? 'usunięte z' : 'dodane do'} ulubionych.`,
     });
   }, [isFavorite, movie?.title, toast]);
 
@@ -80,19 +93,42 @@ export const MovieModal = ({
     e.stopPropagation();
     setIsWatchlisted(prev => !prev);
     toast({
-      title: isWatchlisted ? "Removed from watchlist" : "Added to watchlist",
-      description: `${movie?.title} has been ${isWatchlisted ? 'removed from' : 'added to'} your watchlist.`,
+      title: isWatchlisted ? "Usunięto z listy do obejrzenia" : "Dodano do listy do obejrzenia",
+      description: `${movie?.title} zostało ${isWatchlisted ? 'usunięte z' : 'dodane do'} listy do obejrzenia.`,
     });
   }, [isWatchlisted, movie?.title, toast]);
 
-  const handleWatchTrailer = useCallback((e: React.MouseEvent) => {
+  const handleWatchTrailer = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
-    setShowTrailer(true);
-    toast({
-      title: "Trailer",
-      description: `Opening trailer for ${movie?.title}`,
-    });
-  }, [movie?.title, toast]);
+    
+    if (!movie) return;
+    
+    if (!trailerUrl) {
+      try {
+        const year = movie.release_date ? new Date(movie.release_date).getFullYear().toString() : '';
+        const url = await getMovieTrailer(movie.title, year);
+        if (url) {
+          setTrailerUrl(url);
+          setShowTrailer(true);
+        } else {
+          toast({
+            title: "Zwiastun niedostępny",
+            description: "Nie udało się znaleźć zwiastuna dla tego filmu.",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching trailer:', error);
+        toast({
+          title: "Błąd ładowania zwiastuna",
+          description: "Spróbuj ponownie później.",
+          variant: "destructive",
+        });
+      }
+    } else {
+      setShowTrailer(true);
+    }
+  }, [movie, trailerUrl, toast]);
 
   const handleShare = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -100,20 +136,35 @@ export const MovieModal = ({
       if (navigator.share) {
         await navigator.share({
           title: movie?.title,
-          text: `Check out ${movie?.title}!`,
+          text: `Sprawdź ${movie?.title}!`,
           url: window.location.href
         });
       } else {
         await navigator.clipboard.writeText(window.location.href);
         toast({
-          title: "Link copied",
-          description: "Movie link has been copied to clipboard",
+          title: "Link skopiowany",
+          description: "Link do filmu został skopiowany do schowka",
         });
       }
     } catch (error) {
       console.log('Sharing failed');
+      toast({
+        title: "Błąd udostępniania",
+        description: "Nie udało się udostępnić filmu",
+        variant: "destructive",
+      });
     }
   }, [movie?.title, toast]);
+
+  const checkStreamingAvailability = () => {
+    if (!streamingData.requested) {
+      streamingData.fetchData();
+      toast({
+        title: "Sprawdzanie dostępności",
+        description: `Sprawdzam dostępność ${movie?.title} w serwisach streamingowych...`,
+      });
+    }
+  };
 
   if (!movie) return null;
 
@@ -242,25 +293,83 @@ export const MovieModal = ({
                   <div className="flex flex-wrap gap-3 mb-6">
                     <Button className="flex-1 min-w-32" onClick={handleWatchTrailer}>
                       <Play className="h-4 w-4 mr-2" />
-                      Watch Trailer
+                      Obejrzyj zwiastun
                     </Button>
                     <Button variant="outline" onClick={handleAddToFavorites}>
                       <Heart className={`h-4 w-4 mr-2 ${isFavorite ? 'fill-current text-red-500' : ''}`} />
-                      {isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}
+                      {isFavorite ? 'Usuń z ulubionych' : 'Dodaj do ulubionych'}
                     </Button>
                     <Button variant="outline" onClick={handleAddToWatchlist}>
                       <Bookmark className={`h-4 w-4 mr-2 ${isWatchlisted ? 'fill-current' : ''}`} />
-                      {isWatchlisted ? 'Remove from Watchlist' : 'Add to Watchlist'}
+                      {isWatchlisted ? 'Usuń z listy' : 'Dodaj do listy'}
                     </Button>
                     <Button variant="outline" size="icon" onClick={handleShare}>
                       <Share2 className="h-4 w-4" />
                     </Button>
                   </div>
 
+                  {/* Streaming Availability Section */}
+                  <div className="mb-6 p-4 border rounded-lg">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-lg font-semibold">Dostępność w serwisach</h3>
+                      {!streamingData.requested && (
+                        <Button variant="outline" size="sm" onClick={checkStreamingAvailability}>
+                          Sprawdź dostępność
+                        </Button>
+                      )}
+                    </div>
+
+                    {streamingData.isLoading ? (
+                      <div className="flex gap-2">
+                        {[1, 2, 3, 4].map((i) => (
+                          <Skeleton key={i} className="h-16 w-20 rounded-md" />
+                        ))}
+                      </div>
+                    ) : streamingData.error ? (
+                      <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>
+                          Nie udało się sprawdzić dostępności w serwisach streamingowych
+                        </AlertDescription>
+                      </Alert>
+                    ) : streamingData.services && streamingData.services.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {streamingData.services.map((service, index) => (
+                          <Button
+                            key={`${service.service}-${index}`}
+                            variant="outline"
+                            className="flex items-center gap-2"
+                            onClick={() => {
+                              if (service.link) {
+                                window.open(service.link, '_blank');
+                              } else {
+                                toast({
+                                  title: "Link niedostępny",
+                                  description: `Brak bezpośredniego linku do ${service.service}`,
+                                  variant: "destructive",
+                                });
+                              }
+                            }}
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                            {service.service}
+                          </Button>
+                        ))}
+                      </div>
+                    ) : streamingData.requested ? (
+                      <Alert>
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>
+                          Ten film nie jest obecnie dostępny w popularnych serwisach streamingowych
+                        </AlertDescription>
+                      </Alert>
+                    ) : null}
+                  </div>
+
                   {/* Overview */}
                   {movie.overview && (
                     <div className="mb-6">
-                      <h3 className="text-lg font-semibold mb-3">Overview</h3>
+                      <h3 className="text-lg font-semibold mb-3">Opis</h3>
                       <p className="text-muted-foreground leading-relaxed">
                         {movie.overview}
                       </p>
@@ -270,7 +379,7 @@ export const MovieModal = ({
                   {/* Cast */}
                   {movie.cast && movie.cast.length > 0 && (
                     <div className="mb-6">
-                      <h3 className="text-lg font-semibold mb-3">Cast</h3>
+                      <h3 className="text-lg font-semibold mb-3">Obsada</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                         {movie.cast.slice(0, 6).map((actor, index) => (
                           <div key={index} className="flex justify-between">
@@ -285,7 +394,7 @@ export const MovieModal = ({
                   {/* Director */}
                   {movie.director && (
                     <div>
-                      <h3 className="text-lg font-semibold mb-2">Director</h3>
+                      <h3 className="text-lg font-semibold mb-2">Reżyser</h3>
                       <p className="text-muted-foreground">{movie.director}</p>
                     </div>
                   )}
@@ -296,7 +405,7 @@ export const MovieModal = ({
 
           {/* Trailer Modal */}
           <AnimatePresence>
-            {showTrailer && (
+            {showTrailer && trailerUrl && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -312,12 +421,14 @@ export const MovieModal = ({
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="bg-black rounded-lg overflow-hidden shadow-2xl">
-                    <div className="aspect-video bg-gray-800 flex items-center justify-center">
-                      <div className="text-center text-white">
-                        <Play className="h-20 w-20 mx-auto mb-6 text-red-500" />
-                        <h3 className="text-2xl font-bold mb-3">{movie.title} - Trailer</h3>
-                        <p className="text-gray-400">Trailer playback would be implemented here</p>
-                      </div>
+                    <div className="aspect-video">
+                      <iframe
+                        src={trailerUrl}
+                        title={`${movie.title} - Zwiastun`}
+                        className="w-full h-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
                     </div>
                   </div>
                   <Button
@@ -327,7 +438,7 @@ export const MovieModal = ({
                     onClick={() => setShowTrailer(false)}
                   >
                     <X className="h-5 w-5 mr-2" />
-                    Close
+                    Zamknij
                   </Button>
                 </motion.div>
               </motion.div>

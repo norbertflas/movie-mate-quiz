@@ -9,6 +9,7 @@ import { useMovieData } from "@/hooks/use-movie-data";
 import { useIndexState } from "@/hooks/use-index-state";
 import { useAuth } from "@/hooks/use-auth";
 import { ContentSection } from "@/components/sections/ContentSection";
+import { TrendingMoviesSection } from "@/components/sections/TrendingMoviesSection";
 
 const Index = () => {
   const { session } = useAuth();
@@ -106,17 +107,9 @@ const Index = () => {
               userPreferences={userPreferences}
             />
             
-            {/* Show popular movies section under quiz */}
+            {/* Show scrolling popular movies section under quiz */}
             <div className="container mx-auto px-4 py-8">
-              <NewMainContent
-                trendingMovies={[]}
-                popularMovies={popularMovies || []}
-                isLoading={isLoading}
-                hasError={hasError}
-                onRetry={retryAll}
-                userPreferences={userPreferences}
-                currentView={state.currentView}
-              />
+              <TrendingMoviesSection movies={popularMovies || []} />
             </div>
           </div>
         )}
