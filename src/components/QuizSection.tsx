@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { QuizResults } from "./quiz/QuizResults";
 import { QuizQuestions } from "./quiz/QuizQuestions";
@@ -10,11 +9,13 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Check, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
+import { useIsMobile } from "@/hooks/use-mobile";
 import type { QuizAnswer } from "./quiz/QuizTypes";
 
 export const QuizSection = () => {
   const { toast } = useToast();
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [answerMap, setAnswerMap] = useState<Record<string, string>>({});
@@ -171,13 +172,13 @@ export const QuizSection = () => {
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
+    <div className="w-full max-w-4xl mx-auto px-2 sm:px-4">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         className="bg-black text-white rounded-xl overflow-hidden"
       >
-        <div className="p-6">
+        <div className="p-3 sm:p-6">
           <QuizQuestions
             questions={steps}
             currentStep={currentStep}
@@ -186,20 +187,20 @@ export const QuizSection = () => {
             answerMap={answerMap}
           />
           
-          <div className="mt-12">
+          <div className="mt-8 sm:mt-12">
             <QuizProgressBar 
               currentStep={visibleStepIndex + 1} 
               totalSteps={totalSteps} 
             />
           </div>
           
-          <div className="flex justify-between mt-6">
+          <div className={`flex ${isMobile ? 'flex-col gap-3' : 'justify-between'} mt-4 sm:mt-6`}>
             {currentStep > 0 && (
               <Button
                 variant="outline"
                 onClick={handlePrevious}
                 disabled={isSubmitting}
-                className="text-white bg-gray-800 border-gray-700 hover:bg-gray-700 flex items-center gap-2"
+                className={`text-white bg-gray-800 border-gray-700 hover:bg-gray-700 flex items-center gap-2 ${isMobile ? 'w-full justify-center' : ''} text-sm sm:text-base`}
               >
                 <ArrowLeft className="h-4 w-4" />
                 {t("quiz.previous")}
@@ -209,7 +210,7 @@ export const QuizSection = () => {
             <Button
               onClick={handleNext}
               disabled={!answers.some(a => a.questionId === steps[currentStep]?.id) || isSubmitting}
-              className={`ml-auto flex items-center gap-2 ${currentStep === 0 ? 'mx-auto' : ''} bg-blue-600 hover:bg-blue-700`}
+              className={`${isMobile ? 'w-full' : 'ml-auto'} flex items-center gap-2 ${currentStep === 0 && !isMobile ? 'mx-auto' : ''} bg-blue-600 hover:bg-blue-700 text-sm sm:text-base`}
             >
               {isSubmitting ? (
                 <>

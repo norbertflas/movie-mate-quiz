@@ -10,10 +10,12 @@ import { LoadingState } from "@/components/LoadingState";
 import { useQuery } from "@tanstack/react-query";
 import { getTrendingMovies, getPopularMovies } from "@/services/tmdb/trending";
 import { QuickActions } from "@/components/QuickActions";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Index = () => {
   const [showQuiz, setShowQuiz] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const isMobile = useIsMobile();
 
   const { isLoading: isTrendingLoading, data: trendingMovies = [] } = useQuery({
     queryKey: ['trendingMovies', 'US', '1'],
@@ -40,7 +42,7 @@ const Index = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="space-y-8 min-h-screen pb-8"
+        className={`space-y-4 sm:space-y-8 min-h-screen pb-4 sm:pb-8 ${isMobile ? 'px-1' : ''}`}
       >
         <AnimatePresence mode="wait">
           {isLoading ? (

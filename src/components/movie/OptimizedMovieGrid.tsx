@@ -13,8 +13,10 @@ interface OptimizedMovieGridProps {
 }
 
 const ITEMS_PER_PAGE = 20;
-const CARD_MIN_WIDTH = 280;
-const GAP = 24;
+const CARD_MIN_WIDTH_MOBILE = 150;
+const CARD_MIN_WIDTH_DESKTOP = 280;
+const GAP_MOBILE = 12;
+const GAP_DESKTOP = 24;
 
 export const OptimizedMovieGrid = memo(({ 
   movies, 
@@ -24,17 +26,35 @@ export const OptimizedMovieGrid = memo(({
 }: OptimizedMovieGridProps) => {
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
   const [isLoading, setIsLoading] = useState(false);
+  const [containerWidth, setContainerWidth] = useState(0);
   const gridRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const isMobile = useIsMobile();
 
-  // Calculate responsive columns
+  // Update container width on resize
+  useEffect(() => {
+    const updateWidth = () => {
+      if (gridRef.current) {
+        setContainerWidth(gridRef.current.offsetWidth);
+      }
+    };
+
+    updateWidth();
+    window.addEventListener('resize', updateWidth);
+    return () => window.removeEventListener('resize', updateWidth);
+  }, []);
+
+  // Calculate responsive columns based on actual container width
   const columns = useMemo(() => {
-    if (typeof window === 'undefined') return 4;
-    const containerWidth = window.innerWidth - 64; // Account for padding
-    const columnsCount = Math.floor(containerWidth / (CARD_MIN_WIDTH + GAP));
-    return Math.max(1, Math.min(columnsCount, isMobile ? 2 : 5));
-  }, [isMobile]);
+    if (containerWidth === 0) return isMobile ? 2 : 4;
+    
+    const cardMinWidth = isMobile ? CARD_MIN_WIDTH_MOBILE : CARD_MIN_WIDTH_DESKTOP;
+    const gap = isMobile ? GAP_MOBILE : GAP_DESKTOP;
+    const availableWidth = containerWidth - 32; // Account for padding
+    
+    const columnsCount = Math.floor((availableWidth + gap) / (cardMinWidth + gap));
+    return Math.max(1, Math.min(columnsCount, isMobile ? 3 : 6));
+  }, [containerWidth, isMobile]);
 
   // Visible movies with pagination
   const visibleMovies = useMemo(() => 
@@ -83,13 +103,10 @@ export const OptimizedMovieGrid = memo(({
     return `https://image.tmdb.org/t/p/w500${posterPath}`;
   }, []);
 
-  console.log('OptimizedMovieGrid movies:', movies.length);
-  console.log('First movie poster path:', movies[0]?.poster_path);
-
   if (movies.length === 0) {
     return (
-      <div className="text-center py-12 text-muted-foreground">
-        <p className="text-lg">No movies found</p>
+      <div className="text-center py-8 sm:py-12 text-muted-foreground px-4">
+        <p className="text-base sm:text-lg">No movies found</p>
       </div>
     );
   }
@@ -97,7 +114,7 @@ export const OptimizedMovieGrid = memo(({
   return (
     <div ref={gridRef} className={className}>
       <motion.div
-        className="grid gap-6"
+        className={`grid gap-3 sm:gap-6`}
         style={{
           gridTemplateColumns: `repeat(${columns}, 1fr)`,
         }}
@@ -108,7 +125,6 @@ export const OptimizedMovieGrid = memo(({
         <AnimatePresence mode="popLayout">
           {visibleMovies.map((movie, index) => {
             const imageUrl = getImageUrl(movie.poster_path);
-            console.log(`Movie ${movie.title} image URL:`, imageUrl);
             
             return (
               <motion.div
@@ -123,7 +139,7 @@ export const OptimizedMovieGrid = memo(({
                   type: "spring",
                   stiffness: 100
                 }}
-                whileHover={{ y: -5 }}
+                whileHover={{ y: isMobile ? 0 : -5 }}
                 className="h-full"
               >
                 <MovieCard
@@ -149,9 +165,9 @@ export const OptimizedMovieGrid = memo(({
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="flex justify-center py-8"
+          className="flex justify-center py-6 sm:py-8"
         >
-          <div className="flex items-center gap-2 text-muted-foreground">
+          <div className="flex items-center gap-2 text-muted-foreground text-sm sm:text-base">
             <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
             <span>Loading more movies...</span>
           </div>
@@ -161,14 +177,14 @@ export const OptimizedMovieGrid = memo(({
       {/* Load more button (fallback) */}
       {!enableLazyLoad && visibleCount < movies.length && (
         <motion.div 
-          className="flex justify-center py-6"
+          className="flex justify-center py-4 sm:py-6 px-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
         >
           <button
             onClick={loadMore}
             disabled={isLoading}
-            className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-colors"
+            className="px-4 sm:px-6 py-2 sm:py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-colors text-sm sm:text-base"
           >
             {isLoading ? 'Loading...' : 'Load More'}
           </button>
