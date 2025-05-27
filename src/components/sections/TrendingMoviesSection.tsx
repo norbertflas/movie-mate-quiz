@@ -1,13 +1,12 @@
 
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import type { TMDBMovie } from "@/services/tmdb";
 import { MovieCardSwitcher } from "../movie/MovieCardSwitcher";
 import { useTranslation } from "react-i18next";
 import { UnifiedMovieDetails } from "../movie/UnifiedMovieDetails";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sparkles } from "lucide-react";
-import { useIntersectionObserver } from "@/hooks/use-intersection-observer";
 
 interface TrendingMoviesSectionProps {
   movies: TMDBMovie[];
@@ -17,12 +16,10 @@ export const TrendingMoviesSection = ({ movies }: TrendingMoviesSectionProps) =>
   const [isHovered, setIsHovered] = useState(false);
   const [selectedMovie, setSelectedMovie] = useState<TMDBMovie | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isVisible, setIsVisible] = useState(true); // Default to visible to avoid intersection observer issues
   const { t } = useTranslation();
   const isMobile = useIsMobile();
-  const { ref, isVisible } = useIntersectionObserver({
-    threshold: 0.1,
-    freezeOnceVisible: true
-  });
+  const sectionRef = useRef<HTMLElement>(null);
 
   console.log('TrendingMoviesSection rendering with movies count:', movies?.length || 0);
 
@@ -73,7 +70,7 @@ export const TrendingMoviesSection = ({ movies }: TrendingMoviesSectionProps) =>
     
     return (
       <section 
-        ref={ref}
+        ref={sectionRef}
         className={`space-y-4 transition-opacity duration-500 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
       >
         <div className="flex items-center space-x-2">
