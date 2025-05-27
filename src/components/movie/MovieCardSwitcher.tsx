@@ -10,9 +10,16 @@ interface MovieCardSwitcherProps extends MovieCardProps {
 
 export const MovieCardSwitcher = memo(({
   initialState = 'minimized',
+  title = "Unknown Movie",
+  year = "N/A",
+  platform = "Unknown",
+  genre = "",
+  imageUrl = '/placeholder.svg',
+  description = "",
+  trailerUrl = "",
+  rating = 0,
   ...props
 }: MovieCardSwitcherProps) => {
-  // Initialize hooks unconditionally at the top level
   const [isMaximized, setIsMaximized] = useState(initialState === 'maximized');
 
   const handleExpand = useCallback(() => {
@@ -30,16 +37,23 @@ export const MovieCardSwitcher = memo(({
     }
   }, [props]);
 
-  // Early return validation
-  if (!props.title) {
-    console.warn('MovieCardSwitcher: title prop is required');
-    return null;
-  }
+  // Always render something, never return null
+  const movieProps = {
+    title,
+    year,
+    platform,
+    genre,
+    imageUrl,
+    description,
+    trailerUrl,
+    rating,
+    ...props
+  };
 
   if (isMaximized) {
     return (
       <ImprovedMaximizedMovieCard
-        {...props}
+        {...movieProps}
         onMinimize={handleMinimize}
         onClose={handleClose}
       />
@@ -48,7 +62,7 @@ export const MovieCardSwitcher = memo(({
 
   return (
     <ImprovedMinimizedMovieCard
-      {...props}
+      {...movieProps}
       onExpand={handleExpand}
     />
   );

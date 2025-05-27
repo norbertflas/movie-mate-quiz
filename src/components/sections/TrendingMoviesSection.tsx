@@ -16,6 +16,7 @@ interface TrendingMoviesSectionProps {
 export const TrendingMoviesSection = ({ movies }: TrendingMoviesSectionProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const [selectedMovie, setSelectedMovie] = useState<TMDBMovie | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const { t } = useTranslation();
   const isMobile = useIsMobile();
   const { ref, isVisible } = useIntersectionObserver({
@@ -24,11 +25,20 @@ export const TrendingMoviesSection = ({ movies }: TrendingMoviesSectionProps) =>
   });
 
   const handleMovieClick = (movie: TMDBMovie) => {
-    setSelectedMovie(movie);
+    try {
+      setSelectedMovie(movie);
+    } catch (err) {
+      console.error('Error selecting movie:', err);
+      setError('Failed to select movie');
+    }
   };
 
   const handleCloseDetails = () => {
-    setSelectedMovie(null);
+    try {
+      setSelectedMovie(null);
+    } catch (err) {
+      console.error('Error closing details:', err);
+    }
   };
 
   const titleVariants = {
@@ -42,6 +52,17 @@ export const TrendingMoviesSection = ({ movies }: TrendingMoviesSectionProps) =>
       }
     }
   };
+
+  if (error) {
+    return (
+      <section className="space-y-4">
+        <h2 className="text-2xl md:text-3xl font-bold text-red-500">
+          Error loading trending movies
+        </h2>
+        <p className="text-muted-foreground">{error}</p>
+      </section>
+    );
+  }
 
   return (
     <section 

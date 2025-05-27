@@ -9,9 +9,9 @@ import { MovieRating } from "./MovieRating";
 import type { MovieCardProps } from "@/types/movie";
 
 export const ImprovedMinimizedMovieCard = memo(({
-  title,
-  year,
-  imageUrl,
+  title = "Unknown Movie",
+  year = "N/A",
+  imageUrl = '/placeholder.svg',
   rating = 0,
   tmdbId,
   onExpand,
@@ -21,7 +21,6 @@ export const ImprovedMinimizedMovieCard = memo(({
   hasTrailer = false,
   priority = false
 }: MovieCardProps) => {
-  // Initialize all hooks at the top level - never conditionally
   const [isFavorite, setIsFavorite] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
@@ -59,12 +58,6 @@ export const ImprovedMinimizedMovieCard = memo(({
       onExpand();
     }
   }, [onExpand]);
-
-  // Early return if no title
-  if (!title) {
-    console.warn('ImprovedMinimizedMovieCard: title is required');
-    return null;
-  }
 
   return (
     <motion.div

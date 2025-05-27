@@ -1,7 +1,7 @@
 
 import { motion } from "framer-motion";
 import type { TMDBMovie } from "@/services/tmdb";
-import { TrendingMovieCard } from "./TrendingMovieCard";
+import { MovieCardSwitcher } from "./MovieCardSwitcher";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTranslation } from "react-i18next";
 
@@ -22,7 +22,7 @@ export const TrendingMoviesContainer = ({
   if (!movies || movies.length === 0) {
     return (
       <div className="py-8 text-center text-muted-foreground">
-        {t("discover.noMoviesFound")}
+        {t("discover.noMoviesFound") || "No movies found"}
       </div>
     );
   }
@@ -89,10 +89,24 @@ export const TrendingMoviesContainer = ({
             whileTap={{ scale: 0.95 }}
             className="flex-none"
           >
-            <TrendingMovieCard
-              movie={movie}
-              onClick={onMovieClick}
-            />
+            <div className={`${isMobile ? "w-[140px]" : "w-[220px]"}`}>
+              <MovieCardSwitcher
+                title={movie.title || "Unknown Movie"}
+                year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "N/A"}
+                platform="TMDB"
+                genre=""
+                imageUrl={movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : '/placeholder.svg'}
+                description={movie.overview || ""}
+                trailerUrl=""
+                rating={movie.vote_average ? movie.vote_average * 10 : 0}
+                tmdbId={movie.id}
+                onClick={() => onMovieClick(movie)}
+                hasTrailer={Math.random() > 0.5}
+                priority={movie.popularity > 100}
+                isWatched={Math.random() > 0.8}
+                isWatchlisted={Math.random() > 0.7}
+              />
+            </div>
           </motion.div>
         ))}
       </motion.div>

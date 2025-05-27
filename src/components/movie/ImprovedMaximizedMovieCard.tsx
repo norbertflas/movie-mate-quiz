@@ -1,4 +1,3 @@
-
 import { useState, memo, useCallback } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,13 +14,13 @@ import { MovieStreamingServices } from "./MovieStreamingServices";
 import type { MovieCardProps } from "@/types/movie";
 
 export const ImprovedMaximizedMovieCard = memo(({
-  title,
-  year,
-  platform,
-  genre,
-  imageUrl,
-  description,
-  trailerUrl,
+  title = "Unknown Movie",
+  year = "N/A",
+  platform = "Unknown",
+  genre = "",
+  imageUrl = '/placeholder.svg',
+  description = "",
+  trailerUrl = "",
   rating = 0,
   tags = [],
   streamingServices = [],
@@ -36,7 +35,6 @@ export const ImprovedMaximizedMovieCard = memo(({
   budget = "Unknown",
   popularity = 0
 }: MovieCardProps) => {
-  // Initialize all hooks at the top level - never conditionally
   const [isFavorite, setIsFavorite] = useState(false);
   const [isWatchlisted, setIsWatchlisted] = useState(false);
   const [isWatched, setIsWatched] = useState(false);
