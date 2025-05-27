@@ -75,11 +75,36 @@ const Index = () => {
               onStartQuiz={handleStartQuizClick}
             />
             <ContentSection />
+            
+            {/* Show movies on welcome page too */}
+            <div className="container mx-auto px-4 py-8">
+              <NewMainContent
+                trendingMovies={trendingMovies || []}
+                popularMovies={popularMovies || []}
+                isLoading={isLoading}
+                hasError={hasError}
+                onRetry={retryAll}
+                userPreferences={userPreferences}
+                currentView={state.currentView}
+              />
+            </div>
           </div>
         )}
 
         {state.currentView === 'quiz' && state.showQuiz && (
-          <QuizContent />
+          <QuizContent 
+            onBack={handleBackToWelcome}
+            onComplete={(results) => {
+              // Handle quiz completion
+              console.log('Quiz completed with results:', results);
+              setState(prev => ({ 
+                ...prev, 
+                currentView: 'welcome',
+                showQuiz: false 
+              }));
+            }}
+            userPreferences={userPreferences}
+          />
         )}
 
         {state.currentView === 'explore' && (

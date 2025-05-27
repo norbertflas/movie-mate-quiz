@@ -35,7 +35,7 @@ export const QuizQuestions = ({ questions, currentStep, onAnswer, answers, answe
     return null;
   }
 
-  // Get options with better fallback logic
+  // Get options with guaranteed fallbacks
   let optionsToUse: string[] = [];
   
   // First try static options
@@ -56,51 +56,29 @@ export const QuizQuestions = ({ questions, currentStep, onAnswer, answers, answe
     }
   }
 
-  // Enhanced fallback options based on question ID - always ensure we have options
+  // GUARANTEED fallback options based on question ID
   if (!optionsToUse || optionsToUse.length === 0) {
-    console.log('Using fallback options for question:', currentQuestion.id);
+    console.log('Using GUARANTEED fallback options for question:', currentQuestion.id);
     
-    switch (currentQuestion.id) {
-      case "platforms":
-        optionsToUse = ["Netflix", "Disney+", "Amazon Prime Video", "HBO Max", "Hulu", "Apple TV+", "Paramount+", "YouTube Premium"];
-        break;
-      case "genres":
-        optionsToUse = ["Action", "Adventure", "Comedy", "Drama", "Horror", "Sci-Fi", "Romance", "Thriller", "Documentary", "Animation"];
-        break;
-      case "mood":
-        optionsToUse = ["Relaxed", "Excited", "Thoughtful", "Adventurous", "Romantic", "Scary", "Funny", "Dramatic"];
-        break;
-      case "decade":
-        optionsToUse = ["2020s", "2010s", "2000s", "1990s", "1980s", "1970s", "1960s", "Older"];
-        break;
-      case "length":
-        optionsToUse = ["Short (< 90 min)", "Medium (90-120 min)", "Long (> 120 min)", "Any length"];
-        break;
-      case "rating":
-        optionsToUse = ["G - Family friendly", "PG - Parental guidance", "PG-13 - Teen suitable", "R - Adult content", "NC-17 - Adults only", "Any rating"];
-        break;
-      case "language":
-        optionsToUse = ["English", "Polish", "Spanish", "French", "German", "Italian", "Japanese", "Korean", "Any language"];
-        break;
-      case "type":
-        optionsToUse = ["Movies", "TV Series", "Documentaries", "Both"];
-        break;
-      case "companions":
-        optionsToUse = ["Alone", "With partner", "With family", "With friends", "With kids"];
-        break;
-      case "time":
-        optionsToUse = ["Morning", "Afternoon", "Evening", "Late night", "Weekend"];
-        break;
-      default:
-        // Force options for any unknown question type
-        optionsToUse = ["Yes", "No", "Maybe", "I don't know"];
-        break;
-    }
+    const fallbackOptions = {
+      "platforms": ["Netflix", "Disney+", "Amazon Prime Video", "HBO Max", "Hulu", "Apple TV+", "Paramount+", "YouTube Premium"],
+      "genres": ["Action", "Adventure", "Comedy", "Drama", "Horror", "Sci-Fi", "Romance", "Thriller", "Documentary", "Animation"],
+      "mood": ["Relaxed", "Excited", "Thoughtful", "Adventurous", "Romantic", "Scary", "Funny", "Dramatic"],
+      "decade": ["2020s", "2010s", "2000s", "1990s", "1980s", "1970s", "1960s", "Older"],
+      "length": ["Short (< 90 min)", "Medium (90-120 min)", "Long (> 120 min)", "Any length"],
+      "rating": ["G - Family friendly", "PG - Parental guidance", "PG-13 - Teen suitable", "R - Adult content", "Any rating"],
+      "language": ["English", "Polish", "Spanish", "French", "German", "Italian", "Japanese", "Korean", "Any language"],
+      "type": ["Movies", "TV Series", "Documentaries", "Both"],
+      "companions": ["Alone", "With partner", "With family", "With friends", "With kids"],
+      "time": ["Morning", "Afternoon", "Evening", "Late night", "Weekend"]
+    };
+    
+    optionsToUse = fallbackOptions[currentQuestion.id as keyof typeof fallbackOptions] || ["Yes", "No", "Maybe", "I don't know"];
   }
 
-  // Final safety check - always ensure we have at least basic options
+  // FINAL EMERGENCY fallback - this should NEVER be needed now
   if (!optionsToUse || optionsToUse.length === 0) {
-    console.warn('Still no options! Using emergency fallback');
+    console.error('EMERGENCY: Still no options! Using absolute fallback');
     optionsToUse = ["Option 1", "Option 2", "Option 3", "Option 4"];
   }
 
@@ -111,54 +89,19 @@ export const QuizQuestions = ({ questions, currentStep, onAnswer, answers, answe
   
   // Translate options if needed
   const translatedOptions = skipTranslation ? optionsToUse : optionsToUse.map(option => {
-    // Create a safe translation key
     const safeOption = option.toLowerCase()
-      .replace(/[^a-z0-9\s]/g, '') // Remove special characters
-      .replace(/\s+/g, ''); // Remove spaces
+      .replace(/[^a-z0-9\s]/g, '')
+      .replace(/\s+/g, '');
     
     const translationKey = `quiz.options.${safeOption}`;
     const translated = t(translationKey, option);
-    console.log(`Translating: ${option} -> ${translated} (key: ${translationKey})`);
     return translated;
   });
   
   const questionText = t(currentQuestion.question, currentQuestion.question);
   const subtitleText = currentQuestion.subtitle ? t(currentQuestion.subtitle, currentQuestion.subtitle) : "";
 
-  console.log(`[Quiz] Rendering question: ${currentQuestion.question} -> ${questionText}`);
-  console.log(`[Quiz] Current language: ${i18n.language}`);
   console.log(`[Quiz] Final translated options:`, translatedOptions);
-
-  // Final check before rendering - this should never happen now
-  if (translatedOptions.length === 0) {
-    console.error('CRITICAL: No options after all fallbacks!');
-    return (
-      <div className="text-center text-red-500 p-8">
-        <p className="mb-4 text-lg">⚠️ Critical Error: No options available</p>
-        <p className="text-sm">Question ID: {currentQuestion.id}</p>
-        <p className="text-sm">Question Type: {currentQuestion.type}</p>
-        <div className="mt-4 p-4 bg-gray-800 rounded text-left">
-          <p className="text-xs text-gray-400">Debug info:</p>
-          <pre className="text-xs text-gray-300">{JSON.stringify({
-            questionId: currentQuestion.id,
-            hasStaticOptions: !!currentQuestion.options,
-            staticOptionsLength: currentQuestion.options?.length || 0,
-            hasDynamicOptions: !!currentQuestion.getDynamicOptions,
-            answerMapKeys: Object.keys(answerMap || {}),
-            originalOptions: currentQuestion.options,
-            finalOptions: optionsToUse,
-            translatedOptions
-          }, null, 2)}</pre>
-        </div>
-        <button 
-          onClick={() => onAnswer("Emergency Answer")}
-          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-        >
-          Skip Question
-        </button>
-      </div>
-    );
-  }
 
   return (
     <motion.div
