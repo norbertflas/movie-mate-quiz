@@ -80,7 +80,7 @@ export const quizTranslations = {
           long: "Long (over 150 min)",
           noPreference: "No preference"
         },
-        series: {
+        seriesPrefs: {
           finished: "Completed series (I can binge)",
           ongoing: "Currently airing",
           shortSeason: "Short seasons (under 10 episodes)",
@@ -246,7 +246,7 @@ export const quizTranslations = {
           long: "Długi (powyżej 150 min)",
           noPreference: "Bez preferencji"
         },
-        series: {
+        seriesPrefs: {
           finished: "Zakończone seriale (mogę oglądać maraton)",
           ongoing: "Obecnie emitowane",
           shortSeason: "Krótkie sezony (poniżej 10 odcinków)",
