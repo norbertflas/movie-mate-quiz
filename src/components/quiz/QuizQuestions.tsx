@@ -2,7 +2,6 @@
 import { SurveyStep } from "@/components/SurveyStep";
 import type { QuizQuestionsProps } from "./QuizTypes";
 import { useTranslation } from "react-i18next";
-import { X } from "lucide-react";
 import { motion } from "framer-motion";
 
 export const QuizQuestions = ({ questions, currentStep, onAnswer, answers, answerMap }: QuizQuestionsProps) => {
@@ -36,64 +35,83 @@ export const QuizQuestions = ({ questions, currentStep, onAnswer, answers, answe
     return null;
   }
 
-  // Get options - handle all cases
+  // Get options with better fallback logic
   let optionsToUse: string[] = [];
   
   // First try static options
   if (currentQuestion.options && Array.isArray(currentQuestion.options) && currentQuestion.options.length > 0) {
-    optionsToUse = currentQuestion.options;
+    optionsToUse = [...currentQuestion.options];
     console.log('Using static options:', optionsToUse);
   }
   // Then try dynamic options
   else if (currentQuestion.getDynamicOptions && typeof currentQuestion.getDynamicOptions === 'function') {
     try {
-      optionsToUse = currentQuestion.getDynamicOptions(answerMap);
-      console.log('Using dynamic options:', optionsToUse);
+      const dynamicOptions = currentQuestion.getDynamicOptions(answerMap);
+      if (dynamicOptions && Array.isArray(dynamicOptions) && dynamicOptions.length > 0) {
+        optionsToUse = [...dynamicOptions];
+        console.log('Using dynamic options:', optionsToUse);
+      }
     } catch (error) {
       console.error('Error getting dynamic options:', error);
-      optionsToUse = [];
     }
   }
 
-  // Fallback options based on question ID
+  // Enhanced fallback options based on question ID
   if (!optionsToUse || optionsToUse.length === 0) {
     console.log('Using fallback options for question:', currentQuestion.id);
     
     switch (currentQuestion.id) {
       case "platforms":
-        optionsToUse = ["Netflix", "Disney+", "Amazon Prime", "HBO Max", "Hulu", "Apple TV+", "Paramount+"];
+        optionsToUse = ["Netflix", "Disney+", "Amazon Prime Video", "HBO Max", "Hulu", "Apple TV+", "Paramount+", "YouTube Premium"];
         break;
       case "genres":
-        optionsToUse = ["Action", "Comedy", "Drama", "Horror", "Sci-Fi", "Romance", "Thriller", "Documentary"];
+        optionsToUse = ["Action", "Adventure", "Comedy", "Drama", "Horror", "Sci-Fi", "Romance", "Thriller", "Documentary", "Animation"];
         break;
       case "mood":
-        optionsToUse = ["Relaxed", "Excited", "Thoughtful", "Adventurous", "Romantic", "Scary"];
+        optionsToUse = ["Relaxed", "Excited", "Thoughtful", "Adventurous", "Romantic", "Scary", "Funny", "Dramatic"];
         break;
       case "decade":
-        optionsToUse = ["2020s", "2010s", "2000s", "1990s", "1980s", "1970s", "Older"];
+        optionsToUse = ["2020s", "2010s", "2000s", "1990s", "1980s", "1970s", "1960s", "Older"];
         break;
       case "length":
         optionsToUse = ["Short (< 90 min)", "Medium (90-120 min)", "Long (> 120 min)", "Any length"];
         break;
       case "rating":
-        optionsToUse = ["G - Family friendly", "PG - Parental guidance", "PG-13 - Teen suitable", "R - Adult content", "Any rating"];
+        optionsToUse = ["G - Family friendly", "PG - Parental guidance", "PG-13 - Teen suitable", "R - Adult content", "NC-17 - Adults only", "Any rating"];
+        break;
+      case "language":
+        optionsToUse = ["English", "Polish", "Spanish", "French", "German", "Italian", "Japanese", "Korean", "Any language"];
+        break;
+      case "type":
+        optionsToUse = ["Movies", "TV Series", "Documentaries", "Both"];
+        break;
+      case "companions":
+        optionsToUse = ["Alone", "With partner", "With family", "With friends", "With kids"];
+        break;
+      case "time":
+        optionsToUse = ["Morning", "Afternoon", "Evening", "Late night", "Weekend"];
         break;
       default:
-        optionsToUse = ["Yes", "No", "Maybe"];
+        optionsToUse = ["Yes", "No", "Maybe", "I don't know"];
         break;
     }
   }
 
   console.log('Final options to use:', optionsToUse);
 
-  // Skip translation for certain question types
-  const skipTranslation = ["platforms", "genres"].includes(currentQuestion.id);
+  // Skip translation for certain question types that have proper names
+  const skipTranslation = ["platforms"].includes(currentQuestion.id);
   
   // Translate options if needed
   const translatedOptions = skipTranslation ? optionsToUse : optionsToUse.map(option => {
-    const translationKey = `quiz.options.${option.toLowerCase().replace(/\s+/g, '')}`;
+    // Create a safe translation key
+    const safeOption = option.toLowerCase()
+      .replace(/[^a-z0-9\s]/g, '') // Remove special characters
+      .replace(/\s+/g, ''); // Remove spaces
+    
+    const translationKey = `quiz.options.${safeOption}`;
     const translated = t(translationKey, option);
-    console.log(`Translating: ${option} -> ${translated}`);
+    console.log(`Translating: ${option} -> ${translated} (key: ${translationKey})`);
     return translated;
   });
   
@@ -108,7 +126,7 @@ export const QuizQuestions = ({ questions, currentStep, onAnswer, answers, answe
     console.warn('No options available for question:', currentQuestion.id);
     return (
       <div className="text-center text-yellow-500 p-8">
-        <p className="mb-4">Warning: No options available for this question</p>
+        <p className="mb-4 text-lg">⚠️ No options available for this question</p>
         <p className="text-sm">Question ID: {currentQuestion.id}</p>
         <p className="text-sm">Question Type: {currentQuestion.type}</p>
         <div className="mt-4 p-4 bg-gray-800 rounded text-left">
@@ -146,7 +164,7 @@ export const QuizQuestions = ({ questions, currentStep, onAnswer, answers, answe
           {/* Debug info in development */}
           {process.env.NODE_ENV === 'development' && (
             <div className="mb-4 p-2 bg-gray-800 rounded text-xs text-gray-400">
-              Options count: {translatedOptions.length} | Question: {currentQuestion.id}
+              Options count: {translatedOptions.length} | Question: {currentQuestion.id} | Step: {currentStep}
             </div>
           )}
           

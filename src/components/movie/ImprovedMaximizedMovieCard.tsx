@@ -9,7 +9,6 @@ import {
   Copy, ExternalLink, TrendingUp, X, Search, RefreshCw
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { OptimizedMovieImage } from "./OptimizedMovieImage";
 import { MovieRating } from "./MovieRating";
 import { MovieStreamingServices } from "./MovieStreamingServices";
 import { useOptimizedStreaming } from "@/hooks/use-optimized-streaming";
@@ -112,6 +111,10 @@ export const ImprovedMaximizedMovieCard = memo(({
       switch(platform) {
         case 'copy':
           await navigator.clipboard.writeText(shareData.url);
+          toast({
+            title: "Skopiowano",
+            description: "Link został skopiowany do schowka",
+          });
           break;
         case 'native':
           if (navigator.share) {
@@ -125,7 +128,7 @@ export const ImprovedMaximizedMovieCard = memo(({
       console.log('Sharing failed or cancelled');
     }
     setShowShareMenu(false);
-  }, [title, description]);
+  }, [title, description, toast]);
 
   const formatRuntime = useCallback((minutes: number) => {
     const hours = Math.floor(minutes / 60);
@@ -133,17 +136,7 @@ export const ImprovedMaximizedMovieCard = memo(({
     return `${hours}h ${mins}m`;
   }, []);
 
-  const formatDate = useCallback((dateString?: string) => {
-    if (!dateString) return year;
-    return new Date(dateString).toLocaleDateString('pl-PL', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric'
-    });
-  }, [year]);
-
   const formatStreamingServices = useCallback(() => {
-    // Use data from optimized hook if available, otherwise fallback to props
     const services = streamingData.services?.length > 0 ? streamingData.services : streamingServices;
     
     if (!services || services.length === 0) return [];
@@ -182,7 +175,7 @@ export const ImprovedMaximizedMovieCard = memo(({
           }
         }}
       >
-        <Card className="w-full h-full overflow-hidden shadow-2xl bg-gray-900 border-gray-700 flex flex-col">
+        <Card className="w-full h-full max-w-7xl max-h-[95vh] overflow-hidden shadow-2xl bg-gray-900 border-gray-700 flex flex-col">
           {/* Header */}
           <CardHeader className="flex flex-row items-center justify-between space-y-0 p-6 bg-gradient-to-r from-blue-600/20 via-purple-600/20 to-pink-600/20 backdrop-blur-sm border-b border-gray-700 flex-shrink-0">
             <div className="flex items-center space-x-3">
@@ -243,33 +236,20 @@ export const ImprovedMaximizedMovieCard = memo(({
               />
               
               {/* Gradient overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-black/60">
-                <div className="absolute inset-0 opacity-10">
-                  <div 
-                    className="w-full h-full animate-pulse" 
-                    style={{
-                      backgroundImage: `radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.3) 0%, transparent 50%),
-                                       radial-gradient(circle at 75% 75%, rgba(168, 85, 247, 0.3) 0%, transparent 50%)`,
-                      backgroundSize: '100px 100px'
-                    }}
-                  />
-                </div>
-              </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-black/60" />
               
               {/* Top controls on image */}
               <div className="absolute top-6 right-6 flex space-x-3">
-                <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    className="bg-black/50 hover:bg-black/70 backdrop-blur-sm text-white border-gray-600"
-                    onClick={handleToggleFavorite}
-                  >
-                    <Heart 
-                      className={`h-5 w-5 transition-colors ${isFavorite ? 'text-red-500 fill-red-500' : 'text-white'}`} 
-                    />
-                  </Button>
-                </motion.div>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="bg-black/50 hover:bg-black/70 backdrop-blur-sm text-white border-gray-600"
+                  onClick={handleToggleFavorite}
+                >
+                  <Heart 
+                    className={`h-5 w-5 transition-colors ${isFavorite ? 'text-red-500 fill-red-500' : 'text-white'}`} 
+                  />
+                </Button>
                 
                 <div className="relative">
                   <Button
@@ -317,16 +297,14 @@ export const ImprovedMaximizedMovieCard = memo(({
               <div className="absolute bottom-6 left-6 right-6">
                 <div className="flex gap-3 flex-wrap">
                   {trailerUrl && (
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <Button 
-                        size="sm" 
-                        className="bg-red-600 hover:bg-red-700 shadow-lg px-6 py-3"
-                        onClick={handlePlayTrailer}
-                      >
-                        <Play className="h-5 w-5 mr-2 fill-white" />
-                        Trailer
-                      </Button>
-                    </motion.div>
+                    <Button 
+                      size="sm" 
+                      className="bg-red-600 hover:bg-red-700 shadow-lg px-6 py-3"
+                      onClick={handlePlayTrailer}
+                    >
+                      <Play className="h-5 w-5 mr-2 fill-white" />
+                      Trailer
+                    </Button>
                   )}
                   
                   <Button
