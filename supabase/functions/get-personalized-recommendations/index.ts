@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { corsHeaders } from "./utils.ts";
@@ -22,25 +23,45 @@ serve(async (req) => {
 
     if (!GEMINI_API_KEY) {
       console.error('Missing GEMINI_API_KEY');
-      throw new Error('Gemini API key is not configured. Please add it in Supabase Edge Function Secrets.');
+      throw new Error('Gemini API key is not configured');
     }
 
     const requestData: RequestData = await req.json();
-    console.log('Raw request data:', requestData);
+    console.log('Enhanced request data:', requestData);
 
-    // Handle personalized recommendations based on prompt and selected movies
-    if (requestData.prompt || requestData.selectedMovies) {
-      console.log('Processing personalized recommendations with prompt:', requestData.prompt);
-      console.log('Selected movies:', requestData.selectedMovies);
+    // Enhanced personalized recommendations with streaming info
+    if (requestData.prompt || requestData.selectedMovies || requestData.filters) {
+      console.log('Processing enhanced personalized recommendations');
+      console.log('Prompt:', requestData.prompt);
+      console.log('Filters:', requestData.filters);
       
       try {
-        const input = requestData.prompt || 'Recommend popular movies based on my selected favorites';
+        let enhancedPrompt = requestData.prompt || 'Recommend highly-rated popular movies';
         
-        // Create a more specific prompt that includes user preferences
-        let enhancedPrompt = input;
-        if (requestData.selectedMovies && requestData.selectedMovies.length > 0) {
-          enhancedPrompt = `${input}\n\nI particularly enjoyed these movies: ${requestData.selectedMovies.map(m => m.title).join(', ')}. Please recommend movies that align with these preferences.`;
+        // Uwzględnij filtry w prompcie
+        if (requestData.filters) {
+          const filters = requestData.filters;
+          enhancedPrompt += `\n\nUser preferences:`;
+          if (filters.platforms?.length > 0) {
+            enhancedPrompt += `\n- Available on: ${filters.platforms.join(', ')}`;
+          }
+          if (filters.genres?.length > 0) {
+            enhancedPrompt += `\n- Preferred genres: ${filters.genres.join(', ')}`;
+          }
+          if (filters.mood) {
+            enhancedPrompt += `\n- Mood: ${filters.mood}`;
+          }
+          if (filters.runtime) {
+            enhancedPrompt += `\n- Runtime: ${filters.runtime.min || 0}-${filters.runtime.max || 999} minutes`;
+          }
+          enhancedPrompt += `\n\nRecommend movies that specifically match these preferences.`;
         }
+        
+        if (requestData.selectedMovies && requestData.selectedMovies.length > 0) {
+          enhancedPrompt += `\n\nUser particularly enjoyed: ${requestData.selectedMovies.map(m => m.title).join(', ')}.`;
+        }
+        
+        console.log('Final enhanced prompt:', enhancedPrompt);
         
         const { data: recommendations } = await getMovieRecommendations(
           enhancedPrompt,
@@ -50,10 +71,53 @@ serve(async (req) => {
 
         console.log('AI recommended movie IDs:', recommendations);
 
-        // Get detailed movie information for each recommendation
-        const movieDetailsPromises = recommendations.slice(0, 8).map(async (movieId) => {
+        // Get detailed movie information with enhanced data
+        const movieDetailsPromises = recommendations.slice(0, 12).map(async (movieId) => {
           try {
-            return await getMovieDetails(movieId, TMDB_API_KEY);
+            const movieDetails = await getMovieDetails(movieId, TMDB_API_KEY);
+            
+            // Add enhanced explanations based on user preferences
+            const explanations: string[] = [];
+            
+            if (requestData.filters?.genres && movieDetails.genres) {
+              const matchingGenres = movieDetails.genres.filter(g => 
+                requestData.filters.genres.some(userGenre => 
+                  g.name.toLowerCase().includes(userGenre.toLowerCase()) ||
+                  userGenre.toLowerCase().includes(g.name.toLowerCase())
+                )
+              );
+              if (matchingGenres.length > 0) {
+                explanations.push(`Matches your genre preference: ${matchingGenres.map(g => g.name).join(', ')}`);
+              }
+            }
+            
+            if (movieDetails.vote_average >= 7.5) {
+              explanations.push('Highly rated by viewers');
+            }
+            
+            if (movieDetails.vote_average >= 8.0) {
+              explanations.push('Critically acclaimed');
+            }
+            
+            if (requestData.filters?.mood) {
+              const mood = requestData.filters.mood.toLowerCase();
+              if (mood.includes('funny') || mood.includes('śmieszn')) {
+                explanations.push('Perfect for a good laugh');
+              } else if (mood.includes('touching') || mood.includes('wzrusza')) {
+                explanations.push('Emotionally engaging');
+              } else if (mood.includes('adrenaline') || mood.includes('adrena')) {
+                explanations.push('Action-packed excitement');
+              }
+            }
+            
+            if (explanations.length === 0) {
+              explanations.push('Popular choice matching your preferences');
+            }
+            
+            return {
+              ...movieDetails,
+              explanations
+            };
           } catch (error) {
             console.error(`Failed to get details for movie ${movieId}:`, error);
             return null;
@@ -67,26 +131,45 @@ serve(async (req) => {
           throw new Error('No valid movies found for the given recommendations');
         }
 
-        console.log('Successfully processed personalized recommendations:', movies.length);
+        console.log('Successfully processed enhanced recommendations:', movies.length);
         
         return new Response(JSON.stringify(movies), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       } catch (error) {
-        console.error('Error processing personalized recommendations:', error);
+        console.error('Error processing enhanced recommendations:', error);
         
-        // Enhanced fallback with more variety
+        // Enhanced fallback with better variety
         console.log('Using enhanced fallback recommendations');
-        const fallbackGenres = [28, 35, 18, 53, 878]; // Action, Comedy, Drama, Thriller, Sci-Fi
-        const randomGenre = fallbackGenres[Math.floor(Math.random() * fallbackGenres.length)];
+        const fallbackGenres = [28, 35, 18, 53, 878, 12]; // Action, Comedy, Drama, Thriller, Sci-Fi, Adventure
+        const selectedGenres = requestData.filters?.genres || [];
         
-        const fallbackMovies = await getMoviesByGenre(randomGenre, TMDB_API_KEY);
-        const movieDetailsPromises = fallbackMovies.slice(0, 6).map(movie => 
+        let genreIds = selectedGenres.map(genre => getGenreId(genre));
+        if (genreIds.length === 0) {
+          genreIds = fallbackGenres;
+        }
+        
+        const fallbackMovies: any[] = [];
+        
+        for (const genreId of genreIds.slice(0, 3)) {
+          try {
+            const genreMovies = await getMoviesByGenre(genreId, TMDB_API_KEY);
+            fallbackMovies.push(...genreMovies.slice(0, 4));
+          } catch (error) {
+            console.error(`Error getting movies for genre ${genreId}:`, error);
+          }
+        }
+        
+        const movieDetailsPromises = fallbackMovies.slice(0, 8).map(movie => 
           getMovieDetails(movie.id, TMDB_API_KEY)
         );
 
         const movies = (await Promise.all(movieDetailsPromises))
-          .filter((movie): movie is MovieRecommendation => movie !== null);
+          .filter((movie): movie is MovieRecommendation => movie !== null)
+          .map(movie => ({
+            ...movie,
+            explanations: ['Popular choice in your preferred genre']
+          }));
 
         return new Response(JSON.stringify(movies), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -211,11 +294,11 @@ serve(async (req) => {
     }
     
   } catch (error) {
-    console.error('Error in get-personalized-recommendations:', error);
+    console.error('Error in enhanced get-personalized-recommendations:', error);
     return new Response(
       JSON.stringify({ 
         error: error.message,
-        details: 'Check the edge function logs for more information'
+        details: 'Check the enhanced edge function logs for more information'
       }), 
       { 
         status: 500,

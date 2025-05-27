@@ -3,10 +3,14 @@ import { supabase } from "@/integrations/supabase/client";
 import type { QuizAnswer, MovieRecommendation, EnhancedQuizFilters } from "../QuizTypes";
 
 export const parseQuizAnswers = (answers: QuizAnswer[]): EnhancedQuizFilters => {
+  console.log('Parsing quiz answers:', answers);
+  
   const answerMap = answers.reduce((acc, answer) => {
     acc[answer.questionId] = answer.answer;
     return acc;
   }, {} as Record<string, string>);
+
+  console.log('Answer map:', answerMap);
 
   // Parse platforms - handle both string and array formats
   let platforms: string[] = [];
@@ -20,34 +24,105 @@ export const parseQuizAnswers = (answers: QuizAnswer[]): EnhancedQuizFilters => 
     }
   }
 
-  // Parse genres
+  // Parse genres - POPRAWKA: prawidłowe parsowanie gatunków
   let genres: string[] = [];
-  if (answerMap.preferredGenres) {
+  if (answerMap.genres || answerMap.preferredGenres) {
+    const genreAnswer = answerMap.genres || answerMap.preferredGenres;
     try {
-      genres = JSON.parse(answerMap.preferredGenres);
+      const parsed = JSON.parse(genreAnswer);
+      if (Array.isArray(parsed)) {
+        genres = parsed;
+      }
     } catch {
-      genres = answerMap.preferredGenres.split(',').map(g => g.trim());
+      // Jeśli nie można sparsować, sprawdź czy to pojedynczy gatunek
+      if (genreAnswer && genreAnswer !== '[]' && genreAnswer !== '') {
+        genres = [genreAnswer];
+      }
     }
   }
 
-  return {
+  // Mapowanie nastroju na gatunki jeśli brak bezpośredniego wyboru
+  if (genres.length === 0 && answerMap.mood) {
+    const moodToGenres: Record<string, string[]> = {
+      'Coś śmiesznego': ['Comedy', 'Family'],
+      'Coś wzruszającego': ['Drama', 'Romance'],
+      'Coś z adreną': ['Action', 'Thriller', 'Adventure'],
+      'Coś do relaksu': ['Animation', 'Documentary', 'Family'],
+      'Something funny': ['Comedy', 'Family'],
+      'Something touching': ['Drama', 'Romance'],
+      'Something with adrenaline': ['Action', 'Thriller', 'Adventure'],
+      'Something to relax': ['Animation', 'Documentary', 'Family']
+    };
+    
+    const moodGenres = moodToGenres[answerMap.mood];
+    if (moodGenres) {
+      genres = moodGenres;
+    }
+  }
+
+  // Mapowanie długości filmu
+  let runtime: { min?: number; max?: number } | undefined;
+  if (answerMap.movieLength) {
+    switch (answerMap.movieLength) {
+      case 'Krótki (do 90 minut)':
+      case 'Short (up to 90 minutes)':
+        runtime = { max: 90 };
+        break;
+      case 'Standardowy (90-120 minut)':
+      case 'Standard (90-120 minutes)':
+        runtime = { min: 90, max: 120 };
+        break;
+      case 'Długi (powyżej 120 minut)':
+      case 'Long (over 120 minutes)':
+        runtime = { min: 120 };
+        break;
+    }
+  }
+
+  const filters: EnhancedQuizFilters = {
     platforms,
-    contentType: (answerMap.contentType as any) || 'notSure',
+    contentType: (answerMap.contentType as any) || 'movies',
     mood: answerMap.mood || 'notSure',
     genres,
+    runtime,
     region: 'us',
     languages: ['en'],
     includeStreamingInfo: true,
-    maxResults: 15
+    maxResults: 20,
+    minRating: platforms.some(p => ['Netflix', 'Disney+', 'HBO Max'].includes(p)) ? 6.5 : 6.0
   };
+
+  console.log('Parsed enhanced filters:', filters);
+  return filters;
 };
 
 export const getPersonalizedRecommendations = async (filters: EnhancedQuizFilters): Promise<MovieRecommendation[]> => {
   try {
-    console.log('Getting personalized recommendations with filters:', filters);
+    console.log('Getting personalized recommendations with enhanced filters:', filters);
     
+    // Przygotuj prompt uwzględniający wszystkie preferencje użytkownika
+    const userPreferences = {
+      platforms: filters.platforms?.join(', ') || 'Any platform',
+      genres: filters.genres?.join(', ') || 'Mixed genres',
+      mood: filters.mood || 'Any mood',
+      contentType: filters.contentType || 'Movies',
+      runtime: filters.runtime ? 
+        `${filters.runtime.min || 0}-${filters.runtime.max || 999} minutes` : 'Any length'
+    };
+
+    const enhancedPrompt = `Find movies that match these specific user preferences:
+- Available on: ${userPreferences.platforms}
+- Genres: ${userPreferences.genres}
+- Mood/Style: ${userPreferences.mood}
+- Content Type: ${userPreferences.contentType}
+- Runtime: ${userPreferences.runtime}
+
+Focus on highly-rated movies that are actually available on the specified platforms. Prioritize recent releases and popular titles that match the mood and genre preferences exactly.`;
+
     const { data, error } = await supabase.functions.invoke('get-personalized-recommendations', {
       body: { 
+        prompt: enhancedPrompt,
+        filters: filters,
         answers: Object.entries(filters).map(([questionId, answer]) => ({
           questionId,
           answer: typeof answer === 'object' ? JSON.stringify(answer) : String(answer)
@@ -56,61 +131,176 @@ export const getPersonalizedRecommendations = async (filters: EnhancedQuizFilter
     });
 
     if (error) {
-      console.error('Error from Edge Function:', error);
+      console.error('Error from Enhanced Edge Function:', error);
       throw error;
     }
 
-    console.log('Received recommendations:', data);
+    console.log('Received enhanced recommendations:', data);
     
     if (!data || !Array.isArray(data)) {
-      throw new Error('Invalid response format from recommendations service');
+      throw new Error('Invalid response format from enhanced recommendations service');
     }
 
-    return data as MovieRecommendation[];
+    // Wzbogać rekomendacje o informacje streamingowe od razu
+    const enrichedRecommendations = await Promise.all(
+      data.map(async (movie: any) => {
+        try {
+          // Pobierz dostępność streamingową dla każdego filmu
+          const { data: streamingData, error: streamingError } = await supabase.functions.invoke('streaming-availability', {
+            body: {
+              tmdbId: movie.id,
+              country: 'us',
+              title: movie.title,
+              year: movie.release_date?.split('-')[0]
+            }
+          });
+
+          let availableOn: string[] = [];
+          let streamingLinks: Record<string, string> = {};
+
+          if (!streamingError && streamingData?.result) {
+            availableOn = streamingData.result.map((service: any) => service.service);
+            streamingLinks = streamingData.result.reduce((acc: any, service: any) => {
+              acc[service.service] = service.link;
+              return acc;
+            }, {});
+          }
+
+          // Dodaj wyjaśnienie dlaczego film został polecony
+          const explanations: string[] = [];
+          
+          if (filters.genres?.some(genre => movie.genre_ids?.includes(getGenreId(genre)))) {
+            explanations.push(`Matches your preferred genre: ${filters.genres.join(', ')}`);
+          }
+          
+          if (availableOn.some(platform => filters.platforms?.includes(platform))) {
+            const matchingPlatforms = availableOn.filter(platform => filters.platforms?.includes(platform));
+            explanations.push(`Available on your platforms: ${matchingPlatforms.join(', ')}`);
+          }
+          
+          if (movie.vote_average >= 7.5) {
+            explanations.push('Highly rated by viewers');
+          }
+
+          return {
+            ...movie,
+            availableOn,
+            streamingLinks,
+            explanations: explanations.length > 0 ? explanations : ['Popular choice matching your preferences']
+          };
+        } catch (enrichError) {
+          console.error(`Error enriching movie ${movie.id}:`, enrichError);
+          return {
+            ...movie,
+            availableOn: [],
+            streamingLinks: {},
+            explanations: ['Recommended based on your preferences']
+          };
+        }
+      })
+    );
+
+    return enrichedRecommendations;
   } catch (error) {
-    console.error('Error getting personalized recommendations:', error);
+    console.error('Error getting enhanced personalized recommendations:', error);
     throw error;
   }
 };
 
-export const generateFallbackRecommendations = (filters: EnhancedQuizFilters): MovieRecommendation[] => {
-  // Basic fallback recommendations
-  const fallbackMovies = [
-    {
-      id: 550,
-      title: "Fight Club",
-      overview: "An insomniac office worker and a devil-may-care soap maker form an underground fight club.",
-      poster_path: "/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg",
-      release_date: "1999-10-15",
-      vote_average: 8.4,
-      genre: "Drama",
-      trailer_url: null,
-      explanations: ["Classic highly-rated film", "Popular choice"]
-    },
-    {
-      id: 13,
-      title: "Forrest Gump", 
-      overview: "The presidencies of Kennedy and Johnson, through the eyes of an Alabama man with an IQ of 75.",
-      poster_path: "/arw2vcBveWOVZr6pxd9XTd1TdQa.jpg",
-      release_date: "1994-07-06",
-      vote_average: 8.5,
-      genre: "Drama",
-      trailer_url: null,
-      explanations: ["Heartwarming story", "Award-winning film"]
-    },
-    {
-      id: 157336,
-      title: "Interstellar",
-      overview: "A team of explorers travel through a wormhole in space in an attempt to ensure humanity's survival.",
-      poster_path: "/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg",
-      release_date: "2014-11-07", 
-      vote_average: 8.4,
-      genre: "Science Fiction",
-      trailer_url: null,
-      explanations: ["Mind-bending sci-fi", "Visually stunning"]
-    }
-  ];
+// Helper function to map genre names to IDs
+const getGenreId = (genreName: string): number => {
+  const genreMap: Record<string, number> = {
+    'Action': 28,
+    'Adventure': 12,
+    'Animation': 16,
+    'Comedy': 35,
+    'Crime': 80,
+    'Documentary': 99,
+    'Drama': 18,
+    'Family': 10751,
+    'Fantasy': 14,
+    'History': 36,
+    'Horror': 27,
+    'Music': 10402,
+    'Mystery': 9648,
+    'Romance': 10749,
+    'Science Fiction': 878,
+    'Sci-Fi': 878,
+    'TV Movie': 10770,
+    'Thriller': 53,
+    'War': 10752,
+    'Western': 37
+  };
+  
+  return genreMap[genreName] || 28; // Default to Action
+};
 
-  console.log('Using fallback recommendations');
-  return fallbackMovies;
+export const generateFallbackRecommendations = (filters: EnhancedQuizFilters): MovieRecommendation[] => {
+  console.log('Generating enhanced fallback recommendations for:', filters);
+  
+  // Lepsze rekomendacje fallback dopasowane do preferencji użytkownika
+  const genreBasedMovies: Record<string, any[]> = {
+    'Comedy': [
+      {
+        id: 13,
+        title: "Forrest Gump",
+        overview: "The presidencies of Kennedy and Johnson through the eyes of an Alabama man with an IQ of 75.",
+        poster_path: "/arw2vcBveWOVZr6pxd9XTd1TdQa.jpg",
+        release_date: "1994-07-06",
+        vote_average: 8.5,
+        genre: "Comedy/Drama",
+        availableOn: ['Netflix', 'Amazon Prime Video'],
+        explanations: ["Heartwarming comedy-drama", "Available on your platforms"]
+      }
+    ],
+    'Drama': [
+      {
+        id: 278,
+        title: "The Shawshank Redemption",
+        overview: "Two imprisoned men bond over a number of years, finding solace and eventual redemption.",
+        poster_path: "/q6y0Go1tsGEsmtFryDOJo3dEmqu.jpg",
+        release_date: "1994-09-23",
+        vote_average: 9.3,
+        genre: "Drama",
+        availableOn: ['HBO Max', 'Amazon Prime Video'],
+        explanations: ["Highly acclaimed drama", "Perfect for touching moments"]
+      }
+    ],
+    'Action': [
+      {
+        id: 155,
+        title: "The Dark Knight",
+        overview: "Batman faces the Joker, a criminal mastermind who wants to plunge Gotham City into anarchy.",
+        poster_path: "/qJ2tW6WMUDux911r6m7haRef0WH.jpg",
+        release_date: "2008-07-18",
+        vote_average: 9.0,
+        genre: "Action",
+        availableOn: ['HBO Max', 'Netflix'],
+        explanations: ["Action-packed superhero film", "High adrenaline content"]
+      }
+    ]
+  };
+
+  // Wybierz filmy na podstawie gatunków użytkownika
+  let selectedMovies: any[] = [];
+  
+  if (filters.genres && filters.genres.length > 0) {
+    filters.genres.forEach(genre => {
+      const moviesForGenre = genreBasedMovies[genre];
+      if (moviesForGenre) {
+        selectedMovies.push(...moviesForGenre);
+      }
+    });
+  }
+
+  // Jeśli brak filmów dla gatunków, użyj domyślnych
+  if (selectedMovies.length === 0) {
+    selectedMovies = [
+      ...genreBasedMovies.Comedy,
+      ...genreBasedMovies.Drama,
+      ...genreBasedMovies.Action
+    ];
+  }
+
+  return selectedMovies.slice(0, 8);
 };
