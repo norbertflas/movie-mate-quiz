@@ -36,8 +36,8 @@ const Index = () => {
   } = useIndexState();
 
   const {
-    trendingMovies,
-    popularMovies,
+    trendingMovies = [],
+    popularMovies = [],
     isLoading,
     hasError,
     retryAll

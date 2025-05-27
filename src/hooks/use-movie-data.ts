@@ -1,4 +1,5 @@
 
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getTrendingMovies, getPopularMovies } from '@/services/tmdb/trending';
 import { Analytics } from '@/lib/analytics';
@@ -18,27 +19,6 @@ export const useMovieData = () => {
     staleTime: 10 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
-    onError: (error: any) => {
-      console.error('Failed to load trending movies:', error);
-      Analytics.track('api_error', {
-        endpoint: 'trending_movies',
-        error: error.message,
-        timestamp: new Date().toISOString()
-      });
-      toast.error('Failed to load trending movies. Please try again.', {
-        action: {
-          label: 'Retry',
-          onClick: () => refetchTrending()
-        }
-      });
-    },
-    onSuccess: (data: any) => {
-      Analytics.track('api_success', {
-        endpoint: 'trending_movies',
-        count: data.length,
-        timestamp: new Date().toISOString()
-      });
-    }
   });
 
   const { 
@@ -54,11 +34,32 @@ export const useMovieData = () => {
     staleTime: 10 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
-    onError: (error: any) => {
-      console.error('Failed to load popular movies:', error);
+  });
+
+  // Handle errors using useEffect instead of deprecated onError
+  React.useEffect(() => {
+    if (trendingError) {
+      console.error('Failed to load trending movies:', trendingError);
+      Analytics.track('api_error', {
+        endpoint: 'trending_movies',
+        error: trendingError.message,
+        timestamp: new Date().toISOString()
+      });
+      toast.error('Failed to load trending movies. Please try again.', {
+        action: {
+          label: 'Retry',
+          onClick: () => refetchTrending()
+        }
+      });
+    }
+  }, [trendingError, refetchTrending]);
+
+  React.useEffect(() => {
+    if (popularError) {
+      console.error('Failed to load popular movies:', popularError);
       Analytics.track('api_error', {
         endpoint: 'popular_movies',
-        error: error.message,
+        error: popularError.message,
         timestamp: new Date().toISOString()
       });
       toast.error('Failed to load popular movies. Please try again.', {
@@ -67,15 +68,29 @@ export const useMovieData = () => {
           onClick: () => refetchPopular()
         }
       });
-    },
-    onSuccess: (data: any) => {
+    }
+  }, [popularError, refetchPopular]);
+
+  // Handle success analytics
+  React.useEffect(() => {
+    if (trendingMovies.length > 0) {
       Analytics.track('api_success', {
-        endpoint: 'popular_movies',
-        count: data.length,
+        endpoint: 'trending_movies',
+        count: trendingMovies.length,
         timestamp: new Date().toISOString()
       });
     }
-  });
+  }, [trendingMovies]);
+
+  React.useEffect(() => {
+    if (popularMovies.length > 0) {
+      Analytics.track('api_success', {
+        endpoint: 'popular_movies',
+        count: popularMovies.length,
+        timestamp: new Date().toISOString()
+      });
+    }
+  }, [popularMovies]);
 
   const retryAll = () => {
     refetchTrending();
