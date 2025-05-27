@@ -86,7 +86,7 @@ export class PerformanceMonitor {
         Analytics.track('performance_metrics', {
           dom_content_loaded: navigation.domContentLoadedEventEnd - navigation.domContentLoadedEventStart,
           load_complete: navigation.loadEventEnd - navigation.loadEventStart,
-          total_load_time: navigation.loadEventEnd - navigation.navigationStart
+          total_load_time: navigation.loadEventEnd - navigation.fetchStart
         });
       }, 0);
     });
