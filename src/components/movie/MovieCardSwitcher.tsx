@@ -20,52 +20,66 @@ export const MovieCardSwitcher = memo(({
   rating = 0,
   ...props
 }: MovieCardSwitcherProps) => {
+  console.log('MovieCardSwitcher rendering with title:', title);
+  
   const [isMaximized, setIsMaximized] = useState(initialState === 'maximized');
 
   const handleExpand = useCallback(() => {
+    console.log('Expanding movie card:', title);
     setIsMaximized(true);
-  }, []);
+  }, [title]);
 
   const handleMinimize = useCallback(() => {
+    console.log('Minimizing movie card:', title);
     setIsMaximized(false);
-  }, []);
+  }, [title]);
 
   const handleClose = useCallback(() => {
+    console.log('Closing movie card:', title);
     setIsMaximized(false);
     if (props.onClose) {
       props.onClose();
     }
-  }, [props]);
+  }, [props, title]);
 
-  // Always render something, never return null
+  // Ensure we always have valid props
   const movieProps = {
-    title,
-    year,
-    platform,
-    genre,
-    imageUrl,
-    description,
-    trailerUrl,
-    rating,
+    title: title || "Unknown Movie",
+    year: year || "N/A",
+    platform: platform || "Unknown",
+    genre: genre || "",
+    imageUrl: imageUrl || '/placeholder.svg',
+    description: description || "",
+    trailerUrl: trailerUrl || "",
+    rating: rating || 0,
     ...props
   };
 
-  if (isMaximized) {
+  try {
+    if (isMaximized) {
+      return (
+        <ImprovedMaximizedMovieCard
+          {...movieProps}
+          onMinimize={handleMinimize}
+          onClose={handleClose}
+        />
+      );
+    }
+
     return (
-      <ImprovedMaximizedMovieCard
+      <ImprovedMinimizedMovieCard
         {...movieProps}
-        onMinimize={handleMinimize}
-        onClose={handleClose}
+        onExpand={handleExpand}
       />
     );
+  } catch (error) {
+    console.error('Error in MovieCardSwitcher:', error);
+    return (
+      <div className="w-20 h-28 bg-gray-800 rounded-lg flex items-center justify-center">
+        <span className="text-xs text-gray-400">Error</span>
+      </div>
+    );
   }
-
-  return (
-    <ImprovedMinimizedMovieCard
-      {...movieProps}
-      onExpand={handleExpand}
-    />
-  );
 });
 
 MovieCardSwitcher.displayName = "MovieCardSwitcher";
