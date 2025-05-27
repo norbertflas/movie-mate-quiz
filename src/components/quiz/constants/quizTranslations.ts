@@ -1,8 +1,4 @@
 
-// =============================================================================
-// TŁUMACZENIA DLA ULEPSZONEGO QUIZU
-// =============================================================================
-
 export const quizTranslations = {
   en: {
     quiz: {
@@ -15,7 +11,6 @@ export const quizTranslations = {
       saveRecommendations: "Save to Watchlist",
       selectMultiple: "Select all that apply:",
       progress: "Step {{current}} of {{total}}",
-      finish: "Get My Recommendations",
 
       welcome: {
         title: "Find Your Perfect Watch",
@@ -42,37 +37,26 @@ export const quizTranslations = {
       questions: {
         region: "What's your location?",
         regionSubtitle: "This helps us find content available in your area",
-
         platforms: "Which streaming services do you have access to?",
         platformsSubtitle: "Select all that apply - we'll prioritize content available on your services",
-
         contentType: "What type of content are you looking for?",
         contentTypeSubtitle: "This helps us narrow down the perfect recommendation",
-
         movieLength: "How long do you want your movie to be?",
         movieLengthSubtitle: "We'll match the runtime to your available time",
-
         seriesPreferences: "What do you prefer in TV series?",
         seriesPreferencesSubtitle: "Help us find the perfect binge-watch",
-
         mood: "What's your current mood?",
         moodSubtitle: "We'll match content to how you're feeling",
-
         preferredGenres: "Which genres do you enjoy most?",
         preferredGenresSubtitle: "Select your favorites - we'll find the best in each category",
-
         releaseYear: "When should your content be from?",
         releaseYearSubtitle: "From the latest releases to timeless classics",
-
         languagePreference: "What's your language preference?",
         languagePreferenceSubtitle: "Original audio, dubbing, or subtitles?",
-
         qualityPreference: "What's your quality preference?",
         qualityPreferenceSubtitle: "Highly rated hits or hidden gems?",
-
         watchingTime: "When are you planning to watch?",
         watchingTimeSubtitle: "We'll consider your schedule",
-
         watchingCompany: "Who will you be watching with?",
         watchingCompanySubtitle: "Content appropriate for your audience"
       },
@@ -85,31 +69,25 @@ export const quizTranslations = {
           germany: "Germany",
           auto: "Auto-detect"
         },
-
-        contentTypes: {
-          movie: "Movies",
-          series: "TV Series",
-          documentary: "Documentaries",
-          animation: "Animation",
-          notSure: "I'm not sure"
-        },
-
+        movie: "Movies",
+        series: "TV Series",
+        documentary: "Documentaries",
+        animation: "Animation",
+        notSure: "I'm not sure",
         movieLength: {
           short: "Short (under 90 min)",
           standard: "Standard (90-150 min)",
           long: "Long (over 150 min)",
           noPreference: "No preference"
         },
-
-        seriesTypes: {
+        series: {
           finished: "Completed series (I can binge)",
           ongoing: "Currently airing",
           shortSeason: "Short seasons (under 10 episodes)",
           longSeason: "Long seasons (10+ episodes)",
           noPreference: "No preference"
         },
-
-        moods: {
+        mood: {
           laugh: "I want to laugh",
           touching: "Something touching/emotional",
           adrenaline: "Action and adrenaline",
@@ -118,7 +96,6 @@ export const quizTranslations = {
           escape: "Pure escapism",
           notSure: "Surprise me"
         },
-
         genres: {
           action: "Action",
           comedy: "Comedy",
@@ -133,8 +110,7 @@ export const quizTranslations = {
           crime: "Crime",
           history: "Historical"
         },
-
-        releaseYears: {
+        releaseYear: {
           latest: "Latest releases (2024-2025)",
           recent: "Recent hits (2020-2024)",
           modern: "Modern classics (2000-2020)",
@@ -142,31 +118,27 @@ export const quizTranslations = {
           vintage: "Vintage (before 1980)",
           noPreference: "Any era"
         },
-
-        languages: {
+        language: {
           original: "Original language with subtitles",
           dubbed: "Dubbed in my language",
           subtitles: "Don't mind subtitles",
           localLanguage: "Only in my language",
           noPreference: "No preference"
         },
-
-        qualityTypes: {
+        quality: {
           onlyHighRated: "Only highly rated (7.5+ stars)",
           mixed: "Mix of popular and quality",
           hidden: "Hidden gems and underrated",
           noPreference: "Show me everything"
         },
-
-        watchingTimes: {
+        watchingTime: {
           now: "Right now",
           tonight: "Tonight",
           weekend: "This weekend",
           planning: "Planning ahead",
           noPreference: "No rush"
         },
-
-        companies: {
+        company: {
           alone: "By myself",
           partner: "With my partner",
           family: "With family",
@@ -205,12 +177,11 @@ export const quizTranslations = {
       saveRecommendations: "Zapisz do Listy",
       selectMultiple: "Wybierz wszystkie pasujące:",
       progress: "Krok {{current}} z {{total}}",
-      finish: "Pokaż Rekomendacje",
 
       welcome: {
         title: "Znajdź Swój Idealny Film",
         subtitle: "Odkryj filmy i seriale dopasowane specjalnie dla Ciebie",
-        features: "Co czyni to wyjątkowym:",
+        features: "Co nas wyróżnia:",
         feature1: "Spersonalizowane rekomendacje na podstawie Twoich serwisów",
         feature2: "Dostępność w czasie rzeczywistym na wszystkich platformach",
         feature3: "Międzynarodowe treści (USA, UK, Polska, Niemcy)",
@@ -232,37 +203,26 @@ export const quizTranslations = {
       questions: {
         region: "Gdzie się znajdujesz?",
         regionSubtitle: "Pomoże nam to znaleźć treści dostępne w Twoim regionie",
-
         platforms: "Do jakich serwisów streamingowych masz dostęp?",
         platformsSubtitle: "Wybierz wszystkie - będziemy priorytetowo traktować treści na Twoich serwisach",
-
         contentType: "Jakiego typu treści szukasz?",
         contentTypeSubtitle: "Pomoże nam to zawęzić idealną rekomendację",
-
         movieLength: "Jak długi ma być Twój film?",
         movieLengthSubtitle: "Dopasujemy czas trwania do Twojego wolnego czasu",
-
         seriesPreferences: "Co preferujesz w serialach?",
         seriesPreferencesSubtitle: "Pomóż nam znaleźć idealny maraton",
-
         mood: "Jaki jest Twój obecny nastrój?",
         moodSubtitle: "Dopasujemy treści do tego, jak się czujesz",
-
         preferredGenres: "Które gatunki najbardziej lubisz?",
         preferredGenresSubtitle: "Wybierz ulubione - znajdziemy najlepsze w każdej kategorii",
-
         releaseYear: "Z jakiego okresu mają być Twoje treści?",
         releaseYearSubtitle: "Od najnowszych premier po ponadczasowe klasyki",
-
         languagePreference: "Jakie masz preferencje językowe?",
         languagePreferenceSubtitle: "Oryginalny dźwięk, dubbing czy napisy?",
-
         qualityPreference: "Jakie masz preferencje jakościowe?",
         qualityPreferenceSubtitle: "Wysoko oceniane hity czy ukryte perły?",
-
         watchingTime: "Kiedy planujesz oglądać?",
         watchingTimeSubtitle: "Weźmiemy pod uwagę Twój harmonogram",
-
         watchingCompany: "Z kim będziesz oglądać?",
         watchingCompanySubtitle: "Treści odpowiednie dla Twojej publiczności"
       },
@@ -275,31 +235,25 @@ export const quizTranslations = {
           germany: "Niemcy",
           auto: "Wykryj automatycznie"
         },
-
-        contentTypes: {
-          movie: "Filmy",
-          series: "Seriale",
-          documentary: "Dokumenty",
-          animation: "Animacje",
-          notSure: "Nie jestem pewien/pewna"
-        },
-
+        movie: "Filmy",
+        series: "Seriale",
+        documentary: "Dokumenty",
+        animation: "Animacje",
+        notSure: "Nie jestem pewien/pewna",
         movieLength: {
           short: "Krótki (poniżej 90 min)",
           standard: "Standardowy (90-150 min)",
           long: "Długi (powyżej 150 min)",
           noPreference: "Bez preferencji"
         },
-
-        seriesTypes: {
+        series: {
           finished: "Zakończone seriale (mogę oglądać maraton)",
           ongoing: "Obecnie emitowane",
           shortSeason: "Krótkie sezony (poniżej 10 odcinków)",
           longSeason: "Długie sezony (10+ odcinków)",
           noPreference: "Bez preferencji"
         },
-
-        moods: {
+        mood: {
           laugh: "Chcę się pośmiać",
           touching: "Coś wzruszającego/emocjonalnego",
           adrenaline: "Akcja i adrenalina",
@@ -308,7 +262,6 @@ export const quizTranslations = {
           escape: "Czysta ucieczka od rzeczywistości",
           notSure: "Zaskocz mnie"
         },
-
         genres: {
           action: "Akcja",
           comedy: "Komedia",
@@ -323,8 +276,7 @@ export const quizTranslations = {
           crime: "Kryminał",
           history: "Historyczny"
         },
-
-        releaseYears: {
+        releaseYear: {
           latest: "Najnowsze premiery (2024-2025)",
           recent: "Ostatnie hity (2020-2024)",
           modern: "Nowoczesne klasyki (2000-2020)",
@@ -332,31 +284,27 @@ export const quizTranslations = {
           vintage: "Vintage (przed 1980)",
           noPreference: "Dowolna epoka"
         },
-
-        languages: {
+        language: {
           original: "Język oryginalny z napisami",
           dubbed: "Dubbing w moim języku",
           subtitles: "Nie przeszkadzają mi napisy",
           localLanguage: "Tylko w moim języku",
           noPreference: "Bez preferencji"
         },
-
-        qualityTypes: {
+        quality: {
           onlyHighRated: "Tylko wysoko oceniane (7.5+ gwiazdek)",
           mixed: "Mix popularnych i jakościowych",
           hidden: "Ukryte perły i niedoceniane",
           noPreference: "Pokaż mi wszystko"
         },
-
-        watchingTimes: {
+        watchingTime: {
           now: "Teraz",
           tonight: "Dzisiaj wieczorem",
           weekend: "W ten weekend",
           planning: "Planuję z wyprzedzeniem",
           noPreference: "Bez pośpiechu"
         },
-
-        companies: {
+        company: {
           alone: "Sam/sama",
           partner: "Z partnerem/partnerką",
           family: "Z rodziną",

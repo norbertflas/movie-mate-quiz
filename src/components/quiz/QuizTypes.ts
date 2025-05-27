@@ -126,6 +126,202 @@ export interface EnhancedQuizFilters {
   };
 }
 
+export interface StreamingService {
+  id: string;
+  name: string;
+  displayName: string;
+  logo?: string;
+  color?: string;
+  regions: string[];
+  types: ('subscription' | 'rent' | 'buy' | 'free')[];
+  baseUrl?: string;
+  popularity?: number;
+}
+
+export interface RegionInfo {
+  code: string;
+  name: string;
+  currency: string;
+  languages: string[];
+  popularServices: string[];
+  timezone?: string;
+  contentRestrictions?: string[];
+}
+
+export const STREAMING_SERVICES: Record<string, StreamingService> = {
+  netflix: {
+    id: 'netflix',
+    name: 'Netflix',
+    displayName: 'Netflix',
+    logo: '/logos/netflix.png',
+    color: '#E50914',
+    regions: ['US', 'PL', 'GB', 'DE', 'FR', 'CA', 'AU'],
+    types: ['subscription'],
+    baseUrl: 'https://www.netflix.com',
+    popularity: 0.95
+  },
+  prime: {
+    id: 'prime',
+    name: 'Amazon Prime Video',
+    displayName: 'Prime Video',
+    logo: '/logos/prime.png',
+    color: '#00A8E1',
+    regions: ['US', 'PL', 'GB', 'DE', 'FR', 'CA', 'AU'],
+    types: ['subscription', 'rent', 'buy'],
+    baseUrl: 'https://www.primevideo.com',
+    popularity: 0.85
+  },
+  disney: {
+    id: 'disney',
+    name: 'Disney+',
+    displayName: 'Disney+',
+    logo: '/logos/disney.png',
+    color: '#113CCF',
+    regions: ['US', 'PL', 'GB', 'DE', 'FR', 'CA', 'AU'],
+    types: ['subscription'],
+    baseUrl: 'https://www.disneyplus.com',
+    popularity: 0.80
+  },
+  hbo: {
+    id: 'hbo',
+    name: 'HBO Max',
+    displayName: 'HBO Max',
+    logo: '/logos/hbo.png',
+    color: '#8B5CF6',
+    regions: ['US', 'PL', 'GB'],
+    types: ['subscription'],
+    baseUrl: 'https://www.hbomax.com',
+    popularity: 0.75
+  },
+  apple: {
+    id: 'apple',
+    name: 'Apple TV+',
+    displayName: 'Apple TV+',
+    logo: '/logos/apple.png',
+    color: '#000000',
+    regions: ['US', 'PL', 'GB', 'DE', 'FR', 'CA', 'AU'],
+    types: ['subscription'],
+    baseUrl: 'https://tv.apple.com',
+    popularity: 0.60
+  },
+  player: {
+    id: 'player',
+    name: 'Player.pl',
+    displayName: 'Player.pl',
+    logo: '/logos/player.png',
+    color: '#FF6B35',
+    regions: ['PL'],
+    types: ['subscription', 'free'],
+    baseUrl: 'https://player.pl',
+    popularity: 0.70
+  },
+  canalplus: {
+    id: 'canalplus',
+    name: 'Canal+',
+    displayName: 'Canal+',
+    logo: '/logos/canal.png',
+    color: '#000000',
+    regions: ['PL', 'FR'],
+    types: ['subscription'],
+    baseUrl: 'https://canalplus.com',
+    popularity: 0.65
+  },
+  tvp: {
+    id: 'tvp',
+    name: 'TVP VOD',
+    displayName: 'TVP VOD',
+    logo: '/logos/tvp.png',
+    color: '#0066CC',
+    regions: ['PL'],
+    types: ['free', 'subscription'],
+    baseUrl: 'https://vod.tvp.pl',
+    popularity: 0.50
+  }
+};
+
+export const REGION_INFO: Record<string, RegionInfo> = {
+  US: {
+    code: 'US',
+    name: 'United States',
+    currency: 'USD',
+    languages: ['en'],
+    popularServices: ['netflix', 'prime', 'disney', 'hbo', 'hulu', 'apple'],
+    timezone: 'America/New_York'
+  },
+  PL: {
+    code: 'PL', 
+    name: 'Poland',
+    currency: 'PLN',
+    languages: ['pl', 'en'],
+    popularServices: ['netflix', 'prime', 'disney', 'hbo', 'player', 'canalplus'],
+    timezone: 'Europe/Warsaw'
+  },
+  GB: {
+    code: 'GB',
+    name: 'United Kingdom', 
+    currency: 'GBP',
+    languages: ['en'],
+    popularServices: ['netflix', 'prime', 'disney', 'now', 'bbc', 'itv'],
+    timezone: 'Europe/London'
+  }
+};
+
+export const getServicesForRegion = (region: string): StreamingService[] => {
+  return Object.values(STREAMING_SERVICES)
+    .filter(service => service.regions.includes(region))
+    .sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
+};
+
+export const getRegionInfo = (region: string): RegionInfo | undefined => {
+  return REGION_INFO[region];
+};
+
+export const detectUserRegion = (): string => {
+  try {
+    const savedRegion = localStorage.getItem('preferred-region');
+    if (savedRegion && REGION_INFO[savedRegion]) {
+      return savedRegion;
+    }
+
+    const browserLang = navigator.language.toLowerCase();
+    if (browserLang.includes('pl')) return 'PL';
+    if (browserLang.includes('de')) return 'DE';
+    if (browserLang.includes('fr')) return 'FR';
+    if (browserLang.includes('gb') || browserLang.includes('uk')) return 'GB';
+    
+    return 'US';
+  } catch {
+    return 'US';
+  }
+};
+
+export const calculateRecommendationScore = (
+  movie: EnhancedMovieRecommendation,
+  filters: EnhancedQuizFilters,
+  userPlatforms: string[]
+): number => {
+  let score = movie.vote_average * 10;
+
+  const availableOnUserPlatforms = movie.availableOn?.filter(platform =>
+    userPlatforms.some(userPlatform =>
+      platform.toLowerCase().includes(userPlatform.toLowerCase())
+    )
+  ) || [];
+  
+  score += availableOnUserPlatforms.length * 15;
+
+  const genreMatches = movie.genres?.filter(genre =>
+    filters.genres.includes(genre)
+  ) || [];
+  score += genreMatches.length * 10;
+
+  if (!movie.streamingAvailability?.length && filters.includeStreamingInfo) {
+    score -= 25;
+  }
+
+  return Math.max(0, Math.min(100, score));
+};
+
 // Backward compatibility - zachowujemy stare typy
 export type SurveyStepType = {
   id: string;
@@ -135,6 +331,8 @@ export type SurveyStepType = {
   options: string[];
   getDynamicOptions?: (answers: Record<string, any>) => string[];
   shouldShow?: (answers: Record<string, any>) => boolean;
+  weight?: number;
+  category?: 'basic' | 'preference' | 'technical' | 'social';
 };
 
 export interface MovieRecommendation extends EnhancedMovieRecommendation {}

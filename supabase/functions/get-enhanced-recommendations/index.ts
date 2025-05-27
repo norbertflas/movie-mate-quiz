@@ -1,21 +1,14 @@
 
-// =============================================================================
-// SUPABASE EDGE FUNCTION: get-enhanced-recommendations
-// =============================================================================
-
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// API Configuration
 const TMDB_API_KEY = Deno.env.get('TMDB_API_KEY')
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3'
 
-// TMDB Genre Mapping
 const GENRE_MAP: Record<string, number[]> = {
   'Action': [28],
   'Adventure': [12],
@@ -38,7 +31,6 @@ const GENRE_MAP: Record<string, number[]> = {
   'Western': [37]
 }
 
-// Mood to Genre Mapping
 const MOOD_TO_GENRES: Record<string, string[]> = {
   'laugh': ['Comedy', 'Family', 'Animation'],
   'touching': ['Drama', 'Romance', 'Family'],
@@ -48,7 +40,6 @@ const MOOD_TO_GENRES: Record<string, string[]> = {
   'escape': ['Fantasy', 'Science Fiction', 'Adventure']
 }
 
-// Parse quiz answers
 function parseQuizAnswers(answers: any[]): any {
   const answerMap = answers.reduce((acc, answer) => {
     acc[answer.questionId] = answer.answer;
@@ -68,18 +59,15 @@ function parseQuizAnswers(answers: any[]): any {
     runtime: {} as any
   };
 
-  // Map region to languages
   if (answerMap.region?.includes('Poland') || answerMap.region?.includes('polska')) {
     filters.region = 'pl';
     filters.languages = ['pl', 'en'];
   }
 
-  // Add genres based on mood
   if (answerMap.mood && MOOD_TO_GENRES[answerMap.mood]) {
     filters.genres = [...filters.genres, ...MOOD_TO_GENRES[answerMap.mood]];
   }
 
-  // Map release year
   const currentYear = new Date().getFullYear();
   switch (answerMap.releaseYear) {
     case 'Latest releases (2024-2025)':
@@ -100,7 +88,6 @@ function parseQuizAnswers(answers: any[]): any {
       break;
   }
 
-  // Map movie length
   switch (answerMap.movieLength) {
     case 'Short (under 90 min)':
     case 'Krótki (poniżej 90 min)':
@@ -116,7 +103,6 @@ function parseQuizAnswers(answers: any[]): any {
       break;
   }
 
-  // Map quality preference
   switch (answerMap.qualityPreference) {
     case 'Only highly rated (7.5+ stars)':
     case 'Tylko wysoko oceniane (7.5+ gwiazdek)':
@@ -129,14 +115,13 @@ function parseQuizAnswers(answers: any[]): any {
     case 'Hidden gems and underrated':
     case 'Ukryte perły i niedoceniane':
       filters.minRating = 6.5;
-      filters.maxResults = 30; // More results for hidden gems
+      filters.maxResults = 30;
       break;
   }
 
   return filters;
 }
 
-// Build TMDB URL
 function buildTMDBUrl(filters: any, mediaType: 'movie' | 'tv', page = 1): string {
   const baseUrl = `${TMDB_BASE_URL}/discover/${mediaType}`;
   const params = new URLSearchParams({
@@ -147,7 +132,6 @@ function buildTMDBUrl(filters: any, mediaType: 'movie' | 'tv', page = 1): string
     'vote_count.gte': '50'
   });
 
-  // Add genre filters
   if (filters.genres.length > 0) {
     const genreIds = filters.genres
       .flatMap(genre => GENRE_MAP[genre] || [])
@@ -158,7 +142,6 @@ function buildTMDBUrl(filters: any, mediaType: 'movie' | 'tv', page = 1): string
     }
   }
 
-  // Add year filters
   if (filters.releaseYear.min) {
     const dateField = mediaType === 'movie' ? 'primary_release_date' : 'first_air_date';
     params.set(`${dateField}.gte`, `${filters.releaseYear.min}-01-01`);
@@ -168,7 +151,6 @@ function buildTMDBUrl(filters: any, mediaType: 'movie' | 'tv', page = 1): string
     params.set(`${dateField}.lte`, `${filters.releaseYear.max}-12-31`);
   }
 
-  // Add runtime filters (movies only)
   if (mediaType === 'movie') {
     if (filters.runtime.min) {
       params.set('with_runtime.gte', filters.runtime.min.toString());
@@ -178,7 +160,6 @@ function buildTMDBUrl(filters: any, mediaType: 'movie' | 'tv', page = 1): string
     }
   }
 
-  // Add rating filters
   if (filters.minRating > 0) {
     params.set('vote_average.gte', filters.minRating.toString());
   }
@@ -186,7 +167,6 @@ function buildTMDBUrl(filters: any, mediaType: 'movie' | 'tv', page = 1): string
   return `${baseUrl}?${params.toString()}`;
 }
 
-// Fetch TMDB recommendations
 async function fetchTMDBRecommendations(filters: any): Promise<any[]> {
   const recommendations: any[] = [];
   const mediaTypes = filters.contentType === 'series' ? ['tv'] : 
@@ -195,7 +175,6 @@ async function fetchTMDBRecommendations(filters: any): Promise<any[]> {
 
   for (const mediaType of mediaTypes) {
     try {
-      // Fetch first page
       const url = buildTMDBUrl(filters, mediaType as 'movie' | 'tv');
       console.log(`Fetching ${mediaType} from: ${url}`);
       
@@ -225,7 +204,7 @@ async function fetchTMDBRecommendations(filters: any): Promise<any[]> {
           genres: item.genre_ids?.map(id => 
             Object.keys(GENRE_MAP).find(genre => GENRE_MAP[genre].includes(id))
           ).filter(Boolean) || [],
-          trailer_url: null, // Can add separate video query
+          trailer_url: null,
           type: mediaType,
           runtime: item.runtime,
           seasons: item.number_of_seasons,
@@ -236,7 +215,6 @@ async function fetchTMDBRecommendations(filters: any): Promise<any[]> {
         recommendations.push(...processedResults);
       }
 
-      // If we need more results, fetch second page
       if (recommendations.length < filters.maxResults && data.total_pages > 1) {
         const url2 = buildTMDBUrl(filters, mediaType as 'movie' | 'tv', 2);
         const response2 = await fetch(url2);
@@ -281,59 +259,7 @@ async function fetchTMDBRecommendations(filters: any): Promise<any[]> {
   return recommendations;
 }
 
-// Add streaming info
-async function enrichWithStreamingInfo(recommendations: any[], region: string): Promise<any[]> {
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-  const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-  const supabase = createClient(supabaseUrl, supabaseKey);
-
-  const enrichedRecommendations = [];
-
-  for (const rec of recommendations) {
-    try {
-      // Call streaming-availability function
-      const { data: streamingData, error } = await supabase.functions.invoke('streaming-availability', {
-        body: {
-          tmdbId: rec.tmdbId,
-          country: region.toLowerCase(),
-          title: rec.title,
-          year: rec.release_date?.split('-')[0]
-        }
-      });
-
-      let streamingAvailability = [];
-      let availableOn = [];
-      
-      if (!error && streamingData?.result) {
-        streamingAvailability = streamingData.result;
-        availableOn = streamingAvailability.map(s => s.service);
-      }
-
-      enrichedRecommendations.push({
-        ...rec,
-        streamingAvailability,
-        availableOn,
-        recommendationScore: rec.vote_average * 10 + (availableOn.length * 5)
-      });
-
-    } catch (error) {
-      console.error(`Error enriching ${rec.title} with streaming info:`, error);
-      // Add without streaming info
-      enrichedRecommendations.push({
-        ...rec,
-        streamingAvailability: [],
-        availableOn: [],
-        recommendationScore: rec.vote_average * 10
-      });
-    }
-  }
-
-  return enrichedRecommendations;
-}
-
-// Fallback recommendations
 function generateFallbackRecommendations(filters: any): any[] {
-  // Popular movies/series as fallback
   const fallbackMovies = [
     {
       id: 550,
@@ -360,6 +286,32 @@ function generateFallbackRecommendations(filters: any): any[] {
       genres: ["Drama", "Romance"],
       trailer_url: null,
       type: "movie"
+    },
+    {
+      id: 238,
+      tmdbId: 238,
+      title: "The Shawshank Redemption",
+      overview: "Two imprisoned men bond over a number of years, finding solace and eventual redemption through acts of common decency.",
+      poster_path: "/q6y0Go1tsGEsmtFryDOJo3dEmqu.jpg",
+      release_date: "1994-09-23",
+      vote_average: 9.3,
+      genre: "Drama",
+      genres: ["Drama"],
+      trailer_url: null,
+      type: "movie"
+    },
+    {
+      id: 680,
+      tmdbId: 680,
+      title: "Pulp Fiction",
+      overview: "A burger-loving hit man, his philosophical partner, a drug-addled gangster's moll and a washed-up boxer converge in this sprawling, comedic crime caper.",
+      poster_path: "/d5iIlFn5s0ImszYzBPb8JPIfbXD.jpg",
+      release_date: "1994-09-10",
+      vote_average: 8.9,
+      genre: "Crime",
+      genres: ["Crime", "Drama"],
+      trailer_url: null,
+      type: "movie"
     }
   ];
 
@@ -372,7 +324,6 @@ function generateFallbackRecommendations(filters: any): any[] {
   }));
 }
 
-// Main edge function
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -388,7 +339,6 @@ serve(async (req) => {
       throw new Error('TMDB_API_KEY not configured');
     }
 
-    // Parse answers
     const filters = parseQuizAnswers(answers);
     filters.maxResults = maxResults;
     
@@ -397,7 +347,6 @@ serve(async (req) => {
     let recommendations = [];
 
     try {
-      // Try to fetch from TMDB
       recommendations = await fetchTMDBRecommendations(filters);
       console.log(`[Enhanced Recommendations] TMDB returned ${recommendations.length} recommendations`);
       
@@ -411,18 +360,6 @@ serve(async (req) => {
       recommendations = generateFallbackRecommendations(filters);
     }
 
-    // Enrich with streaming info if requested
-    if (includeStreaming && recommendations.length > 0) {
-      try {
-        console.log(`[Enhanced Recommendations] Enriching with streaming info for region: ${region}`);
-        recommendations = await enrichWithStreamingInfo(recommendations, region);
-      } catch (streamingError) {
-        console.error('[Enhanced Recommendations] Streaming enrichment error:', streamingError);
-        // Continue without streaming info
-      }
-    }
-
-    // Sort and limit results
     const finalRecommendations = recommendations
       .sort((a, b) => (b.recommendationScore || 0) - (a.recommendationScore || 0))
       .slice(0, maxResults);
@@ -442,13 +379,12 @@ serve(async (req) => {
   } catch (error) {
     console.error('[Enhanced Recommendations] Error:', error);
     
-    // Return fallback in case of error
     const fallbackRecommendations = generateFallbackRecommendations({});
     
     return new Response(
       JSON.stringify(fallbackRecommendations),
       { 
-        status: 200, // Return 200 with fallback instead of error
+        status: 200,
         headers: { 
           ...corsHeaders,
           'Content-Type': 'application/json'

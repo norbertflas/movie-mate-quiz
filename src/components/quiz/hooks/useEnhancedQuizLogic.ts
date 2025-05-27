@@ -1,331 +1,218 @@
-import { useState, useCallback } from "react";
-import type { QuizAnswer, MovieRecommendation, QuizLogicHook, EnhancedQuizFilters, EnhancedMovieRecommendation, StreamingAvailability } from "../QuizTypes";
-import { useToast } from "@/hooks/use-toast";
-import { useTranslation } from "react-i18next";
-import { supabase } from "@/integrations/supabase/client";
-import { parseQuizAnswers, getPersonalizedRecommendations, generateFallbackRecommendations } from "../utils/quizRecommendationLogic";
 
-export const useEnhancedQuizLogic = (): QuizLogicHook => {
+import { useState, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import type { EnhancedMovieRecommendation, EnhancedQuizAnswer, EnhancedQuizFilters } from '../QuizTypes';
+import { detectUserRegion } from '../QuizTypes';
+
+export const useEnhancedQuizLogic = () => {
   const [showQuiz, setShowQuiz] = useState(false);
   const [showResults, setShowResults] = useState(false);
-  const [answers, setAnswers] = useState<QuizAnswer[]>([]);
-  const [answerMap, setAnswerMap] = useState<Record<string, string>>({});
   const [recommendations, setRecommendations] = useState<EnhancedMovieRecommendation[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [region, setRegion] = useState<string>('us');
-  
-  const { toast } = useToast();
-  const { t } = useTranslation();
+  const [region, setRegion] = useState(detectUserRegion());
 
   const handleStartQuiz = useCallback(() => {
     setShowQuiz(true);
     setShowResults(false);
-    setAnswers([]);
-    setAnswerMap({});
     setRecommendations([]);
   }, []);
 
-  // Wykrywanie regionu użytkownika
-  const detectUserRegion = useCallback(async (): Promise<string> => {
-    try {
-      // Sprawdź preferencje użytkownika w localStorage
-      const savedRegion = localStorage.getItem('preferred-region');
-      if (savedRegion) return savedRegion;
-
-      // Wykryj język przeglądarki
-      const browserLang = navigator.language.toLowerCase();
-      if (browserLang.includes('pl')) return 'pl';
-      if (browserLang.includes('de')) return 'de';
-      if (browserLang.includes('fr')) return 'fr';
-      
-      // Domyślnie US
-      return 'us';
-    } catch {
-      return 'us';
-    }
+  const changeRegion = useCallback((newRegion: string) => {
+    setRegion(newRegion.toUpperCase());
+    localStorage.setItem('preferred-region', newRegion.toUpperCase());
   }, []);
 
-  // Parsowanie odpowiedzi z dodatkową logiką dla regionów i platform
-  const parseEnhancedQuizAnswers = useCallback((quizAnswers: QuizAnswer[]): EnhancedQuizFilters => {
-    const answerMap = quizAnswers.reduce((acc, answer) => {
+  const parseQuizAnswers = (answers: EnhancedQuizAnswer[]): EnhancedQuizFilters => {
+    const answerMap = answers.reduce((acc, answer) => {
       acc[answer.questionId] = answer.answer;
       return acc;
     }, {} as Record<string, string>);
 
-    // Podstawowe parsowanie
-    const basicFilters = parseQuizAnswers(quizAnswers);
-    
-    // Rozszerzone filtry
-    const enhancedFilters: EnhancedQuizFilters = {
-      ...basicFilters,
+    const filters: EnhancedQuizFilters = {
+      platforms: answerMap.platforms?.split(',') || [],
+      contentType: answerMap.contentType as any || 'notSure',
+      mood: answerMap.mood || 'notSure',
+      genres: answerMap.preferredGenres?.split(',') || [],
       region: region,
-      languages: region === 'pl' ? ['pl', 'en'] : ['en'],
-      includeStreamingInfo: true,
+      languages: ['en'],
+      minRating: 0,
       maxResults: 20,
+      includeStreamingInfo: true
     };
 
-    // Dodatkowa logika dla różnych typów pytań
-    if (answerMap.movieLength) {
-      switch (answerMap.movieLength) {
-        case t("quiz.options.movieLength.short"):
-          enhancedFilters.runtime = { max: 90 };
-          break;
-        case t("quiz.options.movieLength.standard"):
-          enhancedFilters.runtime = { min: 90, max: 150 };
-          break;
-        case t("quiz.options.movieLength.long"):
-          enhancedFilters.runtime = { min: 150 };
-          break;
-      }
+    // Region detection from answers
+    if (answerMap.region?.includes('Poland') || answerMap.region?.includes('polska')) {
+      filters.region = 'PL';
+      filters.languages = ['pl', 'en'];
+    } else if (answerMap.region?.includes('USA')) {
+      filters.region = 'US';
+    } else if (answerMap.region?.includes('UK')) {
+      filters.region = 'GB';
     }
 
-    // Mapowanie nastroju na gatunki
-    if (answerMap.mood) {
-      const moodToGenres: Record<string, string[]> = {
-        [t("quiz.options.mood.laugh")]: ['Comedy', 'Family'],
-        [t("quiz.options.mood.touching")]: ['Drama', 'Romance'],
-        [t("quiz.options.mood.adrenaline")]: ['Action', 'Thriller', 'Adventure'],
-        [t("quiz.options.mood.relax")]: ['Documentary', 'Animation', 'Family'],
-      };
-      
-      const moodGenres = moodToGenres[answerMap.mood];
-      if (moodGenres) {
-        enhancedFilters.genres = [...(enhancedFilters.genres || []), ...moodGenres];
-      }
+    // Mood to genres mapping
+    const moodToGenres: Record<string, string[]> = {
+      'laugh': ['Comedy', 'Family', 'Animation'],
+      'touching': ['Drama', 'Romance', 'Family'],
+      'adrenaline': ['Action', 'Thriller', 'Adventure'],
+      'relax': ['Documentary', 'Animation', 'Family'],
+      'think': ['Drama', 'Documentary', 'Mystery'],
+      'escape': ['Fantasy', 'Science Fiction', 'Adventure']
+    };
+
+    if (answerMap.mood && moodToGenres[answerMap.mood]) {
+      filters.genres = [...filters.genres, ...moodToGenres[answerMap.mood]];
     }
 
-    // Dodaj preferencje jakości na podstawie wybranych platform premium
-    const premiumPlatforms = ['Netflix', 'Disney+', 'HBO Max', 'Apple TV+'];
-    const userPlatforms = enhancedFilters.platforms || [];
-    const hasPremiumPlatforms = userPlatforms.some(p => premiumPlatforms.includes(p));
-    
-    if (hasPremiumPlatforms) {
-      enhancedFilters.minRating = 6.5; // Wyższe oceny dla platform premium
+    // Release year filtering
+    const currentYear = new Date().getFullYear();
+    if (answerMap.releaseYear?.includes('Latest') || answerMap.releaseYear?.includes('Najnowsze')) {
+      filters.releaseYear = { min: currentYear - 1 };
+    } else if (answerMap.releaseYear?.includes('Recent') || answerMap.releaseYear?.includes('Ostatnie')) {
+      filters.releaseYear = { min: currentYear - 5 };
+    } else if (answerMap.releaseYear?.includes('Modern') || answerMap.releaseYear?.includes('Nowoczesne')) {
+      filters.releaseYear = { min: 2000, max: 2020 };
+    } else if (answerMap.releaseYear?.includes('Vintage') || answerMap.releaseYear?.includes('przed')) {
+      filters.releaseYear = { max: 1979 };
     }
 
-    return enhancedFilters;
-  }, [region, t]);
+    // Movie length filtering
+    if (answerMap.movieLength?.includes('Short') || answerMap.movieLength?.includes('Krótki')) {
+      filters.runtime = { max: 90 };
+    } else if (answerMap.movieLength?.includes('Standard') || answerMap.movieLength?.includes('Standardowy')) {
+      filters.runtime = { min: 90, max: 150 };
+    } else if (answerMap.movieLength?.includes('Long') || answerMap.movieLength?.includes('Długi')) {
+      filters.runtime = { min: 150 };
+    }
 
-  // Pobieranie dostępności streamingowej dla rekomendacji
-  const enrichWithStreamingData = useCallback(async (
-    recommendations: MovieRecommendation[]
+    // Quality preference
+    if (answerMap.qualityPreference?.includes('highly rated') || answerMap.qualityPreference?.includes('wysoko')) {
+      filters.minRating = 7.5;
+    } else if (answerMap.qualityPreference?.includes('Mix') || answerMap.qualityPreference?.includes('mix')) {
+      filters.minRating = 6.0;
+    } else if (answerMap.qualityPreference?.includes('Hidden') || answerMap.qualityPreference?.includes('Ukryte')) {
+      filters.minRating = 6.5;
+      filters.maxResults = 30;
+    }
+
+    return filters;
+  };
+
+  const enrichWithStreamingData = async (
+    recommendations: EnhancedMovieRecommendation[],
+    region: string
   ): Promise<EnhancedMovieRecommendation[]> => {
-    const enrichedRecommendations: EnhancedMovieRecommendation[] = [];
+    const enrichedRecommendations = await Promise.all(
+      recommendations.map(async (movie) => {
+        try {
+          const { data } = await supabase.functions.invoke('get-streaming-availability', {
+            body: {
+              tmdbId: movie.tmdbId || movie.id,
+              country: region.toLowerCase(),
+              title: movie.title,
+              year: new Date(movie.release_date).getFullYear()
+            }
+          });
 
-    for (const rec of recommendations) {
-      try {
-        // Wywołaj edge function streaming-availability
-        const { data, error } = await supabase.functions.invoke('streaming-availability', {
-          body: {
-            tmdbId: rec.tmdbId || rec.id,
-            country: region.toLowerCase(),
-            title: rec.title,
-            year: rec.release_date?.split('-')[0]
+          if (data?.result && Array.isArray(data.result)) {
+            return {
+              ...movie,
+              streamingAvailability: data.result,
+              availableOn: data.result.map((service: any) => service.service),
+              primaryPlatform: data.result[0]?.service
+            };
           }
-        });
-
-        let streamingAvailability: StreamingAvailability[] = [];
-        let availableOn: string[] = [];
-
-        if (!error && data?.result) {
-          streamingAvailability = data.result;
-          availableOn = streamingAvailability.map(s => s.service);
+        } catch (error) {
+          console.error(`Failed to get streaming data for ${movie.title}:`, error);
         }
 
-        // Oblicz wynik dopasowania na podstawie dostępności
-        let recommendationScore = rec.vote_average * 10; // Bazowy wynik
-        
-        // Bonus za dostępność na preferowanych platformach użytkownika
-        const userPlatforms = answerMap.platforms?.split(',') || [];
-        const matchingPlatforms = availableOn.filter(platform => 
-          userPlatforms.some(userPlatform => 
-            platform.toLowerCase().includes(userPlatform.toLowerCase())
-          )
-        );
-        
-        recommendationScore += matchingPlatforms.length * 15;
-
-        // Przygotuj powody rekomendacji
-        const matchReasons: string[] = [];
-        if (matchingPlatforms.length > 0) {
-          matchReasons.push(`Available on ${matchingPlatforms.join(', ')}`);
-        }
-        if (rec.vote_average >= 7.5) {
-          matchReasons.push('Highly rated');
-        }
-
-        enrichedRecommendations.push({
-          ...rec,
-          streamingAvailability,
-          availableOn,
-          recommendationScore,
-          matchReasons,
-          alternativeRegions: streamingAvailability.length === 0 ? ['us', 'gb'] : undefined
-        });
-
-      } catch (error) {
-        console.error(`Error enriching recommendation ${rec.id}:`, error);
-        // Dodaj bez informacji o streamingu
-        enrichedRecommendations.push({
-          ...rec,
-          streamingAvailability: [],
-          availableOn: [],
-          recommendationScore: rec.vote_average * 10,
-          matchReasons: []
-        });
-      }
-    }
-
-    // Sortuj według wyniku dopasowania
-    return enrichedRecommendations.sort((a, b) => 
-      (b.recommendationScore || 0) - (a.recommendationScore || 0)
+        return movie;
+      })
     );
-  }, [region, answerMap]);
 
-  // Główna funkcja przetwarzania odpowiedzi
-  const processAnswers = useCallback(async (quizAnswers: QuizAnswer[]): Promise<MovieRecommendation[]> => {
+    return enrichedRecommendations;
+  };
+
+  const handleQuizComplete = useCallback(async (answers: EnhancedQuizAnswer[]): Promise<EnhancedMovieRecommendation[]> => {
     setIsLoading(true);
     
     try {
-      console.log('Processing enhanced quiz answers:', quizAnswers);
+      const filters = parseQuizAnswers(answers);
       
-      // Wykryj region użytkownika
-      const detectedRegion = await detectUserRegion();
-      setRegion(detectedRegion);
-      
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      // Zapisz historię quizu
-      if (user) {
-        const { error: historyError } = await supabase
-          .from('quiz_history')
-          .insert([{ 
-            user_id: user.id, 
-            answers: quizAnswers
-          }]);
-        
-        if (historyError) {
-          console.error('Error saving quiz history:', historyError);
+      // Get recommendations from edge function
+      const { data, error } = await supabase.functions.invoke('get-enhanced-recommendations', {
+        body: {
+          answers: answers,
+          region: filters.region,
+          includeStreaming: true,
+          maxResults: filters.maxResults
         }
-      }
-
-      // Parsuj odpowiedzi do rozszerzonych filtrów
-      const enhancedFilters = parseEnhancedQuizAnswers(quizAnswers);
-      console.log('Enhanced filters:', enhancedFilters);
-
-      // Update answer map for UI consistency
-      const newAnswerMap = quizAnswers.reduce((map, answer) => {
-        map[answer.questionId] = answer.answer;
-        return map;
-      }, {} as Record<string, string>);
-      setAnswerMap(newAnswerMap);
-
-      let baseRecommendations: MovieRecommendation[] = [];
-
-      try {
-        // Spróbuj pobrać spersonalizowane rekomendacje
-        baseRecommendations = await getPersonalizedRecommendations(enhancedFilters);
-        
-      } catch (edgeFunctionError) {
-        console.error('Enhanced recommendations failed, using fallback:', edgeFunctionError);
-        baseRecommendations = generateFallbackRecommendations(enhancedFilters);
-      }
-
-      // Wzbogać rekomendacje o dane streamingowe
-      const enrichedRecommendations = await enrichWithStreamingData(baseRecommendations);
-      
-      // Filtruj rekomendacje dostępne na platformach użytkownika
-      const userPlatforms = enhancedFilters.platforms || [];
-      const availableRecommendations = enrichedRecommendations.filter(rec => 
-        rec.availableOn?.some(platform => 
-          userPlatforms.some(userPlatform => 
-            platform.toLowerCase().includes(userPlatform.toLowerCase())
-          )
-        ) || rec.availableOn?.length === 0 // Zachowaj też te bez informacji o streamingu
-      );
-
-      // Jeśli za mało dostępnych, dodaj najlepsze ogólne
-      const finalRecommendations = availableRecommendations.length >= 5 
-        ? availableRecommendations.slice(0, 12)
-        : [
-            ...availableRecommendations,
-            ...enrichedRecommendations
-              .filter(rec => !availableRecommendations.includes(rec))
-              .slice(0, 12 - availableRecommendations.length)
-          ];
-
-      setAnswers(quizAnswers);
-      setRecommendations(finalRecommendations);
-      setShowResults(true);
-      
-      // Wyświetl toast z informacją o regionie - fix the translation call
-      toast({
-        title: t('quiz.success.title') || 'Quiz completed!',
-        description: t('quiz.success.regionDetected', { region: detectedRegion.toUpperCase() }) || `Recommendations for ${detectedRegion.toUpperCase()}`,
       });
 
-      return finalRecommendations;
+      if (error) throw error;
 
+      let recommendations: EnhancedMovieRecommendation[] = data || [];
+
+      // Enrich with streaming availability
+      if (recommendations.length > 0) {
+        recommendations = await enrichWithStreamingData(recommendations, filters.region);
+      }
+
+      // Add match reasons and scoring
+      recommendations = recommendations.map((movie, index) => ({
+        ...movie,
+        recommendationScore: movie.recommendationScore || (90 - index * 5),
+        matchReasons: movie.matchReasons || [
+          'Matches your preferred genres',
+          'Available on your platforms',
+          'Fits your mood'
+        ].slice(0, 2)
+      }));
+
+      setRecommendations(recommendations);
+      setShowResults(true);
+      setShowQuiz(false);
+      
+      return recommendations;
     } catch (error) {
-      console.error('Error processing enhanced quiz answers:', error);
+      console.error('Enhanced quiz completion error:', error);
       
-      // Ostateczny fallback
-      const basicFilters = parseQuizAnswers(quizAnswers);
-      const fallbackRecommendations = generateFallbackRecommendations(basicFilters);
+      // Fallback recommendations
+      const fallbackRecommendations: EnhancedMovieRecommendation[] = [
+        {
+          id: 550,
+          title: "Fight Club",
+          overview: "An insomniac office worker and a devil-may-care soapmaker form an underground fight club.",
+          poster_path: "/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg",
+          release_date: "1999-10-15",
+          vote_average: 8.4,
+          genre: "Drama",
+          genres: ["Drama", "Thriller"],
+          trailer_url: null,
+          type: "movie",
+          recommendationScore: 85,
+          matchReasons: ["Highly rated", "Popular choice"]
+        }
+      ];
       
-      setRecommendations(fallbackRecommendations.map(rec => ({
-        ...rec,
-        streamingAvailability: [],
-        availableOn: [],
-        recommendationScore: rec.vote_average * 10,
-        matchReasons: []
-      })));
+      setRecommendations(fallbackRecommendations);
       setShowResults(true);
+      setShowQuiz(false);
       
-      toast({
-        title: t('quiz.error.title') || 'Error',
-        description: t('quiz.error.fallback') || 'Using fallback recommendations',
-        variant: 'destructive'
-      });
-
       return fallbackRecommendations;
     } finally {
       setIsLoading(false);
     }
-  }, [detectUserRegion, parseEnhancedQuizAnswers, enrichWithStreamingData, toast, t]);
-
-  const handleQuizComplete = useCallback(async (quizAnswers: QuizAnswer[]): Promise<MovieRecommendation[]> => {
-    try {
-      const recommendations = await processAnswers(quizAnswers);
-      return recommendations;
-    } catch (error) {
-      console.error('Error completing enhanced quiz:', error);
-      throw error;
-    }
-  }, [processAnswers]);
-
-  // Funkcja do zmiany regionu
-  const changeRegion = useCallback((newRegion: string) => {
-    setRegion(newRegion);
-    localStorage.setItem('preferred-region', newRegion);
-    
-    // Jeśli są już wyniki, odśwież je dla nowego regionu
-    if (recommendations.length > 0) {
-      processAnswers(answers);
-    }
-  }, [recommendations, answers, processAnswers]);
+  }, [region]);
 
   return {
     showQuiz,
     showResults,
-    answers,
-    answerMap,
-    recommendations: recommendations as MovieRecommendation[], // Type compatibility
+    recommendations,
     isLoading,
     region,
     handleStartQuiz,
-    handleQuizComplete,
-    processAnswers,
-    changeRegion
+    changeRegion,
+    handleQuizComplete
   };
 };

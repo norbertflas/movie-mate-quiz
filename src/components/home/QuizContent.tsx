@@ -1,6 +1,7 @@
+
 import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import { QuizSection } from "@/components/QuizSection";
+import EnhancedQuiz from "@/components/quiz/EnhancedQuiz";
 
 export const QuizContent = () => {
   return (
@@ -8,10 +9,9 @@ export const QuizContent = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
+      className="w-full"
     >
-      <Card className="p-6">
-        <QuizSection />
-      </Card>
+      <EnhancedQuiz />
     </motion.div>
   );
 };
