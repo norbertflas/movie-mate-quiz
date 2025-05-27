@@ -21,7 +21,7 @@ interface EnhancedQuizProps {
   className?: string;
 }
 
-export const EnhancedQuiz: React.FC<EnhancedQuizProps> = ({
+const EnhancedQuiz: React.FC<EnhancedQuizProps> = ({
   onComplete,
   initialRegion = 'us',
   className = ''
