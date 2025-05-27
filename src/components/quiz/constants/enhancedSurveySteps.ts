@@ -29,9 +29,9 @@ export const useEnhancedSurveySteps = (): SurveyStepType[] => {
       subtitle: t("quiz.questions.contentTypeSubtitle", "Choose your preferred content type"),
       type: "single",
       options: [
-        t("quiz.options.movies", "Movies"),
-        t("quiz.options.series", "TV Series"),
-        t("quiz.options.both", "Both")
+        "movies",
+        "series",
+        "both"
       ],
       getDynamicOptions: () => []
     },
@@ -41,12 +41,16 @@ export const useEnhancedSurveySteps = (): SurveyStepType[] => {
       subtitle: t("quiz.questions.movieLengthSubtitle", "Choose your preferred duration"),
       type: "single",
       options: [
-        t("quiz.options.short", "Short (up to 90 minutes)"),
-        t("quiz.options.standard", "Standard (90-120 minutes)"),
-        t("quiz.options.long", "Long (over 120 minutes)")
+        "short",
+        "standard",
+        "long"
       ],
       getDynamicOptions: () => [],
-      shouldShow: (answerMap) => answerMap.contentType === t("quiz.options.movies", "Movies") || answerMap.contentType === "Filmy"
+      shouldShow: (answerMap) => {
+        const contentType = answerMap.contentType;
+        return contentType === "movies" || contentType === "both" || 
+               contentType === t("quiz.options.movies") || contentType === t("quiz.options.both");
+      }
     },
     {
       id: "mood",
@@ -54,11 +58,11 @@ export const useEnhancedSurveySteps = (): SurveyStepType[] => {
       subtitle: t("quiz.questions.moodSubtitle", "What do you feel like watching?"),
       type: "single",
       options: [
-        t("quiz.options.funny", "Something funny"),
-        t("quiz.options.touching", "Something touching"), 
-        t("quiz.options.adrenaline", "Something with adrenaline"),
-        t("quiz.options.relaxing", "Something relaxing"),
-        t("quiz.options.notSure", "I'm not sure")
+        "funny",
+        "touching",
+        "adrenaline",
+        "relaxing",
+        "notSure"
       ],
       getDynamicOptions: () => []
     },

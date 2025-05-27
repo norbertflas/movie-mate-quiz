@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import type { QuizAnswer, MovieRecommendation, EnhancedQuizFilters } from "../QuizTypes";
 import { useTranslation } from "react-i18next";
@@ -15,6 +14,42 @@ const getRegionFromLanguage = (language: string): string => {
   };
   
   return languageToRegion[language] || 'us';
+};
+
+// Mapowanie opcji na angielskie odpowiedniki dla API
+const translateOptionToEnglish = (option: string, questionId: string): string => {
+  const translations: Record<string, Record<string, string>> = {
+    contentType: {
+      'Filmy': 'movies',
+      'Seriale': 'series', 
+      'Oba': 'both',
+      'movies': 'movies',
+      'series': 'series',
+      'both': 'both'
+    },
+    movieLength: {
+      'Krótki (do 90 minut)': 'short',
+      'Standardowy (90-120 minut)': 'standard',
+      'Długi (ponad 120 minut)': 'long',
+      'short': 'short',
+      'standard': 'standard',
+      'long': 'long'
+    },
+    mood: {
+      'Coś śmiesznego': 'funny',
+      'Coś wzruszającego': 'touching',
+      'Coś z adreną': 'adrenaline',
+      'Coś relaksującego': 'relaxing',
+      'Nie jestem pewien/pewna': 'notSure',
+      'funny': 'funny',
+      'touching': 'touching',
+      'adrenaline': 'adrenaline',
+      'relaxing': 'relaxing',
+      'notSure': 'notSure'
+    }
+  };
+
+  return translations[questionId]?.[option] || option;
 };
 
 export const parseQuizAnswers = (answers: QuizAnswer[]): EnhancedQuizFilters => {
@@ -60,21 +95,21 @@ export const parseQuizAnswers = (answers: QuizAnswer[]): EnhancedQuizFilters => 
     }
   }
 
+  // Przetłumacz opcje na angielskie odpowiedniki
+  const contentType = translateOptionToEnglish(answerMap.contentType || 'movies', 'contentType');
+  const mood = translateOptionToEnglish(answerMap.mood || 'notSure', 'mood');
+  const movieLength = translateOptionToEnglish(answerMap.movieLength || '', 'movieLength');
+
   // Mapowanie nastroju na gatunki jeśli brak bezpośredniego wyboru
-  if (genres.length === 0 && answerMap.mood) {
+  if (genres.length === 0 && mood) {
     const moodToGenres: Record<string, string[]> = {
-      'Coś śmiesznego': ['Comedy', 'Family'],
-      'Coś wzruszającego': ['Drama', 'Romance'],
-      'Coś z adreną': ['Action', 'Thriller', 'Adventure'],
-      'Coś do relaksu': ['Animation', 'Documentary', 'Family'],
-      'Coś relaksującego': ['Animation', 'Documentary', 'Family'],
-      'Something funny': ['Comedy', 'Family'],
-      'Something touching': ['Drama', 'Romance'],
-      'Something with adrenaline': ['Action', 'Thriller', 'Adventure'],
-      'Something to relax': ['Animation', 'Documentary', 'Family']
+      'funny': ['Comedy', 'Family'],
+      'touching': ['Drama', 'Romance'],
+      'adrenaline': ['Action', 'Thriller', 'Adventure'],
+      'relaxing': ['Animation', 'Documentary', 'Family']
     };
     
-    const moodGenres = moodToGenres[answerMap.mood];
+    const moodGenres = moodToGenres[mood];
     if (moodGenres) {
       genres = moodGenres;
     }
@@ -82,18 +117,15 @@ export const parseQuizAnswers = (answers: QuizAnswer[]): EnhancedQuizFilters => 
 
   // Mapowanie długości filmu
   let runtime: { min?: number; max?: number } | undefined;
-  if (answerMap.movieLength) {
-    switch (answerMap.movieLength) {
-      case 'Krótki (do 90 minut)':
-      case 'Short (up to 90 minutes)':
+  if (movieLength) {
+    switch (movieLength) {
+      case 'short':
         runtime = { max: 90 };
         break;
-      case 'Standardowy (90-120 minut)':
-      case 'Standard (90-120 minutes)':
+      case 'standard':
         runtime = { min: 90, max: 120 };
         break;
-      case 'Długi (powyżej 120 minut)':
-      case 'Long (over 120 minutes)':
+      case 'long':
         runtime = { min: 120 };
         break;
     }
@@ -101,12 +133,12 @@ export const parseQuizAnswers = (answers: QuizAnswer[]): EnhancedQuizFilters => 
 
   const filters: EnhancedQuizFilters = {
     platforms,
-    contentType: (answerMap.contentType as any) || 'movies',
-    mood: answerMap.mood || 'notSure',
+    contentType: (contentType as any) || 'movies',
+    mood: mood || 'notSure',
     genres,
     runtime,
-    region, // Używaj regionu na podstawie języka
-    languages: [currentLanguage], // Używaj aktualnego języka
+    region,
+    languages: [currentLanguage],
     includeStreamingInfo: true,
     maxResults: 20,
     minRating: platforms.some(p => ['Netflix', 'Disney+', 'HBO Max'].includes(p)) ? 6.5 : 6.0

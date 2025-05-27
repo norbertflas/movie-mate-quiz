@@ -1,3 +1,4 @@
+
 import { SurveyStep } from "@/components/SurveyStep";
 import type { QuizQuestionsProps } from "./QuizTypes";
 import { useTranslation } from "react-i18next";
@@ -34,24 +35,20 @@ export const QuizQuestions = ({ questions, currentStep, onAnswer, answers, answe
       return option;
     }
     
-    // Make sure we have the full translation path
-    const translationKey = option.includes(".") ? option : `quiz.options.${option}`;
+    // For genre names which shouldn't be translated
+    if (currentQuestion.id === "genres") {
+      return option;
+    }
+    
+    // For other options, use translation keys
+    const translationKey = `quiz.options.${option}`;
     return t(translationKey, option);
   });
   
-  // Make sure we have the full translation path for questions
-  const questionKey = currentQuestion.question.includes(".") ? 
-    currentQuestion.question : 
-    `quiz.questions.${currentQuestion.question}`;
-    
-  const subtitleKey = currentQuestion.subtitle && currentQuestion.subtitle.includes(".") ?
-    currentQuestion.subtitle :
-    currentQuestion.subtitle ? `quiz.questions.${currentQuestion.subtitle}` : "";
-    
-  const questionText = t(questionKey, currentQuestion.question);
-  const subtitleText = subtitleKey ? t(subtitleKey, "") : "";
+  const questionText = t(currentQuestion.question, currentQuestion.question);
+  const subtitleText = currentQuestion.subtitle ? t(currentQuestion.subtitle, currentQuestion.subtitle) : "";
 
-  console.log(`[Quiz] Rendering question: ${questionKey} -> ${questionText}`);
+  console.log(`[Quiz] Rendering question: ${currentQuestion.question} -> ${questionText}`);
   console.log(`[Quiz] Current language: ${i18n.language}`);
   console.log(`[Quiz] Translated options:`, translatedOptions);
 

@@ -54,51 +54,23 @@ export const translations = {
         contentTypeSubtitle: "Choose what type of content you're in the mood for",
         movieLength: "How long of a movie are you looking for?",
         movieLengthSubtitle: "Select your preferred movie length",
-        seasonCount: "How many seasons would you prefer?",
-        seasonCountSubtitle: "Select your preferred number of seasons",
-        episodesPerSeason: "How many episodes per season?",
-        episodesPerSeasonSubtitle: "Select your preferred episode count per season",
-        episodeLength: "How long should each episode be?",
-        episodeLengthSubtitle: "Select your preferred episode length",
         mood: "What mood are you in today?",
-        moodSubtitle: "Select the type of experience you're looking for"
+        moodSubtitle: "Select the type of experience you're looking for",
+        genres: "What genres do you enjoy?",
+        genresSubtitle: "Select your favorite genres"
       },
       options: {
-        movie: "Movies",
+        movies: "Movies",
         series: "TV Series",
+        both: "Both",
         notSure: "I'm not sure",
-        movieLength: {
-          short: "Short (up to 90 minutes)",
-          standard: "Standard (90-120 minutes)",
-          long: "Long (over 120 minutes)",
-          noPreference: "No preference"
-        },
-        seasonCount: {
-          short: "Short (1-2 seasons)",
-          medium: "Medium (3-5 seasons)",
-          long: "Long (6+ seasons)",
-          noPreference: "No preference"
-        },
-        episodesPerSeason: {
-          few: "Up to 10",
-          medium: "10-20",
-          many: "20+",
-          noPreference: "No preference"
-        },
-        episodeLength: {
-          short: "Short (up to 30 minutes)",
-          standard: "Standard (30-60 minutes)",
-          long: "Long (over 60 minutes)",
-          noPreference: "No preference"
-        },
-        mood: {
-          laugh: "I want to laugh",
-          touching: "Something heartfelt",
-          adrenaline: "Something exciting",
-          relax: "Something relaxing",
-          notSure: "I'm not sure"
-        },
-        noSubscriptions: "I don't have any subscriptions"
+        short: "Short (up to 90 minutes)",
+        standard: "Standard (90-120 minutes)",
+        long: "Long (over 120 minutes)",
+        funny: "Something funny",
+        touching: "Something touching",
+        adrenaline: "Something with adrenaline",
+        relaxing: "Something relaxing"
       }
     },
     errors: {
@@ -107,6 +79,10 @@ export const translations = {
       quizError: "Quiz Error",
       tryAgain: "Please try again",
       recommendationError: "Error fetching recommendations"
+    },
+    common: {
+      viewDetails: "View Details",
+      availableOn: "Available on"
     }
   },
   pl: {
@@ -150,64 +126,36 @@ export const translations = {
       recommendations: {
         ready: "Twoje rekomendacje są gotowe!",
         title: "Twoje Spersonalizowane Rekomendacje",
-        subtitle: "Na podstawie Twoich preferencji myślimy, że pokochasz te tytuły",
+        subtitle: "Na podstawie Twoich preferencji myślimy, że te tytuły Ci się spodobają",
         explore: "Chcesz odkryć więcej opcji?",
         tryAgain: "Spróbuj quiz ponownie"
       },
       step: "Krok {{current}} z {{total}}",
       complete: "{{percent}}% Ukończone",
       questions: {
-        platforms: "Których serwisów streamingowych używasz?",
+        platforms: "Z jakich serwisów streamingowych korzystasz?",
         platformsSubtitle: "Wybierz wszystkie serwisy, które obecnie subskrybujesz",
         contentType: "Co chciałbyś obejrzeć?",
-        contentTypeSubtitle: "Wybierz, jakiego typu treści masz ochotę",
-        movieLength: "Jak długi film Cię interesuje?",
+        contentTypeSubtitle: "Wybierz rodzaj treści, na którą masz ochotę",
+        movieLength: "Jak długiego filmu szukasz?",
         movieLengthSubtitle: "Wybierz preferowaną długość filmu",
-        seasonCount: "Ile sezonów wolałbyś?",
-        seasonCountSubtitle: "Wybierz preferowaną liczbę sezonów",
-        episodesPerSeason: "Ile odcinków na sezon?",
-        episodesPerSeasonSubtitle: "Wybierz preferowaną liczbę odcinków na sezon",
-        episodeLength: "Jak długi powinien być każdy odcinek?",
-        episodeLengthSubtitle: "Wybierz preferowaną długość odcinka",
-        mood: "W jakim nastroju jesteś dzisiaj?",
-        moodSubtitle: "Wybierz typ doświadczenia, którego szukasz"
+        mood: "W jakim jesteś dziś nastroju?",
+        moodSubtitle: "Wybierz typ doświadczenia, którego szukasz",
+        genres: "Jakie gatunki lubisz?",
+        genresSubtitle: "Wybierz swoje ulubione gatunki"
       },
       options: {
-        movie: "Filmy",
+        movies: "Filmy",
         series: "Seriale",
-        notSure: "Nie jestem pewny",
-        movieLength: {
-          short: "Krótki (do 90 minut)",
-          standard: "Standardowy (90-120 minut)",
-          long: "Długi (ponad 120 minut)",
-          noPreference: "Bez preferencji"
-        },
-        seasonCount: {
-          short: "Krótki (1-2 sezony)",
-          medium: "Średni (3-5 sezonów)",
-          long: "Długi (6+ sezonów)",
-          noPreference: "Bez preferencji"
-        },
-        episodesPerSeason: {
-          few: "Do 10",
-          medium: "10-20",
-          many: "20+",
-          noPreference: "Bez preferencji"
-        },
-        episodeLength: {
-          short: "Krótki (do 30 minut)",
-          standard: "Standardowy (30-60 minut)",
-          long: "Długi (ponad 60 minut)",
-          noPreference: "Bez preferencji"
-        },
-        mood: {
-          laugh: "Chcę się śmiać",
-          touching: "Coś wzruszającego",
-          adrenaline: "Coś ekscytującego",
-          relax: "Coś relaksującego",
-          notSure: "Nie jestem pewny"
-        },
-        noSubscriptions: "Nie mam żadnych subskrypcji"
+        both: "Oba",
+        notSure: "Nie jestem pewien/pewna",
+        short: "Krótki (do 90 minut)",
+        standard: "Standardowy (90-120 minut)",
+        long: "Długi (ponad 120 minut)",
+        funny: "Coś śmiesznego",
+        touching: "Coś wzruszającego",
+        adrenaline: "Coś z adreną",
+        relaxing: "Coś relaksującego"
       }
     },
     errors: {
@@ -216,6 +164,10 @@ export const translations = {
       quizError: "Błąd Quiz",
       tryAgain: "Spróbuj ponownie",
       recommendationError: "Błąd pobierania rekomendacji"
+    },
+    common: {
+      viewDetails: "Zobacz szczegóły",
+      availableOn: "Dostępne na"
     }
   }
 };

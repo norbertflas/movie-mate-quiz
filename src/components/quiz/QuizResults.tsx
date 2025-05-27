@@ -99,7 +99,7 @@ export const QuizResults = ({ recommendations, isGroupQuiz = false }: QuizResult
                   {/* Dostępność streamingowa - od razu widoczna */}
                   {movie.availableOn && movie.availableOn.length > 0 && (
                     <div className="mb-3">
-                      <p className="text-xs text-gray-300 mb-2">Dostępne na:</p>
+                      <p className="text-xs text-gray-300 mb-2">{t("common.availableOn")}:</p>
                       <div className="flex flex-wrap gap-1">
                         {movie.availableOn.slice(0, 3).map((platform: string) => (
                           <Badge key={platform} className="text-xs bg-green-900/30 text-green-300">
@@ -128,7 +128,7 @@ export const QuizResults = ({ recommendations, isGroupQuiz = false }: QuizResult
                     onClick={() => handleMovieClick(movie)}
                   >
                     <Plus className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-                    {t("common.viewDetails", "View Details")}
+                    {t("common.viewDetails")}
                   </Button>
                 </div>
               </div>
