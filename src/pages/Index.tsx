@@ -11,15 +11,20 @@ import { useAuth } from "@/hooks/use-auth";
 import { ContentSection } from "@/components/sections/ContentSection";
 
 const Index = () => {
-  const { user } = useAuth();
-  const { currentView, showQuiz, setCurrentView, setShowQuiz } = useIndexState();
+  const { session } = useAuth();
+  const { 
+    state, 
+    setState,
+    handleStartQuiz,
+    handleBackToWelcome 
+  } = useIndexState();
   
   const {
     trendingMovies,
     popularMovies,
     isLoading,
-    error,
-    refetch
+    hasError,
+    retryAll
   } = useMovieData();
 
   const [userPreferences, setUserPreferences] = useState({
@@ -34,16 +39,22 @@ const Index = () => {
     if (savedPreferences) {
       setUserPreferences(JSON.parse(savedPreferences));
     }
-  }, [user]);
+  }, [session]);
 
-  const handleStartQuiz = () => {
-    setShowQuiz(true);
-    setCurrentView('quiz');
+  const handleStartQuizClick = () => {
+    setState(prev => ({ 
+      ...prev, 
+      showQuiz: true, 
+      currentView: 'quiz' 
+    }));
   };
 
   const handleExploreMovies = () => {
-    setCurrentView('explore');
-    setShowQuiz(false);
+    setState(prev => ({ 
+      ...prev, 
+      currentView: 'explore',
+      showQuiz: false 
+    }));
   };
 
   if (isLoading && (!trendingMovies || trendingMovies.length === 0)) {
@@ -58,30 +69,29 @@ const Index = () => {
       />
       
       <div className="min-h-screen bg-background">
-        {currentView === 'welcome' && (
+        {state.currentView === 'welcome' && (
           <div className="space-y-8">
             <WelcomeSection 
-              onStartQuiz={handleStartQuiz}
-              onExplore={handleExploreMovies}
+              onStartQuiz={handleStartQuizClick}
             />
             <ContentSection />
           </div>
         )}
 
-        {currentView === 'quiz' && showQuiz && (
+        {state.currentView === 'quiz' && state.showQuiz && (
           <QuizContent />
         )}
 
-        {currentView === 'explore' && (
+        {state.currentView === 'explore' && (
           <div className="container mx-auto px-4 py-8">
             <NewMainContent
               trendingMovies={trendingMovies || []}
               popularMovies={popularMovies || []}
               isLoading={isLoading}
-              hasError={!!error}
-              onRetry={refetch}
+              hasError={hasError}
+              onRetry={retryAll}
               userPreferences={userPreferences}
-              currentView={currentView}
+              currentView={state.currentView}
             />
           </div>
         )}
