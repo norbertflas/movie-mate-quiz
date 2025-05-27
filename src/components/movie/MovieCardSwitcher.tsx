@@ -12,6 +12,7 @@ export const MovieCardSwitcher = memo(({
   initialState = 'minimized',
   ...props
 }: MovieCardSwitcherProps) => {
+  // Initialize hooks unconditionally at the top level
   const [isMaximized, setIsMaximized] = useState(initialState === 'maximized');
 
   const handleExpand = useCallback(() => {
@@ -24,8 +25,16 @@ export const MovieCardSwitcher = memo(({
 
   const handleClose = useCallback(() => {
     setIsMaximized(false);
-    props.onClose?.();
+    if (props.onClose) {
+      props.onClose();
+    }
   }, [props]);
+
+  // Early return validation
+  if (!props.title) {
+    console.warn('MovieCardSwitcher: title prop is required');
+    return null;
+  }
 
   if (isMaximized) {
     return (

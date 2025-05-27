@@ -21,13 +21,14 @@ export const ImprovedMinimizedMovieCard = memo(({
   hasTrailer = false,
   priority = false
 }: MovieCardProps) => {
+  // Initialize all hooks at the top level - never conditionally
   const [isFavorite, setIsFavorite] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
   const handleToggleFavorite = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsFavorite(!isFavorite);
-  }, [isFavorite]);
+    setIsFavorite(prev => !prev);
+  }, []);
 
   const handleCardClick = useCallback(() => {
     if (onClick) {
@@ -41,6 +42,29 @@ export const ImprovedMinimizedMovieCard = memo(({
     e.stopPropagation();
     console.log('Playing trailer for:', title);
   }, [title]);
+
+  const handleToggleWatched = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    console.log('Toggle watched for:', title);
+  }, [title]);
+
+  const handleToggleWatchlist = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    console.log('Toggle watchlist for:', title);
+  }, [title]);
+
+  const handleExpand = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onExpand) {
+      onExpand();
+    }
+  }, [onExpand]);
+
+  // Early return if no title
+  if (!title) {
+    console.warn('ImprovedMinimizedMovieCard: title is required');
+    return null;
+  }
 
   return (
     <motion.div
@@ -103,10 +127,7 @@ export const ImprovedMinimizedMovieCard = memo(({
                 variant="ghost"
                 size="sm"
                 className="h-5 w-5 p-0 bg-black/40 hover:bg-black/60 backdrop-blur-sm rounded-full"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onExpand?.();
-                }}
+                onClick={handleExpand}
               >
                 <Maximize2 className="h-2.5 w-2.5 text-white" />
               </Button>
@@ -146,10 +167,7 @@ export const ImprovedMinimizedMovieCard = memo(({
                   variant="ghost"
                   size="sm"
                   className="h-4 w-4 p-0 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    console.log('Toggle watched');
-                  }}
+                  onClick={handleToggleWatched}
                 >
                   <Eye className="h-2 w-2 text-white" />
                 </Button>
@@ -158,10 +176,7 @@ export const ImprovedMinimizedMovieCard = memo(({
                   variant="ghost"
                   size="sm"
                   className="h-4 w-4 p-0 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    console.log('Toggle watchlist');
-                  }}
+                  onClick={handleToggleWatchlist}
                 >
                   <Bookmark className="h-2 w-2 text-white" />
                 </Button>

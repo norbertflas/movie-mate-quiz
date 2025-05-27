@@ -1,3 +1,4 @@
+
 import { useState, memo, useCallback } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +36,7 @@ export const ImprovedMaximizedMovieCard = memo(({
   budget = "Unknown",
   popularity = 0
 }: MovieCardProps) => {
+  // Initialize all hooks at the top level - never conditionally
   const [isFavorite, setIsFavorite] = useState(false);
   const [isWatchlisted, setIsWatchlisted] = useState(false);
   const [isWatched, setIsWatched] = useState(false);
@@ -44,18 +46,18 @@ export const ImprovedMaximizedMovieCard = memo(({
 
   const handleToggleFavorite = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsFavorite(!isFavorite);
-  }, [isFavorite]);
+    setIsFavorite(prev => !prev);
+  }, []);
 
   const handleToggleWatchlist = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsWatchlisted(!isWatchlisted);
-  }, [isWatchlisted]);
+    setIsWatchlisted(prev => !prev);
+  }, []);
 
   const handleToggleWatched = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsWatched(!isWatched);
-  }, [isWatched]);
+    setIsWatched(prev => !prev);
+  }, []);
 
   const handlePlayTrailer = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -71,49 +73,57 @@ export const ImprovedMaximizedMovieCard = memo(({
       url: window.location.href
     };
 
-    switch(platform) {
-      case 'copy':
-        navigator.clipboard.writeText(shareData.url);
-        break;
-      case 'native':
-        if (navigator.share) {
-          try {
+    try {
+      switch(platform) {
+        case 'copy':
+          await navigator.clipboard.writeText(shareData.url);
+          break;
+        case 'native':
+          if (navigator.share) {
             await navigator.share(shareData);
-          } catch (err) {
-            console.log('Sharing cancelled');
           }
-        }
-        break;
-      default:
-        break;
+          break;
+        default:
+          break;
+      }
+    } catch (err) {
+      console.log('Sharing failed or cancelled');
     }
     setShowShareMenu(false);
   }, [title, description]);
 
-  const formatRuntime = (minutes: number) => {
+  const formatRuntime = useCallback((minutes: number) => {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return `${hours}h ${mins}m`;
-  };
+  }, []);
 
-  const formatDate = (dateString?: string) => {
+  const formatDate = useCallback((dateString?: string) => {
     if (!dateString) return year;
     return new Date(dateString).toLocaleDateString('pl-PL', {
       day: '2-digit',
       month: 'long',
       year: 'numeric'
     });
-  };
+  }, [year]);
 
   // Convert streamingServices to the format expected by MovieStreamingServices
-  const formatStreamingServices = () => {
+  const formatStreamingServices = useCallback(() => {
+    if (!streamingServices || streamingServices.length === 0) return [];
+    
     return streamingServices.map(service => {
       if (typeof service === 'string') {
         return service;
       }
       return service.service;
     });
-  };
+  }, [streamingServices]);
+
+  // Early return if no title (invalid props)
+  if (!title) {
+    console.warn('ImprovedMaximizedMovieCard: title is required');
+    return null;
+  }
 
   return (
     <>
@@ -140,17 +150,19 @@ export const ImprovedMaximizedMovieCard = memo(({
               </Badge>
             </div>
             <div className="flex items-center space-x-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-gray-700"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onMinimize?.();
-                }}
-              >
-                <Minimize2 className="h-4 w-4" />
-              </Button>
+              {onMinimize && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-gray-700"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onMinimize();
+                  }}
+                >
+                  <Minimize2 className="h-4 w-4" />
+                </Button>
+              )}
               {onClose && (
                 <Button
                   variant="ghost"
@@ -211,7 +223,7 @@ export const ImprovedMaximizedMovieCard = memo(({
                     variant="secondary"
                     size="sm"
                     className="bg-black/50 hover:bg-black/70 backdrop-blur-sm text-white border-gray-600"
-                    onClick={() => setShowShareMenu(!showShareMenu)}
+                    onClick={() => setShowShareMenu(prev => !prev)}
                   >
                     <Share2 className="h-4 w-4" />
                   </Button>
@@ -384,7 +396,7 @@ export const ImprovedMaximizedMovieCard = memo(({
             </motion.div>
 
             {/* Tags */}
-            {tags.length > 0 && (
+            {tags && tags.length > 0 && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -405,8 +417,8 @@ export const ImprovedMaximizedMovieCard = memo(({
               </motion.div>
             )}
 
-            {/* Fixed Streaming Services section */}
-            {streamingServices.length > 0 && (
+            {/* Streaming Services section */}
+            {streamingServices && streamingServices.length > 0 && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -419,7 +431,7 @@ export const ImprovedMaximizedMovieCard = memo(({
             )}
 
             {/* Explanations */}
-            {explanations.length > 0 && (
+            {explanations && explanations.length > 0 && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
