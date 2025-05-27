@@ -1,4 +1,3 @@
-
 import { useState, memo, useCallback } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -103,6 +102,16 @@ export const ImprovedMaximizedMovieCard = memo(({
       day: '2-digit',
       month: 'long',
       year: 'numeric'
+    });
+  };
+
+  // Convert streamingServices to the format expected by MovieStreamingServices
+  const formatStreamingServices = () => {
+    return streamingServices.map(service => {
+      if (typeof service === 'string') {
+        return service;
+      }
+      return service.service;
     });
   };
 
@@ -396,7 +405,7 @@ export const ImprovedMaximizedMovieCard = memo(({
               </motion.div>
             )}
 
-            {/* Streaming Services */}
+            {/* Fixed Streaming Services section */}
             {streamingServices.length > 0 && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
@@ -405,7 +414,7 @@ export const ImprovedMaximizedMovieCard = memo(({
                 className="space-y-2"
               >
                 <h4 className="text-sm font-medium text-white">Available on:</h4>
-                <MovieStreamingServices services={streamingServices} />
+                <MovieStreamingServices services={formatStreamingServices()} />
               </motion.div>
             )}
 
