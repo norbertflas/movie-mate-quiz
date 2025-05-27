@@ -8,115 +8,64 @@ export const useEnhancedSurveySteps = (): SurveyStepType[] => {
   return [
     {
       id: "platforms",
-      question: t("quiz.questions.platforms"),
-      subtitle: t("quiz.questions.platformsSubtitle"),
+      question: t("quiz.questions.platforms", "Which streaming platforms do you have access to?"),
+      subtitle: t("quiz.questions.platformsSubtitle", "Select all that apply"),
       type: "multiple",
       options: [
-        'Netflix', 
-        'Amazon Prime Video', 
-        'Disney+', 
-        'HBO Max', 
-        'Hulu',
-        'Apple TV+', 
-        'Paramount+', 
-        'Peacock', 
-        'Showtime', 
-        'Starz',
-        t("quiz.options.noSubscriptions")
-      ]
+        "Netflix",
+        "Amazon Prime Video", 
+        "Disney+",
+        "HBO Max",
+        "Hulu",
+        "Apple TV+",
+        "Paramount+",
+        "Peacock"
+      ],
+      getDynamicOptions: () => []
     },
     {
       id: "contentType",
-      question: t("quiz.questions.contentType"),
-      subtitle: t("quiz.questions.contentTypeSubtitle"),
+      question: t("quiz.questions.contentType", "What type of content are you looking for?"),
+      subtitle: t("quiz.questions.contentTypeSubtitle", "Choose your preferred content type"),
       type: "single",
       options: [
-        t("quiz.options.movie"),
-        t("quiz.options.series"),
-        t("quiz.options.notSure")
-      ]
+        t("quiz.options.movies", "Movies"),
+        t("quiz.options.series", "TV Series"),
+        t("quiz.options.both", "Both")
+      ],
+      getDynamicOptions: () => []
     },
     {
       id: "movieLength",
-      question: t("quiz.questions.movieLength"),
-      subtitle: t("quiz.questions.movieLengthSubtitle"),
+      question: t("quiz.questions.movieLength", "How long should the movie be?"),
+      subtitle: t("quiz.questions.movieLengthSubtitle", "Choose your preferred duration"),
       type: "single",
       options: [
-        t("quiz.options.movieLength.short"),
-        t("quiz.options.movieLength.standard"),
-        t("quiz.options.movieLength.long"),
-        t("quiz.options.movieLength.noPreference")
+        t("quiz.options.short", "Short (up to 90 minutes)"),
+        t("quiz.options.standard", "Standard (90-120 minutes)"),
+        t("quiz.options.long", "Long (over 120 minutes)")
       ],
-      shouldShow: (answers) => {
-        const contentType = answers.contentType;
-        return contentType === t("quiz.options.movie") || contentType === "Movies";
-      }
-    },
-    {
-      id: "seasonCount",
-      question: t("quiz.questions.seasonCount"),
-      subtitle: t("quiz.questions.seasonCountSubtitle"),
-      type: "single",
-      options: [
-        t("quiz.options.seasonCount.short"),
-        t("quiz.options.seasonCount.medium"),
-        t("quiz.options.seasonCount.long"),
-        t("quiz.options.seasonCount.noPreference")
-      ],
-      shouldShow: (answers) => {
-        const contentType = answers.contentType;
-        return contentType === t("quiz.options.series") || contentType === "TV Series";
-      }
-    },
-    {
-      id: "episodesPerSeason",
-      question: t("quiz.questions.episodesPerSeason"),
-      subtitle: t("quiz.questions.episodesPerSeasonSubtitle"),
-      type: "single",
-      options: [
-        t("quiz.options.episodesPerSeason.few"),
-        t("quiz.options.episodesPerSeason.medium"),
-        t("quiz.options.episodesPerSeason.many"),
-        t("quiz.options.episodesPerSeason.noPreference")
-      ],
-      shouldShow: (answers) => {
-        const contentType = answers.contentType;
-        return contentType === t("quiz.options.series") || contentType === "TV Series";
-      }
-    },
-    {
-      id: "episodeLength",
-      question: t("quiz.questions.episodeLength"),
-      subtitle: t("quiz.questions.episodeLengthSubtitle"),
-      type: "single",
-      options: [
-        t("quiz.options.episodeLength.short"),
-        t("quiz.options.episodeLength.standard"),
-        t("quiz.options.episodeLength.long"),
-        t("quiz.options.episodeLength.noPreference")
-      ],
-      shouldShow: (answers) => {
-        const contentType = answers.contentType;
-        return contentType === t("quiz.options.series") || contentType === "TV Series";
-      }
+      getDynamicOptions: () => [],
+      shouldShow: (answerMap) => answerMap.contentType === t("quiz.options.movies", "Movies") || answerMap.contentType === "Filmy"
     },
     {
       id: "mood",
-      question: t("quiz.questions.mood"),
-      subtitle: t("quiz.questions.moodSubtitle"),
+      question: t("quiz.questions.mood", "What's your current mood?"),
+      subtitle: t("quiz.questions.moodSubtitle", "What do you feel like watching?"),
       type: "single",
       options: [
-        t("quiz.options.mood.laugh"),
-        t("quiz.options.mood.touching"),
-        t("quiz.options.mood.adrenaline"),
-        t("quiz.options.mood.relax"),
-        t("quiz.options.mood.notSure")
-      ]
+        t("quiz.options.funny", "Something funny"),
+        t("quiz.options.touching", "Something touching"), 
+        t("quiz.options.adrenaline", "Something with adrenaline"),
+        t("quiz.options.relaxing", "Something relaxing"),
+        t("quiz.options.notSure", "I'm not sure")
+      ],
+      getDynamicOptions: () => []
     },
     {
       id: "genres",
-      question: "What genres do you enjoy?",
-      subtitle: "Select your favorite movie or TV genres",
+      question: t("quiz.questions.genres", "What genres do you enjoy?"),
+      subtitle: t("quiz.questions.genresSubtitle", "Select your favorite genres"),
       type: "multiple",
       options: [
         "Action",
@@ -129,7 +78,8 @@ export const useEnhancedSurveySteps = (): SurveyStepType[] => {
         "Fantasy",
         "Animation",
         "Documentary"
-      ]
+      ],
+      getDynamicOptions: () => []
     }
   ];
 };

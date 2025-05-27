@@ -1,6 +1,21 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import type { QuizAnswer, MovieRecommendation, EnhancedQuizFilters } from "../QuizTypes";
+import { useTranslation } from "react-i18next";
+
+// Mapowanie języków na regiony
+const getRegionFromLanguage = (language: string): string => {
+  const languageToRegion: Record<string, string> = {
+    'pl': 'pl',
+    'en': 'us', 
+    'de': 'de',
+    'fr': 'fr',
+    'es': 'es',
+    'it': 'it'
+  };
+  
+  return languageToRegion[language] || 'us';
+};
 
 export const parseQuizAnswers = (answers: QuizAnswer[]): EnhancedQuizFilters => {
   console.log('Parsing quiz answers:', answers);
@@ -11,6 +26,10 @@ export const parseQuizAnswers = (answers: QuizAnswer[]): EnhancedQuizFilters => 
   }, {} as Record<string, string>);
 
   console.log('Answer map:', answerMap);
+
+  // Pobierz aktualny język z localStorage lub domyślnie 'en'
+  const currentLanguage = localStorage.getItem('language') || 'en';
+  const region = getRegionFromLanguage(currentLanguage);
 
   // Parse platforms - handle both string and array formats
   let platforms: string[] = [];
@@ -48,6 +67,7 @@ export const parseQuizAnswers = (answers: QuizAnswer[]): EnhancedQuizFilters => 
       'Coś wzruszającego': ['Drama', 'Romance'],
       'Coś z adreną': ['Action', 'Thriller', 'Adventure'],
       'Coś do relaksu': ['Animation', 'Documentary', 'Family'],
+      'Coś relaksującego': ['Animation', 'Documentary', 'Family'],
       'Something funny': ['Comedy', 'Family'],
       'Something touching': ['Drama', 'Romance'],
       'Something with adrenaline': ['Action', 'Thriller', 'Adventure'],
@@ -85,8 +105,8 @@ export const parseQuizAnswers = (answers: QuizAnswer[]): EnhancedQuizFilters => 
     mood: answerMap.mood || 'notSure',
     genres,
     runtime,
-    region: 'us',
-    languages: ['en'],
+    region, // Używaj regionu na podstawie języka
+    languages: [currentLanguage], // Używaj aktualnego języka
     includeStreamingInfo: true,
     maxResults: 20,
     minRating: platforms.some(p => ['Netflix', 'Disney+', 'HBO Max'].includes(p)) ? 6.5 : 6.0
@@ -100,24 +120,31 @@ export const getPersonalizedRecommendations = async (filters: EnhancedQuizFilter
   try {
     console.log('Getting personalized recommendations with enhanced filters:', filters);
     
-    // Przygotuj prompt uwzględniający wszystkie preferencje użytkownika
+    // Pobierz aktualny język dla lokalizacji
+    const currentLanguage = localStorage.getItem('language') || 'en';
+    
+    // Przygotuj prompt uwzględniający wszystkie preferencje użytkownika z regionem
     const userPreferences = {
       platforms: filters.platforms?.join(', ') || 'Any platform',
       genres: filters.genres?.join(', ') || 'Mixed genres',
       mood: filters.mood || 'Any mood',
       contentType: filters.contentType || 'Movies',
       runtime: filters.runtime ? 
-        `${filters.runtime.min || 0}-${filters.runtime.max || 999} minutes` : 'Any length'
+        `${filters.runtime.min || 0}-${filters.runtime.max || 999} minutes` : 'Any length',
+      region: filters.region || 'us',
+      language: currentLanguage
     };
 
-    const enhancedPrompt = `Find movies that match these specific user preferences:
-- Available on: ${userPreferences.platforms}
+    const enhancedPrompt = `Find movies that match these specific user preferences for region ${userPreferences.region.toUpperCase()}:
+- Available on at least ONE of these platforms: ${userPreferences.platforms}
 - Genres: ${userPreferences.genres}
 - Mood/Style: ${userPreferences.mood}
 - Content Type: ${userPreferences.contentType}
 - Runtime: ${userPreferences.runtime}
+- Region: ${userPreferences.region}
+- Language preference: ${userPreferences.language}
 
-Focus on highly-rated movies that are actually available on the specified platforms. Prioritize recent releases and popular titles that match the mood and genre preferences exactly.`;
+Focus on highly-rated movies that are available in the ${userPreferences.region.toUpperCase()} region. The movie should be available on AT LEAST ONE of the specified platforms, not necessarily all of them. Prioritize recent releases and popular titles that match the mood and genre preferences exactly.`;
 
     const { data, error } = await supabase.functions.invoke('get-personalized-recommendations', {
       body: { 
@@ -141,15 +168,15 @@ Focus on highly-rated movies that are actually available on the specified platfo
       throw new Error('Invalid response format from enhanced recommendations service');
     }
 
-    // Wzbogać rekomendacje o informacje streamingowe od razu
+    // Wzbogać rekomendacje o informacje streamingowe dla odpowiedniego regionu
     const enrichedRecommendations = await Promise.all(
       data.map(async (movie: any) => {
         try {
-          // Pobierz dostępność streamingową dla każdego filmu
+          // Pobierz dostępność streamingową dla odpowiedniego regionu
           const { data: streamingData, error: streamingError } = await supabase.functions.invoke('streaming-availability', {
             body: {
               tmdbId: movie.id,
-              country: 'us',
+              country: filters.region || 'us',
               title: movie.title,
               year: movie.release_date?.split('-')[0]
             }
@@ -166,20 +193,26 @@ Focus on highly-rated movies that are actually available on the specified platfo
             }, {});
           }
 
-          // Dodaj wyjaśnienie dlaczego film został polecony
+          // Dodaj wyjaśnienie dlaczego film został polecony z uwzględnieniem regionu
           const explanations: string[] = [];
           
           if (filters.genres?.some(genre => movie.genre_ids?.includes(getGenreId(genre)))) {
             explanations.push(`Matches your preferred genre: ${filters.genres.join(', ')}`);
           }
           
+          // POPRAWKA: sprawdź dostępność na PRZYNAJMNIEJ JEDNEJ platformie
           if (availableOn.some(platform => filters.platforms?.includes(platform))) {
             const matchingPlatforms = availableOn.filter(platform => filters.platforms?.includes(platform));
-            explanations.push(`Available on your platforms: ${matchingPlatforms.join(', ')}`);
+            explanations.push(`Available on: ${matchingPlatforms.join(', ')}`);
           }
           
           if (movie.vote_average >= 7.5) {
             explanations.push('Highly rated by viewers');
+          }
+
+          // Dodaj informację o regionie
+          if (filters.region && filters.region !== 'us') {
+            explanations.push(`Available in ${filters.region.toUpperCase()} region`);
           }
 
           return {
@@ -238,7 +271,7 @@ const getGenreId = (genreName: string): number => {
 export const generateFallbackRecommendations = (filters: EnhancedQuizFilters): MovieRecommendation[] => {
   console.log('Generating enhanced fallback recommendations for:', filters);
   
-  // Lepsze rekomendacje fallback dopasowane do preferencji użytkownika
+  // Lepsze rekomendacje fallback dopasowane do preferencji użytkownika z regionem
   const genreBasedMovies: Record<string, any[]> = {
     'Comedy': [
       {
@@ -250,7 +283,7 @@ export const generateFallbackRecommendations = (filters: EnhancedQuizFilters): M
         vote_average: 8.5,
         genre: "Comedy/Drama",
         availableOn: ['Netflix', 'Amazon Prime Video'],
-        explanations: ["Heartwarming comedy-drama", "Available on your platforms"]
+        explanations: ["Heartwarming comedy-drama", `Available in ${filters.region?.toUpperCase() || 'US'} region`]
       }
     ],
     'Drama': [

@@ -29,7 +29,7 @@ serve(async (req) => {
     const requestData: RequestData = await req.json();
     console.log('Enhanced request data:', requestData);
 
-    // Enhanced personalized recommendations with streaming info
+    // Enhanced personalized recommendations with streaming info and region support
     if (requestData.prompt || requestData.selectedMovies || requestData.filters) {
       console.log('Processing enhanced personalized recommendations');
       console.log('Prompt:', requestData.prompt);
@@ -38,12 +38,12 @@ serve(async (req) => {
       try {
         let enhancedPrompt = requestData.prompt || 'Recommend highly-rated popular movies';
         
-        // Uwzględnij filtry w prompcie
+        // Uwzględnij filtry w prompcie z regionem
         if (requestData.filters) {
           const filters = requestData.filters;
-          enhancedPrompt += `\n\nUser preferences:`;
+          enhancedPrompt += `\n\nUser preferences for region ${filters.region?.toUpperCase() || 'US'}:`;
           if (filters.platforms?.length > 0) {
-            enhancedPrompt += `\n- Available on: ${filters.platforms.join(', ')}`;
+            enhancedPrompt += `\n- Must be available on AT LEAST ONE of: ${filters.platforms.join(', ')}`;
           }
           if (filters.genres?.length > 0) {
             enhancedPrompt += `\n- Preferred genres: ${filters.genres.join(', ')}`;
@@ -54,7 +54,13 @@ serve(async (req) => {
           if (filters.runtime) {
             enhancedPrompt += `\n- Runtime: ${filters.runtime.min || 0}-${filters.runtime.max || 999} minutes`;
           }
-          enhancedPrompt += `\n\nRecommend movies that specifically match these preferences.`;
+          if (filters.region) {
+            enhancedPrompt += `\n- Region: ${filters.region.toUpperCase()}`;
+          }
+          if (filters.languages?.length > 0) {
+            enhancedPrompt += `\n- Language preference: ${filters.languages.join(', ')}`;
+          }
+          enhancedPrompt += `\n\nIMPORTANT: Movies should be available in ${filters.region?.toUpperCase() || 'US'} region and on at least ONE of the specified platforms, not necessarily all of them.`;
         }
         
         if (requestData.selectedMovies && requestData.selectedMovies.length > 0) {
@@ -76,7 +82,7 @@ serve(async (req) => {
           try {
             const movieDetails = await getMovieDetails(movieId, TMDB_API_KEY);
             
-            // Add enhanced explanations based on user preferences
+            // Add enhanced explanations based on user preferences with region support
             const explanations: string[] = [];
             
             if (requestData.filters?.genres && movieDetails.genres) {
@@ -105,9 +111,18 @@ serve(async (req) => {
                 explanations.push('Perfect for a good laugh');
               } else if (mood.includes('touching') || mood.includes('wzrusza')) {
                 explanations.push('Emotionally engaging');
-              } else if (mood.includes('adrenaline') || mood.includes('adrena')) {
-                explanations.push('Action-packed excitement');
+              } else if (mood.includes('adrenaline') || mood.includes('adrena') || mood.includes('relax')) {
+                if (mood.includes('adrenaline') || mood.includes('adrena')) {
+                  explanations.push('Action-packed excitement');
+                } else {
+                  explanations.push('Perfect for relaxation');
+                }
               }
+            }
+            
+            // Dodaj informację o regionie
+            if (requestData.filters?.region && requestData.filters.region !== 'us') {
+              explanations.push(`Available in ${requestData.filters.region.toUpperCase()} region`);
             }
             
             if (explanations.length === 0) {
@@ -139,7 +154,7 @@ serve(async (req) => {
       } catch (error) {
         console.error('Error processing enhanced recommendations:', error);
         
-        // Enhanced fallback with better variety
+        // Enhanced fallback with better variety and region support
         console.log('Using enhanced fallback recommendations');
         const fallbackGenres = [28, 35, 18, 53, 878, 12]; // Action, Comedy, Drama, Thriller, Sci-Fi, Adventure
         const selectedGenres = requestData.filters?.genres || [];
@@ -166,10 +181,19 @@ serve(async (req) => {
 
         const movies = (await Promise.all(movieDetailsPromises))
           .filter((movie): movie is MovieRecommendation => movie !== null)
-          .map(movie => ({
-            ...movie,
-            explanations: ['Popular choice in your preferred genre']
-          }));
+          .map(movie => {
+            const explanations = ['Popular choice in your preferred genre'];
+            
+            // Dodaj informację o regionie dla fallback
+            if (requestData.filters?.region && requestData.filters.region !== 'us') {
+              explanations.push(`Available in ${requestData.filters.region.toUpperCase()} region`);
+            }
+            
+            return {
+              ...movie,
+              explanations
+            };
+          });
 
         return new Response(JSON.stringify(movies), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
