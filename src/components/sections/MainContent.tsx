@@ -1,102 +1,55 @@
 
 import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import { useTranslation } from "react-i18next";
-import { SearchBar } from "../SearchBar";
-import { TrendingMoviesSection } from "./TrendingMoviesSection";
-import { useQuery } from "@tanstack/react-query";
-import { getTrendingMovies, getPopularMovies } from "@/services/tmdb/trending";
-import { OptimizedPopularMoviesSection } from "./OptimizedPopularMoviesSection";
 import { LoadingState } from "@/components/LoadingState";
-import { Film, Sparkles } from "lucide-react";
+import { TrendingMoviesSection } from "./TrendingMoviesSection";
+import { PopularMoviesSection } from "./PopularMoviesSection";
+import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
 
-export const MainContent = () => {
-  const { t } = useTranslation();
-  
-  const { data: trendingMovies = [], isLoading: isTrendingLoading } = useQuery({
-    queryKey: ['trendingMovies', 'US', '1'],
-    queryFn: getTrendingMovies,
-    staleTime: 1000 * 60 * 10, // 10 minutes
-    gcTime: 1000 * 60 * 30, // 30 minutes
-  });
+interface MainContentProps {
+  trendingMovies: any[];
+  popularMovies: any[];
+  isLoading: boolean;
+  hasError: boolean;
+  onRetry: () => void;
+  userPreferences?: any;
+  currentView: 'welcome' | 'quiz' | 'explore';
+}
 
-  const { data: popularMovies = [], isLoading: isPopularLoading } = useQuery({
-    queryKey: ['popularMovies', 'US', '1'],
-    queryFn: getPopularMovies,
-    staleTime: 1000 * 60 * 10, // 10 minutes
-    gcTime: 1000 * 60 * 30, // 30 minutes
-  });
+export const MainContent = ({
+  trendingMovies,
+  popularMovies,
+  isLoading,
+  hasError,
+  onRetry,
+  userPreferences,
+  currentView
+}: MainContentProps) => {
+  if (isLoading) {
+    return <LoadingState message="Loading movies..." />;
+  }
 
-  const isLoading = isTrendingLoading || isPopularLoading;
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.2,
-      }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { 
-      opacity: 1, 
-      y: 0,
-      transition: {
-        duration: 0.5
-      }
-    }
-  };
+  if (hasError) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center py-12"
+      >
+        <p className="text-muted-foreground mb-4">Failed to load movies</p>
+        <Button onClick={onRetry} variant="outline">
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Retry
+        </Button>
+      </motion.div>
+    );
+  }
 
   return (
-    <motion.div 
-      className="space-y-8"
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-    >
-      <motion.div variants={itemVariants} className="relative">
-        <Card className="hero-section p-8 shadow-xl">
-          <motion.div variants={itemVariants} className="flex items-center gap-3 mb-8">
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight whitespace-normal">
-              <span className="bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">
-                Find your perfect movie
-              </span>
-            </h1>
-            <motion.div
-              initial={{ rotate: 0 }}
-              animate={{ rotate: 360 }}
-              transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-            >
-              <Sparkles className="h-6 w-6 text-primary/80" />
-            </motion.div>
-          </motion.div>
-          
-          <div className="relative z-10 max-w-2xl mx-auto">
-            <SearchBar />
-          </div>
-          
-          <div className="absolute top-0 right-0 opacity-20 pointer-events-none">
-            <Film className="w-72 h-72 text-primary/20" />
-          </div>
-        </Card>
-      </motion.div>
-
-      {isLoading ? (
-        <LoadingState />
-      ) : (
-        <>
-          <motion.div variants={itemVariants} className="glass-panel p-6 rounded-xl">
-            <TrendingMoviesSection movies={trendingMovies} />
-          </motion.div>
-          
-          <motion.div variants={itemVariants} className="glass-panel p-6 rounded-xl">
-            <OptimizedPopularMoviesSection movies={popularMovies} />
-          </motion.div>
-        </>
-      )}
-    </motion.div>
+    <div className="space-y-8">
+      <TrendingMoviesSection movies={trendingMovies} />
+      <PopularMoviesSection movies={popularMovies} />
+    </div>
   );
 };

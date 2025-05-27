@@ -2,6 +2,7 @@
 import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { FilterContent } from "./FilterContent";
+import type { MovieFilters } from "@/components/MovieFilters";
 
 interface AdvancedFiltersProps {
   userPreferences?: any;
@@ -9,6 +10,18 @@ interface AdvancedFiltersProps {
 }
 
 const AdvancedFilters = ({ userPreferences, onPreferencesUpdate }: AdvancedFiltersProps) => {
+  const currentYear = new Date().getFullYear();
+  
+  const defaultFilters: MovieFilters = {
+    yearRange: [2000, currentYear],
+    minRating: 0
+  };
+
+  const handleFilterChange = (filters: MovieFilters) => {
+    // Handle filter changes
+    console.log('Filters changed:', filters);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: -20 }}
@@ -19,8 +32,8 @@ const AdvancedFilters = ({ userPreferences, onPreferencesUpdate }: AdvancedFilte
       <Card className="p-6">
         <h3 className="text-lg font-semibold mb-4">Advanced Filters</h3>
         <FilterContent 
-          currentFilters={{}}
-          onFilterChange={() => {}}
+          currentFilters={defaultFilters}
+          onFilterChange={handleFilterChange}
           isMobile={false}
         />
       </Card>
