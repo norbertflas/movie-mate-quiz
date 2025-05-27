@@ -113,10 +113,23 @@ class OfficialStreamingService {
         }
       }
 
+      // Convert year to number, handling both string and number types
+      let releaseYear = new Date().getFullYear();
+      if (show.releaseYear) {
+        if (typeof show.releaseYear === 'number') {
+          releaseYear = show.releaseYear;
+        } else if (typeof show.releaseYear === 'string') {
+          const parsedYear = parseInt(show.releaseYear, 10);
+          if (!isNaN(parsedYear)) {
+            releaseYear = parsedYear;
+          }
+        }
+      }
+
       const movieData: MovieStreamingData = {
         tmdbId: show.tmdbId || tmdbId,
         title: show.title || title || 'Unknown',
-        year: typeof show.releaseYear === 'number' ? show.releaseYear : new Date().getFullYear(),
+        year: releaseYear,
         country: country,
         streamingOptions,
         availableServices,
