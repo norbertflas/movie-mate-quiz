@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { getPopularMovies } from "@/services/tmdb/trending";
 import { useQuery } from "@tanstack/react-query";
+import { useScrollContext } from "@/hooks/use-scroll-context";
 
 interface Movie {
   id: number;
@@ -33,12 +34,12 @@ export const DynamicMovieBackground = ({
   const [rows, setRows] = useState<Movie[][]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const [posterDimensions, setPosterDimensions] = useState({ width: 140, height: 210 });
+  const { isScrolling } = useScrollContext();
 
   // Fetch trending movies from TMDB
   const { data: trendingMovies = [] } = useQuery({
     queryKey: ['backgroundMovies'],
     queryFn: async () => {
-      // Fixed: Using the correct parameter structure for getPopularMovies
       const movies = await getPopularMovies({ queryKey: ['popularMovies', '', '1'] });
       return movies.map(movie => ({
         id: movie.id,
@@ -49,69 +50,47 @@ export const DynamicMovieBackground = ({
         rating: movie.vote_average || 5.0,
       }));
     },
-    staleTime: 1000 * 60 * 60, // 1 hour
+    staleTime: 1000 * 60 * 60,
   });
 
-  // Create rows of movies for the scrolling background
+  // Create rows of movies - simplified
   useEffect(() => {
-    const createRows = () => {
-      if (trendingMovies.length === 0) return;
-      
-      // Shuffle the movies array to randomize the order
-      const shuffled = [...trendingMovies].sort(() => 0.5 - Math.random());
+    if (trendingMovies.length === 0) return;
+    
+    const shuffled = [...trendingMovies].sort(() => 0.5 - Math.random());
+    const newRows = [];
+    const moviesPerRow = 8;
 
-      // Create rows with different movies
-      const newRows = [];
-      const moviesPerRow = 8; // We'll duplicate these to create an infinite scroll effect
+    for (let i = 0; i < rowCount; i++) {
+      const startIndex = (i * moviesPerRow) % shuffled.length;
+      let rowMovies = shuffled.slice(startIndex, startIndex + moviesPerRow);
 
-      for (let i = 0; i < rowCount; i++) {
-        // Get a slice of movies for this row, with wrapping if we run out
-        const startIndex = (i * moviesPerRow) % shuffled.length;
-        let rowMovies = shuffled.slice(startIndex, startIndex + moviesPerRow);
-
-        // If we don't have enough movies, wrap around to the beginning
-        if (rowMovies.length < moviesPerRow) {
-          rowMovies = [...rowMovies, ...shuffled.slice(0, moviesPerRow - rowMovies.length)];
-        }
-
-        // Duplicate the movies to create a seamless loop
-        newRows.push([...rowMovies, ...rowMovies]);
+      if (rowMovies.length < moviesPerRow) {
+        rowMovies = [...rowMovies, ...shuffled.slice(0, moviesPerRow - rowMovies.length)];
       }
 
-      setRows(newRows);
-    };
+      newRows.push([...rowMovies, ...rowMovies]);
+    }
 
-    createRows();
-
-    // Refresh the rows every 2 hours to simulate updating trending movies
-    const interval = setInterval(createRows, 2 * 60 * 60 * 1000);
-
-    return () => clearInterval(interval);
+    setRows(newRows);
   }, [trendingMovies, rowCount]);
 
-  // Calculate poster dimensions based on container size
+  // Responsive dimensions
   useEffect(() => {
     const updateDimensions = () => {
       if (containerRef.current) {
         const containerWidth = containerRef.current.offsetWidth;
-        // Enhanced responsive design with more granular breakpoints
         if (containerWidth < 480) {
-          // Extra small (mobile phones)
           setPosterDimensions({ width: 90, height: 135 });
         } else if (containerWidth < 640) {
-          // Small mobile
           setPosterDimensions({ width: 100, height: 150 });
         } else if (containerWidth < 768) {
-          // Medium mobile/small tablet
           setPosterDimensions({ width: 110, height: 165 });
         } else if (containerWidth < 1024) {
-          // Tablet
           setPosterDimensions({ width: 120, height: 180 });
         } else if (containerWidth < 1280) {
-          // Small desktop
           setPosterDimensions({ width: 130, height: 195 });
         } else {
-          // Large desktop
           setPosterDimensions({ width: 140, height: 210 });
         }
       }
@@ -119,24 +98,20 @@ export const DynamicMovieBackground = ({
 
     updateDimensions();
     window.addEventListener("resize", updateDimensions);
-
     return () => window.removeEventListener("resize", updateDimensions);
   }, []);
 
-  // Calculate animation duration based on speed prop
   const getAnimationDuration = (rowIndex: number) => {
     const baseDuration = speed === "slow" ? 180 : speed === "fast" ? 80 : 120;
     return baseDuration + rowIndex * 15;
   };
 
-  // Get background styles based on variant
   const getBackgroundStyles = () => {
     switch (variant) {
       case "light":
         return {
           backgroundColor: "#f8fafc",
-          backgroundImage:
-            "radial-gradient(circle at center, rgba(224, 231, 255, 0.6) 0%, rgba(248, 250, 252, 0.8) 100%)",
+          backgroundImage: "radial-gradient(circle at center, rgba(224, 231, 255, 0.6) 0%, rgba(248, 250, 252, 0.8) 100%)",
         };
       case "dark":
         return {
@@ -156,7 +131,6 @@ export const DynamicMovieBackground = ({
     }
   };
 
-  // Get overlay styles based on variant
   const getOverlayStyles = () => {
     switch (variant) {
       case "light":
@@ -170,28 +144,17 @@ export const DynamicMovieBackground = ({
     }
   };
 
-  // Get gradient overlay styles based on variant
-  const getGradientOverlayStyles = () => {
-    switch (variant) {
-      case "light":
-        return "from-blue-100/30 to-purple-100/30";
-      case "dark":
-        return "from-blue-950/30 to-purple-950/30";
-      case "gradient":
-        return "from-blue-800/30 to-purple-800/30";
-      default:
-        return "from-blue-900/30 to-purple-900/30";
-    }
-  };
-
-  // Get poster opacity based on variant
   const getPosterOpacity = () => {
     return variant === "light" ? 0.5 : 0.7;
   };
 
   return (
-    <div ref={containerRef} className={`relative w-full overflow-hidden ${className}`} style={getBackgroundStyles()}>
-      {/* Scrolling movie posters background */}
+    <div 
+      ref={containerRef} 
+      className={`relative w-full overflow-hidden ${className}`} 
+      style={getBackgroundStyles()}
+    >
+      {/* Scrolling movie posters background - optimized */}
       <div className="absolute inset-0 z-0">
         {rows.map((row, rowIndex) => (
           <motion.div
@@ -211,14 +174,15 @@ export const DynamicMovieBackground = ({
             }}
             style={{
               height: posterDimensions.height,
-              marginBottom: 16, // Gap between rows
-              marginTop: rowIndex === 0 ? -20 : 0, // Offset first row
+              marginBottom: 16,
+              marginTop: rowIndex === 0 ? -20 : 0,
               opacity: getPosterOpacity(),
               filter: "brightness(0.7)",
+              willChange: "transform", // Performance optimization
             }}
           >
             {row.map((movie, movieIndex) => (
-              <motion.div
+              <div
                 key={`${movie.id}-${movieIndex}`}
                 className="relative flex-shrink-0 mx-2 rounded-md overflow-hidden shadow-lg"
                 style={{
@@ -227,40 +191,28 @@ export const DynamicMovieBackground = ({
                   transform: `rotate(${Math.random() * 6 - 3}deg) translateY(${Math.random() * 10 - 5}px)`,
                   transformOrigin: "center center",
                   zIndex: Math.floor(Math.random() * 10),
-                }}
-                whileHover={{
-                  scale: 1.05,
-                  rotate: 0,
-                  filter: "brightness(1.2)",
-                  zIndex: 20,
-                  transition: { duration: 0.3 },
+                  pointerEvents: isScrolling ? 'none' : 'auto', // Disable interactions during scroll
                 }}
               >
                 <img
                   src={movie.posterImage}
                   alt={movie.title}
                   className="w-full h-full object-cover rounded-md"
+                  loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/70" />
-
-                {/* Subtle blue/purple glow effect on hover */}
-                <div className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-md" />
-              </motion.div>
+              </div>
             ))}
           </motion.div>
         ))}
       </div>
 
-      {/* Dark overlay with appropriate gradient */}
+      {/* Overlay layers */}
       <div
         className={`absolute inset-0 z-10 bg-gradient-to-b ${getOverlayStyles()}`}
         style={{ opacity: overlayOpacity }}
       />
 
-      {/* Additional blue/purple gradient overlay */}
-      <div className={`absolute inset-0 z-10 bg-gradient-to-r ${getGradientOverlayStyles()} mix-blend-overlay`} />
-
-      {/* Content container */}
       <div className="relative z-20">{children}</div>
     </div>
   );

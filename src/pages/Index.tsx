@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { PageContainer } from "@/components/home/PageContainer";
 import { QuizContent } from "@/components/home/QuizContent";
@@ -313,7 +312,7 @@ const Index = () => {
           )}
         </AnimatePresence>
 
-        {/* Content below welcome/quiz - show only when not in quiz mode */}
+        {/* Content below welcome/quiz */}
         <AnimatePresence>
           {!state.showQuiz && (
             <motion.div
@@ -323,17 +322,14 @@ const Index = () => {
               exit="exit"
               className="space-y-4 sm:space-y-8"
             >
-              {/* Quick Actions with enhanced features */}
               <motion.div variants={contentVariants}>
                 <QuickActions />
               </motion.div>
               
-              {/* Main Content with enhanced error handling */}
               <motion.div variants={contentVariants}>
                 <MainContent />
               </motion.div>
               
-              {/* Personalized Recommendations */}
               <motion.div variants={contentVariants}>
                 <PersonalizedRecommendations />
               </motion.div>
