@@ -10,6 +10,10 @@ import { useIndexState } from "@/hooks/use-index-state";
 import { useAuth } from "@/hooks/use-auth";
 import { ContentSection } from "@/components/sections/ContentSection";
 import { TrendingMoviesSection } from "@/components/sections/TrendingMoviesSection";
+import { PopularMoviesSection } from "@/components/sections/PopularMoviesSection";
+import { FindYourPerfectMovie } from "@/components/sections/FindYourPerfectMovie";
+import { QuickActions } from "@/components/QuickActions";
+import { Footer } from "@/components/Footer";
 
 const Index = () => {
   const { session } = useAuth();
@@ -31,8 +35,12 @@ const Index = () => {
   const [userPreferences, setUserPreferences] = useState({
     hasCompletedOnboarding: false,
     preferredGenres: [],
-    streamingServices: []
+    streamingServices: [],
+    watchlist: []
   });
+
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [showWatchlist, setShowWatchlist] = useState(false);
 
   useEffect(() => {
     // Load user preferences from localStorage or API
@@ -50,12 +58,12 @@ const Index = () => {
     }));
   };
 
-  const handleExploreMovies = () => {
-    setState(prev => ({ 
-      ...prev, 
-      currentView: 'explore',
-      showQuiz: false 
-    }));
+  const handleToggleFilters = () => {
+    setShowAdvancedFilters(prev => !prev);
+  };
+
+  const handleToggleWatchlist = () => {
+    setShowWatchlist(prev => !prev);
   };
 
   if (isLoading && (!trendingMovies || trendingMovies.length === 0)) {
@@ -72,12 +80,41 @@ const Index = () => {
       <div className="min-h-screen bg-background">
         {state.currentView === 'welcome' && (
           <div className="space-y-8">
+            {/* Panel funkcyjny - WelcomeSection */}
             <WelcomeSection 
               onStartQuiz={handleStartQuizClick}
             />
+            
+            {/* Content Section */}
             <ContentSection />
             
-            {/* Show movies on welcome page */}
+            {/* Find Your Perfect Movie */}
+            <div className="container mx-auto px-4">
+              <FindYourPerfectMovie onStartQuiz={handleStartQuizClick} />
+            </div>
+
+            {/* Quick Actions */}
+            <div className="container mx-auto px-4">
+              <QuickActions 
+                onToggleFilters={handleToggleFilters}
+                onToggleWatchlist={handleToggleWatchlist}
+                showAdvancedFilters={showAdvancedFilters}
+                showWatchlist={showWatchlist}
+                userPreferences={userPreferences}
+              />
+            </div>
+
+            {/* Popular Movies Section - nad Trending */}
+            <div className="container mx-auto px-4">
+              <PopularMoviesSection movies={popularMovies || []} />
+            </div>
+
+            {/* Trending Movies Section */}
+            <div className="container mx-auto px-4">
+              <TrendingMoviesSection movies={trendingMovies || []} />
+            </div>
+
+            {/* Additional content */}
             <div className="container mx-auto px-4 py-8">
               <NewMainContent
                 trendingMovies={trendingMovies || []}
@@ -89,11 +126,15 @@ const Index = () => {
                 currentView={state.currentView}
               />
             </div>
+
+            {/* Footer */}
+            <Footer />
           </div>
         )}
 
         {state.currentView === 'quiz' && state.showQuiz && (
           <div className="space-y-8">
+            {/* Quiz Content */}
             <QuizContent 
               onBack={handleBackToWelcome}
               onComplete={(results) => {
@@ -107,24 +148,32 @@ const Index = () => {
               userPreferences={userPreferences}
             />
             
-            {/* Show scrolling popular movies section under quiz */}
+            {/* Popular movies under quiz */}
             <div className="container mx-auto px-4 py-8">
-              <TrendingMoviesSection movies={popularMovies || []} />
+              <PopularMoviesSection movies={popularMovies || []} />
             </div>
+
+            {/* Footer */}
+            <Footer />
           </div>
         )}
 
         {state.currentView === 'explore' && (
-          <div className="container mx-auto px-4 py-8">
-            <NewMainContent
-              trendingMovies={trendingMovies || []}
-              popularMovies={popularMovies || []}
-              isLoading={isLoading}
-              hasError={hasError}
-              onRetry={retryAll}
-              userPreferences={userPreferences}
-              currentView={state.currentView}
-            />
+          <div className="space-y-8">
+            <div className="container mx-auto px-4 py-8">
+              <NewMainContent
+                trendingMovies={trendingMovies || []}
+                popularMovies={popularMovies || []}
+                isLoading={isLoading}
+                hasError={hasError}
+                onRetry={retryAll}
+                userPreferences={userPreferences}
+                currentView={state.currentView}
+              />
+            </div>
+            
+            {/* Footer */}
+            <Footer />
           </div>
         )}
       </div>
