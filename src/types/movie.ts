@@ -23,6 +23,20 @@ export interface MovieCardProps {
   onClose?: () => void;
   isExpanded?: boolean;
   onClick?: () => void;
+  // New properties for improved cards
+  isWatched?: boolean;
+  isWatchlisted?: boolean;
+  hasTrailer?: boolean;
+  priority?: boolean;
+  director?: string;
+  runtime?: number;
+  releaseDate?: string;
+  cast?: string[];
+  budget?: string;
+  popularity?: number;
+  personalRating?: number;
+  onMinimize?: () => void;
+  onExpand?: () => void;
 }
 
 export interface MovieImageProps {

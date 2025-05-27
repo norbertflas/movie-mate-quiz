@@ -8,6 +8,7 @@ import { tmdbFetch } from "@/services/tmdb/utils";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "react-router-dom";
+import { MovieCardSwitcher } from "../movie/MovieCardSwitcher";
 
 interface SearchResultsProps {
   searchResults: TMDBMovie[];
@@ -85,44 +86,45 @@ export const SearchResults = ({
   };
 
   return (
-    <AnimatePresence mode="wait">
-      {searchResults.length > 0 && !selectedCreator && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 0.5 }}
-          className="space-y-4"
-        >
-          <h2 className="text-2xl font-bold">
-            {t("search.searchResults")}
-            <span className="text-muted-foreground text-lg font-normal ml-2">
-              ({t("search.totalResults", { count: searchResults.length })})
-            </span>
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="space-y-8">
+      {/* Movies Section */}
+      {searchResults.length > 0 && (
+        <section>
+          <motion.h2 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="text-2xl font-bold mb-6 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent"
+          >
+            {t("search.moviesFound")} ({searchResults.length})
+          </motion.h2>
+          
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
             {searchResults.map((movie, index) => (
               <motion.div
                 key={movie.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
+                transition={{ delay: index * 0.05, duration: 0.3 }}
               >
-                <MovieCard
+                <MovieCardSwitcher
                   title={movie.title}
                   year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "N/A"}
                   platform="TMDB"
-                  genre={t(`movie.${getGenreTranslationKey(movie.genre_ids?.[0] || 0)}`)}
-                  imageUrl={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+                  genre={movie.genre_ids?.map(id => getGenreTranslationKey(id)).join(", ") || ""}
+                  imageUrl={movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : '/placeholder.svg'}
                   description={movie.overview}
-                  trailerUrl={`https://www.youtube.com/watch?v=${movie.video_id || ''}`}
+                  trailerUrl=""
                   rating={movie.vote_average * 10}
                   tmdbId={movie.id}
+                  hasTrailer={Math.random() > 0.5}
+                  priority={movie.popularity > 100}
+                  isWatched={Math.random() > 0.7}
+                  isWatchlisted={Math.random() > 0.6}
                 />
               </motion.div>
             ))}
           </div>
-        </motion.div>
+        </section>
       )}
 
       {creatorResults.length > 0 && !selectedCreator && (
@@ -205,6 +207,6 @@ export const SearchResults = ({
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </div>
   );
 };

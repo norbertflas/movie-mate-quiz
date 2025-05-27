@@ -1,4 +1,3 @@
-
 import { motion, useInView } from "framer-motion";
 import { MovieCard } from "../MovieCard";
 import type { TMDBMovie } from "@/services/tmdb";
@@ -6,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useRef } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { TrendingUp } from "lucide-react";
+import { MovieCardSwitcher } from "../movie/MovieCardSwitcher";
 
 interface PopularMoviesSectionProps {
   movies: TMDBMovie[];
@@ -87,7 +87,7 @@ export const PopularMoviesSection = ({ movies }: PopularMoviesSectionProps) => {
       
       {movies && movies.length > 0 ? (
         <motion.div 
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 auto-rows-fr"
+          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
           variants={containerVariants}
           initial="hidden"
           animate={isInView ? "visible" : "hidden"}
@@ -107,7 +107,7 @@ export const PopularMoviesSection = ({ movies }: PopularMoviesSectionProps) => {
                 }}
                 className="h-full flex"
               >
-                <MovieCard
+                <MovieCardSwitcher
                   title={movie.title}
                   year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "N/A"}
                   platform="TMDB"
@@ -119,6 +119,10 @@ export const PopularMoviesSection = ({ movies }: PopularMoviesSectionProps) => {
                   tmdbId={movie.id}
                   streamingServices={[]}
                   tags={[]}
+                  hasTrailer={Math.random() > 0.5}
+                  priority={movie.popularity > 100}
+                  isWatched={Math.random() > 0.8}
+                  isWatchlisted={Math.random() > 0.7}
                 />
               </motion.div>
             </motion.div>
