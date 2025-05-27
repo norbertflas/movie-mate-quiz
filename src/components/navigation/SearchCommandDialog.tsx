@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { Search, Film, User, Calendar, TrendingUp, Clock } from 'lucide-react';
 import { 
@@ -20,6 +19,14 @@ interface SearchCommandDialogProps {
   onOpenChange: (open: boolean) => void;
   onSubmit: (query: string) => void;
   placeholder?: string;
+}
+
+interface Suggestion {
+  type: 'recent' | 'quick' | 'result';
+  label: string;
+  icon: any;
+  action: () => void;
+  subtitle?: string;
 }
 
 export const SearchCommandDialog = ({
@@ -49,21 +56,21 @@ export const SearchCommandDialog = ({
   ];
 
   // All suggestions (recent + quick + search results)
-  const allSuggestions = [
+  const allSuggestions: Suggestion[] = [
     ...recentSearches.slice(0, 3).map(search => ({
-      type: 'recent',
+      type: 'recent' as const,
       label: search,
       icon: Clock,
       action: () => handleSubmit(search)
     })),
     ...quickSuggestions.map(suggestion => ({
-      type: 'quick',
+      type: 'quick' as const,
       ...suggestion
     })),
     ...searchResults.slice(0, 5).map((movie: any) => ({
-      type: 'result',
+      type: 'result' as const,
       label: movie.title,
-      subtitle: movie.release_date ? new Date(movie.release_date).getFullYear() : '',
+      subtitle: movie.release_date ? new Date(movie.release_date).getFullYear().toString() : '',
       icon: Film,
       action: () => handleSubmit(movie.title)
     }))
