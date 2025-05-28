@@ -40,7 +40,7 @@ interface SmartStreamingOptions {
 
 export function useSmartStreamingSearch(
   tmdbIds: number[],
-  options: SmartStreamingOptions = {}
+  options: SmartStreamingOptions = { mode: 'lazy' } // Provide default mode
 ) {
   const { i18n } = useTranslation();
   const {

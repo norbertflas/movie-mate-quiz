@@ -14,12 +14,14 @@ interface SearchResultsProps {
   searchResults: TMDBMovie[];
   creatorResults: TMDBPerson[];
   getGenreTranslationKey: (genreId: number) => string;
+  streamingSearch?: any; // Add optional streaming search prop
 }
 
 export const SearchResults = ({ 
   searchResults, 
   creatorResults, 
-  getGenreTranslationKey 
+  getGenreTranslationKey,
+  streamingSearch
 }: SearchResultsProps) => {
   const { t } = useTranslation();
   const [selectedCreator, setSelectedCreator] = useState<TMDBPerson | null>(null);
@@ -99,30 +101,44 @@ export const SearchResults = ({
           </motion.h2>
           
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-            {searchResults.map((movie, index) => (
-              <motion.div
-                key={movie.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05, duration: 0.3 }}
-              >
-                <MovieCardSwitcher
-                  title={movie.title}
-                  year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "N/A"}
-                  platform="TMDB"
-                  genre={movie.genre_ids?.map(id => getGenreTranslationKey(id)).join(", ") || ""}
-                  imageUrl={movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : '/placeholder.svg'}
-                  description={movie.overview}
-                  trailerUrl=""
-                  rating={movie.vote_average * 10}
-                  tmdbId={movie.id}
-                  hasTrailer={Math.random() > 0.5}
-                  priority={movie.popularity > 100}
-                  isWatched={Math.random() > 0.7}
-                  isWatchlisted={Math.random() > 0.6}
-                />
-              </motion.div>
-            ))}
+            {searchResults.map((movie, index) => {
+              // Get streaming data if available
+              const streamingData = streamingSearch?.getStreamingData(movie.id);
+              const hasStreaming = streamingSearch?.hasStreaming(movie.id);
+              
+              return (
+                <motion.div
+                  key={movie.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05, duration: 0.3 }}
+                  className="relative"
+                >
+                  <MovieCardSwitcher
+                    title={movie.title}
+                    year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "N/A"}
+                    platform="TMDB"
+                    genre={movie.genre_ids?.map(id => getGenreTranslationKey(id)).join(", ") || ""}
+                    imageUrl={movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : '/placeholder.svg'}
+                    description={movie.overview}
+                    trailerUrl=""
+                    rating={movie.vote_average * 10}
+                    tmdbId={movie.id}
+                    hasTrailer={Math.random() > 0.5}
+                    priority={movie.popularity > 100}
+                    isWatched={Math.random() > 0.7}
+                    isWatchlisted={Math.random() > 0.6}
+                  />
+                  
+                  {/* Show streaming availability badge for instant mode */}
+                  {streamingData && hasStreaming && (
+                    <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full">
+                      ✓ Dostępny
+                    </div>
+                  )}
+                </motion.div>
+              );
+            })}
           </div>
         </section>
       )}

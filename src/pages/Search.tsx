@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ import { SearchResults } from "@/components/search/SearchResults";
 import { useLocation } from "react-router-dom";
 import { SearchInput } from "@/components/search/SearchInput";
 import { useSmartStreamingSearch } from "@/hooks/use-smart-streaming-search";
+import { StreamingServiceSelector } from "@/components/streaming/StreamingServiceSelector";
 
 type SearchType = "movies" | "creators" | "personalized";
 
@@ -81,8 +83,8 @@ const Search = () => {
     let filtered = [...movies];
 
     // Apply existing filters
-    const year = movie => movie.release_date ? new Date(movie.release_date).getFullYear() : 0;
-    const rating = movie => movie.vote_average * 10;
+    const year = (movie: TMDBMovie) => movie.release_date ? new Date(movie.release_date).getFullYear() : 0;
+    const rating = (movie: TMDBMovie) => movie.vote_average * 10;
 
     filtered = filtered.filter(movie => {
       const movieYear = year(movie);
