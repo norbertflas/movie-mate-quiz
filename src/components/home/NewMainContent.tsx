@@ -54,7 +54,11 @@ const ErrorState = ({ onRetry }: { onRetry?: () => void }) => (
         <Button 
           variant="outline" 
           size="sm" 
-          onClick={onRetry} 
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onRetry();
+          }}
           className="ml-3"
         >
           <RefreshCw className="h-3 w-3 mr-1" />
@@ -75,7 +79,8 @@ const MovieSection = ({
   isLoading = false,
   hasError = false,
   onRetry,
-  limit = 10
+  limit = 10,
+  sectionId
 }: {
   title: string;
   movies: Movie[];
@@ -86,6 +91,7 @@ const MovieSection = ({
   hasError?: boolean;
   onRetry?: () => void;
   limit?: number;
+  sectionId: string;
 }) => {
   const { selectedMovie, isModalOpen, openModal, closeModal } = useMovieModal();
 
@@ -146,7 +152,7 @@ const MovieSection = ({
         ) : isLoading ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
             {Array.from({ length: limit }).map((_, index) => (
-              <MovieCardSkeleton key={index} />
+              <MovieCardSkeleton key={`${sectionId}-skeleton-${index}`} />
             ))}
           </div>
         ) : movies.length > 0 ? (
@@ -155,7 +161,7 @@ const MovieSection = ({
             className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4"
           >
             {movies.slice(0, limit).map((movie, index) => (
-              <motion.div key={movie.id} variants={itemVariants}>
+              <motion.div key={`${sectionId}-movie-${movie.id}-${index}`} variants={itemVariants}>
                 <UnifiedMovieCard
                   movie={movie}
                   onExpand={() => openModal(movie)}
@@ -202,26 +208,6 @@ export const NewMainContent = ({
   const convertedPopularMovies = useMemo(() => 
     popularMovies.map(convertTMDBMovie), [popularMovies]
   );
-
-  // Memoize sections to prevent unnecessary re-renders
-  const sections = useMemo(() => [
-    {
-      id: 'trending',
-      title: 'Trending This Week',
-      movies: convertedTrendingMovies,
-      icon: <TrendingUp className="h-6 w-6" />,
-      badge: 'Hot',
-      description: 'What everyone\'s watching right now'
-    },
-    {
-      id: 'popular',
-      title: 'Popular Movies',
-      movies: convertedPopularMovies,
-      icon: <Users className="h-6 w-6" />,
-      badge: 'Popular',
-      description: 'Most popular movies this week'
-    }
-  ], [convertedTrendingMovies, convertedPopularMovies]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -284,6 +270,7 @@ export const NewMainContent = ({
           hasError={hasError}
           onRetry={onRetry}
           limit={12}
+          sectionId="trending-main"
         />
       </motion.div>
 
@@ -304,7 +291,15 @@ export const NewMainContent = ({
 
             {/* Global retry button */}
             {hasError && onRetry && (
-              <Button variant="outline" onClick={onRetry} size="sm">
+              <Button 
+                variant="outline" 
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onRetry();
+                }}
+                size="sm"
+              >
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Retry All
               </Button>
@@ -323,6 +318,7 @@ export const NewMainContent = ({
                 hasError={hasError}
                 onRetry={onRetry}
                 limit={12}
+                sectionId="trending-more"
               />
             </TabsContent>
 
@@ -337,6 +333,7 @@ export const NewMainContent = ({
                 hasError={hasError}
                 onRetry={onRetry}
                 limit={12}
+                sectionId="popular-main"
               />
             </TabsContent>
           </AnimatePresence>
@@ -359,6 +356,7 @@ export const NewMainContent = ({
               isLoading={false}
               hasError={false}
               limit={10}
+              sectionId="top-rated"
             />
           </motion.div>
 
@@ -373,6 +371,7 @@ export const NewMainContent = ({
               isLoading={false}
               hasError={false}
               limit={8}
+              sectionId="recently-added"
             />
           </motion.div>
         </>
@@ -393,7 +392,14 @@ export const NewMainContent = ({
                 </p>
               </div>
               {onRetry && (
-                <Button onClick={onRetry} className="mt-4">
+                <Button 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onRetry();
+                  }}
+                  className="mt-4"
+                >
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Try Again
                 </Button>

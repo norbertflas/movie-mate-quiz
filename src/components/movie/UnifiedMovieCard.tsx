@@ -49,6 +49,14 @@ export const UnifiedMovieCard = ({
     ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
     : '/placeholder.svg';
 
+  const handleCardClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onExpand) {
+      onExpand();
+    }
+  }, [onExpand]);
+
   const renderStreamingInfo = () => {
     if (!streamingData) return null;
 
@@ -71,7 +79,7 @@ export const UnifiedMovieCard = ({
         animate={{ opacity: 1, scale: 1 }}
         whileHover={{ scale: 1.02 }}
         className="bg-card rounded-lg shadow-md overflow-hidden cursor-pointer relative group"
-        onClick={onExpand}
+        onClick={handleCardClick}
       >
         <div className="relative aspect-[2/3] overflow-hidden">
           {!imageLoaded && (
@@ -99,8 +107,13 @@ export const UnifiedMovieCard = ({
           {/* Expand button */}
           {showExpandButton && (
             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <Button size="sm" variant="secondary">
-                {t("common.viewDetails")}
+              <Button 
+                size="sm" 
+                variant="secondary"
+                onClick={handleCardClick}
+                className="pointer-events-auto"
+              >
+                View Details
               </Button>
             </div>
           )}
@@ -125,7 +138,7 @@ export const UnifiedMovieCard = ({
         animate={{ opacity: 1, scale: 1 }}
         whileHover={{ scale: 1.02 }}
         className="bg-card rounded-lg shadow-md overflow-hidden cursor-pointer relative group"
-        onClick={onExpand}
+        onClick={handleCardClick}
       >
         <div className="relative aspect-[9/16] overflow-hidden">
           {!imageLoaded && (
@@ -149,8 +162,13 @@ export const UnifiedMovieCard = ({
           {/* Expand button */}
           {showExpandButton && (
             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <Button size="sm" variant="secondary">
-                {t("common.viewDetails")}
+              <Button 
+                size="sm" 
+                variant="secondary"
+                onClick={handleCardClick}
+                className="pointer-events-auto"
+              >
+                View Details
               </Button>
             </div>
           )}
@@ -192,7 +210,7 @@ export const UnifiedMovieCard = ({
           <Badge variant="secondary">
             ⭐ {movie.vote_average?.toFixed(1) || "N/A"}
           </Badge>
-          <Button>
+          <Button onClick={handleCardClick}>
             <PlayCircle className="mr-2 h-4 w-4" /> Play
           </Button>
         </CardFooter>
