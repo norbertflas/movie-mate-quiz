@@ -30,14 +30,6 @@ export default defineConfig(({ mode }) => ({
           'supabase': ['@supabase/supabase-js'],
           'i18n': ['react-i18next', 'i18next']
         }
-      },
-      // Fix for deployment issues with optional dependencies
-      external: (id) => {
-        // Don't externalize core dependencies
-        if (id.startsWith('@rollup/rollup-')) {
-          return false;
-        }
-        return false;
       }
     },
     chunkSizeWarningLimit: 1000,
