@@ -25,7 +25,7 @@ export const RandomMovieSection = () => {
       const movies = await discoverMovies({
         page: randomPage,
         sortBy: 'popularity.desc',
-        'vote_count.gte': 100
+        minVoteCount: 100
       });
       const randomIndex = Math.floor(Math.random() * movies.length);
       return movies[randomIndex];
