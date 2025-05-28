@@ -52,10 +52,20 @@ export const UnifiedMovieCard = ({
   const handleCardClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    console.log('Movie card clicked:', movie.title);
     if (onExpand) {
       onExpand();
     }
-  }, [onExpand]);
+  }, [onExpand, movie.title]);
+
+  const handleButtonClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Movie card button clicked:', movie.title);
+    if (onExpand) {
+      onExpand();
+    }
+  }, [onExpand, movie.title]);
 
   const renderStreamingInfo = () => {
     if (!streamingData) return null;
@@ -96,24 +106,21 @@ export const UnifiedMovieCard = ({
             onError={() => setImageLoaded(true)}
           />
 
-          {/* Streaming info overlay */}
           {renderStreamingInfo()}
 
-          {/* Rating badge */}
           <div className="absolute bottom-2 left-2 bg-black/70 text-white px-2 py-1 rounded text-xs">
             ⭐ {movie.vote_average?.toFixed(1) || "N/A"}
           </div>
 
-          {/* Expand button */}
           {showExpandButton && (
             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
               <Button 
                 size="sm" 
                 variant="secondary"
-                onClick={handleCardClick}
+                onClick={handleButtonClick}
                 className="pointer-events-auto"
               >
-                View Details
+                {t("common.viewDetails") || "View Details"}
               </Button>
             </div>
           )}
@@ -153,22 +160,22 @@ export const UnifiedMovieCard = ({
             onLoad={() => setImageLoaded(true)}
             onError={() => setImageLoaded(true)}
           />
-          {/* Streaming info overlay */}
+          
           {renderStreamingInfo()}
-          {/* Rating badge */}
+          
           <div className="absolute bottom-2 left-2 bg-black/70 text-white px-2 py-1 rounded text-xs">
             ⭐ {movie.vote_average?.toFixed(1) || "N/A"}
           </div>
-          {/* Expand button */}
+          
           {showExpandButton && (
             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
               <Button 
                 size="sm" 
                 variant="secondary"
-                onClick={handleCardClick}
+                onClick={handleButtonClick}
                 className="pointer-events-auto"
               >
-                View Details
+                {t("common.viewDetails") || "View Details"}
               </Button>
             </div>
           )}
@@ -210,7 +217,7 @@ export const UnifiedMovieCard = ({
           <Badge variant="secondary">
             ⭐ {movie.vote_average?.toFixed(1) || "N/A"}
           </Badge>
-          <Button onClick={handleCardClick}>
+          <Button onClick={handleButtonClick}>
             <PlayCircle className="mr-2 h-4 w-4" /> Play
           </Button>
         </CardFooter>
@@ -261,11 +268,13 @@ export const useMovieModal = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const openModal = useCallback((movie: Movie) => {
+    console.log('Opening modal for movie:', movie.title);
     setSelectedMovie(movie);
     setIsModalOpen(true);
   }, []);
 
   const closeModal = useCallback(() => {
+    console.log('Closing movie modal');
     setSelectedMovie(null);
     setIsModalOpen(false);
   }, []);

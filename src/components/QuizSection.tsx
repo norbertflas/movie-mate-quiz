@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { QuizResults } from "./quiz/QuizResults";
 import { QuizQuestions } from "./quiz/QuizQuestions";
@@ -25,7 +26,8 @@ export const QuizSection = () => {
   const { 
     showResults,
     recommendations,
-    handleQuizComplete 
+    handleQuizComplete,
+    isLoading 
   } = useQuizLogic();
 
   // Get visible steps based on current answers
@@ -46,6 +48,8 @@ export const QuizSection = () => {
     const currentQuestion = steps[currentStep];
     if (!currentQuestion) return;
 
+    console.log(`📝 Quiz answer: ${currentQuestion.id} = ${answer}`);
+
     const newAnswer: QuizAnswer = {
       questionId: currentQuestion.id,
       answer
@@ -62,6 +66,7 @@ export const QuizSection = () => {
         newAnswers.push(newAnswer);
       }
       
+      console.log('📋 Updated answers:', newAnswers);
       return newAnswers;
     });
   };
@@ -105,8 +110,8 @@ export const QuizSection = () => {
     
     if (!hasCurrentAnswer) {
       toast({
-        title: t("errors.missingAnswer"),
-        description: t("errors.pleaseSelectOption"),
+        title: t("errors.missingAnswer") || "Missing Answer",
+        description: t("errors.pleaseSelectOption") || "Please select an option",
         variant: "destructive",
       });
       return;
@@ -132,17 +137,20 @@ export const QuizSection = () => {
   const handleFinish = async () => {
     try {
       setIsSubmitting(true);
-      await handleQuizComplete(answers);
+      console.log('🏁 Finishing quiz with answers:', answers);
+      
+      const results = await handleQuizComplete(answers);
+      console.log('✅ Quiz completed with results:', results);
       
       toast({
-        title: t("quiz.completed"),
-        description: t("quiz.recommendations.ready"),
+        title: t("quiz.completed") || "Quiz Completed!",
+        description: t("quiz.recommendations.ready") || "Your recommendations are ready!",
       });
     } catch (error) {
-      console.error('Error submitting quiz:', error);
+      console.error('💥 Error submitting quiz:', error);
       toast({
-        title: t("errors.quizError"),
-        description: t("errors.tryAgain"),
+        title: t("errors.quizError") || "Quiz Error",
+        description: t("errors.tryAgain") || "Please try again",
         variant: "destructive",
       });
     } finally {
@@ -199,32 +207,32 @@ export const QuizSection = () => {
               <Button
                 variant="outline"
                 onClick={handlePrevious}
-                disabled={isSubmitting}
+                disabled={isSubmitting || isLoading}
                 className={`text-white bg-gray-800 border-gray-700 hover:bg-gray-700 flex items-center gap-2 ${isMobile ? 'w-full justify-center' : ''} text-sm sm:text-base`}
               >
                 <ArrowLeft className="h-4 w-4" />
-                {t("quiz.previous")}
+                {t("quiz.previous") || "Previous"}
               </Button>
             )}
 
             <Button
               onClick={handleNext}
-              disabled={!answers.some(a => a.questionId === steps[currentStep]?.id) || isSubmitting}
+              disabled={!answers.some(a => a.questionId === steps[currentStep]?.id) || isSubmitting || isLoading}
               className={`${isMobile ? 'w-full' : 'ml-auto'} flex items-center gap-2 ${currentStep === 0 && !isMobile ? 'mx-auto' : ''} bg-blue-600 hover:bg-blue-700 text-sm sm:text-base`}
             >
-              {isSubmitting ? (
+              {isSubmitting || isLoading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  {t("quiz.processing")}
+                  {t("quiz.processing") || "Processing..."}
                 </>
               ) : isLastStep ? (
                 <>
-                  {t("quiz.finish")}
+                  {t("quiz.finish") || "Finish"}
                   <Check className="h-4 w-4" />
                 </>
               ) : (
                 <>
-                  {t("quiz.next")}
+                  {t("quiz.next") || "Next"}
                   <ArrowRight className="h-4 w-4" />
                 </>
               )}
