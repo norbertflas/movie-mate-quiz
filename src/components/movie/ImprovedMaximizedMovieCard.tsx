@@ -1,529 +1,612 @@
 
-import { useState, memo, useCallback } from "react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect, memo, useCallback } from "react";
 import { 
-  Heart, Minimize2, Play, Star, Share2, Bookmark, 
-  Clock, Calendar, Users, Award, Download, Eye, EyeOff,
-  Copy, ExternalLink, TrendingUp, X, Search, RefreshCw
+  X, Heart, Star, Play, Calendar, Clock, Users, MapPin, 
+  Award, TrendingUp, Eye, EyeOff, Bookmark, Share2, 
+  Download, ExternalLink, Copy, ThumbsUp, ThumbsDown,
+  Film, Camera, Mic, Edit3, DollarSign, Globe, Languages
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
 import { motion, AnimatePresence } from "framer-motion";
-import { MovieRating } from "./MovieRating";
-import { MovieStreamingServices } from "./MovieStreamingServices";
-import { useOptimizedStreaming } from "@/hooks/use-optimized-streaming";
-import { useToast } from "@/hooks/use-toast";
 import type { MovieCardProps } from "@/types/movie";
+import { getMovieDetails } from "@/services/tmdb/movies";
 
 export const ImprovedMaximizedMovieCard = memo(({
   title = "Unknown Movie",
-  year = "N/A",
-  platform = "Unknown",
-  genre = "",
+  year = "N/A", 
   imageUrl = '/placeholder.svg',
   description = "",
-  trailerUrl = "",
   rating = 0,
-  tags = [],
-  streamingServices = [],
+  genre = "",
   tmdbId,
-  explanations = [],
-  onMinimize,
   onClose,
-  director = "Unknown Director",
-  runtime = 120,
-  releaseDate,
+  onMinimize,
+  director,
+  runtime,
   cast = [],
-  budget = "Unknown",
-  popularity = 0
+  budget,
+  popularity = 0,
+  personalRating = 0,
+  isWatched = false,
+  isWatchlisted = false,
+  trailerUrl = "",
+  ...props
 }: MovieCardProps) => {
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [isWatchlisted, setIsWatchlisted] = useState(false);
-  const [isWatched, setIsWatched] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showTrailer, setShowTrailer] = useState(false);
+  const [movieDetails, setMovieDetails] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [userActions, setUserActions] = useState({
+    isFavorite: false,
+    isWatchlisted: isWatchlisted,
+    isWatched: isWatched,
+    personalRating: personalRating || 0
+  });
   const [showShareMenu, setShowShareMenu] = useState(false);
-  const [personalRating, setPersonalRating] = useState(0);
-  const [isSearchingStreaming, setIsSearchingStreaming] = useState(false);
-  
-  const { toast } = useToast();
-  
-  // Use optimized streaming hook
-  const streamingData = useOptimizedStreaming(tmdbId && tmdbId > 0 ? tmdbId : 0, title, year);
 
-  const handleToggleFavorite = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsFavorite(prev => !prev);
-  }, []);
-
-  const handleToggleWatchlist = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsWatchlisted(prev => !prev);
-  }, []);
-
-  const handleToggleWatched = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsWatched(prev => !prev);
-  }, []);
-
-  const handlePlayTrailer = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (trailerUrl) {
-      setShowTrailer(true);
-    }
-  }, [trailerUrl]);
-
-  const handleSearchStreaming = useCallback(async () => {
-    if (!tmdbId || tmdbId <= 0) {
-      toast({
-        title: "Błąd",
-        description: "Nie można wyszukać dostępności dla tego filmu",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsSearchingStreaming(true);
-    try {
-      await streamingData.fetchData();
-      toast({
-        title: "Wyszukiwanie zakończone",
-        description: `Znaleziono ${streamingData.services.length} serwisów streamingowych`,
-      });
-    } catch (error) {
-      toast({
-        title: "Błąd wyszukiwania",
-        description: "Nie udało się wyszukać dostępności streamingowej",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSearchingStreaming(false);
-    }
-  }, [tmdbId, streamingData, toast]);
-
-  const handleShare = useCallback(async (platform = 'native') => {
-    const shareData = {
-      title: title,
-      text: `Zobacz "${title}" - ${description?.slice(0, 100)}...`,
-      url: window.location.href
+  // Load detailed movie data if tmdbId is available
+  useEffect(() => {
+    const loadMovieDetails = async () => {
+      if (!tmdbId) return;
+      
+      try {
+        setLoading(true);
+        const details = await getMovieDetails(tmdbId);
+        setMovieDetails(details);
+      } catch (error) {
+        console.error('Error loading movie details:', error);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    try {
-      switch(platform) {
-        case 'copy':
-          await navigator.clipboard.writeText(shareData.url);
-          toast({
-            title: "Skopiowano",
-            description: "Link został skopiowany do schowka",
-          });
-          break;
-        case 'native':
-          if (navigator.share) {
-            await navigator.share(shareData);
-          }
-          break;
-        default:
-          break;
-      }
-    } catch (err) {
-      console.log('Sharing failed or cancelled');
-    }
-    setShowShareMenu(false);
-  }, [title, description, toast]);
+    loadMovieDetails();
+  }, [tmdbId]);
 
-  const formatRuntime = useCallback((minutes: number) => {
+  const formatCurrency = useCallback((amount) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0
+    }).format(amount);
+  }, []);
+
+  const formatDate = useCallback((dateString) => {
+    return new Date(dateString).toLocaleDateString('pl-PL', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric'
+    });
+  }, []);
+
+  const formatRuntime = useCallback((minutes) => {
+    if (!minutes) return 'N/A';
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return `${hours}h ${mins}m`;
   }, []);
 
-  const formatStreamingServices = useCallback(() => {
-    const services = streamingData.services?.length > 0 ? streamingData.services : streamingServices;
-    
-    if (!services || services.length === 0) return [];
-    
-    return services.map(service => {
-      if (typeof service === 'string') {
-        return service;
-      }
-      return service.service;
-    });
-  }, [streamingServices, streamingData.services]);
+  const getRatingColor = useCallback((rating) => {
+    const normalizedRating = rating > 10 ? rating / 10 : rating;
+    if (normalizedRating >= 8.0) return 'text-green-400';
+    if (normalizedRating >= 7.0) return 'text-yellow-400';
+    if (normalizedRating >= 6.0) return 'text-orange-400';
+    return 'text-red-400';
+  }, []);
 
-  // Fix image URL
+  const handleUserAction = useCallback((action, value = null) => {
+    setUserActions(prev => ({
+      ...prev,
+      [action]: value !== null ? value : !prev[action]
+    }));
+  }, []);
+
+  const handleShare = useCallback(async (platform) => {
+    const shareData = {
+      title: title,
+      text: `Check out "${title}" - ${description.slice(0, 100)}...`,
+      url: `${window.location.origin}/movie/${tmdbId || title}`
+    };
+
+    switch(platform) {
+      case 'copy':
+        navigator.clipboard.writeText(shareData.url);
+        break;
+      case 'native':
+        if (navigator.share) {
+          await navigator.share(shareData);
+        }
+        break;
+    }
+    setShowShareMenu(false);
+  }, [title, description, tmdbId]);
+
+  const handleClose = useCallback(() => {
+    if (onClose) {
+      onClose();
+    }
+  }, [onClose]);
+
+  const handleMinimizeClick = useCallback(() => {
+    if (onMinimize) {
+      onMinimize();
+    }
+  }, [onMinimize]);
+
+  // Fix image URL - ensure it's a complete URL
   const posterUrl = imageUrl?.startsWith('http') 
     ? imageUrl 
     : imageUrl?.startsWith('/') 
-      ? `https://image.tmdb.org/t/p/w1280${imageUrl}`
+      ? `https://image.tmdb.org/t/p/w500${imageUrl}`
       : imageUrl || '/placeholder.svg';
 
-  if (!title) {
-    console.warn('ImprovedMaximizedMovieCard: title is required');
-    return null;
-  }
+  const backdropUrl = movieDetails?.backdrop_path 
+    ? `https://image.tmdb.org/t/p/w1280${movieDetails.backdrop_path}`
+    : posterUrl;
+
+  // Convert rating from 0-100 to 0-10 scale if needed
+  const displayRating = rating > 10 ? (rating / 10).toFixed(1) : rating.toFixed(1);
+
+  // Prepare genres data
+  const genres = movieDetails?.genres || (genre ? genre.split(',').map((g, i) => ({ id: i, name: g.trim() })) : []);
+  
+  // Prepare cast data
+  const castData = movieDetails?.credits?.cast || (Array.isArray(cast) ? cast.map((name, i) => ({ id: i, name, character: 'Unknown' })) : []);
+  
+  // Prepare crew data
+  const crewData = movieDetails?.credits?.crew || (director ? [{ id: 1, name: director, job: 'Director', department: 'Directing' }] : []);
 
   return (
-    <>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+    >
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm"
-        onClick={(e) => {
-          if (e.target === e.currentTarget && onClose) {
-            onClose();
-          }
-        }}
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.9, opacity: 0, y: 20 }}
+        className="bg-gray-900 rounded-xl max-w-6xl w-full max-h-[95vh] overflow-hidden shadow-2xl border border-gray-700"
       >
-        <Card className="w-full h-full max-w-7xl max-h-[95vh] overflow-hidden shadow-2xl bg-gray-900 border-gray-700 flex flex-col">
-          {/* Header */}
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 p-6 bg-gradient-to-r from-blue-600/20 via-purple-600/20 to-pink-600/20 backdrop-blur-sm border-b border-gray-700 flex-shrink-0">
-            <div className="flex items-center space-x-3">
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+        {/* Enhanced Header */}
+        <div className="relative h-96 overflow-hidden">
+          {/* Backdrop Image */}
+          <div className="absolute inset-0">
+            <img
+              src={backdropUrl}
+              alt={title}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = "/placeholder.svg";
+              }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/60 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-gray-900/80 via-transparent to-gray-900/40" />
+          </div>
+
+          {/* Close and Minimize Buttons */}
+          <div className="absolute top-4 right-4 flex space-x-2 z-10">
+            {onMinimize && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleMinimizeClick}
+                className="h-10 w-10 rounded-full bg-black/50 hover:bg-black/70 text-white"
               >
-                <Star className="h-6 w-6 text-yellow-400 fill-current" />
+                <EyeOff className="h-5 w-5" />
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleClose}
+              className="h-10 w-10 rounded-full bg-black/50 hover:bg-black/70 text-white"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+
+          {/* Main Content Overlay */}
+          <div className="absolute bottom-0 left-0 right-0 p-8">
+            <div className="flex items-end space-x-6">
+              {/* Poster */}
+              <motion.div
+                initial={{ x: -50, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="flex-shrink-0"
+              >
+                <img
+                  src={posterUrl}
+                  alt={title}
+                  className="w-32 h-48 object-cover rounded-lg shadow-2xl border-2 border-white/20"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = "/placeholder.svg";
+                  }}
+                />
               </motion.div>
-              <span className="font-semibold text-white text-lg">Polecany Film</span>
-              <Badge variant="secondary" className="text-sm bg-yellow-500/20 text-yellow-300 border-yellow-500/30">
-                HOT
-              </Badge>
-            </div>
-            <div className="flex items-center space-x-2">
-              {onMinimize && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-10 w-10 p-0 text-gray-400 hover:text-white hover:bg-gray-700"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onMinimize();
-                  }}
-                >
-                  <Minimize2 className="h-5 w-5" />
-                </Button>
-              )}
-              {onClose && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-10 w-10 p-0 text-gray-400 hover:text-white hover:bg-gray-700"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onClose();
-                  }}
-                >
-                  <X className="h-5 w-5" />
-                </Button>
-              )}
-            </div>
-          </CardHeader>
 
-          {/* Content */}
-          <div className="flex flex-1 overflow-hidden">
-            {/* Left side - Image */}
-            <div className="w-1/2 relative overflow-hidden">
-              <img
-                src={posterUrl}
-                alt={title}
-                className="w-full h-full object-cover"
-                loading="eager"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = '/placeholder.svg';
-                }}
-              />
-              
-              {/* Gradient overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-black/60" />
-              
-              {/* Top controls on image */}
-              <div className="absolute top-6 right-6 flex space-x-3">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="bg-black/50 hover:bg-black/70 backdrop-blur-sm text-white border-gray-600"
-                  onClick={handleToggleFavorite}
-                >
-                  <Heart 
-                    className={`h-5 w-5 transition-colors ${isFavorite ? 'text-red-500 fill-red-500' : 'text-white'}`} 
-                  />
-                </Button>
-                
-                <div className="relative">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    className="bg-black/50 hover:bg-black/70 backdrop-blur-sm text-white border-gray-600"
-                    onClick={() => setShowShareMenu(prev => !prev)}
-                  >
-                    <Share2 className="h-5 w-5" />
-                  </Button>
-                  
-                  <AnimatePresence>
-                    {showShareMenu && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -10, scale: 0.9 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -10, scale: 0.9 }}
-                        className="absolute top-full right-0 mt-2 bg-gray-800 rounded-lg shadow-xl border border-gray-600 p-2 z-10 min-w-32"
-                      >
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleShare('copy')}
-                          className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-700"
-                        >
-                          <Copy className="h-4 w-4 mr-2" />
-                          Kopiuj link
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleShare('native')}
-                          className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-700"
-                        >
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          Udostępnij
-                        </Button>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+              {/* Movie Info */}
+              <motion.div
+                initial={{ y: 30, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className="flex-1 text-white"
+              >
+                <div className="mb-2">
+                  <h1 className="text-4xl font-bold mb-2">{title}</h1>
+                  {movieDetails?.original_title !== title && (
+                    <p className="text-xl text-gray-300 italic mb-2">{movieDetails?.original_title}</p>
+                  )}
+                  {movieDetails?.tagline && (
+                    <p className="text-lg text-gray-400 italic">"{movieDetails.tagline}"</p>
+                  )}
                 </div>
-              </div>
 
-              {/* Action buttons on image */}
-              <div className="absolute bottom-6 left-6 right-6">
-                <div className="flex gap-3 flex-wrap">
+                {/* Meta Info */}
+                <div className="flex flex-wrap items-center space-x-4 text-sm text-gray-300 mb-4">
+                  <div className="flex items-center">
+                    <Calendar className="h-4 w-4 mr-1" />
+                    {year}
+                  </div>
+                  {(runtime || movieDetails?.runtime) && (
+                    <div className="flex items-center">
+                      <Clock className="h-4 w-4 mr-1" />
+                      {formatRuntime(runtime || movieDetails?.runtime)}
+                    </div>
+                  )}
+                  {movieDetails?.production_countries?.[0]?.name && (
+                    <div className="flex items-center">
+                      <MapPin className="h-4 w-4 mr-1" />
+                      {movieDetails.production_countries[0].name}
+                    </div>
+                  )}
+                  <Badge variant="outline" className="border-gray-400 text-gray-300">
+                    {movieDetails?.status || 'Released'}
+                  </Badge>
+                </div>
+
+                {/* Rating and Popularity */}
+                <div className="flex items-center space-x-4 mb-4">
+                  <div className="flex items-center space-x-2">
+                    <Star className="h-5 w-5 text-yellow-400 fill-current" />
+                    <span className={`text-xl font-bold ${getRatingColor(rating)}`}>
+                      {displayRating}
+                    </span>
+                    <span className="text-gray-400">({movieDetails?.vote_count?.toLocaleString() || '0'} votes)</span>
+                  </div>
+                  {popularity > 0 && (
+                    <div className="flex items-center space-x-1">
+                      <TrendingUp className="h-4 w-4 text-blue-400" />
+                      <span className="text-blue-400 font-medium">{popularity.toFixed(1)}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Genres */}
+                <div className="flex flex-wrap gap-2 mb-6">
+                  {genres.map((genre) => (
+                    <Badge key={genre.id} className="bg-blue-600/20 text-blue-300 border-blue-600/30">
+                      {genre.name}
+                    </Badge>
+                  ))}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-wrap gap-3">
                   {trailerUrl && (
-                    <Button 
-                      size="sm" 
-                      className="bg-red-600 hover:bg-red-700 shadow-lg px-6 py-3"
-                      onClick={handlePlayTrailer}
+                    <Button
+                      size="lg"
+                      className="bg-red-600 hover:bg-red-700"
+                      onClick={() => setShowTrailer(true)}
                     >
                       <Play className="h-5 w-5 mr-2 fill-white" />
-                      Zwiastun
+                      Watch Trailer
                     </Button>
                   )}
                   
                   <Button
-                    variant="secondary"
-                    size="sm"
-                    className={`backdrop-blur-sm border-white/30 px-6 py-3 ${
-                      isWatchlisted 
-                        ? 'bg-blue-600/30 text-blue-300' 
-                        : 'bg-white/20 hover:bg-white/30'
-                    }`}
-                    onClick={handleToggleWatchlist}
+                    variant="outline"
+                    size="lg"
+                    onClick={() => handleUserAction('isFavorite')}
+                    className={`border-white/30 ${userActions.isFavorite ? 'bg-red-600/20 text-red-400 border-red-600/50' : 'text-white hover:bg-white/10'}`}
                   >
-                    <Bookmark className={`h-5 w-5 mr-2 ${isWatchlisted ? 'fill-current' : ''}`} />
-                    {isWatchlisted ? 'Na liście' : 'Dodaj do listy'}
+                    <Heart className={`h-5 w-5 mr-2 ${userActions.isFavorite ? 'fill-current' : ''}`} />
+                    {userActions.isFavorite ? 'Favorite' : 'Add to Favorites'}
                   </Button>
-
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    className="backdrop-blur-sm border-white/30 bg-purple-600/20 hover:bg-purple-600/30 px-6 py-3"
-                    onClick={handleSearchStreaming}
-                    disabled={isSearchingStreaming}
-                  >
-                    {isSearchingStreaming ? (
-                      <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
-                    ) : (
-                      <Search className="h-5 w-5 mr-2" />
-                    )}
-                    {isSearchingStreaming ? 'Szukam...' : 'Znajdź streaming'}
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            {/* Right side - Content */}
-            <CardContent className="w-1/2 p-8 space-y-6 bg-gray-800 overflow-y-auto">
-              {/* Title and basic info */}
-              <div>
-                <h3 className="text-4xl font-bold mb-4 text-white" title={title}>
-                  {title}
-                </h3>
-                
-                <div className="flex items-center gap-4 text-lg text-white/90 mb-4">
-                  <div className="flex items-center">
-                    <Calendar className="h-5 w-5 mr-2" />
-                    {year}
-                  </div>
-                  {genre && (
-                    <>
-                      <span>•</span>
-                      <span>{genre.split(',')[0]}</span>
-                    </>
-                  )}
-                  <div className="flex items-center">
-                    <Clock className="h-5 w-5 mr-2" />
-                    {formatRuntime(runtime)}
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-4 mb-6">
-                  <MovieRating rating={rating} />
-                  {platform && (
-                    <Badge variant="secondary" className="text-sm bg-blue-600/30 text-blue-300 border-blue-600/50 px-3 py-1">
-                      {platform}
-                    </Badge>
-                  )}
-                  <div className="flex items-center text-lg text-white/80">
-                    <TrendingUp className="h-5 w-5 mr-2" />
-                    {popularity}
-                  </div>
-                </div>
-              </div>
-
-              {/* Description */}
-              {description && (
-                <div>
-                  <p className="text-lg text-gray-300 leading-relaxed">
-                    {description}
-                  </p>
-                </div>
-              )}
-
-              {/* Movie details */}
-              <div className="grid grid-cols-2 gap-3 text-sm text-gray-400">
-                <div className="flex items-center">
-                  <Users className="h-4 w-4 mr-2" />
-                  Reżyser: {director}
-                </div>
-                <div className="flex items-center">
-                  <Award className="h-4 w-4 mr-2" />
-                  Budżet: {budget}
-                </div>
-              </div>
-
-              {/* Personal Rating */}
-              <div className="flex items-center space-x-4">
-                <span className="text-gray-300 text-lg">Twoja ocena:</span>
-                <div className="flex space-x-2">
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((ratingValue) => (
-                    <button
-                      key={ratingValue}
-                      onClick={() => setPersonalRating(ratingValue)}
-                      className={`w-8 h-8 rounded text-sm font-semibold transition-colors ${
-                        ratingValue <= personalRating
-                          ? 'bg-yellow-400 text-gray-900'
-                          : 'bg-gray-600 text-gray-400 hover:bg-gray-500'
-                      }`}
-                    >
-                      {ratingValue}
-                    </button>
-                  ))}
-                </div>
-                {personalRating > 0 && (
-                  <span className="text-yellow-400 text-lg">{personalRating}/10</span>
-                )}
-              </div>
-
-              {/* Tags */}
-              {tags && tags.length > 0 && (
-                <div>
-                  <div className="flex flex-wrap gap-2">
-                    {tags.slice(0, 6).map((tag, index) => (
-                      <Badge key={index} variant="outline" className="text-sm border-gray-600 text-gray-300 hover:bg-gray-700 px-3 py-1">
-                        {tag}
-                      </Badge>
-                    ))}
-                    {tags.length > 6 && (
-                      <Badge variant="outline" className="text-sm border-gray-600 text-gray-300 px-3 py-1">
-                        +{tags.length - 6} więcej
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Streaming Services section */}
-              {formatStreamingServices().length > 0 && (
-                <div className="space-y-3">
-                  <h4 className="text-lg font-medium text-white">Dostępne na:</h4>
-                  <MovieStreamingServices services={formatStreamingServices()} />
-                </div>
-              )}
-
-              {/* Streaming status */}
-              {streamingData.isLoading && (
-                <div className="text-center py-4">
-                  <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2 text-primary" />
-                  <p className="text-sm text-gray-400">Wyszukiwanie dostępności streamingowej...</p>
-                </div>
-              )}
-
-              {streamingData.error && (
-                <div className="text-center py-4">
-                  <p className="text-sm text-red-400">Nie udało się załadować danych streamingowych</p>
+                  
                   <Button
                     variant="outline"
-                    size="sm"
-                    onClick={() => streamingData.refetch()}
-                    className="mt-2"
+                    size="lg"
+                    onClick={() => handleUserAction('isWatchlisted')}
+                    className={`border-white/30 ${userActions.isWatchlisted ? 'bg-blue-600/20 text-blue-400 border-blue-600/50' : 'text-white hover:bg-white/10'}`}
                   >
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Spróbuj ponownie
+                    <Bookmark className={`h-5 w-5 mr-2 ${userActions.isWatchlisted ? 'fill-current' : ''}`} />
+                    {userActions.isWatchlisted ? 'On Watchlist' : 'Add to Watchlist'}
                   </Button>
-                </div>
-              )}
 
-              {/* Explanations */}
-              {explanations && explanations.length > 0 && (
-                <div className="space-y-3">
-                  <h4 className="text-lg font-medium text-white">Dlaczego polecamy:</h4>
-                  <div className="space-y-2">
-                    {explanations.slice(0, 3).map((explanation, index) => (
-                      <p key={index} className="text-sm text-gray-400 flex items-start">
-                        <span className="text-blue-400 mr-3">•</span>
-                        {explanation}
-                      </p>
+                  <div className="relative">
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      onClick={() => setShowShareMenu(!showShareMenu)}
+                      className="border-white/30 text-white hover:bg-white/10"
+                    >
+                      <Share2 className="h-5 w-5 mr-2" />
+                      Share
+                    </Button>
+                    
+                    <AnimatePresence>
+                      {showShareMenu && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          className="absolute top-full left-0 mt-2 bg-gray-800 rounded-lg shadow-xl border border-gray-600 p-2 z-10 min-w-32"
+                        >
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleShare('copy')}
+                            className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-700"
+                          >
+                            <Copy className="h-4 w-4 mr-2" />
+                            Copy Link
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleShare('native')}
+                            className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-700"
+                          >
+                            <ExternalLink className="h-4 w-4 mr-2" />
+                            Share
+                          </Button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        </div>
+
+        {/* Content Tabs */}
+        <div className="p-6 overflow-y-auto max-h-[50vh]">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-4 bg-gray-800 mb-6">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="cast">Cast & Crew</TabsTrigger>
+              <TabsTrigger value="details">Details</TabsTrigger>
+              <TabsTrigger value="reviews">Reviews</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="overview" className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 space-y-4">
+                  <div>
+                    <h3 className="text-xl font-semibold text-white mb-3">Plot Summary</h3>
+                    <p className="text-gray-300 leading-relaxed">{description}</p>
+                  </div>
+                  
+                  {/* Personal Rating */}
+                  <div className="flex items-center space-x-4 p-4 bg-gray-800 rounded-lg">
+                    <span className="text-white font-medium">Your Rating:</span>
+                    <div className="flex space-x-1">
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((ratingValue) => (
+                        <button
+                          key={ratingValue}
+                          onClick={() => handleUserAction('personalRating', ratingValue)}
+                          className={`w-8 h-8 rounded text-sm font-semibold transition-colors ${
+                            ratingValue <= userActions.personalRating
+                              ? 'bg-yellow-400 text-gray-900'
+                              : 'bg-gray-600 text-gray-400 hover:bg-gray-500'
+                          }`}
+                        >
+                          {ratingValue}
+                        </button>
+                      ))}
+                    </div>
+                    {userActions.personalRating > 0 && (
+                      <span className="text-yellow-400 font-medium">{userActions.personalRating}/10</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Stats */}
+                  <Card className="bg-gray-800 border-gray-700">
+                    <CardHeader>
+                      <CardTitle className="text-white">Movie Stats</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-400">Rating:</span>
+                        <span className="text-white font-medium">{displayRating}/10</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-400">Votes:</span>
+                        <span className="text-white font-medium">{movieDetails?.vote_count?.toLocaleString() || '0'}</span>
+                      </div>
+                      {popularity > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-400">Popularity:</span>
+                          <span className="text-white font-medium">{popularity.toFixed(1)}</span>
+                        </div>
+                      )}
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-gray-400">User Score</span>
+                          <span className="text-white">{Math.round(parseFloat(displayRating) * 10)}%</span>
+                        </div>
+                        <Progress value={parseFloat(displayRating) * 10} className="h-2" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="cast" className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="text-xl font-semibold text-white mb-4">Main Cast</h3>
+                  <div className="space-y-3">
+                    {castData.slice(0, 8).map((actor, index) => (
+                      <div key={actor.id || index} className="flex items-center space-x-3 p-3 bg-gray-800 rounded-lg">
+                        <div className="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center">
+                          <Users className="h-6 w-6 text-gray-400" />
+                        </div>
+                        <div>
+                          <p className="text-white font-medium">{actor.name}</p>
+                          <p className="text-gray-400 text-sm">{actor.character || 'Unknown'}</p>
+                        </div>
+                      </div>
                     ))}
                   </div>
                 </div>
-              )}
-
-              {/* Quick Actions */}
-              <div className="flex gap-3 pt-4 border-t border-gray-700">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleToggleWatched}
-                  className={`flex-1 text-sm ${
-                    isWatched 
-                      ? 'bg-green-600/20 text-green-400 border-green-600/50' 
-                      : 'text-gray-400 border-gray-600 hover:bg-gray-700'
-                  }`}
-                >
-                  {isWatched ? <Eye className="h-4 w-4 mr-2" /> : <EyeOff className="h-4 w-4 mr-2" />}
-                  {isWatched ? 'Obejrzane' : 'Oznacz jako obejrzane'}
-                </Button>
                 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1 text-sm text-gray-400 border-gray-600 hover:bg-gray-700"
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Pobierz
-                </Button>
+                <div>
+                  <h3 className="text-xl font-semibold text-white mb-4">Key Crew</h3>
+                  <div className="space-y-3">
+                    {crewData.slice(0, 8).map((member, index) => (
+                      <div key={index} className="flex items-center space-x-3 p-3 bg-gray-800 rounded-lg">
+                        <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center">
+                          {member.department === 'Directing' && <Film className="h-5 w-5 text-gray-400" />}
+                          {member.department === 'Writing' && <Edit3 className="h-5 w-5 text-gray-400" />}
+                          {member.department === 'Camera' && <Camera className="h-5 w-5 text-gray-400" />}
+                          {member.department === 'Sound' && <Mic className="h-5 w-5 text-gray-400" />}
+                          {!['Directing', 'Writing', 'Camera', 'Sound'].includes(member.department) &&
+                            <Users className="h-5 w-5 text-gray-400" />}
+                        </div>
+                        <div>
+                          <p className="text-white font-medium">{member.name}</p>
+                          <p className="text-gray-400 text-sm">{member.job}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
-            </CardContent>
-          </div>
-        </Card>
+            </TabsContent>
+
+            <TabsContent value="details" className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <h3 className="text-xl font-semibold text-white">Production Info</h3>
+                  <div className="space-y-3 text-sm">
+                    {budget && (
+                      <div className="flex justify-between py-2 border-b border-gray-700">
+                        <span className="text-gray-400">Budget:</span>
+                        <span className="text-white">{budget}</span>
+                      </div>
+                    )}
+                    {movieDetails?.revenue && (
+                      <div className="flex justify-between py-2 border-b border-gray-700">
+                        <span className="text-gray-400">Revenue:</span>
+                        <span className="text-white">{formatCurrency(movieDetails.revenue)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between py-2 border-b border-gray-700">
+                      <span className="text-gray-400">Status:</span>
+                      <span className="text-white">{movieDetails?.status || 'Released'}</span>
+                    </div>
+                    {(runtime || movieDetails?.runtime) && (
+                      <div className="flex justify-between py-2 border-b border-gray-700">
+                        <span className="text-gray-400">Runtime:</span>
+                        <span className="text-white">{formatRuntime(runtime || movieDetails?.runtime)}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <h3 className="text-xl font-semibold text-white">Additional Info</h3>
+                  <div className="space-y-3">
+                    {movieDetails?.production_companies && (
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-400 mb-2">Production Companies:</h4>
+                        {movieDetails.production_companies.slice(0, 3).map((company, index) => (
+                          <p key={index} className="text-white text-sm">• {company.name}</p>
+                        ))}
+                      </div>
+                    )}
+                    {movieDetails?.production_countries && (
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-400 mb-2">Countries:</h4>
+                        {movieDetails.production_countries.map((country, index) => (
+                          <p key={index} className="text-white text-sm">• {country.name}</p>
+                        ))}
+                      </div>
+                    )}
+                    {director && (
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-400 mb-2">Director:</h4>
+                        <p className="text-white text-sm">• {director}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="reviews" className="space-y-6">
+              <div>
+                <h3 className="text-xl font-semibold text-white mb-4">User Reviews</h3>
+                <div className="space-y-4">
+                  {movieDetails?.reviews?.results?.length > 0 ? (
+                    movieDetails.reviews.results.map((review, index) => (
+                      <Card key={index} className="bg-gray-800 border-gray-700">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-white font-medium">{review.author}</span>
+                            {review.author_details?.rating && (
+                              <div className="flex items-center space-x-1">
+                                <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                                <span className="text-white text-sm">{review.author_details.rating}/10</span>
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-gray-300 text-sm leading-relaxed mb-2">
+                            {review.content.slice(0, 300)}...
+                          </p>
+                          <div className="text-xs text-gray-500">
+                            {formatDate(review.created_at)}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  ) : (
+                    <Card className="bg-gray-800 border-gray-700">
+                      <CardContent className="p-4 text-center">
+                        <p className="text-gray-400">No reviews available for this movie yet.</p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
       </motion.div>
 
       {/* Trailer Modal */}
       <AnimatePresence>
-        {showTrailer && trailerUrl && (
+        {showTrailer && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/95 flex items-center justify-center z-10"
             onClick={() => setShowTrailer(false)}
           >
             <motion.div
@@ -535,27 +618,40 @@ export const ImprovedMaximizedMovieCard = memo(({
             >
               <div className="bg-black rounded-lg overflow-hidden shadow-2xl">
                 <div className="aspect-video bg-gray-800 flex items-center justify-center">
-                  <div className="text-center text-white">
-                    <Play className="h-20 w-20 mx-auto mb-6 text-red-500" />
-                    <h3 className="text-2xl font-bold mb-3">{title} - Zwiastun</h3>
-                    <p className="text-gray-400">Odtwarzanie zwiastuna zostanie zaimplementowane tutaj</p>
-                  </div>
+                  {trailerUrl ? (
+                    <iframe
+                      src={trailerUrl}
+                      title={`${title} trailer`}
+                      className="w-full h-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  ) : (
+                    <div className="text-center text-white">
+                      <Play className="h-20 w-20 mx-auto mb-4 text-red-500" />
+                      <h3 className="text-2xl font-bold mb-2">{title} - Trailer</h3>
+                      <p className="text-gray-400 mb-4">Official Trailer</p>
+                      <p className="text-sm text-gray-500">
+                        Trailer not available
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
               <Button
                 variant="secondary"
-                size="sm"
-                className="absolute -top-12 right-0 bg-gray-800 hover:bg-gray-700"
+                size="lg"
+                className="absolute -top-16 right-0 bg-gray-800 hover:bg-gray-700"
                 onClick={() => setShowTrailer(false)}
               >
                 <X className="h-5 w-5 mr-2" />
-                Zamknij
+                Close Trailer
               </Button>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-    </>
+    </motion.div>
   );
 });
 
