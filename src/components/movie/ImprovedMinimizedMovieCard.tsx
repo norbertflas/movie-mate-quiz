@@ -2,10 +2,8 @@
 import { useState, memo, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Heart, Maximize2, Play, Star, Eye, Bookmark } from "lucide-react";
+import { Star } from "lucide-react";
 import { motion } from "framer-motion";
-import { OptimizedMovieImage } from "./OptimizedMovieImage";
-import { MovieRating } from "./MovieRating";
 import type { MovieCardProps } from "@/types/movie";
 
 export const ImprovedMinimizedMovieCard = memo(({
@@ -16,18 +14,9 @@ export const ImprovedMinimizedMovieCard = memo(({
   tmdbId,
   onExpand,
   onClick,
-  isWatched = false,
-  isWatchlisted = false,
-  hasTrailer = false,
-  priority = false
 }: MovieCardProps) => {
-  const [isFavorite, setIsFavorite] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-
-  const handleToggleFavorite = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsFavorite(prev => !prev);
-  }, []);
 
   const handleCardClick = useCallback(() => {
     if (onClick) {
@@ -37,22 +26,7 @@ export const ImprovedMinimizedMovieCard = memo(({
     }
   }, [onClick, onExpand]);
 
-  const handlePlayTrailer = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    console.log('Playing trailer for:', title);
-  }, [title]);
-
-  const handleToggleWatched = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    console.log('Toggle watched for:', title);
-  }, [title]);
-
-  const handleToggleWatchlist = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    console.log('Toggle watchlist for:', title);
-  }, [title]);
-
-  const handleExpand = useCallback((e: React.MouseEvent) => {
+  const handleViewDetails = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     if (onExpand) {
       onExpand();
@@ -66,169 +40,79 @@ export const ImprovedMinimizedMovieCard = memo(({
       ? `https://image.tmdb.org/t/p/w500${imageUrl}`
       : imageUrl || '/placeholder.svg';
 
+  // Convert rating from 0-100 to 0-10 scale
+  const displayRating = rating > 10 ? (rating / 10).toFixed(1) : rating.toFixed(1);
+
   return (
     <motion.div
       whileHover={{ 
         scale: 1.05,
-        y: -2,
-        boxShadow: "0 10px 25px rgba(0,0,0,0.3)"
+        transition: { duration: 0.2 }
       }}
       whileTap={{ scale: 0.98 }}
-      transition={{ duration: 0.2 }}
+      className="w-full max-w-64"
     >
       <Card 
-        className={`
-          w-56 h-80 cursor-pointer transition-all duration-300 overflow-hidden group relative
-          ${priority ? 'ring-2 ring-yellow-400/50' : ''}
-          hover:shadow-xl border-gray-700 bg-gray-800
-        `}
+        className="h-96 cursor-pointer transition-all duration-300 overflow-hidden group relative bg-gray-900 border-gray-700"
         onClick={handleCardClick}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
         <div className="relative h-full">
-          <div className="w-full h-64 overflow-hidden">
+          {/* Main image */}
+          <div className="w-full h-full overflow-hidden relative">
+            {!imageLoaded && (
+              <div className="absolute inset-0 bg-gradient-to-br from-gray-800 via-gray-700 to-gray-600 animate-pulse" />
+            )}
+            
             <img
               src={posterUrl}
               alt={title}
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-              loading="lazy"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.src = '/placeholder.svg';
-              }}
+              className={`w-full h-full object-cover transition-all duration-300 ${
+                imageLoaded ? 'opacity-100' : 'opacity-0'
+              } ${isHovered ? 'scale-110' : 'scale-100'}`}
+              onLoad={() => setImageLoaded(true)}
+              onError={() => setImageLoaded(true)}
             />
+
+            {/* Dark overlay for better text readability */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
           </div>
 
-          {/* Status indicators */}
-          <div className="absolute top-2 left-2 flex flex-col space-y-1">
-            {isWatched && (
-              <div className="w-3 h-3 bg-green-500 rounded-full ring-1 ring-green-300/50"></div>
-            )}
-            {isFavorite && (
-              <div className="w-3 h-3 bg-red-500 rounded-full ring-1 ring-red-300/50"></div>
-            )}
-            {isWatchlisted && (
-              <div className="w-3 h-3 bg-blue-500 rounded-full ring-1 ring-blue-300/50"></div>
-            )}
+          {/* Rating badge in top right corner */}
+          <div className="absolute top-3 right-3 z-10">
+            <div className="flex items-center gap-1 bg-black/70 backdrop-blur-sm rounded-full px-2 py-1">
+              <Star className="h-3 w-3 text-yellow-400 fill-yellow-400" />
+              <span className="text-white text-xs font-medium">
+                {displayRating}
+              </span>
+            </div>
           </div>
 
-          {/* Priority badge */}
-          {priority && (
-            <div className="absolute top-2 right-2">
-              <div className="w-3 h-3 bg-yellow-400 rounded-full animate-pulse"></div>
-            </div>
-          )}
-
-          {/* Hover overlay */}
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: isHovered ? 1 : 0 }}
-            transition={{ duration: 0.2 }}
-            className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/60"
-          >
-            {/* Top controls */}
-            <div className="absolute top-2 right-2 flex flex-col space-y-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0 bg-black/40 hover:bg-black/60 backdrop-blur-sm rounded-full"
-                onClick={handleExpand}
-              >
-                <Maximize2 className="h-4 w-4 text-white" />
-              </Button>
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0 bg-black/40 hover:bg-black/60 backdrop-blur-sm rounded-full"
-                onClick={handleToggleFavorite}
-              >
-                <Heart 
-                  className={`h-4 w-4 ${isFavorite ? 'text-red-500 fill-red-500' : 'text-white'}`} 
-                />
-              </Button>
-
-              {hasTrailer && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0 bg-black/40 hover:bg-red-600/80 backdrop-blur-sm rounded-full"
-                  onClick={handlePlayTrailer}
-                >
-                  <Play className="h-4 w-4 text-white fill-white" />
-                </Button>
-              )}
-            </div>
-
-            {/* Center quick actions */}
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-              <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.1, duration: 0.2 }}
-                className="flex space-x-2"
-              >
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full"
-                  onClick={handleToggleWatched}
-                >
-                  <Eye className="h-4 w-4 text-white" />
-                </Button>
-                
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full"
-                  onClick={handleToggleWatchlist}
-                >
-                  <Bookmark className="h-4 w-4 text-white" />
-                </Button>
-              </motion.div>
-            </div>
-
-            {/* Bottom info */}
-            <div className="absolute bottom-0 left-0 right-0 p-4">
-              <motion.div
-                initial={{ y: 10, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.05, duration: 0.2 }}
-              >
-                <div className="mb-2">
-                  <MovieRating rating={rating} />
-                </div>
-                
-                <div className="space-y-1">
-                  <p className="text-white text-sm font-semibold truncate leading-tight">
-                    {title}
-                  </p>
-                  <p className="text-white/80 text-xs leading-tight">
-                    {year}
-                  </p>
-                </div>
-              </motion.div>
-            </div>
-          </motion.div>
-
-          {/* Movie title and year - always visible */}
-          <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
-            <p className="text-white text-sm font-semibold truncate">
+          {/* Movie title at bottom */}
+          <div className="absolute bottom-0 left-0 right-0 p-4">
+            <h3 className="text-white text-lg font-bold leading-tight mb-1 line-clamp-2">
               {title}
-            </p>
-            <p className="text-white/70 text-xs">
+            </h3>
+            <p className="text-white/80 text-sm">
               {year}
             </p>
           </div>
 
-          {/* Priority glow effect */}
-          {priority && (
-            <div className="absolute inset-0 rounded-lg ring-1 ring-yellow-400/30 pointer-events-none" />
-          )}
-
-          {/* Loading shimmer effect */}
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 pointer-events-none" />
+          {/* Hover overlay with View Details button */}
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: isHovered ? 1 : 0 }}
+            transition={{ duration: 0.2 }}
+            className="absolute inset-0 bg-black/60 flex items-center justify-center"
+          >
+            <Button 
+              onClick={handleViewDetails}
+              className="bg-white/90 text-black hover:bg-white font-semibold px-6 py-2 rounded-full"
+            >
+              View Details
+            </Button>
+          </motion.div>
         </div>
       </Card>
     </motion.div>
