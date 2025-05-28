@@ -9,21 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UnifiedMovieCard, MovieModal, useMovieModal } from "../movie/UnifiedMovieCard";
 import type { TMDBMovie } from "@/services/tmdb";
-
-interface Movie {
-  id: number;
-  title: string;
-  poster_path: string;
-  backdrop_path: string;
-  overview: string;
-  release_date: string;
-  vote_average: number;
-  runtime?: number;
-  genres?: Array<{ id: number; name: string }>;
-  cast?: Array<{ name: string; character: string }>;
-  director?: string;
-  trailer_url?: string;
-}
+import { Movie } from "@/types/movie";
 
 interface NewMainContentProps {
   trendingMovies?: TMDBMovie[];
@@ -35,12 +21,12 @@ interface NewMainContentProps {
   currentView?: string;
 }
 
-// Convert TMDB movie to our Movie interface
+// Convert TMDB movie to our unified Movie interface
 const convertTMDBMovie = (tmdbMovie: TMDBMovie): Movie => ({
   id: tmdbMovie.id,
   title: tmdbMovie.title,
   poster_path: tmdbMovie.poster_path,
-  backdrop_path: tmdbMovie.backdrop_path,
+  backdrop_path: tmdbMovie.backdrop_path || '',
   overview: tmdbMovie.overview,
   release_date: tmdbMovie.release_date,
   vote_average: tmdbMovie.vote_average,

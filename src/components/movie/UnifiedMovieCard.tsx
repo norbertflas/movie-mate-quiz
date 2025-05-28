@@ -15,29 +15,13 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { PlayCircle } from "lucide-react";
 import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { cn } from "@/lib/utils";
-
-interface Movie {
-  id: number;
-  title: string;
-  poster_path: string;
-  backdrop_path: string;
-  overview: string;
-  release_date: string;
-  vote_average: number;
-  runtime: number | undefined;
-  genres: string[] | undefined;
-  cast: string[] | undefined;
-  director: string[] | undefined;
-  trailer_url: string | undefined;
-}
+import { Movie } from "@/types/movie";
 
 interface UnifiedMovieCardProps {
   movie: Movie;

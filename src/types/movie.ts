@@ -7,6 +7,27 @@ export interface MovieInsights {
   analysis: string;
 }
 
+// Unified Movie interface that works across all components
+export interface Movie {
+  id: number;
+  title: string;
+  poster_path: string;
+  backdrop_path: string;
+  overview: string;
+  release_date: string;
+  vote_average: number;
+  runtime?: number;
+  genres?: Array<{ id: number; name: string }> | string[];
+  cast?: Array<{ name: string; character: string }> | string[];
+  director?: string[] | string;
+  trailer_url?: string;
+  // Additional properties for enhanced functionality
+  tmdbId?: number;
+  genre?: string; // Single genre string for compatibility
+  vote_count?: number;
+  popularity?: number;
+}
+
 export interface MovieCardProps {
   title: string;
   year: string;
@@ -23,7 +44,6 @@ export interface MovieCardProps {
   onClose?: () => void;
   isExpanded?: boolean;
   onClick?: () => void;
-  // New properties for improved cards
   isWatched?: boolean;
   isWatchlisted?: boolean;
   hasTrailer?: boolean;
