@@ -78,14 +78,16 @@ export const translations = {
       pleaseSelectOption: "Please select at least one option before continuing",
       quizError: "Quiz Error",
       tryAgain: "Please try again",
-      recommendationError: "Error fetching recommendations"
+      recommendationError: "Error fetching recommendations",
+      loadingServices: "Error loading services"
     },
     common: {
       viewDetails: "View Details",
       availableOn: "Available on",
       languageChanged: "Language changed",
       languageChangedTo: "Language changed to {{language}}",
-      selectLanguage: "Select language"
+      selectLanguage: "Select language",
+      loading: "Loading..."
     },
     randomMovie: {
       title: "Random Movie for Today",
@@ -97,7 +99,7 @@ export const translations = {
       successDescription: "We found for you: {{title}}"
     },
     findPerfect: {
-      title: "Find your perfect movie",
+      title: "Find Your Perfect Movie",
       subtitle: "Search for movies and creators or answer a few questions in our movie quiz",
       searchMovies: "Movies",
       searchCreators: "Creators",
@@ -113,6 +115,20 @@ export const translations = {
         availability: "Service availability",
         matching: "Smart matching"
       }
+    },
+    filters: {
+      platform: "Streaming Platforms",
+      selectPlatform: "Select platforms..."
+    },
+    services: {
+      netflix: "Netflix",
+      hulu: "Hulu",
+      disney: "Disney+",
+      amazon: "Amazon Prime",
+      hbo: "HBO Max",
+      apple: "Apple TV+",
+      paramount: "Paramount+",
+      peacock: "Peacock"
     }
   },
   pl: {
@@ -193,14 +209,16 @@ export const translations = {
       pleaseSelectOption: "Proszę wybierz przynajmniej jedną opcję przed kontynuowaniem",
       quizError: "Błąd Quiz",
       tryAgain: "Spróbuj ponownie",
-      recommendationError: "Błąd pobierania rekomendacji"
+      recommendationError: "Błąd pobierania rekomendacji",
+      loadingServices: "Błąd ładowania serwisów"
     },
     common: {
       viewDetails: "Zobacz szczegóły",
       availableOn: "Dostępne na",
       languageChanged: "Język zmieniony",
       languageChangedTo: "Język zmieniony na {{language}}",
-      selectLanguage: "Wybierz język"
+      selectLanguage: "Wybierz język",
+      loading: "Ładowanie..."
     },
     randomMovie: {
       title: "Losowy film na dziś",
@@ -228,6 +246,25 @@ export const translations = {
         availability: "Dostępność w serwisach",
         matching: "Inteligentny matching"
       }
+    },
+    filters: {
+      platform: "Platformy Streamingowe",
+      selectPlatform: "Wybierz platformy..."
+    },
+    services: {
+      netflix: "Netflix",
+      hulu: "Hulu",
+      disney: "Disney+",
+      amazon: "Amazon Prime",
+      hbo: "HBO Max",
+      apple: "Apple TV+",
+      paramount: "Paramount+",
+      peacock: "Peacock",
+      "canal+": "Canal+",
+      "player.pl": "Player.pl",
+      "tvp vod": "TVP VOD",
+      "polsat box go": "Polsat Box Go",
+      "nc+": "nc+"
     }
   }
 };
