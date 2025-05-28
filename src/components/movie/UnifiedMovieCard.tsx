@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Star, Calendar, Clock, Play, Heart, Bookmark, Share2, ExternalLink } from "lucide-react";
@@ -12,6 +11,8 @@ import { useStreamingAvailabilityOfficial } from "@/hooks/use-streaming-availabi
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { useSmartStreamingSearch } from "@/hooks/use-smart-streaming-search";
 
 interface Movie {
   id: number;
@@ -49,18 +50,24 @@ export const MovieModal = ({
   onClose: () => void; 
 }) => {
   const { toast } = useToast();
+  const { i18n } = useTranslation();
   const [isFavorite, setIsFavorite] = useState(false);
   const [isWatchlisted, setIsWatchlisted] = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
   const [trailerUrl, setTrailerUrl] = useState("");
 
-  // Use official streaming availability API
-  const streamingData = useStreamingAvailabilityOfficial(
-    movie?.id || 0, 
-    movie?.title, 
-    movie?.release_date ? new Date(movie.release_date).getFullYear().toString() : undefined,
-    'pl' // Default to Poland, can be made configurable
+  // Use smart streaming search with automatic fetching
+  const streamingSearch = useSmartStreamingSearch(
+    movie ? [movie.id] : [],
+    {
+      mode: 'instant', // Always instant for modal details
+      country: i18n.language === 'pl' ? 'pl' : 'us',
+      enabled: isOpen && !!movie,
+      autoFetch: true
+    }
   );
+
+  const streamingData = movie ? streamingSearch.getStreamingData(movie.id) : null;
 
   // Handle escape key
   useEffect(() => {
@@ -212,10 +219,9 @@ export const MovieModal = ({
 
               {/* Content */}
               <div className="h-full overflow-y-auto">
-                {/* Hero Section - Now can display trailer */}
+                {/* Hero Section */}
                 <div className="relative h-80 md:h-96">
                   {showTrailer && trailerUrl ? (
-                    // Trailer View
                     <div className="absolute inset-0">
                       <iframe
                         src={trailerUrl}
@@ -224,7 +230,6 @@ export const MovieModal = ({
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
                       />
-                      {/* Close trailer button */}
                       <Button
                         variant="ghost"
                         size="icon"
@@ -235,7 +240,6 @@ export const MovieModal = ({
                       </Button>
                     </div>
                   ) : (
-                    // Poster/Backdrop View
                     <>
                       <div
                         className="absolute inset-0 bg-cover bg-center"
@@ -243,7 +247,6 @@ export const MovieModal = ({
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
                       
-                      {/* Floating Poster */}
                       <div className="absolute bottom-4 left-4 md:bottom-8 md:left-8">
                         <motion.img
                           src={posterUrl}
@@ -258,7 +261,6 @@ export const MovieModal = ({
                         />
                       </div>
 
-                      {/* Title and Rating */}
                       <div className="absolute bottom-4 left-40 md:left-52 lg:left-60 right-4 md:bottom-8 md:right-8">
                         <motion.h1
                           className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-2"
@@ -298,7 +300,6 @@ export const MovieModal = ({
                           )}
                         </div>
 
-                        {/* Genres */}
                         {movie.genres && movie.genres.length > 0 && (
                           <div className="flex flex-wrap gap-2">
                             {movie.genres.slice(0, 3).map((genre) => (
@@ -334,72 +335,78 @@ export const MovieModal = ({
                     </Button>
                   </div>
 
-                  {/* Streaming Availability Section - Using Official API */}
+                  {/* AUTOMATIC STREAMING AVAILABILITY - No button needed */}
                   <div className="mb-6 p-4 border rounded-lg">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-lg font-semibold">Dostępność w serwisach (Oficjalne API)</h3>
-                      {!streamingData.requested && (
-                        <Button variant="outline" size="sm" onClick={checkStreamingAvailability}>
-                          Sprawdź dostępność
-                        </Button>
-                      )}
-                    </div>
+                    <h3 className="text-lg font-semibold mb-3">Dostępność w serwisach</h3>
 
-                    {streamingData.isLoading ? (
-                      <div className="flex gap-2">
-                        {[1, 2, 3, 4].map((i) => (
-                          <Skeleton key={i} className="h-16 w-20 rounded-md" />
-                        ))}
+                    {streamingSearch.loading ? (
+                      <div className="flex items-center gap-3">
+                        <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full" />
+                        <span className="text-muted-foreground">Sprawdzam dostępność...</span>
                       </div>
-                    ) : streamingData.error ? (
-                      <Alert variant="destructive">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertDescription>
-                          Nie udało się sprawdzić dostępności w serwisach streamingowych
-                        </AlertDescription>
-                      </Alert>
-                    ) : streamingData.services && streamingData.services.length > 0 ? (
+                    ) : streamingData && streamingData.streamingOptions.length > 0 ? (
                       <div className="space-y-3">
-                        <div className="flex flex-wrap gap-2">
-                          {streamingData.services.map((service, index) => (
+                        {streamingData.streamingOptions.map((option, index) => (
+                          <motion.div
+                            key={index}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: index * 0.1 }}
+                            className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                          >
+                            <div className="flex items-center gap-3">
+                              <img 
+                                src={option.serviceLogo}
+                                alt={option.service}
+                                className="w-8 h-8 object-contain"
+                                onError={(e) => {
+                                  e.currentTarget.src = '/streaming-icons/default.svg';
+                                }}
+                              />
+                              <div>
+                                <div className="font-medium">{option.service}</div>
+                                <div className="text-sm text-muted-foreground">
+                                  {option.type === 'subscription' ? 'Subskrypcja' : 
+                                   option.type === 'rent' ? 'Wypożyczenie' : 
+                                   option.type === 'buy' ? 'Kup' : 
+                                   option.type === 'free' ? 'Za darmo' : option.type}
+                                  {option.quality && ` • ${option.quality}`}
+                                  {option.price && ` • ${option.price.formatted}`}
+                                </div>
+                              </div>
+                            </div>
+                            
                             <Button
-                              key={`${service.service}-${index}`}
-                              variant="outline"
-                              className="flex items-center gap-2"
+                              size="sm"
                               onClick={() => {
-                                if (service.link) {
-                                  window.open(service.link, '_blank');
+                                if (option.link && option.link !== '#') {
+                                  window.open(option.link, '_blank');
                                 } else {
                                   toast({
                                     title: "Link niedostępny",
-                                    description: `Brak bezpośredniego linku do ${service.service}`,
+                                    description: `Brak bezpośredniego linku do ${option.service}`,
                                     variant: "destructive",
                                   });
                                 }
                               }}
                             >
-                              <ExternalLink className="h-4 w-4" />
-                              <div className="text-left">
-                                <div className="font-medium">{service.service}</div>
-                                <div className="text-xs text-muted-foreground">
-                                  {service.type} {service.price && `- ${service.price}`}
-                                </div>
-                              </div>
+                              <ExternalLink className="h-4 w-4 mr-2" />
+                              Oglądaj
                             </Button>
-                          ))}
-                        </div>
+                          </motion.div>
+                        ))}
                         <div className="text-xs text-muted-foreground">
-                          Dane z oficjalnego API Streaming Availability - zawsze aktualne!
+                          Dane aktualizowane automatycznie według Twojej lokalizacji
                         </div>
                       </div>
-                    ) : streamingData.requested ? (
+                    ) : (
                       <Alert>
                         <AlertCircle className="h-4 w-4" />
                         <AlertDescription>
                           Ten film nie jest obecnie dostępny w popularnych serwisach streamingowych w Polsce
                         </AlertDescription>
                       </Alert>
-                    ) : null}
+                    )}
                   </div>
 
                   {/* Overview */}

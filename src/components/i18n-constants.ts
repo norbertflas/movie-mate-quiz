@@ -1,4 +1,3 @@
-
 export const translations = {
   en: {
     site: {
@@ -87,7 +86,8 @@ export const translations = {
       languageChanged: "Language changed",
       languageChangedTo: "Language changed to {{language}}",
       selectLanguage: "Select language",
-      loading: "Loading..."
+      loading: "Loading...",
+      selected: "Selected"
     },
     randomMovie: {
       title: "Random Movie for Today",
@@ -120,6 +120,19 @@ export const translations = {
       platform: "Streaming Platforms",
       selectPlatform: "Select platforms..."
     },
+    streaming: {
+      checkingAvailability: "Checking streaming availability...",
+      availableOn: "Available on",
+      notAvailableStreaming: "Not available in streaming",
+      watchNow: "Watch Now",
+      subscription: "Subscription",
+      rent: "Rent", 
+      buy: "Buy",
+      free: "Free",
+      included: "Included",
+      notAvailable: "This movie is not currently available on any streaming platform in your region.",
+      checkBackLater: "Please check back later as availability changes frequently."
+    },
     services: {
       netflix: "Netflix",
       hulu: "Hulu",
@@ -128,7 +141,8 @@ export const translations = {
       hbo: "HBO Max",
       apple: "Apple TV+",
       paramount: "Paramount+",
-      peacock: "Peacock"
+      peacock: "Peacock",
+      services: "services"
     }
   },
   pl: {
@@ -218,7 +232,8 @@ export const translations = {
       languageChanged: "Język zmieniony",
       languageChangedTo: "Język zmieniony na {{language}}",
       selectLanguage: "Wybierz język",
-      loading: "Ładowanie..."
+      loading: "Ładowanie...",
+      selected: "Wybrano"
     },
     randomMovie: {
       title: "Losowy film na dziś",
@@ -251,6 +266,19 @@ export const translations = {
       platform: "Platformy Streamingowe",
       selectPlatform: "Wybierz platformy..."
     },
+    streaming: {
+      checkingAvailability: "Sprawdzam dostępność w streamingu...",
+      availableOn: "Dostępny w",
+      notAvailableStreaming: "Niedostępny w streamingu",
+      watchNow: "Oglądaj teraz",
+      subscription: "Subskrypcja",
+      rent: "Wypożycz",
+      buy: "Kup", 
+      free: "Za darmo",
+      included: "Wliczone",
+      notAvailable: "Ten film nie jest obecnie dostępny na żadnej platformie streamingowej w Polsce.",
+      checkBackLater: "Sprawdź ponownie później, ponieważ dostępność często się zmienia."
+    },
     services: {
       netflix: "Netflix",
       hulu: "Hulu",
@@ -264,7 +292,8 @@ export const translations = {
       "player.pl": "Player.pl",
       "tvp vod": "TVP VOD",
       "polsat box go": "Polsat Box Go",
-      "nc+": "nc+"
+      "nc+": "nc+",
+      services: "serwisów"
     }
   }
 };
