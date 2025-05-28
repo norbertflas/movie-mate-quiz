@@ -176,7 +176,7 @@ export const TrendingMoviesSection = ({ movies }: TrendingMoviesSectionProps) =>
                             director: undefined,
                             trailer_url: undefined
                           }}
-                          onExpand={handleMovieClick}
+                          onExpand={() => handleMovieClick(movie)}
                           variant={isMobile ? "small" : "medium"}
                           showExpandButton={true}
                         />

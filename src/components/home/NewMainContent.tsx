@@ -13,11 +13,11 @@ import type { TMDBMovie } from "@/services/tmdb";
 interface Movie {
   id: number;
   title: string;
-  poster_path?: string;
-  backdrop_path?: string;
-  overview?: string;
-  release_date?: string;
-  vote_average?: number;
+  poster_path: string;
+  backdrop_path: string;
+  overview: string;
+  release_date: string;
+  vote_average: number;
   runtime?: number;
   genres?: Array<{ id: number; name: string }>;
   cast?: Array<{ name: string; character: string }>;
@@ -172,7 +172,7 @@ const MovieSection = ({
               <motion.div key={movie.id} variants={itemVariants}>
                 <UnifiedMovieCard
                   movie={movie}
-                  onExpand={openModal}
+                  onExpand={() => openModal(movie)}
                   variant="medium"
                   showExpandButton={true}
                 />

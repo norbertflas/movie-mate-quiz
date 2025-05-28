@@ -55,22 +55,24 @@ export const RandomMovieSection = () => {
     }
   };
 
-  const handleMovieClick = (movie: any) => {
-    const convertedMovie = {
-      id: movie.id,
-      title: movie.title,
-      poster_path: movie.poster_path,
-      backdrop_path: movie.backdrop_path,
-      overview: movie.overview,
-      release_date: movie.release_date,
-      vote_average: movie.vote_average,
-      runtime: undefined,
-      genres: undefined,
-      cast: undefined,
-      director: undefined,
-      trailer_url: undefined
-    };
-    openModal(convertedMovie);
+  const handleMovieClick = () => {
+    if (randomMovie) {
+      const convertedMovie = {
+        id: randomMovie.id,
+        title: randomMovie.title,
+        poster_path: randomMovie.poster_path,
+        backdrop_path: randomMovie.backdrop_path,
+        overview: randomMovie.overview,
+        release_date: randomMovie.release_date,
+        vote_average: randomMovie.vote_average,
+        runtime: undefined,
+        genres: undefined,
+        cast: undefined,
+        director: undefined,
+        trailer_url: undefined
+      };
+      openModal(convertedMovie);
+    }
   };
 
   return (
@@ -95,7 +97,7 @@ export const RandomMovieSection = () => {
                   <Shuffle className="h-6 w-6 text-orange-500 animate-bounce" />
                   <h2 className="text-2xl md:text-3xl font-bold text-white">
                     <span className="bg-gradient-to-r from-orange-400 via-red-400 to-pink-400 bg-clip-text text-transparent">
-                      ✨ {t("randomMovie.title")}
+                      🎲 {t("randomMovie.title")} 🎲
                     </span>
                   </h2>
                 </div>
