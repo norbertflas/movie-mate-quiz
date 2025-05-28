@@ -1,616 +1,258 @@
-import { useState, useCallback, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { X, Star, Calendar, Clock, Play, Heart, Bookmark, Share2, ExternalLink } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
-import { useToast } from "@/hooks/use-toast";
-import { getMovieTrailer } from "@/services/youtube";
-import { useStreamingAvailabilityOfficial } from "@/hooks/use-streaming-availability-official";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { PlayCircle } from "lucide-react";
+import { useState, useCallback } from "react";
+import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { useSmartStreamingSearch } from "@/hooks/use-smart-streaming-search";
+import { cn } from "@/lib/utils";
 
 interface Movie {
   id: number;
   title: string;
-  poster_path?: string;
-  backdrop_path?: string;
-  overview?: string;
-  release_date?: string;
-  vote_average?: number;
-  runtime?: number;
-  genres?: Array<{ id: number; name: string }>;
-  cast?: Array<{ name: string; character: string }>;
-  director?: string;
-  trailer_url?: string;
+  poster_path: string;
+  backdrop_path: string;
+  overview: string;
+  release_date: string;
+  vote_average: number;
+  runtime: number | undefined;
+  genres: string[] | undefined;
+  cast: string[] | undefined;
+  director: string[] | undefined;
+  trailer_url: string | undefined;
 }
 
-interface MovieCardProps {
+interface UnifiedMovieCardProps {
   movie: Movie;
-  isExpanded?: boolean;
-  onExpand?: (movie: Movie) => void;
-  onClose?: () => void;
-  className?: string;
-  variant?: 'small' | 'medium' | 'large';
+  variant?: "small" | "medium" | "large";
+  onExpand?: () => void;
   showExpandButton?: boolean;
+  streamingSearch?: any;
 }
 
-// Unified Modal Component for fullscreen display
-export const MovieModal = ({ 
+export const UnifiedMovieCard = ({ 
   movie, 
-  isOpen, 
-  onClose 
-}: { 
-  movie: Movie | null; 
-  isOpen: boolean; 
-  onClose: () => void; 
-}) => {
-  const { toast } = useToast();
-  const { i18n } = useTranslation();
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [isWatchlisted, setIsWatchlisted] = useState(false);
-  const [showTrailer, setShowTrailer] = useState(false);
-  const [trailerUrl, setTrailerUrl] = useState("");
+  variant = "small", 
+  onExpand, 
+  showExpandButton = false, 
+  streamingSearch 
+}: UnifiedMovieCardProps) => {
+  const { t } = useTranslation();
+  const [imageLoaded, setImageLoaded] = useState(false);
 
-  // Use smart streaming search with automatic fetching
-  const streamingSearch = useSmartStreamingSearch(
-    movie ? [movie.id] : [],
-    {
-      mode: 'instant', // Always instant for modal details
-      country: i18n.language === 'pl' ? 'pl' : 'us',
-      enabled: isOpen && !!movie,
-      autoFetch: true
-    }
-  );
+  // Get streaming data if available
+  const streamingData = streamingSearch?.getStreamingData?.(movie.id);
+  const hasStreaming = streamingSearch?.hasStreaming?.(movie.id);
 
-  const streamingData = movie ? streamingSearch.getStreamingData(movie.id) : null;
-
-  // Handle escape key
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'hidden';
-    }
-
-    return () => {
-      document.removeEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'unset';
-    };
-  }, [isOpen, onClose]);
-
-  const handleAddToFavorites = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsFavorite(prev => !prev);
-    toast({
-      title: isFavorite ? "Usunięto z ulubionych" : "Dodano do ulubionych",
-      description: `${movie?.title} zostało ${isFavorite ? 'usunięte z' : 'dodane do'} ulubionych.`,
-    });
-  }, [isFavorite, movie?.title, toast]);
-
-  const handleAddToWatchlist = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsWatchlisted(prev => !prev);
-    toast({
-      title: isWatchlisted ? "Usunięto z listy do obejrzenia" : "Dodano do listy do obejrzenia",
-      description: `${movie?.title} zostało ${isWatchlisted ? 'usunięte z' : 'dodane do'} listy do obejrzenia.`,
-    });
-  }, [isWatchlisted, movie?.title, toast]);
-
-  const handleWatchTrailer = useCallback(async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    
-    if (!movie) return;
-    
-    if (!trailerUrl) {
-      try {
-        const year = movie.release_date ? new Date(movie.release_date).getFullYear().toString() : '';
-        const url = await getMovieTrailer(movie.title, year);
-        if (url) {
-          setTrailerUrl(url);
-          setShowTrailer(true);
-        } else {
-          toast({
-            title: "Zwiastun niedostępny",
-            description: "Nie udało się znaleźć zwiastuna dla tego filmu.",
-            variant: "destructive",
-          });
-        }
-      } catch (error) {
-        console.error('Error fetching trailer:', error);
-        toast({
-          title: "Błąd ładowania zwiastuna",
-          description: "Spróbuj ponownie później.",
-          variant: "destructive",
-        });
-      }
-    } else {
-      setShowTrailer(true);
-    }
-  }, [movie, trailerUrl, toast]);
-
-  const handleShare = useCallback(async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: movie?.title,
-          text: `Sprawdź ${movie?.title}!`,
-          url: window.location.href
-        });
-      } else {
-        await navigator.clipboard.writeText(window.location.href);
-        toast({
-          title: "Link skopiowany",
-          description: "Link do filmu został skopiowany do schowka",
-        });
-      }
-    } catch (error) {
-      console.log('Sharing failed');
-      toast({
-        title: "Błąd udostępniania",
-        description: "Nie udało się udostępnić filmu",
-        variant: "destructive",
-      });
-    }
-  }, [movie?.title, toast]);
-
-  const checkStreamingAvailability = () => {
-    if (!streamingData.requested) {
-      streamingData.fetchData();
-      toast({
-        title: "Sprawdzanie dostępności",
-        description: `Sprawdzam dostępność ${movie?.title} w serwisach streamingowych...`,
-      });
-    }
-  };
-
-  if (!movie) return null;
-
-  const backdropUrl = movie.backdrop_path 
-    ? `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces${movie.backdrop_path}`
-    : `https://image.tmdb.org/t/p/w500${movie.poster_path}`;
-
-  const posterUrl = movie.poster_path 
+  const imageUrl = movie.poster_path
     ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
     : '/placeholder.svg';
+
+  const renderStreamingInfo = () => {
+    if (!streamingData) return null;
+
+    const bestOption = streamingData.streamingOptions?.[0];
+    if (!bestOption) return null;
+
+    return (
+      <div className="absolute top-2 right-2 z-10">
+        <Badge className="bg-green-500/90 text-white text-xs">
+          ✓ {bestOption.service}
+        </Badge>
+      </div>
+    );
+  };
+
+  if (variant === "small") {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        whileHover={{ scale: 1.02 }}
+        className="bg-card rounded-lg shadow-md overflow-hidden cursor-pointer relative group"
+        onClick={onExpand}
+      >
+        <div className="relative aspect-[2/3] overflow-hidden">
+          {!imageLoaded && (
+            <div className="absolute inset-0 bg-gradient-to-br from-muted via-muted-foreground/20 to-muted animate-pulse" />
+          )}
+          
+          <img
+            src={imageUrl}
+            alt={movie.title}
+            className={`w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${
+              imageLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
+            onLoad={() => setImageLoaded(true)}
+            onError={() => setImageLoaded(true)}
+          />
+
+          {/* Streaming info overlay */}
+          {renderStreamingInfo()}
+
+          {/* Rating badge */}
+          <div className="absolute bottom-2 left-2 bg-black/70 text-white px-2 py-1 rounded text-xs">
+            ⭐ {movie.vote_average?.toFixed(1) || "N/A"}
+          </div>
+
+          {/* Expand button */}
+          {showExpandButton && (
+            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <Button size="sm" variant="secondary">
+                {t("common.viewDetails")}
+              </Button>
+            </div>
+          )}
+        </div>
+
+        <div className="p-3">
+          <h3 className="font-semibold text-sm leading-tight line-clamp-2 mb-1">
+            {movie.title}
+          </h3>
+          <p className="text-xs text-muted-foreground">
+            {movie.release_date ? new Date(movie.release_date).getFullYear() : "N/A"}
+          </p>
+        </div>
+      </motion.div>
+    );
+  }
+
+  if (variant === "medium") {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        whileHover={{ scale: 1.02 }}
+        className="bg-card rounded-lg shadow-md overflow-hidden cursor-pointer relative group"
+        onClick={onExpand}
+      >
+        <div className="relative aspect-[9/16] overflow-hidden">
+          {!imageLoaded && (
+            <div className="absolute inset-0 bg-gradient-to-br from-muted via-muted-foreground/20 to-muted animate-pulse" />
+          )}
+          <img
+            src={imageUrl}
+            alt={movie.title}
+            className={`w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${
+              imageLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
+            onLoad={() => setImageLoaded(true)}
+            onError={() => setImageLoaded(true)}
+          />
+          {/* Streaming info overlay */}
+          {renderStreamingInfo()}
+          {/* Rating badge */}
+          <div className="absolute bottom-2 left-2 bg-black/70 text-white px-2 py-1 rounded text-xs">
+            ⭐ {movie.vote_average?.toFixed(1) || "N/A"}
+          </div>
+          {/* Expand button */}
+          {showExpandButton && (
+            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <Button size="sm" variant="secondary">
+                {t("common.viewDetails")}
+              </Button>
+            </div>
+          )}
+        </div>
+        <div className="p-3">
+          <h3 className="font-semibold text-sm leading-tight line-clamp-2 mb-1">
+            {movie.title}
+          </h3>
+          <p className="text-xs text-muted-foreground">
+            {movie.release_date ? new Date(movie.release_date).getFullYear() : "N/A"}
+          </p>
+        </div>
+      </motion.div>
+    );
+  }
+
+  if (variant === "large") {
+    return (
+      <Card className="w-full h-full overflow-hidden">
+        <CardHeader>
+          <CardTitle>{movie.title}</CardTitle>
+          <CardDescription>
+            {movie.release_date ? new Date(movie.release_date).getFullYear() : "N/A"}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <div className="relative w-full overflow-hidden rounded-md border">
+            <AspectRatio ratio={16 / 9}>
+              <img
+                src={imageUrl}
+                alt={movie.title}
+                className="object-cover"
+              />
+            </AspectRatio>
+          </div>
+          <p>{movie.overview}</p>
+        </CardContent>
+        <CardFooter className="flex justify-between items-center">
+          <Badge variant="secondary">
+            ⭐ {movie.vote_average?.toFixed(1) || "N/A"}
+          </Badge>
+          <Button>
+            <PlayCircle className="mr-2 h-4 w-4" /> Play
+          </Button>
+        </CardFooter>
+      </Card>
+    );
+  }
+
+  return null;
+};
+
+interface MovieModalProps {
+  movie: Movie | null;
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export const MovieModal = ({ movie, isOpen, onClose }: MovieModalProps) => {
+  const { t } = useTranslation();
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          {/* Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50"
-            onClick={onClose}
-          />
-          
-          {/* Modal Content */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 50 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 50 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
-            className="fixed inset-4 md:inset-8 lg:inset-16 z-50 overflow-hidden rounded-xl"
-          >
-            <Card className="h-full w-full bg-background border-0 shadow-2xl overflow-hidden">
-              {/* Close Button */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onClose}
-                className="absolute top-4 right-4 z-10 h-10 w-10 rounded-full bg-black/50 hover:bg-black/70 text-white border-0"
-              >
-                <X className="h-5 w-5" />
-              </Button>
-
-              {/* Content */}
-              <div className="h-full overflow-y-auto">
-                {/* Hero Section */}
-                <div className="relative h-80 md:h-96">
-                  {showTrailer && trailerUrl ? (
-                    <div className="absolute inset-0">
-                      <iframe
-                        src={trailerUrl}
-                        title={`${movie.title} - Zwiastun`}
-                        className="w-full h-full"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setShowTrailer(false)}
-                        className="absolute top-4 left-4 z-10 h-10 w-10 rounded-full bg-black/50 hover:bg-black/70 text-white border-0"
-                      >
-                        <X className="h-5 w-5" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <>
-                      <div
-                        className="absolute inset-0 bg-cover bg-center"
-                        style={{ backgroundImage: `url(${backdropUrl})` }}
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
-                      
-                      <div className="absolute bottom-4 left-4 md:bottom-8 md:left-8">
-                        <motion.img
-                          src={posterUrl}
-                          alt={movie.title}
-                          className="w-32 md:w-40 lg:w-48 rounded-lg shadow-2xl"
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.2 }}
-                          onError={(e) => {
-                            e.currentTarget.src = '/placeholder.svg';
-                          }}
-                        />
-                      </div>
-
-                      <div className="absolute bottom-4 left-40 md:left-52 lg:left-60 right-4 md:bottom-8 md:right-8">
-                        <motion.h1
-                          className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-2"
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: 0.3 }}
-                        >
-                          {movie.title}
-                        </motion.h1>
-                        
-                        <div className="flex items-center gap-4 mb-3">
-                          {movie.vote_average && (
-                            <div className="flex items-center gap-1">
-                              <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                              <span className="text-white font-medium">
-                                {movie.vote_average.toFixed(1)}
-                              </span>
-                            </div>
-                          )}
-                          
-                          {movie.release_date && (
-                            <div className="flex items-center gap-1">
-                              <Calendar className="h-4 w-4 text-gray-300" />
-                              <span className="text-gray-300">
-                                {new Date(movie.release_date).getFullYear()}
-                              </span>
-                            </div>
-                          )}
-                          
-                          {movie.runtime && (
-                            <div className="flex items-center gap-1">
-                              <Clock className="h-4 w-4 text-gray-300" />
-                              <span className="text-gray-300">
-                                {Math.floor(movie.runtime / 60)}h {movie.runtime % 60}m
-                              </span>
-                            </div>
-                          )}
-                        </div>
-
-                        {movie.genres && movie.genres.length > 0 && (
-                          <div className="flex flex-wrap gap-2">
-                            {movie.genres.slice(0, 3).map((genre) => (
-                              <Badge key={genre.id} variant="secondary" className="bg-white/20 text-white border-0">
-                                {genre.name}
-                              </Badge>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                {/* Content Section */}
-                <CardContent className="p-6 md:p-8">
-                  {/* Action Buttons */}
-                  <div className="flex flex-wrap gap-3 mb-6">
-                    <Button className="flex-1 min-w-32" onClick={handleWatchTrailer}>
-                      <Play className="h-4 w-4 mr-2" />
-                      {showTrailer ? 'Ukryj zwiastun' : 'Obejrzyj zwiastun'}
-                    </Button>
-                    <Button variant="outline" onClick={handleAddToFavorites}>
-                      <Heart className={`h-4 w-4 mr-2 ${isFavorite ? 'fill-current text-red-500' : ''}`} />
-                      {isFavorite ? 'Usuń z ulubionych' : 'Dodaj do ulubionych'}
-                    </Button>
-                    <Button variant="outline" onClick={handleAddToWatchlist}>
-                      <Bookmark className={`h-4 w-4 mr-2 ${isWatchlisted ? 'fill-current' : ''}`} />
-                      {isWatchlisted ? 'Usuń z listy' : 'Dodaj do listy'}
-                    </Button>
-                    <Button variant="outline" size="icon" onClick={handleShare}>
-                      <Share2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-
-                  {/* AUTOMATIC STREAMING AVAILABILITY - No button needed */}
-                  <div className="mb-6 p-4 border rounded-lg">
-                    <h3 className="text-lg font-semibold mb-3">Dostępność w serwisach</h3>
-
-                    {streamingSearch.loading ? (
-                      <div className="flex items-center gap-3">
-                        <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full" />
-                        <span className="text-muted-foreground">Sprawdzam dostępność...</span>
-                      </div>
-                    ) : streamingData && streamingData.streamingOptions.length > 0 ? (
-                      <div className="space-y-3">
-                        {streamingData.streamingOptions.map((option, index) => (
-                          <motion.div
-                            key={index}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: index * 0.1 }}
-                            className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
-                          >
-                            <div className="flex items-center gap-3">
-                              <img 
-                                src={option.serviceLogo}
-                                alt={option.service}
-                                className="w-8 h-8 object-contain"
-                                onError={(e) => {
-                                  e.currentTarget.src = '/streaming-icons/default.svg';
-                                }}
-                              />
-                              <div>
-                                <div className="font-medium">{option.service}</div>
-                                <div className="text-sm text-muted-foreground">
-                                  {option.type === 'subscription' ? 'Subskrypcja' : 
-                                   option.type === 'rent' ? 'Wypożyczenie' : 
-                                   option.type === 'buy' ? 'Kup' : 
-                                   option.type === 'free' ? 'Za darmo' : option.type}
-                                  {option.quality && ` • ${option.quality}`}
-                                  {option.price && ` • ${option.price.formatted}`}
-                                </div>
-                              </div>
-                            </div>
-                            
-                            <Button
-                              size="sm"
-                              onClick={() => {
-                                if (option.link && option.link !== '#') {
-                                  window.open(option.link, '_blank');
-                                } else {
-                                  toast({
-                                    title: "Link niedostępny",
-                                    description: `Brak bezpośredniego linku do ${option.service}`,
-                                    variant: "destructive",
-                                  });
-                                }
-                              }}
-                            >
-                              <ExternalLink className="h-4 w-4 mr-2" />
-                              Oglądaj
-                            </Button>
-                          </motion.div>
-                        ))}
-                        <div className="text-xs text-muted-foreground">
-                          Dane aktualizowane automatycznie według Twojej lokalizacji
-                        </div>
-                      </div>
-                    ) : (
-                      <Alert>
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertDescription>
-                          Ten film nie jest obecnie dostępny w popularnych serwisach streamingowych w Polsce
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                  </div>
-
-                  {/* Overview */}
-                  {movie.overview && (
-                    <div className="mb-6">
-                      <h3 className="text-lg font-semibold mb-3">Opis</h3>
-                      <p className="text-muted-foreground leading-relaxed">
-                        {movie.overview}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Cast */}
-                  {movie.cast && movie.cast.length > 0 && (
-                    <div className="mb-6">
-                      <h3 className="text-lg font-semibold mb-3">Obsada</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        {movie.cast.slice(0, 6).map((actor, index) => (
-                          <div key={index} className="flex justify-between">
-                            <span className="font-medium">{actor.name}</span>
-                            <span className="text-muted-foreground">{actor.character}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Director */}
-                  {movie.director && (
-                    <div>
-                      <h3 className="text-lg font-semibold mb-2">Reżyser</h3>
-                      <p className="text-muted-foreground">{movie.director}</p>
-                    </div>
-                  )}
-                </CardContent>
-              </div>
-            </Card>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
-  );
-};
-
-// Unified MovieCard Component
-export const UnifiedMovieCard = ({
-  movie,
-  isExpanded = false,
-  onExpand,
-  onClose,
-  className,
-  variant = 'medium',
-  showExpandButton = true
-}: MovieCardProps) => {
-  const [isHovered, setIsHovered] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const [imageError, setImageError] = useState(false);
-
-  const handleExpand = useCallback(() => {
-    if (onExpand && !isExpanded) {
-      onExpand(movie);
-    }
-  }, [movie, onExpand, isExpanded]);
-
-  const handleClose = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (onClose) {
-      onClose();
-    }
-  }, [onClose]);
-
-  // Get image URLs
-  const posterUrl = movie.poster_path 
-    ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
-    : '/placeholder.svg';
-
-  // Size variants
-  const sizeClasses = {
-    small: "w-full max-w-48 h-72",
-    medium: "w-full max-w-64 h-96", 
-    large: "w-full max-w-80 h-[28rem]"
-  };
-
-  // Base card component
-  const cardContent = (
-    <Card
-      className={cn(
-        "group relative overflow-hidden cursor-pointer transition-all duration-300 bg-card hover:shadow-xl",
-        sizeClasses[variant],
-        isHovered && "scale-105 shadow-2xl",
-        className
-      )}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      onClick={handleExpand}
-    >
-      {/* Movie Poster */}
-      <div className="relative w-full h-full">
-        {!imageLoaded && !imageError && (
-          <div className="absolute inset-0 bg-muted animate-pulse flex items-center justify-center">
-            <div className="w-12 h-12 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>{movie?.title}</DialogTitle>
+          <DialogDescription>
+            {movie?.release_date ? new Date(movie?.release_date).getFullYear() : "N/A"}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="relative w-full overflow-hidden rounded-md border">
+            <AspectRatio ratio={16 / 9}>
+              <img
+                src={movie?.poster_path ? `https://image.tmdb.org/t/p/w500${movie?.poster_path}` : '/placeholder.svg'}
+                alt={movie?.title}
+                className="object-cover"
+              />
+            </AspectRatio>
           </div>
-        )}
-        
-        <img
-          src={posterUrl}
-          alt={movie.title}
-          className={cn(
-            "w-full h-full object-cover transition-all duration-300",
-            imageLoaded ? "opacity-100" : "opacity-0",
-            isHovered && "scale-110"
-          )}
-          onLoad={() => setImageLoaded(true)}
-          onError={() => {
-            setImageError(true);
-            setImageLoaded(true);
-          }}
-        />
-
-        {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-        {/* Content Overlay */}
-        <AnimatePresence>
-          {isHovered && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              transition={{ duration: 0.2 }}
-              className="absolute inset-x-0 bottom-0 p-4 text-white"
-            >
-              <h3 className="font-bold text-lg mb-2 line-clamp-2">
-                {movie.title}
-              </h3>
-              
-              <div className="flex items-center justify-between mb-3">
-                {movie.vote_average && (
-                  <div className="flex items-center gap-1">
-                    <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                    <span className="text-sm font-medium">
-                      {movie.vote_average.toFixed(1)}
-                    </span>
-                  </div>
-                )}
-                
-                {movie.release_date && (
-                  <span className="text-sm text-gray-300">
-                    {new Date(movie.release_date).getFullYear()}
-                  </span>
-                )}
-              </div>
-
-              {movie.overview && (
-                <p className="text-sm text-gray-300 line-clamp-3 mb-3">
-                  {movie.overview}
-                </p>
-              )}
-
-              {showExpandButton && (
-                <Button 
-                  size="sm" 
-                  className="w-full bg-primary hover:bg-primary/90"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleExpand();
-                  }}
-                >
-                  View Details
-                </Button>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Rating Badge */}
-        {movie.vote_average && (
-          <Badge 
-            className="absolute top-2 right-2 bg-black/70 text-white border-0"
-            variant="secondary"
-          >
-            ⭐ {movie.vote_average.toFixed(1)}
-          </Badge>
-        )}
-
-        {/* Close Button for expanded state */}
-        {isExpanded && onClose && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleClose}
-            className="absolute top-2 left-2 z-10 h-8 w-8 rounded-full bg-black/50 hover:bg-black/70 text-white"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        )}
-      </div>
-    </Card>
+          <p>{movie?.overview}</p>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
-
-  return cardContent;
 };
 
-// Hook for managing modal state
 export const useMovieModal = () => {
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -621,15 +263,9 @@ export const useMovieModal = () => {
   }, []);
 
   const closeModal = useCallback(() => {
+    setSelectedMovie(null);
     setIsModalOpen(false);
-    // Delay clearing the movie to allow exit animation
-    setTimeout(() => setSelectedMovie(null), 300);
   }, []);
 
-  return {
-    selectedMovie,
-    isModalOpen,
-    openModal,
-    closeModal
-  };
+  return { selectedMovie, isModalOpen, openModal, closeModal };
 };
