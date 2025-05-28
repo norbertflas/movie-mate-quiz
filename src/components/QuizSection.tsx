@@ -21,6 +21,8 @@ export const QuizSection = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [answerMap, setAnswerMap] = useState<Record<string, string>>({});
   const [answers, setAnswers] = useState<QuizAnswer[]>([]);
+  const [showLocalResults, setShowLocalResults] = useState(false);
+  const [localRecommendations, setLocalRecommendations] = useState([]);
   const steps = useSurveySteps();
   
   const { 
@@ -142,6 +144,10 @@ export const QuizSection = () => {
       const results = await handleQuizComplete(answers);
       console.log('✅ Quiz completed with results:', results);
       
+      // Set local results to show them immediately and prevent redirect
+      setLocalRecommendations(results);
+      setShowLocalResults(true);
+      
       toast({
         title: t("quiz.completed") || "Quiz Completed!",
         description: t("quiz.recommendations.ready") || "Your recommendations are ready!",
@@ -174,6 +180,11 @@ export const QuizSection = () => {
 
   const visibleStepIndex = getCurrentVisibleStepIndex();
   const isLastStep = visibleStepIndex >= totalSteps - 1;
+
+  // Show results if we have local results or global results
+  if (showLocalResults && localRecommendations && localRecommendations.length > 0) {
+    return <QuizResults recommendations={localRecommendations} isGroupQuiz={false} />;
+  }
 
   if (showResults && recommendations && recommendations.length > 0) {
     return <QuizResults recommendations={recommendations} isGroupQuiz={false} />;

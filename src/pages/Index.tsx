@@ -64,6 +64,17 @@ const Index = () => {
     setShowWatchlist(prev => !prev);
   };
 
+  // Modified quiz complete handler to NOT redirect back to welcome
+  const handleQuizCompleteWithResults = (results: any) => {
+    console.log('Quiz completed with results:', results);
+    // Don't change the view - let the quiz component handle showing results
+    // setState(prev => ({ 
+    //   ...prev, 
+    //   currentView: 'welcome',
+    //   showQuiz: false 
+    // }));
+  };
+
   if (isLoading && (!trendingMovies || trendingMovies.length === 0)) {
     return <LoadingState message="Loading movies..." />;
   }
@@ -132,14 +143,7 @@ const Index = () => {
             {/* Quiz Content */}
             <QuizContent 
               onBack={handleBackToWelcome}
-              onComplete={(results) => {
-                console.log('Quiz completed with results:', results);
-                setState(prev => ({ 
-                  ...prev, 
-                  currentView: 'welcome',
-                  showQuiz: false 
-                }));
-              }}
+              onComplete={handleQuizCompleteWithResults}
               userPreferences={userPreferences}
             />
             

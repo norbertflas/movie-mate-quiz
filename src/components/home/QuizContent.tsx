@@ -10,6 +10,14 @@ interface QuizContentProps {
 }
 
 export const QuizContent = ({ onBack, onComplete, userPreferences }: QuizContentProps) => {
+  const handleQuizComplete = (results: any) => {
+    console.log('QuizContent: Quiz completed with results:', results);
+    // Don't call onComplete to prevent redirect
+    // if (onComplete) {
+    //   onComplete(results);
+    // }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -19,7 +27,7 @@ export const QuizContent = ({ onBack, onComplete, userPreferences }: QuizContent
     >
       <EnhancedQuiz 
         onBack={onBack}
-        onComplete={onComplete}
+        onComplete={handleQuizComplete}
         userPreferences={userPreferences}
       />
     </motion.div>
