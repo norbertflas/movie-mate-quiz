@@ -75,8 +75,8 @@ export const MovieCardSwitcher = memo(({
   } catch (error) {
     console.error('Error in MovieCardSwitcher:', error);
     return (
-      <div className="w-20 h-28 bg-gray-800 rounded-lg flex items-center justify-center">
-        <span className="text-xs text-gray-400">Error</span>
+      <div className="w-64 h-96 bg-gray-800 rounded-lg flex items-center justify-center">
+        <span className="text-sm text-gray-400">Błąd ładowania karty</span>
       </div>
     );
   }

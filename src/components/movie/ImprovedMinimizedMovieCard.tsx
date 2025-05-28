@@ -110,7 +110,7 @@ export const ImprovedMinimizedMovieCard = memo(({
               onClick={handleViewDetails}
               className="bg-white/90 text-black hover:bg-white font-semibold px-6 py-2 rounded-full"
             >
-              View Details
+              Zobacz szczegóły
             </Button>
           </motion.div>
         </div>

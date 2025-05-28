@@ -103,7 +103,7 @@ export const ImprovedMaximizedMovieCard = memo(({
   const handleShare = useCallback(async (platform = 'native') => {
     const shareData = {
       title: title,
-      text: `Check out "${title}" - ${description?.slice(0, 100)}...`,
+      text: `Zobacz "${title}" - ${description?.slice(0, 100)}...`,
       url: window.location.href
     };
 
@@ -185,7 +185,7 @@ export const ImprovedMaximizedMovieCard = memo(({
               >
                 <Star className="h-6 w-6 text-yellow-400 fill-current" />
               </motion.div>
-              <span className="font-semibold text-white text-lg">Featured Movie</span>
+              <span className="font-semibold text-white text-lg">Polecany Film</span>
               <Badge variant="secondary" className="text-sm bg-yellow-500/20 text-yellow-300 border-yellow-500/30">
                 HOT
               </Badge>
@@ -276,7 +276,7 @@ export const ImprovedMaximizedMovieCard = memo(({
                           className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-700"
                         >
                           <Copy className="h-4 w-4 mr-2" />
-                          Copy Link
+                          Kopiuj link
                         </Button>
                         <Button
                           variant="ghost"
@@ -285,7 +285,7 @@ export const ImprovedMaximizedMovieCard = memo(({
                           className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-700"
                         >
                           <ExternalLink className="h-4 w-4 mr-2" />
-                          Share
+                          Udostępnij
                         </Button>
                       </motion.div>
                     )}
@@ -303,7 +303,7 @@ export const ImprovedMaximizedMovieCard = memo(({
                       onClick={handlePlayTrailer}
                     >
                       <Play className="h-5 w-5 mr-2 fill-white" />
-                      Trailer
+                      Zwiastun
                     </Button>
                   )}
                   
@@ -318,7 +318,7 @@ export const ImprovedMaximizedMovieCard = memo(({
                     onClick={handleToggleWatchlist}
                   >
                     <Bookmark className={`h-5 w-5 mr-2 ${isWatchlisted ? 'fill-current' : ''}`} />
-                    {isWatchlisted ? 'Listed' : 'List'}
+                    {isWatchlisted ? 'Na liście' : 'Dodaj do listy'}
                   </Button>
 
                   <Button
@@ -391,17 +391,17 @@ export const ImprovedMaximizedMovieCard = memo(({
               <div className="grid grid-cols-2 gap-3 text-sm text-gray-400">
                 <div className="flex items-center">
                   <Users className="h-4 w-4 mr-2" />
-                  Director: {director}
+                  Reżyser: {director}
                 </div>
                 <div className="flex items-center">
                   <Award className="h-4 w-4 mr-2" />
-                  Budget: {budget}
+                  Budżet: {budget}
                 </div>
               </div>
 
               {/* Personal Rating */}
               <div className="flex items-center space-x-4">
-                <span className="text-gray-300 text-lg">Your rating:</span>
+                <span className="text-gray-300 text-lg">Twoja ocena:</span>
                 <div className="flex space-x-2">
                   {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((ratingValue) => (
                     <button
@@ -433,7 +433,7 @@ export const ImprovedMaximizedMovieCard = memo(({
                     ))}
                     {tags.length > 6 && (
                       <Badge variant="outline" className="text-sm border-gray-600 text-gray-300 px-3 py-1">
-                        +{tags.length - 6} more
+                        +{tags.length - 6} więcej
                       </Badge>
                     )}
                   </div>
@@ -443,7 +443,7 @@ export const ImprovedMaximizedMovieCard = memo(({
               {/* Streaming Services section */}
               {formatStreamingServices().length > 0 && (
                 <div className="space-y-3">
-                  <h4 className="text-lg font-medium text-white">Available on:</h4>
+                  <h4 className="text-lg font-medium text-white">Dostępne na:</h4>
                   <MovieStreamingServices services={formatStreamingServices()} />
                 </div>
               )}
@@ -452,13 +452,13 @@ export const ImprovedMaximizedMovieCard = memo(({
               {streamingData.isLoading && (
                 <div className="text-center py-4">
                   <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2 text-primary" />
-                  <p className="text-sm text-gray-400">Searching for streaming availability...</p>
+                  <p className="text-sm text-gray-400">Wyszukiwanie dostępności streamingowej...</p>
                 </div>
               )}
 
               {streamingData.error && (
                 <div className="text-center py-4">
-                  <p className="text-sm text-red-400">Failed to load streaming data</p>
+                  <p className="text-sm text-red-400">Nie udało się załadować danych streamingowych</p>
                   <Button
                     variant="outline"
                     size="sm"
@@ -466,7 +466,7 @@ export const ImprovedMaximizedMovieCard = memo(({
                     className="mt-2"
                   >
                     <RefreshCw className="h-4 w-4 mr-2" />
-                    Retry
+                    Spróbuj ponownie
                   </Button>
                 </div>
               )}
@@ -474,7 +474,7 @@ export const ImprovedMaximizedMovieCard = memo(({
               {/* Explanations */}
               {explanations && explanations.length > 0 && (
                 <div className="space-y-3">
-                  <h4 className="text-lg font-medium text-white">Why this recommendation:</h4>
+                  <h4 className="text-lg font-medium text-white">Dlaczego polecamy:</h4>
                   <div className="space-y-2">
                     {explanations.slice(0, 3).map((explanation, index) => (
                       <p key={index} className="text-sm text-gray-400 flex items-start">
@@ -499,7 +499,7 @@ export const ImprovedMaximizedMovieCard = memo(({
                   }`}
                 >
                   {isWatched ? <Eye className="h-4 w-4 mr-2" /> : <EyeOff className="h-4 w-4 mr-2" />}
-                  {isWatched ? 'Watched' : 'Mark Watched'}
+                  {isWatched ? 'Obejrzane' : 'Oznacz jako obejrzane'}
                 </Button>
                 
                 <Button
@@ -508,7 +508,7 @@ export const ImprovedMaximizedMovieCard = memo(({
                   className="flex-1 text-sm text-gray-400 border-gray-600 hover:bg-gray-700"
                 >
                   <Download className="h-4 w-4 mr-2" />
-                  Download
+                  Pobierz
                 </Button>
               </div>
             </CardContent>
@@ -537,8 +537,8 @@ export const ImprovedMaximizedMovieCard = memo(({
                 <div className="aspect-video bg-gray-800 flex items-center justify-center">
                   <div className="text-center text-white">
                     <Play className="h-20 w-20 mx-auto mb-6 text-red-500" />
-                    <h3 className="text-2xl font-bold mb-3">{title} - Trailer</h3>
-                    <p className="text-gray-400">Trailer playback would be implemented here</p>
+                    <h3 className="text-2xl font-bold mb-3">{title} - Zwiastun</h3>
+                    <p className="text-gray-400">Odtwarzanie zwiastuna zostanie zaimplementowane tutaj</p>
                   </div>
                 </div>
               </div>
@@ -549,7 +549,7 @@ export const ImprovedMaximizedMovieCard = memo(({
                 onClick={() => setShowTrailer(false)}
               >
                 <X className="h-5 w-5 mr-2" />
-                Close
+                Zamknij
               </Button>
             </motion.div>
           </motion.div>
