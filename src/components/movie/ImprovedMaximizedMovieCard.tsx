@@ -12,6 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
+import { useToast } from "@/hooks/use-toast";
 import type { MovieCardProps } from "@/types/movie";
 import { getMovieDetails } from "@/services/tmdb/movies";
 
@@ -36,6 +38,8 @@ export const ImprovedMaximizedMovieCard = memo(({
   trailerUrl = "",
   ...props
 }: MovieCardProps) => {
+  const { t } = useTranslation();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("overview");
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showTrailer, setShowTrailer] = useState(false);
@@ -104,27 +108,43 @@ export const ImprovedMaximizedMovieCard = memo(({
       ...prev,
       [action]: value !== null ? value : !prev[action]
     }));
-  }, []);
+
+    // Show toast feedback
+    if (action === 'isFavorite') {
+      toast({
+        title: value || !userActions.isFavorite ? t('ratings.saved') : t('common.removed'),
+        description: value || !userActions.isFavorite ? t('ratings.savedDescription', { title }) : t('common.removedDescription', { title }),
+      });
+    }
+  }, [userActions, toast, t, title]);
 
   const handleShare = useCallback(async (platform) => {
     const shareData = {
       title: title,
-      text: `Check out "${title}" - ${description.slice(0, 100)}...`,
+      text: `${t('common.checkOut')} "${title}" - ${description.slice(0, 100)}...`,
       url: `${window.location.origin}/movie/${tmdbId || title}`
     };
 
-    switch(platform) {
-      case 'copy':
-        navigator.clipboard.writeText(shareData.url);
-        break;
-      case 'native':
-        if (navigator.share) {
-          await navigator.share(shareData);
-        }
-        break;
+    try {
+      switch(platform) {
+        case 'copy':
+          await navigator.clipboard.writeText(shareData.url);
+          toast({
+            title: t('common.copied'),
+            description: t('common.linkCopied'),
+          });
+          break;
+        case 'native':
+          if (navigator.share) {
+            await navigator.share(shareData);
+          }
+          break;
+      }
+    } catch (error) {
+      console.error('Share error:', error);
     }
     setShowShareMenu(false);
-  }, [title, description, tmdbId]);
+  }, [title, description, tmdbId, toast, t]);
 
   const handleClose = useCallback(() => {
     if (onClose) {
@@ -156,7 +176,7 @@ export const ImprovedMaximizedMovieCard = memo(({
   const genres = movieDetails?.genres || (genre ? genre.split(',').map((g, i) => ({ id: i, name: g.trim() })) : []);
   
   // Prepare cast data
-  const castData = movieDetails?.credits?.cast || (Array.isArray(cast) ? cast.map((name, i) => ({ id: i, name, character: 'Unknown' })) : []);
+  const castData = movieDetails?.credits?.cast || (Array.isArray(cast) ? cast.map((name, i) => ({ id: i, name, character: t('common.unknown') })) : []);
   
   // Prepare crew data
   const crewData = movieDetails?.credits?.crew || (director ? [{ id: 1, name: director, job: 'Director', department: 'Directing' }] : []);
@@ -270,7 +290,7 @@ export const ImprovedMaximizedMovieCard = memo(({
                     </div>
                   )}
                   <Badge variant="outline" className="border-gray-400 text-gray-300">
-                    {movieDetails?.status || 'Released'}
+                    {movieDetails?.status || t('movie.released')}
                   </Badge>
                 </div>
 
@@ -281,7 +301,7 @@ export const ImprovedMaximizedMovieCard = memo(({
                     <span className={`text-xl font-bold ${getRatingColor(rating)}`}>
                       {displayRating}
                     </span>
-                    <span className="text-gray-400">({movieDetails?.vote_count?.toLocaleString() || '0'} votes)</span>
+                    <span className="text-gray-400">({movieDetails?.vote_count?.toLocaleString() || '0'} {t('movie.votes')})</span>
                   </div>
                   {popularity > 0 && (
                     <div className="flex items-center space-x-1">
@@ -309,7 +329,7 @@ export const ImprovedMaximizedMovieCard = memo(({
                       onClick={() => setShowTrailer(true)}
                     >
                       <Play className="h-5 w-5 mr-2 fill-white" />
-                      Watch Trailer
+                      {t('watchTrailer')}
                     </Button>
                   )}
                   
@@ -320,7 +340,7 @@ export const ImprovedMaximizedMovieCard = memo(({
                     className={`border-white/30 ${userActions.isFavorite ? 'bg-red-600/20 text-red-400 border-red-600/50' : 'text-white hover:bg-white/10'}`}
                   >
                     <Heart className={`h-5 w-5 mr-2 ${userActions.isFavorite ? 'fill-current' : ''}`} />
-                    {userActions.isFavorite ? 'Favorite' : 'Add to Favorites'}
+                    {userActions.isFavorite ? t('common.favorite') : t('common.addToFavorites')}
                   </Button>
                   
                   <Button
@@ -330,7 +350,7 @@ export const ImprovedMaximizedMovieCard = memo(({
                     className={`border-white/30 ${userActions.isWatchlisted ? 'bg-blue-600/20 text-blue-400 border-blue-600/50' : 'text-white hover:bg-white/10'}`}
                   >
                     <Bookmark className={`h-5 w-5 mr-2 ${userActions.isWatchlisted ? 'fill-current' : ''}`} />
-                    {userActions.isWatchlisted ? 'On Watchlist' : 'Add to Watchlist'}
+                    {userActions.isWatchlisted ? t('common.onWatchlist') : t('common.addToWatchlist')}
                   </Button>
 
                   <div className="relative">
@@ -341,7 +361,7 @@ export const ImprovedMaximizedMovieCard = memo(({
                       className="border-white/30 text-white hover:bg-white/10"
                     >
                       <Share2 className="h-5 w-5 mr-2" />
-                      Share
+                      {t('common.share')}
                     </Button>
                     
                     <AnimatePresence>
@@ -359,7 +379,7 @@ export const ImprovedMaximizedMovieCard = memo(({
                             className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-700"
                           >
                             <Copy className="h-4 w-4 mr-2" />
-                            Copy Link
+                            {t('common.copyLink')}
                           </Button>
                           <Button
                             variant="ghost"
@@ -368,7 +388,7 @@ export const ImprovedMaximizedMovieCard = memo(({
                             className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-700"
                           >
                             <ExternalLink className="h-4 w-4 mr-2" />
-                            Share
+                            {t('common.share')}
                           </Button>
                         </motion.div>
                       )}
@@ -384,23 +404,23 @@ export const ImprovedMaximizedMovieCard = memo(({
         <div className="p-6 overflow-y-auto max-h-[50vh]">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-4 bg-gray-800 mb-6">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="cast">Cast & Crew</TabsTrigger>
-              <TabsTrigger value="details">Details</TabsTrigger>
-              <TabsTrigger value="reviews">Reviews</TabsTrigger>
+              <TabsTrigger value="overview">{t('common.overview')}</TabsTrigger>
+              <TabsTrigger value="cast">{t('common.castCrew')}</TabsTrigger>
+              <TabsTrigger value="details">{t('movie.details')}</TabsTrigger>
+              <TabsTrigger value="reviews">{t('common.reviews')}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 space-y-4">
                   <div>
-                    <h3 className="text-xl font-semibold text-white mb-3">Plot Summary</h3>
+                    <h3 className="text-xl font-semibold text-white mb-3">{t('common.plotSummary')}</h3>
                     <p className="text-gray-300 leading-relaxed">{description}</p>
                   </div>
                   
                   {/* Personal Rating */}
                   <div className="flex items-center space-x-4 p-4 bg-gray-800 rounded-lg">
-                    <span className="text-white font-medium">Your Rating:</span>
+                    <span className="text-white font-medium">{t('common.yourRating')}:</span>
                     <div className="flex space-x-1">
                       {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((ratingValue) => (
                         <button
@@ -426,26 +446,26 @@ export const ImprovedMaximizedMovieCard = memo(({
                   {/* Stats */}
                   <Card className="bg-gray-800 border-gray-700">
                     <CardHeader>
-                      <CardTitle className="text-white">Movie Stats</CardTitle>
+                      <CardTitle className="text-white">{t('common.movieStats')}</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-400">Rating:</span>
+                        <span className="text-gray-400">{t('movie.rating')}:</span>
                         <span className="text-white font-medium">{displayRating}/10</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-400">Votes:</span>
+                        <span className="text-gray-400">{t('movie.votes')}:</span>
                         <span className="text-white font-medium">{movieDetails?.vote_count?.toLocaleString() || '0'}</span>
                       </div>
                       {popularity > 0 && (
                         <div className="flex justify-between text-sm">
-                          <span className="text-gray-400">Popularity:</span>
+                          <span className="text-gray-400">{t('movie.popularity')}:</span>
                           <span className="text-white font-medium">{popularity.toFixed(1)}</span>
                         </div>
                       )}
                       <div className="space-y-1">
                         <div className="flex justify-between text-xs">
-                          <span className="text-gray-400">User Score</span>
+                          <span className="text-gray-400">{t('common.userScore')}</span>
                           <span className="text-white">{Math.round(parseFloat(displayRating) * 10)}%</span>
                         </div>
                         <Progress value={parseFloat(displayRating) * 10} className="h-2" />
@@ -459,7 +479,7 @@ export const ImprovedMaximizedMovieCard = memo(({
             <TabsContent value="cast" className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div>
-                  <h3 className="text-xl font-semibold text-white mb-4">Main Cast</h3>
+                  <h3 className="text-xl font-semibold text-white mb-4">{t('common.mainCast')}</h3>
                   <div className="space-y-3">
                     {castData.slice(0, 8).map((actor, index) => (
                       <div key={actor.id || index} className="flex items-center space-x-3 p-3 bg-gray-800 rounded-lg">
@@ -468,7 +488,7 @@ export const ImprovedMaximizedMovieCard = memo(({
                         </div>
                         <div>
                           <p className="text-white font-medium">{actor.name}</p>
-                          <p className="text-gray-400 text-sm">{actor.character || 'Unknown'}</p>
+                          <p className="text-gray-400 text-sm">{actor.character || t('common.unknown')}</p>
                         </div>
                       </div>
                     ))}
@@ -476,7 +496,7 @@ export const ImprovedMaximizedMovieCard = memo(({
                 </div>
                 
                 <div>
-                  <h3 className="text-xl font-semibold text-white mb-4">Key Crew</h3>
+                  <h3 className="text-xl font-semibold text-white mb-4">{t('common.keyCrew')}</h3>
                   <div className="space-y-3">
                     {crewData.slice(0, 8).map((member, index) => (
                       <div key={index} className="flex items-center space-x-3 p-3 bg-gray-800 rounded-lg">
@@ -502,27 +522,27 @@ export const ImprovedMaximizedMovieCard = memo(({
             <TabsContent value="details" className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="space-y-4">
-                  <h3 className="text-xl font-semibold text-white">Production Info</h3>
+                  <h3 className="text-xl font-semibold text-white">{t('common.productionInfo')}</h3>
                   <div className="space-y-3 text-sm">
                     {budget && (
                       <div className="flex justify-between py-2 border-b border-gray-700">
-                        <span className="text-gray-400">Budget:</span>
+                        <span className="text-gray-400">{t('common.budget')}:</span>
                         <span className="text-white">{budget}</span>
                       </div>
                     )}
                     {movieDetails?.revenue && (
                       <div className="flex justify-between py-2 border-b border-gray-700">
-                        <span className="text-gray-400">Revenue:</span>
+                        <span className="text-gray-400">{t('common.revenue')}:</span>
                         <span className="text-white">{formatCurrency(movieDetails.revenue)}</span>
                       </div>
                     )}
                     <div className="flex justify-between py-2 border-b border-gray-700">
-                      <span className="text-gray-400">Status:</span>
-                      <span className="text-white">{movieDetails?.status || 'Released'}</span>
+                      <span className="text-gray-400">{t('common.status')}:</span>
+                      <span className="text-white">{movieDetails?.status || t('movie.released')}</span>
                     </div>
                     {(runtime || movieDetails?.runtime) && (
                       <div className="flex justify-between py-2 border-b border-gray-700">
-                        <span className="text-gray-400">Runtime:</span>
+                        <span className="text-gray-400">{t('common.runtime')}:</span>
                         <span className="text-white">{formatRuntime(runtime || movieDetails?.runtime)}</span>
                       </div>
                     )}
@@ -530,11 +550,11 @@ export const ImprovedMaximizedMovieCard = memo(({
                 </div>
                 
                 <div className="space-y-4">
-                  <h3 className="text-xl font-semibold text-white">Additional Info</h3>
+                  <h3 className="text-xl font-semibold text-white">{t('common.additionalInfo')}</h3>
                   <div className="space-y-3">
                     {movieDetails?.production_companies && (
                       <div>
-                        <h4 className="text-sm font-medium text-gray-400 mb-2">Production Companies:</h4>
+                        <h4 className="text-sm font-medium text-gray-400 mb-2">{t('common.productionCompanies')}:</h4>
                         {movieDetails.production_companies.slice(0, 3).map((company, index) => (
                           <p key={index} className="text-white text-sm">• {company.name}</p>
                         ))}
@@ -542,7 +562,7 @@ export const ImprovedMaximizedMovieCard = memo(({
                     )}
                     {movieDetails?.production_countries && (
                       <div>
-                        <h4 className="text-sm font-medium text-gray-400 mb-2">Countries:</h4>
+                        <h4 className="text-sm font-medium text-gray-400 mb-2">{t('common.countries')}:</h4>
                         {movieDetails.production_countries.map((country, index) => (
                           <p key={index} className="text-white text-sm">• {country.name}</p>
                         ))}
@@ -550,7 +570,7 @@ export const ImprovedMaximizedMovieCard = memo(({
                     )}
                     {director && (
                       <div>
-                        <h4 className="text-sm font-medium text-gray-400 mb-2">Director:</h4>
+                        <h4 className="text-sm font-medium text-gray-400 mb-2">{t('common.director')}:</h4>
                         <p className="text-white text-sm">• {director}</p>
                       </div>
                     )}
@@ -561,7 +581,7 @@ export const ImprovedMaximizedMovieCard = memo(({
 
             <TabsContent value="reviews" className="space-y-6">
               <div>
-                <h3 className="text-xl font-semibold text-white mb-4">User Reviews</h3>
+                <h3 className="text-xl font-semibold text-white mb-4">{t('common.userReviews')}</h3>
                 <div className="space-y-4">
                   {movieDetails?.reviews?.results?.length > 0 ? (
                     movieDetails.reviews.results.map((review, index) => (
@@ -588,7 +608,7 @@ export const ImprovedMaximizedMovieCard = memo(({
                   ) : (
                     <Card className="bg-gray-800 border-gray-700">
                       <CardContent className="p-4 text-center">
-                        <p className="text-gray-400">No reviews available for this movie yet.</p>
+                        <p className="text-gray-400">{t('common.noReviews')}</p>
                       </CardContent>
                     </Card>
                   )}
@@ -629,10 +649,10 @@ export const ImprovedMaximizedMovieCard = memo(({
                   ) : (
                     <div className="text-center text-white">
                       <Play className="h-20 w-20 mx-auto mb-4 text-red-500" />
-                      <h3 className="text-2xl font-bold mb-2">{title} - Trailer</h3>
-                      <p className="text-gray-400 mb-4">Official Trailer</p>
+                      <h3 className="text-2xl font-bold mb-2">{title} - {t('common.trailer')}</h3>
+                      <p className="text-gray-400 mb-4">{t('common.officialTrailer')}</p>
                       <p className="text-sm text-gray-500">
-                        Trailer not available
+                        {t('common.trailerNotAvailable')}
                       </p>
                     </div>
                   )}
@@ -645,7 +665,7 @@ export const ImprovedMaximizedMovieCard = memo(({
                 onClick={() => setShowTrailer(false)}
               >
                 <X className="h-5 w-5 mr-2" />
-                Close Trailer
+                {t('hideTrailer')}
               </Button>
             </motion.div>
           </motion.div>

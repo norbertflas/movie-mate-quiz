@@ -5,9 +5,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { 
   Star, Play, Heart, Bookmark, TrendingUp,
-  Flame, Zap
+  Flame, Zap, Calendar, Clock
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
+import { useToast } from "@/hooks/use-toast";
 import type { MovieCardProps } from "@/types/movie";
 
 export const ImprovedMinimizedMovieCard = memo(({
@@ -23,10 +25,21 @@ export const ImprovedMinimizedMovieCard = memo(({
   isWatched = false,
   isWatchlisted = false,
   hasTrailer = false,
-}: MovieCardProps) => {
+  size = "medium", // small, medium, large
+  trendingPosition,
+  isHot = false,
+  description = "",
+}: MovieCardProps & {
+  size?: "small" | "medium" | "large";
+  trendingPosition?: number;
+  isHot?: boolean;
+}) => {
+  const { t } = useTranslation();
+  const { toast } = useToast();
   const [imageLoaded, setImageLoaded] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [watchlisted, setWatchlisted] = useState(isWatchlisted);
 
   const handleCardClick = useCallback(() => {
     if (onClick) {
@@ -42,6 +55,24 @@ export const ImprovedMinimizedMovieCard = memo(({
       onExpand();
     }
   }, [onExpand]);
+
+  const handleToggleFavorite = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsFavorite(!isFavorite);
+    toast({
+      title: !isFavorite ? t('ratings.saved') : t('common.removed'),
+      description: !isFavorite ? t('ratings.savedDescription', { title }) : t('common.removedFromFavorites', { title }),
+    });
+  }, [isFavorite, toast, t, title]);
+
+  const handleToggleWatchlist = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setWatchlisted(!watchlisted);
+    toast({
+      title: !watchlisted ? t('common.addedToWatchlist') : t('common.removedFromWatchlist'),
+      description: !watchlisted ? t('common.addedToWatchlistDescription', { title }) : t('common.removedFromWatchlistDescription', { title }),
+    });
+  }, [watchlisted, toast, t, title]);
 
   // Fix image URL - ensure it's a complete URL
   const posterUrl = imageUrl?.startsWith('http') 
@@ -62,8 +93,22 @@ export const ImprovedMinimizedMovieCard = memo(({
   };
 
   const getTrendingIcon = () => {
+    if (trendingPosition && trendingPosition <= 3) return <Flame className="h-3 w-3 text-red-500" />;
     if (priority) return <Flame className="h-3 w-3 text-red-500" />;
     return <TrendingUp className="h-3 w-3 text-orange-500" />;
+  };
+
+  // Card sizes configuration
+  const cardSizes = {
+    small: "w-32 h-48",
+    medium: "w-40 h-60", 
+    large: "w-48 h-72"
+  };
+
+  const textSizes = {
+    small: { title: "text-xs", subtitle: "text-xs", rating: "text-xs" },
+    medium: { title: "text-sm", subtitle: "text-xs", rating: "text-sm" },
+    large: { title: "text-base", subtitle: "text-sm", rating: "text-base" }
   };
 
   return (
@@ -76,7 +121,11 @@ export const ImprovedMinimizedMovieCard = memo(({
       className="w-full max-w-64"
     >
       <Card 
-        className="h-96 cursor-pointer overflow-hidden relative group transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/20 bg-gray-900/95 border-gray-700 hover:border-blue-500/50"
+        className={`
+          ${cardSizes[size]} cursor-pointer overflow-hidden relative group
+          transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/20
+          bg-gray-900/95 border-gray-700 hover:border-blue-500/50
+        `}
         onClick={handleCardClick}
       >
         <div className="relative h-full">
@@ -101,26 +150,34 @@ export const ImprovedMinimizedMovieCard = memo(({
           
           {/* Top badges */}
           <div className="absolute top-2 left-2 flex flex-col space-y-1">
-            {/* Priority/Trending Badge */}
-            {priority && (
+            {/* Trending Position */}
+            {trendingPosition && (
               <div className="flex items-center space-x-1 bg-black/70 rounded-full px-2 py-1 backdrop-blur-sm">
                 {getTrendingIcon()}
-                <span className="text-white text-xs font-bold">HOT</span>
+                <span className="text-white text-xs font-bold">#{trendingPosition}</span>
+              </div>
+            )}
+
+            {/* Priority/Hot Badge */}
+            {(priority || isHot) && (
+              <div className="flex items-center space-x-1 bg-black/70 rounded-full px-2 py-1 backdrop-blur-sm">
+                {getTrendingIcon()}
+                <span className="text-white text-xs font-bold">{t('common.hot')}</span>
               </div>
             )}
             
             {/* Watched Badge */}
             {isWatched && (
               <Badge className="bg-green-500/90 text-white text-xs px-2 py-1 rounded-full">
-                ✓ Watched
+                ✓ {t('common.watched')}
               </Badge>
             )}
 
             {/* Watchlisted Badge */}
-            {isWatchlisted && (
+            {watchlisted && (
               <Badge className="bg-blue-500/90 text-white text-xs px-2 py-1 rounded-full">
                 <Bookmark className="h-3 w-3 mr-1" />
-                List
+                {t('common.list')}
               </Badge>
             )}
           </div>
@@ -129,7 +186,7 @@ export const ImprovedMinimizedMovieCard = memo(({
           <div className="absolute top-2 right-2">
             <div className={`flex items-center space-x-1 rounded-full px-2 py-1 backdrop-blur-sm ${getRatingColor(rating)}`}>
               <Star className="h-3 w-3 fill-current" />
-              <span className="font-bold text-sm">
+              <span className={`font-bold ${textSizes[size].rating}`}>
                 {displayRating}
               </span>
             </div>
@@ -160,10 +217,7 @@ export const ImprovedMinimizedMovieCard = memo(({
                 size="sm"
                 variant="secondary"
                 className="bg-black/70 hover:bg-black/90 text-white rounded-full h-10 w-10 p-0"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsFavorite(!isFavorite);
-                }}
+                onClick={handleToggleFavorite}
               >
                 <Heart className={`h-4 w-4 ${isFavorite ? 'fill-red-500 text-red-500' : ''}`} />
               </Button>
@@ -178,12 +232,12 @@ export const ImprovedMinimizedMovieCard = memo(({
               transition={{ duration: 0.2 }}
             >
               {/* Title */}
-              <h3 className="font-bold text-white mb-1 line-clamp-2 leading-tight text-sm">
+              <h3 className={`font-bold text-white mb-1 line-clamp-2 leading-tight ${textSizes[size].title}`}>
                 {title}
               </h3>
               
               {/* Subtitle Info */}
-              <div className="text-gray-300 mb-2 text-xs">
+              <div className={`text-gray-300 mb-2 ${textSizes[size].subtitle}`}>
                 <div className="flex items-center space-x-2">
                   <span>{year}</span>
                   {genre && (
@@ -194,6 +248,18 @@ export const ImprovedMinimizedMovieCard = memo(({
                   )}
                 </div>
               </div>
+
+              {/* Description - tylko dla większych kart przy hover */}
+              {size !== 'small' && isHovered && description && (
+                <motion.p
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="text-gray-300 text-xs line-clamp-2 leading-relaxed mb-2"
+                >
+                  {description}
+                </motion.p>
+              )}
 
               {/* Action Bar - pokazuje się przy hover */}
               {isHovered && (
@@ -208,13 +274,10 @@ export const ImprovedMinimizedMovieCard = memo(({
                       size="sm"
                       variant="outline"
                       className="h-6 px-2 text-xs border-white/30 text-white hover:bg-white/20"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        console.log('Add to watchlist:', title);
-                      }}
+                      onClick={handleToggleWatchlist}
                     >
                       <Bookmark className="h-3 w-3 mr-1" />
-                      List
+                      {t('common.list')}
                     </Button>
                     
                     <Button
@@ -223,7 +286,7 @@ export const ImprovedMinimizedMovieCard = memo(({
                       className="h-6 px-2 text-xs border-white/30 text-white hover:bg-white/20"
                       onClick={handleViewDetails}
                     >
-                      Details
+                      {t('common.details')}
                     </Button>
                   </div>
                 </motion.div>
