@@ -30,9 +30,22 @@ export default defineConfig(({ mode }) => ({
           'supabase': ['@supabase/supabase-js'],
           'i18n': ['react-i18next', 'i18next']
         }
+      },
+      // Fix for deployment issues with optional dependencies
+      external: (id) => {
+        // Don't externalize core dependencies
+        if (id.startsWith('@rollup/rollup-')) {
+          return false;
+        }
+        return false;
       }
     },
-    chunkSizeWarningLimit: 1000
+    chunkSizeWarningLimit: 1000,
+    // Ensure compatibility with different platforms
+    commonjsOptions: {
+      include: [/node_modules/],
+      extensions: ['.js', '.cjs'],
+    }
   },
   optimizeDeps: {
     include: [
@@ -42,7 +55,9 @@ export default defineConfig(({ mode }) => ({
       '@supabase/supabase-js',
       'react-i18next'
     ],
-    exclude: ['@supabase/auth-helpers-react']
+    exclude: ['@supabase/auth-helpers-react'],
+    // Force pre-bundling of problematic dependencies
+    force: true
   },
   esbuild: {
     logOverride: { 'this-is-undefined-in-esm': 'silent' }
