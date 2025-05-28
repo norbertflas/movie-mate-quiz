@@ -1,3 +1,4 @@
+
 import * as streamingAvailability from "streaming-availability";
 import type { StreamingPlatformData } from "@/types/streaming";
 
@@ -126,8 +127,21 @@ class OfficialStreamingService {
         }
       }
 
+      // Convert tmdbId to number, handling both string and number types
+      let movieTmdbId = tmdbId;
+      if (show.tmdbId) {
+        if (typeof show.tmdbId === 'number') {
+          movieTmdbId = show.tmdbId;
+        } else if (typeof show.tmdbId === 'string') {
+          const parsedId = parseInt(show.tmdbId, 10);
+          if (!isNaN(parsedId)) {
+            movieTmdbId = parsedId;
+          }
+        }
+      }
+
       const movieData: MovieStreamingData = {
-        tmdbId: show.tmdbId || tmdbId,
+        tmdbId: movieTmdbId,
         title: show.title || title || 'Unknown',
         year: releaseYear,
         country: country,
