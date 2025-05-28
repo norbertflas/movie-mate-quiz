@@ -58,12 +58,12 @@ export const FindYourPerfectMovie = ({ onStartQuiz }: FindYourPerfectMovieProps)
               <div className="flex items-center justify-center gap-2">
                 <Sparkles className="h-8 w-8 text-primary animate-pulse" />
                 <h2 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
-                  Find your perfect movie
+                  {t("findPerfect.title")}
                 </h2>
                 <Sparkles className="h-8 w-8 text-primary animate-pulse" />
               </div>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Wyszukaj filmy i twórców lub odpowiedz na kilka pytań w quizie filmowym
+                {t("findPerfect.subtitle")}
               </p>
             </div>
 
@@ -74,11 +74,11 @@ export const FindYourPerfectMovie = ({ onStartQuiz }: FindYourPerfectMovieProps)
                 <TabsList className="grid w-full max-w-md mx-auto grid-cols-2">
                   <TabsTrigger value="movies" className="flex items-center gap-2">
                     <Film className="h-4 w-4" />
-                    Filmy
+                    {t("findPerfect.searchMovies")}
                   </TabsTrigger>
                   <TabsTrigger value="creators" className="flex items-center gap-2">
                     <User className="h-4 w-4" />
-                    Twórcy
+                    {t("findPerfect.searchCreators")}
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
@@ -90,8 +90,8 @@ export const FindYourPerfectMovie = ({ onStartQuiz }: FindYourPerfectMovieProps)
                   <Input
                     type="text"
                     placeholder={searchType === "movies" 
-                      ? "Wpisz tytuł filmu..." 
-                      : "Wpisz imię aktora, reżysera..."}
+                      ? t("findPerfect.searchPlaceholder")
+                      : t("findPerfect.creatorsPlaceholder")}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-10 pr-4 py-3 bg-background/50 border border-border rounded-lg"
@@ -102,13 +102,13 @@ export const FindYourPerfectMovie = ({ onStartQuiz }: FindYourPerfectMovieProps)
                   disabled={isSearching || !searchQuery.trim()}
                   className="px-6 py-3 bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90"
                 >
-                  {isSearching ? "Szukam..." : "Szukaj"}
+                  {isSearching ? t("findPerfect.searching") : t("findPerfect.searchButton")}
                 </Button>
               </form>
               
               {/* Quick Search Suggestions */}
               <div className="flex flex-wrap gap-2 mt-3 justify-center">
-                <p className="text-sm text-muted-foreground w-full">Popularne wyszukiwania:</p>
+                <p className="text-sm text-muted-foreground w-full">{t("findPerfect.popularSearches")}</p>
                 {searchType === "movies" ? (
                   <>
                     <Badge 
@@ -116,28 +116,28 @@ export const FindYourPerfectMovie = ({ onStartQuiz }: FindYourPerfectMovieProps)
                       className="text-xs cursor-pointer hover:bg-primary/10"
                       onClick={() => handleQuickSearch("Action")}
                     >
-                      Action
+                      {t("movie.action")}
                     </Badge>
                     <Badge 
                       variant="outline" 
                       className="text-xs cursor-pointer hover:bg-primary/10"
                       onClick={() => handleQuickSearch("Comedy")}
                     >
-                      Komedia
+                      {t("movie.comedy")}
                     </Badge>
                     <Badge 
                       variant="outline" 
                       className="text-xs cursor-pointer hover:bg-primary/10"
                       onClick={() => handleQuickSearch("Sci-Fi")}
                     >
-                      Sci-Fi
+                      {t("movie.sciFi")}
                     </Badge>
                     <Badge 
                       variant="outline" 
                       className="text-xs cursor-pointer hover:bg-primary/10"
                       onClick={() => handleQuickSearch("Horror")}
                     >
-                      Horror
+                      {t("movie.horror")}
                     </Badge>
                   </>
                 ) : (
@@ -178,20 +178,20 @@ export const FindYourPerfectMovie = ({ onStartQuiz }: FindYourPerfectMovieProps)
             {/* Features */}
             <div className="flex flex-wrap justify-center gap-2 mb-6">
               <Badge variant="secondary" className="bg-primary/20 text-primary border-primary/30">
-                Personalizowane rekomendacje
+                {t("findPerfect.features.personalized")}
               </Badge>
               <Badge variant="secondary" className="bg-blue-500/20 text-blue-600 border-blue-500/30">
-                Dostępność w serwisach
+                {t("findPerfect.features.availability")}
               </Badge>
               <Badge variant="secondary" className="bg-purple-500/20 text-purple-600 border-purple-500/30">
-                Inteligentny matching
+                {t("findPerfect.features.matching")}
               </Badge>
             </div>
 
             {/* Quiz CTA Button */}
             <div className="border-t border-border/50 pt-6">
               <p className="text-sm text-muted-foreground mb-4">
-                Lub pozwól nam znaleźć idealne filmy dopasowane do Twoich preferencji
+                {t("findPerfect.quizAlternative")}
               </p>
               <Button 
                 size="lg" 
@@ -200,7 +200,7 @@ export const FindYourPerfectMovie = ({ onStartQuiz }: FindYourPerfectMovieProps)
               >
                 <span className="flex items-center gap-3">
                   <Sparkles className="h-6 w-6 transition-transform group-hover:scale-110 group-hover:rotate-12" />
-                  <span>Rozpocznij Quiz Filmowy</span>
+                  <span>{t("findPerfect.startQuiz")}</span>
                 </span>
               </Button>
             </div>

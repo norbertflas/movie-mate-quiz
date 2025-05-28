@@ -82,7 +82,37 @@ export const translations = {
     },
     common: {
       viewDetails: "View Details",
-      availableOn: "Available on"
+      availableOn: "Available on",
+      languageChanged: "Language changed",
+      languageChangedTo: "Language changed to {{language}}",
+      selectLanguage: "Select language"
+    },
+    randomMovie: {
+      title: "Random Movie for Today",
+      subtitle: "Don't know what to watch? Let us pick something for you!",
+      generate: "Generate Random Movie",
+      generating: "Generating...",
+      regenerate: "Generate Again",
+      success: "Random movie generated!",
+      successDescription: "We found for you: {{title}}"
+    },
+    findPerfect: {
+      title: "Find your perfect movie",
+      subtitle: "Search for movies and creators or answer a few questions in our movie quiz",
+      searchMovies: "Movies",
+      searchCreators: "Creators",
+      searchPlaceholder: "Enter movie title...",
+      creatorsPlaceholder: "Enter actor, director name...",
+      searchButton: "Search",
+      searching: "Searching...",
+      popularSearches: "Popular searches:",
+      quizAlternative: "Or let us find ideal movies tailored to your preferences",
+      startQuiz: "Start Movie Quiz",
+      features: {
+        personalized: "Personalized recommendations",
+        availability: "Service availability",
+        matching: "Smart matching"
+      }
     }
   },
   pl: {
@@ -167,7 +197,37 @@ export const translations = {
     },
     common: {
       viewDetails: "Zobacz szczegóły",
-      availableOn: "Dostępne na"
+      availableOn: "Dostępne na",
+      languageChanged: "Język zmieniony",
+      languageChangedTo: "Język zmieniony na {{language}}",
+      selectLanguage: "Wybierz język"
+    },
+    randomMovie: {
+      title: "Losowy film na dziś",
+      subtitle: "Nie wiesz co obejrzeć? Pozwól nam wybrać coś dla Ciebie!",
+      generate: "Wygeneruj losowy film",
+      generating: "Generuję...",
+      regenerate: "Wygeneruj ponownie",
+      success: "Losowy film wygenerowany!",
+      successDescription: "Znaleźliśmy dla Ciebie: {{title}}"
+    },
+    findPerfect: {
+      title: "Znajdź swój idealny film",
+      subtitle: "Wyszukaj filmy i twórców lub odpowiedz na kilka pytań w quizie filmowym",
+      searchMovies: "Filmy",
+      searchCreators: "Twórcy",
+      searchPlaceholder: "Wpisz tytuł filmu...",
+      creatorsPlaceholder: "Wpisz imię aktora, reżysera...",
+      searchButton: "Szukaj",
+      searching: "Szukam...",
+      popularSearches: "Popularne wyszukiwania:",
+      quizAlternative: "Lub pozwól nam znaleźć idealne filmy dopasowane do Twoich preferencji",
+      startQuiz: "Rozpocznij Quiz Filmowy",
+      features: {
+        personalized: "Spersonalizowane rekomendacje",
+        availability: "Dostępność w serwisach",
+        matching: "Inteligentny matching"
+      }
     }
   }
 };

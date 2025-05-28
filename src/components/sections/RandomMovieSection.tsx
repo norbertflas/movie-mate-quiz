@@ -40,14 +40,14 @@ export const RandomMovieSection = () => {
       if (result.data) {
         setRandomMovie(result.data);
         toast({
-          title: "Losowy film wygenerowany!",
-          description: `Znaleźliśmy dla Ciebie: ${result.data.title}`,
+          title: t("randomMovie.success"),
+          description: t("randomMovie.successDescription", { title: result.data.title }),
         });
       }
     } catch (error) {
       toast({
-        title: "Błąd",
-        description: "Nie udało się wygenerować losowego filmu",
+        title: t("errors.quizError"),
+        description: t("errors.recommendationError"),
         variant: "destructive"
       });
     } finally {
@@ -94,11 +94,11 @@ export const RandomMovieSection = () => {
                 <div className="flex items-center justify-center gap-2">
                   <Shuffle className="h-6 w-6 text-orange-500 animate-bounce" />
                   <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-orange-500 to-pink-600 bg-clip-text text-transparent">
-                    Losowy film na dziś
+                    {t("randomMovie.title")}
                   </h2>
                 </div>
                 <p className="text-muted-foreground">
-                  Nie wiesz co obejrzeć? Pozwól nam wybrać coś dla Ciebie!
+                  {t("randomMovie.subtitle")}
                 </p>
               </div>
 
@@ -143,7 +143,14 @@ export const RandomMovieSection = () => {
               >
                 <span className="flex items-center gap-2">
                   <Shuffle className={`h-5 w-5 transition-transform ${isGenerating ? 'animate-spin' : 'group-hover:scale-110'}`} />
-                  <span>{isGenerating ? 'Generuję...' : randomMovie ? 'Wygeneruj ponownie' : 'Wygeneruj losowy film'}</span>
+                  <span>
+                    {isGenerating 
+                      ? t("randomMovie.generating") 
+                      : randomMovie 
+                        ? t("randomMovie.regenerate") 
+                        : t("randomMovie.generate")
+                    }
+                  </span>
                 </span>
               </Button>
             </motion.div>

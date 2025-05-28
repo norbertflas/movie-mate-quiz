@@ -45,8 +45,11 @@ export const LanguageSwitcher = ({ variant = "default" }: LanguageSwitcherProps)
       const selectedLang = languages.find(lang => lang.code === langCode);
       
       toast({
-        title: t("common.languageChanged"),
-        description: t("common.languageChangedTo", { language: selectedLang?.label }),
+        title: t("common.languageChanged", { defaultValue: "Język zmieniony" }),
+        description: t("common.languageChangedTo", { 
+          language: selectedLang?.label,
+          defaultValue: `Język zmieniony na ${selectedLang?.label}`
+        }),
         className: "bg-gradient-to-r from-blue-500 to-purple-500 text-white",
       });
       
@@ -60,8 +63,8 @@ export const LanguageSwitcher = ({ variant = "default" }: LanguageSwitcherProps)
     } catch (error) {
       console.error("Failed to change language:", error);
       toast({
-        title: t("errors.languageChange"),
-        description: t("errors.tryAgain"),
+        title: t("errors.quizError", { defaultValue: "Błąd" }),
+        description: t("errors.tryAgain", { defaultValue: "Spróbuj ponownie" }),
         variant: "destructive",
       });
       setIsChanging(false);
@@ -111,7 +114,9 @@ export const LanguageSwitcher = ({ variant = "default" }: LanguageSwitcherProps)
         className="w-48 p-2 bg-background/80 backdrop-blur-lg border border-primary/10"
       >
         <div className="mb-2 px-2 py-1.5">
-          <p className="text-xs text-muted-foreground">{t("common.selectLanguage")}</p>
+          <p className="text-xs text-muted-foreground">
+            {t("common.selectLanguage", { defaultValue: "Wybierz język" })}
+          </p>
         </div>
         {languages.map((lang) => (
           <DropdownMenuItem
