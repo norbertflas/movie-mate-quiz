@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { SEOHead } from "@/components/SEOHead";
 import { WelcomeSection } from "@/components/WelcomeSection";
@@ -12,6 +11,7 @@ import { TrendingMoviesSection } from "@/components/sections/TrendingMoviesSecti
 import { FindYourPerfectMovie } from "@/components/sections/FindYourPerfectMovie";
 import { QuickActions } from "@/components/QuickActions";
 import { Footer } from "@/components/Footer";
+import { RandomMovieSection } from "@/components/sections/RandomMovieSection";
 
 const Index = () => {
   const { session } = useAuth();
@@ -83,6 +83,11 @@ const Index = () => {
               onStartQuiz={handleStartQuizClick}
             />
             
+            {/* Random Movie Section */}
+            <div className="container mx-auto px-4">
+              <RandomMovieSection />
+            </div>
+
             {/* Find Your Perfect Movie */}
             <div className="container mx-auto px-4">
               <FindYourPerfectMovie onStartQuiz={handleStartQuizClick} />

@@ -1,15 +1,43 @@
 
 import { motion } from "framer-motion";
-import { Sparkles, Search } from "lucide-react";
+import { Sparkles, Search, Film, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 interface FindYourPerfectMovieProps {
   onStartQuiz: () => void;
 }
 
 export const FindYourPerfectMovie = ({ onStartQuiz }: FindYourPerfectMovieProps) => {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchType, setSearchType] = useState<"movies" | "creators">("movies");
+  const [isSearching, setIsSearching] = useState(false);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+
+    setIsSearching(true);
+    // Simulate search delay
+    setTimeout(() => {
+      navigate(`/search?q=${encodeURIComponent(searchQuery)}&type=${searchType}`);
+      setIsSearching(false);
+    }, 500);
+  };
+
+  const handleQuickSearch = (query: string) => {
+    setSearchQuery(query);
+    navigate(`/search?q=${encodeURIComponent(query)}&type=${searchType}`);
+  };
+
   return (
     <motion.section
       initial={{ opacity: 0, y: 20 }}
@@ -35,8 +63,116 @@ export const FindYourPerfectMovie = ({ onStartQuiz }: FindYourPerfectMovieProps)
                 <Sparkles className="h-8 w-8 text-primary animate-pulse" />
               </div>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Odpowiedz na kilka pytań, a my znajdziemy idealne filmy dopasowane do Twoich preferencji
+                Wyszukaj filmy i twórców lub odpowiedz na kilka pytań w quizie filmowym
               </p>
+            </div>
+
+            {/* Search Section */}
+            <div className="max-w-2xl mx-auto space-y-4">
+              {/* Search Type Tabs */}
+              <Tabs value={searchType} onValueChange={(value) => setSearchType(value as "movies" | "creators")} className="w-full">
+                <TabsList className="grid w-full max-w-md mx-auto grid-cols-2">
+                  <TabsTrigger value="movies" className="flex items-center gap-2">
+                    <Film className="h-4 w-4" />
+                    Filmy
+                  </TabsTrigger>
+                  <TabsTrigger value="creators" className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    Twórcy
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+
+              {/* Search Form */}
+              <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
+                  <Input
+                    type="text"
+                    placeholder={searchType === "movies" 
+                      ? "Wpisz tytuł filmu..." 
+                      : "Wpisz imię aktora, reżysera..."}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 pr-4 py-3 bg-background/50 border border-border rounded-lg"
+                  />
+                </div>
+                <Button 
+                  type="submit" 
+                  disabled={isSearching || !searchQuery.trim()}
+                  className="px-6 py-3 bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90"
+                >
+                  {isSearching ? "Szukam..." : "Szukaj"}
+                </Button>
+              </form>
+              
+              {/* Quick Search Suggestions */}
+              <div className="flex flex-wrap gap-2 mt-3 justify-center">
+                <p className="text-sm text-muted-foreground w-full">Popularne wyszukiwania:</p>
+                {searchType === "movies" ? (
+                  <>
+                    <Badge 
+                      variant="outline" 
+                      className="text-xs cursor-pointer hover:bg-primary/10"
+                      onClick={() => handleQuickSearch("Action")}
+                    >
+                      Action
+                    </Badge>
+                    <Badge 
+                      variant="outline" 
+                      className="text-xs cursor-pointer hover:bg-primary/10"
+                      onClick={() => handleQuickSearch("Comedy")}
+                    >
+                      Komedia
+                    </Badge>
+                    <Badge 
+                      variant="outline" 
+                      className="text-xs cursor-pointer hover:bg-primary/10"
+                      onClick={() => handleQuickSearch("Sci-Fi")}
+                    >
+                      Sci-Fi
+                    </Badge>
+                    <Badge 
+                      variant="outline" 
+                      className="text-xs cursor-pointer hover:bg-primary/10"
+                      onClick={() => handleQuickSearch("Horror")}
+                    >
+                      Horror
+                    </Badge>
+                  </>
+                ) : (
+                  <>
+                    <Badge 
+                      variant="outline" 
+                      className="text-xs cursor-pointer hover:bg-primary/10"
+                      onClick={() => handleQuickSearch("Christopher Nolan")}
+                    >
+                      Christopher Nolan
+                    </Badge>
+                    <Badge 
+                      variant="outline" 
+                      className="text-xs cursor-pointer hover:bg-primary/10"
+                      onClick={() => handleQuickSearch("Leonardo DiCaprio")}
+                    >
+                      Leonardo DiCaprio
+                    </Badge>
+                    <Badge 
+                      variant="outline" 
+                      className="text-xs cursor-pointer hover:bg-primary/10"
+                      onClick={() => handleQuickSearch("Quentin Tarantino")}
+                    >
+                      Quentin Tarantino
+                    </Badge>
+                    <Badge 
+                      variant="outline" 
+                      className="text-xs cursor-pointer hover:bg-primary/10"
+                      onClick={() => handleQuickSearch("Meryl Streep")}
+                    >
+                      Meryl Streep
+                    </Badge>
+                  </>
+                )}
+              </div>
             </div>
 
             {/* Features */}
@@ -52,34 +188,22 @@ export const FindYourPerfectMovie = ({ onStartQuiz }: FindYourPerfectMovieProps)
               </Badge>
             </div>
 
-            {/* Search Input Mockup */}
-            <div className="max-w-md mx-auto">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
-                <div className="w-full pl-10 pr-4 py-3 bg-background/50 border border-border rounded-lg text-muted-foreground">
-                  Wpisz tytuł filmu...
-                </div>
-              </div>
-              
-              <div className="flex flex-wrap gap-2 mt-3 justify-center">
-                <Badge variant="outline" className="text-xs">Action</Badge>
-                <Badge variant="outline" className="text-xs">Comedy</Badge>
-                <Badge variant="outline" className="text-xs">Drama</Badge>
-                <Badge variant="outline" className="text-xs">Sci-Fi</Badge>
-              </div>
+            {/* Quiz CTA Button */}
+            <div className="border-t border-border/50 pt-6">
+              <p className="text-sm text-muted-foreground mb-4">
+                Lub pozwól nam znaleźć idealne filmy dopasowane do Twoich preferencji
+              </p>
+              <Button 
+                size="lg" 
+                onClick={onStartQuiz}
+                className="group relative px-8 py-6 text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 bg-gradient-to-r from-primary via-blue-600 to-purple-600 hover:from-primary/90 hover:via-blue-600/90 hover:to-purple-600/90"
+              >
+                <span className="flex items-center gap-3">
+                  <Sparkles className="h-6 w-6 transition-transform group-hover:scale-110 group-hover:rotate-12" />
+                  <span>Rozpocznij Quiz Filmowy</span>
+                </span>
+              </Button>
             </div>
-
-            {/* CTA Button */}
-            <Button 
-              size="lg" 
-              onClick={onStartQuiz}
-              className="group relative px-8 py-6 text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 bg-gradient-to-r from-primary via-blue-600 to-purple-600 hover:from-primary/90 hover:via-blue-600/90 hover:to-purple-600/90"
-            >
-              <span className="flex items-center gap-3">
-                <Sparkles className="h-6 w-6 transition-transform group-hover:scale-110 group-hover:rotate-12" />
-                <span>Rozpocznij Quiz Filmowy</span>
-              </span>
-            </Button>
           </motion.div>
         </CardContent>
       </Card>
