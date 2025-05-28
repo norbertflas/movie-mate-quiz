@@ -351,15 +351,15 @@ export const useEnhancedQuizLogicWithDebugging = () => {
         validRecommendations.push(...generateEmergencyFallback());
       }
 
-      // STEP 8: Save history (if user logged in)
+      // STEP 8: Save history (if user logged in) - Fixed the database insert
       if (user) {
         try {
           const { error: historyError } = await supabase
             .from('quiz_history')
-            .insert([{ 
+            .insert({ 
               user_id: user.id, 
-              answers: quizAnswers
-            }]);
+              answers: quizAnswers as any // Cast to Json type
+            });
           
           if (historyError) {
             console.error('⚠️ [Quiz] Failed to save history:', historyError);

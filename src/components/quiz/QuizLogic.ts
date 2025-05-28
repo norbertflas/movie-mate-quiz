@@ -85,8 +85,7 @@ export const useQuizLogic = (): QuizLogicHook => {
             genre: "Drama",
             trailer_url: null,
             tmdbId: 550,
-            explanations: ["Popular choice", "Highly rated"],
-            streamingServices: []
+            explanations: ["Popular choice", "Highly rated"]
           }
         ];
       }
@@ -116,8 +115,7 @@ export const useQuizLogic = (): QuizLogicHook => {
           genre: "Drama",
           trailer_url: null,
           tmdbId: 238,
-          explanations: ["Highly rated", "Classic film"],
-          streamingServices: []
+          explanations: ["Highly rated", "Classic film"]
         }
       ];
       
