@@ -8,9 +8,7 @@ import { LoadingState } from "@/components/LoadingState";
 import { useMovieData } from "@/hooks/use-movie-data";
 import { useIndexState } from "@/hooks/use-index-state";
 import { useAuth } from "@/hooks/use-auth";
-import { ContentSection } from "@/components/sections/ContentSection";
 import { TrendingMoviesSection } from "@/components/sections/TrendingMoviesSection";
-import { PopularMoviesSection } from "@/components/sections/PopularMoviesSection";
 import { FindYourPerfectMovie } from "@/components/sections/FindYourPerfectMovie";
 import { QuickActions } from "@/components/QuickActions";
 import { Footer } from "@/components/Footer";
@@ -85,9 +83,6 @@ const Index = () => {
               onStartQuiz={handleStartQuizClick}
             />
             
-            {/* Content Section */}
-            <ContentSection />
-            
             {/* Find Your Perfect Movie */}
             <div className="container mx-auto px-4">
               <FindYourPerfectMovie onStartQuiz={handleStartQuizClick} />
@@ -102,11 +97,6 @@ const Index = () => {
                 showWatchlist={showWatchlist}
                 userPreferences={userPreferences}
               />
-            </div>
-
-            {/* Popular Movies Section - nad Trending */}
-            <div className="container mx-auto px-4">
-              <PopularMoviesSection movies={popularMovies || []} />
             </div>
 
             {/* Trending Movies Section */}
@@ -148,11 +138,6 @@ const Index = () => {
               userPreferences={userPreferences}
             />
             
-            {/* Popular movies under quiz */}
-            <div className="container mx-auto px-4 py-8">
-              <PopularMoviesSection movies={popularMovies || []} />
-            </div>
-
             {/* Footer */}
             <Footer />
           </div>
