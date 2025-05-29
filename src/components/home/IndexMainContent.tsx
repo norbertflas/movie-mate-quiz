@@ -135,9 +135,6 @@ export const IndexMainContent = ({
           >
             <WelcomeSection 
               onStartQuiz={onStartQuiz}
-              isLoading={state.isTransitioning}
-              userPreferences={userPreferences}
-              showPersonalizedContent={userPreferences.hasCompletedOnboarding}
             />
           </motion.div>
         )}

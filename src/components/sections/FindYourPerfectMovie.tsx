@@ -34,7 +34,7 @@ export const FindYourPerfectMovie = ({ onStartQuiz }: FindYourPerfectMovieProps)
   ];
 
   return (
-    <Card className="w-full bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 border-0 shadow-lg">
+    <Card className="w-full bg-gradient-to-br from-blue-50 via-purple-50 to-indigo-100 dark:from-blue-900/20 dark:via-purple-900/20 dark:to-gray-900 border-0 shadow-lg">
       <CardHeader className="text-center pb-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -42,7 +42,7 @@ export const FindYourPerfectMovie = ({ onStartQuiz }: FindYourPerfectMovieProps)
           transition={{ duration: 0.5 }}
         >
           <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
-            {t('findPerfect.title')}
+            {t('findPerfect.searchTitle')}
           </CardTitle>
           <CardDescription className="text-lg text-muted-foreground max-w-2xl mx-auto">
             {t('findPerfect.subtitle')}

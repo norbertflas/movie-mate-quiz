@@ -73,7 +73,7 @@ export const RandomMovieSection = () => {
   };
 
   return (
-    <Card className="w-full bg-gradient-to-br from-orange-50 to-red-50 dark:from-gray-900 dark:to-gray-800 border-0 shadow-lg">
+    <Card className="w-full bg-gradient-to-br from-orange-50 via-orange-100 to-red-100 dark:from-orange-900/20 dark:via-red-900/20 dark:to-gray-900 border-0 shadow-lg">
       <CardHeader className="text-center pb-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

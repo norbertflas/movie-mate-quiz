@@ -67,7 +67,7 @@ export const QuizQuestions = ({
 
       {currentQuestion.id === 'challenges' && (
         <div className="text-center text-sm text-gray-400">
-          {t('quiz.questions.challengesNote') || 'Your answer will affect the next questions'}
+          {t('quiz.questions.challengesNote')}
         </div>
       )}
     </motion.div>
