@@ -1,173 +1,182 @@
 
-import { motion } from "framer-motion";
-import { Shuffle, Play, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { discoverMovies } from "@/services/tmdb";
-import { useToast } from "@/hooks/use-toast";
+import { Shuffle, RefreshCw, Star } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "react-i18next";
-import { UnifiedMovieCard, MovieModal, useMovieModal } from "@/components/movie/UnifiedMovieCard";
+import { useToast } from "@/hooks/use-toast";
+import { motion, AnimatePresence } from "framer-motion";
+
+interface RandomMovie {
+  id: number;
+  title: string;
+  overview: string;
+  poster_path: string;
+  vote_average: number;
+  release_date: string;
+  genre_ids: number[];
+}
+
+const sampleMovies: RandomMovie[] = [
+  {
+    id: 550,
+    title: "Fight Club",
+    overview: "A ticking-time-bomb insomniac and a slippery soap salesman channel primal male aggression into a shocking new form of therapy.",
+    poster_path: "/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg",
+    vote_average: 8.4,
+    release_date: "1999-10-15",
+    genre_ids: [18, 53]
+  },
+  {
+    id: 13,
+    title: "Forrest Gump",
+    overview: "A man with a low IQ has accomplished great things in his life and been present during significant historic events.",
+    poster_path: "/arw2vcBveWOVZr6pxd9XTd1TdQa.jpg",
+    vote_average: 8.8,
+    release_date: "1994-07-06",
+    genre_ids: [18, 10749]
+  },
+  {
+    id: 238,
+    title: "The Godfather",
+    overview: "Spanning the years 1945 to 1955, a chronicle of the fictional Italian-American Corleone crime family.",
+    poster_path: "/3bhkrj58Vtu7enYsRolD1fZdja1.jpg",
+    vote_average: 9.2,
+    release_date: "1972-03-24",
+    genre_ids: [18, 80]
+  }
+];
 
 export const RandomMovieSection = () => {
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [randomMovie, setRandomMovie] = useState<any>(null);
-  const { toast } = useToast();
   const { t } = useTranslation();
-  const { selectedMovie, isModalOpen, openModal, closeModal } = useMovieModal();
+  const { toast } = useToast();
+  const [randomMovie, setRandomMovie] = useState<RandomMovie | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
 
-  const { refetch: fetchRandomMovie } = useQuery({
-    queryKey: ['randomMovie'],
-    queryFn: async () => {
-      const randomPage = Math.floor(Math.random() * 10) + 1;
-      const movies = await discoverMovies({
-        page: randomPage,
-        sortBy: 'popularity.desc',
-        minVoteCount: 100
-      });
-      const randomIndex = Math.floor(Math.random() * movies.length);
-      return movies[randomIndex];
-    },
-    enabled: false
-  });
-
-  const handleGenerateRandomMovie = async () => {
+  const generateRandomMovie = async () => {
     setIsGenerating(true);
-    try {
-      const result = await fetchRandomMovie();
-      if (result.data) {
-        setRandomMovie(result.data);
-        toast({
-          title: t("randomMovie.success"),
-          description: t("randomMovie.successDescription", { title: result.data.title }),
-        });
-      }
-    } catch (error) {
-      toast({
-        title: t("errors.quizError"),
-        description: t("errors.recommendationError"),
-        variant: "destructive"
-      });
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const handleMovieClick = () => {
-    if (randomMovie) {
-      const convertedMovie = {
-        id: randomMovie.id,
-        title: randomMovie.title,
-        poster_path: randomMovie.poster_path,
-        backdrop_path: randomMovie.backdrop_path,
-        overview: randomMovie.overview,
-        release_date: randomMovie.release_date,
-        vote_average: randomMovie.vote_average,
-        runtime: undefined,
-        genres: undefined,
-        cast: undefined,
-        director: undefined,
-        trailer_url: undefined
-      };
-      openModal(convertedMovie);
-    }
+    
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    const randomIndex = Math.floor(Math.random() * sampleMovies.length);
+    const selectedMovie = sampleMovies[randomIndex];
+    
+    setRandomMovie(selectedMovie);
+    setIsGenerating(false);
+    
+    toast({
+      title: t('randomMovie.success'),
+      description: t('randomMovie.successDescription', { title: selectedMovie.title }),
+    });
   };
 
   return (
-    <>
-      <motion.section
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="py-8"
-      >
-        <Card className="bg-gradient-to-br from-orange-500/10 via-red-500/10 to-pink-500/10 border-orange-500/20">
-          <CardContent className="p-6 text-center">
+    <Card className="w-full bg-gradient-to-br from-orange-50 to-red-50 dark:from-gray-900 dark:to-gray-800 border-0 shadow-lg">
+      <CardHeader className="text-center pb-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent mb-2 flex items-center justify-center gap-2">
+            <Shuffle className="h-6 w-6 text-orange-600" />
+            {t('randomMovie.title')}
+          </CardTitle>
+          <CardDescription className="text-lg text-muted-foreground max-w-xl mx-auto">
+            {t('randomMovie.subtitle')}
+          </CardDescription>
+        </motion.div>
+      </CardHeader>
+
+      <CardContent className="space-y-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="text-center"
+        >
+          <Button
+            onClick={generateRandomMovie}
+            disabled={isGenerating}
+            size="lg"
+            className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white px-8 py-6 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+          >
+            {isGenerating ? (
+              <>
+                <RefreshCw className="mr-2 h-5 w-5 animate-spin" />
+                {t('randomMovie.generating')}
+              </>
+            ) : randomMovie ? (
+              <>
+                <RefreshCw className="mr-2 h-5 w-5" />
+                {t('randomMovie.regenerate')}
+              </>
+            ) : (
+              <>
+                <Shuffle className="mr-2 h-5 w-5" />
+                {t('randomMovie.generate')}
+              </>
+            )}
+          </Button>
+        </motion.div>
+
+        <AnimatePresence mode="wait">
+          {randomMovie && (
             <motion.div
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.1, duration: 0.4 }}
-              className="space-y-4"
+              key={randomMovie.id}
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: -20 }}
+              transition={{ duration: 0.5 }}
+              className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg"
             >
-              {/* Header with new styling to match screenshot */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-center gap-2">
-                  <Shuffle className="h-6 w-6 text-orange-500 animate-bounce" />
-                  <h2 className="text-2xl md:text-3xl font-bold text-white">
-                    <span className="bg-gradient-to-r from-orange-400 via-red-400 to-pink-400 bg-clip-text text-transparent">
-                      🎲 {t("randomMovie.title")} 🎲
-                    </span>
-                  </h2>
+              <div className="flex gap-4">
+                <div className="flex-shrink-0">
+                  <img
+                    src={`https://image.tmdb.org/t/p/w200${randomMovie.poster_path}`}
+                    alt={randomMovie.title}
+                    className="w-24 h-36 object-cover rounded-lg shadow-md"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = "/placeholder.svg";
+                    }}
+                  />
                 </div>
-                <p className="text-gray-300 text-sm md:text-base">
-                  {t("randomMovie.subtitle")}
-                </p>
-              </div>
-
-              {/* Random Movie Result - Now using UnifiedMovieCard */}
-              {randomMovie && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.5 }}
-                  className="flex justify-center"
-                >
-                  <div className="w-64">
-                    <UnifiedMovieCard
-                      movie={{
-                        id: randomMovie.id,
-                        title: randomMovie.title,
-                        poster_path: randomMovie.poster_path,
-                        backdrop_path: randomMovie.backdrop_path,
-                        overview: randomMovie.overview,
-                        release_date: randomMovie.release_date,
-                        vote_average: randomMovie.vote_average,
-                        runtime: undefined,
-                        genres: undefined,
-                        cast: undefined,
-                        director: undefined,
-                        trailer_url: undefined
-                      }}
-                      onExpand={handleMovieClick}
-                      variant="medium"
-                      showExpandButton={true}
-                    />
+                
+                <div className="flex-1 space-y-3">
+                  <div>
+                    <h3 className="text-xl font-bold text-foreground mb-1">
+                      {randomMovie.title}
+                    </h3>
+                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                      <span>{new Date(randomMovie.release_date).getFullYear()}</span>
+                      <div className="flex items-center gap-1">
+                        <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                        <span className="font-medium">{randomMovie.vote_average.toFixed(1)}</span>
+                      </div>
+                    </div>
                   </div>
-                </motion.div>
-              )}
-
-              {/* CTA Button */}
-              <Button 
-                size="lg" 
-                onClick={handleGenerateRandomMovie}
-                disabled={isGenerating}
-                className="group relative px-6 py-4 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 hover:from-orange-600 hover:via-red-600 hover:to-pink-600"
-              >
-                <span className="flex items-center gap-2">
-                  <Shuffle className={`h-5 w-5 transition-transform ${isGenerating ? 'animate-spin' : 'group-hover:scale-110'}`} />
-                  <span>
-                    {isGenerating 
-                      ? t("randomMovie.generating") 
-                      : randomMovie 
-                        ? t("randomMovie.regenerate") 
-                        : t("randomMovie.generate")
-                    }
-                  </span>
-                </span>
-              </Button>
+                  
+                  <p className="text-muted-foreground text-sm leading-relaxed">
+                    {randomMovie.overview}
+                  </p>
+                  
+                  <div className="flex gap-2">
+                    <Badge variant="secondary" className="text-xs">
+                      {t('movie.drama')}
+                    </Badge>
+                    <Badge variant="secondary" className="text-xs">
+                      {t('movie.thriller')}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
             </motion.div>
-          </CardContent>
-        </Card>
-      </motion.section>
-
-      {/* Movie Modal */}
-      <MovieModal
-        movie={selectedMovie}
-        isOpen={isModalOpen}
-        onClose={closeModal}
-      />
-    </>
+          )}
+        </AnimatePresence>
+      </CardContent>
+    </Card>
   );
 };

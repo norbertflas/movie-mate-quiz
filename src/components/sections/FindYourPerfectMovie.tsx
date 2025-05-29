@@ -1,14 +1,12 @@
 
-import { motion } from "framer-motion";
-import { Sparkles, Search, Film, User } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Search, Sparkles, Filter } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "react-i18next";
+import { motion } from "framer-motion";
 
 interface FindYourPerfectMovieProps {
   onStartQuiz: () => void;
@@ -16,199 +14,176 @@ interface FindYourPerfectMovieProps {
 
 export const FindYourPerfectMovie = ({ onStartQuiz }: FindYourPerfectMovieProps) => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchType, setSearchType] = useState<"movies" | "creators">("movies");
   const [isSearching, setIsSearching] = useState(false);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSearch = async () => {
     if (!searchQuery.trim()) return;
-
+    
     setIsSearching(true);
     // Simulate search delay
-    setTimeout(() => {
-      navigate(`/search?q=${encodeURIComponent(searchQuery)}&type=${searchType}`);
-      setIsSearching(false);
-    }, 500);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setIsSearching(false);
+    
+    console.log(`Searching for ${searchType}:`, searchQuery);
   };
 
-  const handleQuickSearch = (query: string) => {
-    setSearchQuery(query);
-    navigate(`/search?q=${encodeURIComponent(query)}&type=${searchType}`);
-  };
+  const popularSearches = [
+    "Avengers", "The Matrix", "Pulp Fiction", "Inception", "The Godfather"
+  ];
 
   return (
-    <motion.section
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
-      className="py-12"
-    >
-      <Card className="bg-gradient-to-br from-slate-800/90 via-slate-700/90 to-slate-600/90 border-slate-600/30">
-        <CardContent className="p-8 text-center">
-          <motion.div
-            initial={{ scale: 0.9 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2, duration: 0.4 }}
-            className="space-y-6"
+    <Card className="w-full bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 border-0 shadow-lg">
+      <CardHeader className="text-center pb-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+            {t('findPerfect.title')}
+          </CardTitle>
+          <CardDescription className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            {t('findPerfect.subtitle')}
+          </CardDescription>
+        </motion.div>
+      </CardHeader>
+
+      <CardContent className="space-y-6">
+        {/* Search Type Toggle */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="flex justify-center"
+        >
+          <div className="flex bg-muted rounded-lg p-1">
+            <Button
+              variant={searchType === "movies" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setSearchType("movies")}
+              className="rounded-md px-6"
+            >
+              {t('findPerfect.searchMovies')}
+            </Button>
+            <Button
+              variant={searchType === "creators" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setSearchType("creators")}
+              className="rounded-md px-6"
+            >
+              {t('findPerfect.searchCreators')}
+            </Button>
+          </div>
+        </motion.div>
+
+        {/* Search Input */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="flex gap-2 max-w-2xl mx-auto"
+        >
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder={
+                searchType === "movies" 
+                  ? t('findPerfect.searchPlaceholder')
+                  : t('findPerfect.creatorsPlaceholder')
+              }
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 py-6 text-lg"
+              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+            />
+          </div>
+          <Button 
+            onClick={handleSearch}
+            disabled={isSearching || !searchQuery.trim()}
+            size="lg"
+            className="px-8"
           >
-            {/* Header with new styling to match screenshot */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-center gap-2">
-                <Sparkles className="h-8 w-8 text-blue-400 animate-pulse" />
-                <h2 className="text-3xl md:text-4xl font-bold text-white">
-                  <span className="bg-gradient-to-r from-blue-300 via-blue-400 to-blue-500 bg-clip-text text-transparent">
-                    ⭐ {t("findPerfect.title")} ⭐
-                  </span>
-                </h2>
-                <Sparkles className="h-8 w-8 text-blue-400 animate-pulse" />
-              </div>
-              <p className="text-lg text-gray-300 max-w-2xl mx-auto">
-                {t("findPerfect.subtitle")}
-              </p>
-            </div>
+            {isSearching ? t('findPerfect.searching') : t('findPerfect.searchButton')}
+          </Button>
+        </motion.div>
 
-            {/* Search Section */}
-            <div className="max-w-2xl mx-auto space-y-4">
-              {/* Search Type Tabs */}
-              <Tabs value={searchType} onValueChange={(value) => setSearchType(value as "movies" | "creators")} className="w-full">
-                <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 bg-slate-700/50 border-slate-600">
-                  <TabsTrigger value="movies" className="flex items-center gap-2 text-white data-[state=active]:bg-slate-600 data-[state=active]:text-white">
-                    <Film className="h-4 w-4" />
-                    {t("findPerfect.searchMovies")}
-                  </TabsTrigger>
-                  <TabsTrigger value="creators" className="flex items-center gap-2 text-white data-[state=active]:bg-slate-600 data-[state=active]:text-white">
-                    <User className="h-4 w-4" />
-                    {t("findPerfect.searchCreators")}
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-
-              {/* Search Form */}
-              <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                  <Input
-                    type="text"
-                    placeholder={searchType === "movies" 
-                      ? t("findPerfect.searchPlaceholder")
-                      : t("findPerfect.creatorsPlaceholder")}
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 pr-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder:text-gray-400"
-                  />
-                </div>
-                <Button 
-                  type="submit" 
-                  disabled={isSearching || !searchQuery.trim()}
-                  className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
-                >
-                  {isSearching ? t("findPerfect.searching") : t("findPerfect.searchButton")}
-                </Button>
-              </form>
-              
-              {/* Quick Search Suggestions */}
-              <div className="flex flex-wrap gap-2 mt-3 justify-center">
-                <p className="text-sm text-gray-400 w-full">{t("findPerfect.popularSearches")}</p>
-                {searchType === "movies" ? (
-                  <>
-                    <Badge 
-                      variant="outline" 
-                      className="text-xs cursor-pointer hover:bg-slate-600/50 border-slate-500 text-gray-300"
-                      onClick={() => handleQuickSearch("Action")}
-                    >
-                      {t("movie.action")}
-                    </Badge>
-                    <Badge 
-                      variant="outline" 
-                      className="text-xs cursor-pointer hover:bg-slate-600/50 border-slate-500 text-gray-300"
-                      onClick={() => handleQuickSearch("Comedy")}
-                    >
-                      {t("movie.comedy")}
-                    </Badge>
-                    <Badge 
-                      variant="outline" 
-                      className="text-xs cursor-pointer hover:bg-slate-600/50 border-slate-500 text-gray-300"
-                      onClick={() => handleQuickSearch("Sci-Fi")}
-                    >
-                      {t("movie.sciFi")}
-                    </Badge>
-                    <Badge 
-                      variant="outline" 
-                      className="text-xs cursor-pointer hover:bg-slate-600/50 border-slate-500 text-gray-300"
-                      onClick={() => handleQuickSearch("Horror")}
-                    >
-                      {t("movie.horror")}
-                    </Badge>
-                  </>
-                ) : (
-                  <>
-                    <Badge 
-                      variant="outline" 
-                      className="text-xs cursor-pointer hover:bg-slate-600/50 border-slate-500 text-gray-300"
-                      onClick={() => handleQuickSearch("Christopher Nolan")}
-                    >
-                      Christopher Nolan
-                    </Badge>
-                    <Badge 
-                      variant="outline" 
-                      className="text-xs cursor-pointer hover:bg-slate-600/50 border-slate-500 text-gray-300"
-                      onClick={() => handleQuickSearch("Leonardo DiCaprio")}
-                    >
-                      Leonardo DiCaprio
-                    </Badge>
-                    <Badge 
-                      variant="outline" 
-                      className="text-xs cursor-pointer hover:bg-slate-600/50 border-slate-500 text-gray-300"
-                      onClick={() => handleQuickSearch("Quentin Tarantino")}
-                    >
-                      Quentin Tarantino
-                    </Badge>
-                    <Badge 
-                      variant="outline" 
-                      className="text-xs cursor-pointer hover:bg-slate-600/50 border-slate-500 text-gray-300"
-                      onClick={() => handleQuickSearch("Meryl Streep")}
-                    >
-                      Meryl Streep
-                    </Badge>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Features */}
-            <div className="flex flex-wrap justify-center gap-2 mb-6">
-              <Badge variant="secondary" className="bg-blue-500/20 text-blue-300 border-blue-500/30">
-                {t("findPerfect.features.personalized")}
-              </Badge>
-              <Badge variant="secondary" className="bg-purple-500/20 text-purple-300 border-purple-500/30">
-                {t("findPerfect.features.availability")}
-              </Badge>
-              <Badge variant="secondary" className="bg-green-500/20 text-green-300 border-green-500/30">
-                {t("findPerfect.features.matching")}
-              </Badge>
-            </div>
-
-            {/* Quiz CTA Button */}
-            <div className="border-t border-slate-600/50 pt-6">
-              <p className="text-sm text-gray-400 mb-4">
-                {t("findPerfect.quizAlternative")}
-              </p>
-              <Button 
-                size="lg" 
-                onClick={onStartQuiz}
-                className="group relative px-8 py-6 text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 bg-gradient-to-r from-blue-500 via-purple-600 to-blue-600 hover:from-blue-600 hover:via-purple-700 hover:to-blue-700"
+        {/* Popular Searches */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="text-center"
+        >
+          <p className="text-sm text-muted-foreground mb-3">
+            {t('findPerfect.popularSearches')}
+          </p>
+          <div className="flex flex-wrap justify-center gap-2">
+            {popularSearches.map((search, index) => (
+              <Badge
+                key={index}
+                variant="secondary"
+                className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+                onClick={() => setSearchQuery(search)}
               >
-                <span className="flex items-center gap-3">
-                  <Sparkles className="h-6 w-6 transition-transform group-hover:scale-110 group-hover:rotate-12" />
-                  <span>{t("findPerfect.startQuiz")}</span>
-                </span>
-              </Button>
+                {search}
+              </Badge>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Divider */}
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-muted-foreground/20" />
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="bg-background px-4 text-muted-foreground">
+              {t('findPerfect.quizAlternative')}
+            </span>
+          </div>
+        </div>
+
+        {/* Quiz Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="text-center space-y-4"
+        >
+          <Button
+            onClick={onStartQuiz}
+            size="lg"
+            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-8 py-6 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+          >
+            <Sparkles className="mr-2 h-5 w-5" />
+            {t('findPerfect.startQuiz')}
+          </Button>
+
+          {/* Features */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+            <div className="text-center p-4">
+              <div className="bg-blue-100 dark:bg-blue-900/30 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-2">
+                <Sparkles className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              </div>
+              <h4 className="font-medium text-sm">{t('findPerfect.features.personalized')}</h4>
             </div>
-          </motion.div>
-        </CardContent>
-      </Card>
-    </motion.section>
+            <div className="text-center p-4">
+              <div className="bg-green-100 dark:bg-green-900/30 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-2">
+                <Search className="h-6 w-6 text-green-600 dark:text-green-400" />
+              </div>
+              <h4 className="font-medium text-sm">{t('findPerfect.features.availability')}</h4>
+            </div>
+            <div className="text-center p-4">
+              <div className="bg-purple-100 dark:bg-purple-900/30 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-2">
+                <Filter className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+              </div>
+              <h4 className="font-medium text-sm">{t('findPerfect.features.matching')}</h4>
+            </div>
+          </div>
+        </motion.div>
+      </CardContent>
+    </Card>
   );
 };

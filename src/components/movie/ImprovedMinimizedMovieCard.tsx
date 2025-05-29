@@ -25,7 +25,7 @@ export const ImprovedMinimizedMovieCard = memo(({
   isWatched = false,
   isWatchlisted = false,
   hasTrailer = false,
-  size = "medium", // small, medium, large
+  size = "medium",
   trendingPosition,
   isHot = false,
   description = "",
@@ -61,7 +61,7 @@ export const ImprovedMinimizedMovieCard = memo(({
     setIsFavorite(!isFavorite);
     toast({
       title: !isFavorite ? t('ratings.saved') : t('common.removed'),
-      description: !isFavorite ? t('ratings.savedDescription', { title }) : t('common.removedFromFavorites', { title }),
+      description: !isFavorite ? t('ratings.savedDescription', { title }) : t('common.removedFromFavorites'),
     });
   }, [isFavorite, toast, t, title]);
 
@@ -74,14 +74,12 @@ export const ImprovedMinimizedMovieCard = memo(({
     });
   }, [watchlisted, toast, t, title]);
 
-  // Fix image URL - ensure it's a complete URL
   const posterUrl = imageUrl?.startsWith('http') 
     ? imageUrl 
     : imageUrl?.startsWith('/') 
       ? `https://image.tmdb.org/t/p/w500${imageUrl}`
       : imageUrl || '/placeholder.svg';
 
-  // Convert rating from 0-100 to 0-10 scale
   const displayRating = rating > 10 ? (rating / 10).toFixed(1) : rating.toFixed(1);
 
   const getRatingColor = (rating: number) => {
@@ -98,7 +96,6 @@ export const ImprovedMinimizedMovieCard = memo(({
     return <TrendingUp className="h-3 w-3 text-orange-500" />;
   };
 
-  // Card sizes configuration
   const cardSizes = {
     small: "w-32 h-48",
     medium: "w-40 h-60", 
@@ -129,12 +126,10 @@ export const ImprovedMinimizedMovieCard = memo(({
         onClick={handleCardClick}
       >
         <div className="relative h-full">
-          {/* Loading placeholder */}
           {!imageLoaded && (
             <div className="absolute inset-0 bg-gradient-to-br from-gray-800 via-gray-700 to-gray-600 animate-pulse" />
           )}
           
-          {/* Main Image */}
           <img
             src={posterUrl}
             alt={title}
@@ -145,12 +140,9 @@ export const ImprovedMinimizedMovieCard = memo(({
             onError={() => setImageLoaded(true)}
           />
 
-          {/* Gradient Overlays */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-black/40" />
           
-          {/* Top badges */}
           <div className="absolute top-2 left-2 flex flex-col space-y-1">
-            {/* Trending Position */}
             {trendingPosition && (
               <div className="flex items-center space-x-1 bg-black/70 rounded-full px-2 py-1 backdrop-blur-sm">
                 {getTrendingIcon()}
@@ -158,7 +150,6 @@ export const ImprovedMinimizedMovieCard = memo(({
               </div>
             )}
 
-            {/* Priority/Hot Badge */}
             {(priority || isHot) && (
               <div className="flex items-center space-x-1 bg-black/70 rounded-full px-2 py-1 backdrop-blur-sm">
                 {getTrendingIcon()}
@@ -166,14 +157,12 @@ export const ImprovedMinimizedMovieCard = memo(({
               </div>
             )}
             
-            {/* Watched Badge */}
             {isWatched && (
               <Badge className="bg-green-500/90 text-white text-xs px-2 py-1 rounded-full">
                 ✓ {t('common.watched')}
               </Badge>
             )}
 
-            {/* Watchlisted Badge */}
             {watchlisted && (
               <Badge className="bg-blue-500/90 text-white text-xs px-2 py-1 rounded-full">
                 <Bookmark className="h-3 w-3 mr-1" />
@@ -182,7 +171,6 @@ export const ImprovedMinimizedMovieCard = memo(({
             )}
           </div>
 
-          {/* Top Right - Rating */}
           <div className="absolute top-2 right-2">
             <div className={`flex items-center space-x-1 rounded-full px-2 py-1 backdrop-blur-sm ${getRatingColor(rating)}`}>
               <Star className="h-3 w-3 fill-current" />
@@ -192,7 +180,6 @@ export const ImprovedMinimizedMovieCard = memo(({
             </div>
           </div>
 
-          {/* Hover Actions */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: isHovered ? 1 : 0 }}
@@ -224,19 +211,16 @@ export const ImprovedMinimizedMovieCard = memo(({
             </div>
           </motion.div>
 
-          {/* Bottom Content */}
           <div className="absolute bottom-0 left-0 right-0 p-3">
             <motion.div
               initial={{ y: 10, opacity: 0.8 }}
               animate={{ y: isHovered ? 0 : 10, opacity: isHovered ? 1 : 0.9 }}
               transition={{ duration: 0.2 }}
             >
-              {/* Title */}
               <h3 className={`font-bold text-white mb-1 line-clamp-2 leading-tight ${textSizes[size].title}`}>
                 {title}
               </h3>
               
-              {/* Subtitle Info */}
               <div className={`text-gray-300 mb-2 ${textSizes[size].subtitle}`}>
                 <div className="flex items-center space-x-2">
                   <span>{year}</span>
@@ -249,7 +233,6 @@ export const ImprovedMinimizedMovieCard = memo(({
                 </div>
               </div>
 
-              {/* Description - tylko dla większych kart przy hover */}
               {size !== 'small' && isHovered && description && (
                 <motion.p
                   initial={{ opacity: 0, height: 0 }}
@@ -261,7 +244,6 @@ export const ImprovedMinimizedMovieCard = memo(({
                 </motion.p>
               )}
 
-              {/* Action Bar - pokazuje się przy hover */}
               {isHovered && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
@@ -294,7 +276,6 @@ export const ImprovedMinimizedMovieCard = memo(({
             </motion.div>
           </div>
 
-          {/* Loading shimmer effect */}
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 pointer-events-none" />
         </div>
       </Card>
