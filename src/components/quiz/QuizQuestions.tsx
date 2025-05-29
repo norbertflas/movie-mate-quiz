@@ -54,15 +54,21 @@ export const QuizQuestions = ({
       </div>
 
       <div className="grid gap-3 sm:gap-4">
-        {currentQuestion.options.map((option) => (
-          <QuestionOption
-            key={option.value}
-            option={option}
-            isSelected={currentAnswer?.answer === option.value}
-            onSelect={() => onAnswer(option.value)}
-            multiSelect={currentQuestion.multiSelect}
-          />
-        ))}
+        {currentQuestion.options.map((option) => {
+          // Handle both string and object options
+          const optionValue = typeof option === 'string' ? option : option.value;
+          const optionLabel = typeof option === 'string' ? option : (option.label || option.value);
+          
+          return (
+            <QuestionOption
+              key={optionValue}
+              option={optionLabel}
+              isSelected={currentAnswer?.answer === optionValue}
+              onSelect={() => onAnswer(optionValue)}
+              type={currentQuestion.multiSelect ? "multiple" : "single"}
+            />
+          );
+        })}
       </div>
 
       {currentQuestion.id === 'challenges' && (
