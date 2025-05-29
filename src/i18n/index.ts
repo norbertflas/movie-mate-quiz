@@ -2,8 +2,8 @@ import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 
-import en from "./locales/en";
-import pl from "./locales/pl";
+import { en } from "./locales/en";
+import { pl } from "./locales/pl";
 
 // Fix: Override console.warn for i18next to avoid console spam
 const originalWarn = console.warn;

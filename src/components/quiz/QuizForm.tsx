@@ -4,10 +4,11 @@ import { Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { QuizQuestions } from "./QuizQuestions";
 import { useEffect, useState } from "react";
-import type { SurveyStepType, QuizAnswer } from "./QuizTypes";
+import type { SurveyStep } from "./constants/surveySteps";
+import type { QuizAnswer } from "./QuizTypes";
 
 interface QuizFormProps {
-  steps: SurveyStepType[];
+  steps: SurveyStep[];
   currentStep: number;
   answers: QuizAnswer[];
   isSubmitting: boolean;
