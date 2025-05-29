@@ -9,6 +9,45 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      api_usage_stats: {
+        Row: {
+          created_at: string | null
+          daily_calls: number | null
+          date: string
+          hourly_calls: number | null
+          id: string
+          last_call_hour: number | null
+          last_call_minute: number | null
+          minute_calls: number | null
+          service: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          daily_calls?: number | null
+          date: string
+          hourly_calls?: number | null
+          id?: string
+          last_call_hour?: number | null
+          last_call_minute?: number | null
+          minute_calls?: number | null
+          service: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          daily_calls?: number | null
+          date?: string
+          hourly_calls?: number | null
+          id?: string
+          last_call_hour?: number | null
+          last_call_minute?: number | null
+          minute_calls?: number | null
+          service?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       favorite_creators: {
         Row: {
           created_at: string
@@ -286,6 +325,42 @@ export type Database = {
         }
         Relationships: []
       }
+      streaming_cache: {
+        Row: {
+          cached_at: string | null
+          country: string
+          expires_at: string
+          hit_count: number | null
+          id: string
+          last_accessed: string | null
+          source: string | null
+          streaming_data: Json
+          tmdb_id: number
+        }
+        Insert: {
+          cached_at?: string | null
+          country: string
+          expires_at?: string
+          hit_count?: number | null
+          id?: string
+          last_accessed?: string | null
+          source?: string | null
+          streaming_data: Json
+          tmdb_id: number
+        }
+        Update: {
+          cached_at?: string | null
+          country?: string
+          expires_at?: string
+          hit_count?: number | null
+          id?: string
+          last_accessed?: string | null
+          source?: string | null
+          streaming_data?: Json
+          tmdb_id?: number
+        }
+        Relationships: []
+      }
       streaming_services: {
         Row: {
           created_at: string
@@ -310,6 +385,24 @@ export type Database = {
           logo_url?: string | null
           name?: string
           regions?: string[]
+        }
+        Relationships: []
+      }
+      system_settings: {
+        Row: {
+          key: string
+          updated_at: string | null
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string | null
+          value: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string | null
+          value?: Json
         }
         Relationships: []
       }
@@ -374,7 +467,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_api_usage: {
+        Args: {
+          p_service: string
+          p_date: string
+          p_hour: number
+          p_minute: number
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

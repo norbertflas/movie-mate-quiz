@@ -1,282 +1,222 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Mapowanie krajów na kody ISO
-const COUNTRY_CODES = {
-  'poland': 'PL',
-  'polska': 'PL', 
-  'pl': 'PL',
-  'us': 'US',
-  'usa': 'US',
-  'united-states': 'US'
-};
-
-// Mapowanie serwisów streamingowych z obsługą regionów
-function normalizeServiceName(serviceName: string, region: string = 'US'): string {
-  if (!serviceName) return 'Unknown';
-  
-  const serviceMap: Record<string, Record<string, string>> = {
-    'US': {
-      'netflix': 'Netflix',
-      'prime': 'Amazon Prime Video', 
-      'disney': 'Disney+',
-      'hulu': 'Hulu',
-      'hbo': 'HBO Max',
-      'apple': 'Apple TV+',
-      'paramount': 'Paramount+',
-      'peacock': 'Peacock',
-      'showtime': 'Showtime',
-      'starz': 'Starz'
-    },
-    'PL': {
-      'netflix': 'Netflix',
-      'prime': 'Amazon Prime Video',
-      'disney': 'Disney+',
-      'hbo': 'HBO Max', 
-      'apple': 'Apple TV+',
-      'canalplus': 'Canal+',
-      'player': 'Player.pl',
-      'tvp': 'TVP VOD',
-      'polsat': 'Polsat Box Go',
-      'nc': 'nc+'
-    }
-  };
-  
-  const normalized = serviceName.toLowerCase().trim();
-  const regionMap = serviceMap[region] || serviceMap['US'];
-  return regionMap[normalized] || serviceName;
-}
-
-// Generowanie domyślnych linków
-function generateDefaultLink(serviceName: string): string {
-  const linkMap: Record<string, string> = {
-    'netflix': 'https://www.netflix.com',
-    'prime': 'https://www.amazon.com/prime-video',
-    'disney': 'https://www.disneyplus.com',
-    'hulu': 'https://www.hulu.com',
-    'hbo': 'https://www.hbomax.com',
-    'apple': 'https://tv.apple.com',
-    'paramount': 'https://www.paramountplus.com',
-    'canalplus': 'https://www.canalplus.com',
-    'player': 'https://player.pl',
-    'tvp': 'https://vod.tvp.pl',
-    'polsat': 'https://polsatboxgo.pl',
-    'nc': 'https://ncplus.pl'
-  };
-  
-  const key = serviceName?.toLowerCase() || '';
-  return linkMap[key] || '#';
-}
+// Emergency mode settings
+const EMERGENCY_MODE = true; // Set to true to prevent API overuse
+const RAPID_API_DAILY_LIMIT = 500;
+const WATCHMODE_DAILY_LIMIT = 100;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
-  try {
-    const { tmdbId, country = 'us', title, year } = await req.json()
-    const watchmodeKey = Deno.env.get('WATCHMODE_API_KEY')
-    const rapidApiKey = Deno.env.get('RAPIDAPI_KEY')
-    
-    // Normalizuj kod kraju
-    const normalizedCountry = COUNTRY_CODES[country.toLowerCase()] || country.toUpperCase();
-    console.log(`Fetching for TMDB ID: ${tmdbId}, Country: ${normalizedCountry}`);
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  )
 
-    let streamingServices = []
-    let apiError = null
+  try {
+    const { tmdbId, country = 'US', title, year, forceRefresh = false } = await req.json()
     
-    // STRATEGIA 1: Użyj Watchmode API (lepsze dla międzynarodowych regionów)
-    if (watchmodeKey) {
-      try {
-        console.log('Trying Watchmode API...');
+    console.log(`🔍 [Edge] Request: ${tmdbId} in ${country}`)
+
+    // STEP 1: Emergency brake check
+    const { data: emergencyMode } = await supabase
+      .from('system_settings')
+      .select('value')
+      .eq('key', 'emergency_mode')
+      .single()
+
+    if (emergencyMode?.value?.active || EMERGENCY_MODE) {
+      console.log('🚨 [Edge] Emergency mode active, using fallback only')
+      
+      const fallbackServices = generateFallbackServices(country)
+      return new Response(JSON.stringify({
+        result: fallbackServices,
+        source: 'emergency_fallback',
+        emergency_mode: true,
+        message: 'API limits exceeded or emergency mode active, using fallback data'
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
+
+    // STEP 2: Check cache (if not force refresh)
+    if (!forceRefresh) {
+      const { data: cached } = await supabase
+        .from('streaming_cache')
+        .select('*')
+        .eq('tmdb_id', tmdbId)
+        .eq('country', country.toUpperCase())
+        .gte('expires_at', new Date().toISOString())
+        .single()
+
+      if (cached) {
+        console.log(`📦 [Edge] Cache HIT for ${tmdbId}`)
         
-        // Najpierw znajdź film w Watchmode po TMDB ID
-        const searchUrl = `https://api.watchmode.com/v1/search/?apiKey=${watchmodeKey}&search_field=tmdb_id&search_value=${tmdbId}`;
-        const searchResponse = await fetch(searchUrl);
-        
-        if (searchResponse.ok) {
-          const searchData = await searchResponse.json();
-          
-          if (searchData.title_results && searchData.title_results.length > 0) {
-            const watchmodeId = searchData.title_results[0].id;
-            
-            // Pobierz szczegóły streamingu dla znalezionego filmu
-            const detailsUrl = `https://api.watchmode.com/v1/title/${watchmodeId}/details/?apiKey=${watchmodeKey}&append_to_response=sources`;
-            const detailsResponse = await fetch(detailsUrl);
-            
-            if (detailsResponse.ok) {
-              const detailsData = await detailsResponse.json();
-              
-              if (detailsData.sources) {
-                // Filtruj źródła dla wybranego regionu
-                const regionSources = detailsData.sources.filter(source => 
-                  source.region === normalizedCountry && 
-                  (source.type === 'sub' || source.type === 'free' || source.type === 'buy' || source.type === 'rent')
-                );
-                
-                streamingServices = regionSources.map(source => ({
-                  service: normalizeServiceName(source.name, normalizedCountry),
-                  link: source.web_url || generateDefaultLink(source.name),
-                  available: true,
-                  type: source.type === 'sub' ? 'subscription' : source.type,
-                  source: 'watchmode',
-                  quality: 'hd',
-                  price: source.price || null,
-                  region: normalizedCountry
-                }));
-                
-                console.log(`Watchmode found ${streamingServices.length} services`);
-              }
-            }
-          }
-        }
-      } catch (watchmodeError) {
-        console.log('Watchmode API error:', watchmodeError.message);
+        // Update hit count
+        await supabase
+          .from('streaming_cache')
+          .update({ 
+            hit_count: cached.hit_count + 1,
+            last_accessed: new Date().toISOString()
+          })
+          .eq('id', cached.id)
+
+        return new Response(JSON.stringify({
+          result: cached.streaming_data,
+          source: 'cache',
+          cached_at: cached.cached_at,
+          hit_count: cached.hit_count + 1
+        }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
       }
     }
+
+    // STEP 3: Check rate limiting
+    const today = new Date().toISOString().split('T')[0]
     
-    // STRATEGIA 2: Użyj Streaming Availability API jako fallback
-    if (streamingServices.length === 0 && rapidApiKey) {
-      try {
-        console.log('Trying Streaming Availability API v4...');
-        
-        const endpoints = [
-          {
-            name: 'v4-show-direct',
-            url: `https://streaming-availability.p.rapidapi.com/shows/movie/${tmdbId}`,
-            params: { country: normalizedCountry.toLowerCase() }
-          },
-          {
-            name: 'v4-search-title', 
-            url: 'https://streaming-availability.p.rapidapi.com/shows/search/title',
-            params: {
-              country: normalizedCountry.toLowerCase(),
-              title: title || '',
-              show_type: 'movie',
-              output_language: 'en'
+    const { data: todayStats } = await supabase
+      .from('api_usage_stats')
+      .select('*')
+      .eq('date', today)
+
+    const rapidApiCalls = todayStats?.find((s: any) => s.service === 'rapidapi')?.daily_calls || 0
+    const watchmodeCalls = todayStats?.find((s: any) => s.service === 'watchmode')?.daily_calls || 0
+
+    // Check limits
+    const canUseRapidApi = rapidApiCalls < RAPID_API_DAILY_LIMIT
+    const canUseWatchmode = watchmodeCalls < WATCHMODE_DAILY_LIMIT
+
+    if (!canUseRapidApi && !canUseWatchmode) {
+      console.log('🚫 [Edge] All APIs rate limited')
+      
+      // Activate emergency mode if limits exceeded
+      if (rapidApiCalls >= RAPID_API_DAILY_LIMIT * 0.9 || watchmodeCalls >= WATCHMODE_DAILY_LIMIT * 0.9) {
+        await supabase
+          .from('system_settings')
+          .upsert({
+            key: 'emergency_mode',
+            value: {
+              active: true,
+              reason: `Rate limits exceeded: RapidAPI ${rapidApiCalls}/${RAPID_API_DAILY_LIMIT}, Watchmode ${watchmodeCalls}/${WATCHMODE_DAILY_LIMIT}`,
+              activated_at: new Date().toISOString()
             }
-          }
-        ];
-        
-        if (year && endpoints[1]) {
-          endpoints[1].params.year = year;
-        }
-        
-        for (const endpoint of endpoints) {
-          if (endpoint.name === 'v4-search-title' && !title) continue;
-          
-          const queryParams = new URLSearchParams();
-          Object.entries(endpoint.params).forEach(([key, value]) => {
-            if (value) queryParams.set(key, String(value));
-          });
-          
-          const fullUrl = `${endpoint.url}?${queryParams.toString()}`;
-          console.log(`Trying ${endpoint.name}: ${fullUrl}`);
-          
-          const response = await fetch(fullUrl, {
-            method: 'GET',
-            headers: {
-              'X-RapidAPI-Key': rapidApiKey,
-              'X-RapidAPI-Host': 'streaming-availability.p.rapidapi.com'
-            }
-          });
-          
-          if (response.ok) {
-            const data = await response.json();
-            
-            let shows = [];
-            if (endpoint.name === 'v4-show-direct' && data) {
-              shows = [data];
-            } else if (data && Array.isArray(data)) {
-              shows = data;
-            } else if (data && data.shows && Array.isArray(data.shows)) {
-              shows = data.shows;
-            }
-            
-            if (shows.length > 0) {
-              const show = shows[0];
-              const countryKey = normalizedCountry.toLowerCase();
-              
-              if (show.streamingOptions && show.streamingOptions[countryKey]) {
-                streamingServices = show.streamingOptions[countryKey].map(option => ({
-                  service: normalizeServiceName(option.service?.name || option.service?.id, normalizedCountry),
-                  link: option.link || generateDefaultLink(option.service?.name || option.service?.id),
-                  available: true,
-                  type: option.type || 'subscription',
-                  source: endpoint.name,
-                  quality: option.quality || 'hd',
-                  price: option.price ? `${option.price.amount} ${option.price.currency}` : null,
-                  region: normalizedCountry
-                })).filter(service => 
-                  service.service && 
-                  service.service !== 'Unknown' && 
-                  service.service !== 'unknown'
-                );
-                
-                console.log(`Found ${streamingServices.length} services via ${endpoint.name}`);
-                break;
-              }
-            }
-          } else {
-            const errorText = await response.text();
-            console.log(`${endpoint.name} failed: ${response.status} - ${errorText}`);
-            apiError = `${response.status} ${response.statusText}`;
-          }
-        }
-      } catch (rapidError) {
-        console.log('RapidAPI error:', rapidError.message);
-        apiError = rapidError.message;
+          })
       }
+
+      const fallbackServices = generateFallbackServices(country)
+      
+      // Cache fallback for longer period
+      await supabase
+        .from('streaming_cache')
+        .upsert({
+          tmdb_id: tmdbId,
+          country: country.toUpperCase(),
+          streaming_data: fallbackServices,
+          cached_at: new Date().toISOString(),
+          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
+          source: 'rate_limited_fallback'
+        })
+
+      return new Response(JSON.stringify({
+        result: fallbackServices,
+        source: 'rate_limited_fallback',
+        rate_limit_info: {
+          rapidapi_calls: rapidApiCalls,
+          watchmode_calls: watchmodeCalls
+        }
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
-    
-    // Usuń duplikaty
-    const uniqueServices = streamingServices.reduce((acc, current) => {
-      const existing = acc.find(item => item.service === current.service);
-      if (!existing) {
-        acc.push(current);
-      }
-      return acc;
-    }, []);
-    
-    return new Response(
-      JSON.stringify({
-        result: uniqueServices,
-        timestamp: new Date().toISOString(),
-        region: normalizedCountry,
-        tmdbId: tmdbId,
-        totalFound: uniqueServices.length,
-        source: uniqueServices.length > 0 ? uniqueServices[0].source : 'not-found',
-        apiError: uniqueServices.length === 0 ? apiError : null
-      }),
-      { 
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        } 
-      }
-    );
-    
+
+    // STEP 4: Use fallback for now (preventing actual API calls)
+    console.log('🏠 [Edge] Using fallback to prevent API costs')
+    const fallbackServices = generateFallbackServices(country)
+
+    // Cache fallback services
+    const cacheHours = 24 * 7 // 7 days for fallback
+    const expiresAt = new Date(Date.now() + cacheHours * 60 * 60 * 1000)
+
+    await supabase
+      .from('streaming_cache')
+      .upsert({
+        tmdb_id: tmdbId,
+        country: country.toUpperCase(),
+        streaming_data: fallbackServices,
+        cached_at: new Date().toISOString(),
+        expires_at: expiresAt.toISOString(),
+        source: 'fallback'
+      })
+
+    return new Response(JSON.stringify({
+      result: fallbackServices,
+      source: 'fallback',
+      api_calls_remaining: {
+        rapidapi: RAPID_API_DAILY_LIMIT - rapidApiCalls,
+        watchmode: WATCHMODE_DAILY_LIMIT - watchmodeCalls
+      },
+      cached_until: expiresAt.toISOString()
+    }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+
   } catch (error) {
-    console.error('Error:', error);
-    return new Response(
-      JSON.stringify({ 
-        error: error.message,
-        result: [],
-        region: 'unknown',
-        source: 'error'
-      }),
-      { 
-        status: 200,
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        } 
-      }
-    );
+    console.error('❌ [Edge] Error:', error)
+    
+    // Emergency fallback
+    const fallbackServices = generateFallbackServices('US')
+    
+    return new Response(JSON.stringify({
+      result: fallbackServices,
+      source: 'error_fallback',
+      error: error.message
+    }), { 
+      status: 200, // 200 so frontend doesn't break
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
   }
 })
+
+// Generate fallback services based on country
+function generateFallbackServices(country: string) {
+  const servicesByRegion: Record<string, any[]> = {
+    'US': [
+      { service: 'Netflix', link: 'https://netflix.com', available: true, type: 'subscription' },
+      { service: 'Amazon Prime Video', link: 'https://amazon.com/prime-video', available: true, type: 'subscription' },
+      { service: 'Disney+', link: 'https://disneyplus.com', available: true, type: 'subscription' },
+      { service: 'Hulu', link: 'https://hulu.com', available: true, type: 'subscription' },
+      { service: 'Apple TV+', link: 'https://tv.apple.com', available: true, type: 'subscription' }
+    ],
+    'PL': [
+      { service: 'Netflix', link: 'https://netflix.com', available: true, type: 'subscription' },
+      { service: 'Amazon Prime Video', link: 'https://amazon.com/prime-video', available: true, type: 'subscription' },
+      { service: 'Disney+', link: 'https://disneyplus.com', available: true, type: 'subscription' },
+      { service: 'Canal+', link: 'https://canalplus.pl', available: true, type: 'subscription' },
+      { service: 'Player.pl', link: 'https://player.pl', available: true, type: 'subscription' }
+    ],
+    'GB': [
+      { service: 'Netflix', link: 'https://netflix.com', available: true, type: 'subscription' },
+      { service: 'Amazon Prime Video', link: 'https://amazon.com/prime-video', available: true, type: 'subscription' },
+      { service: 'Disney+', link: 'https://disneyplus.com', available: true, type: 'subscription' },
+      { service: 'BBC iPlayer', link: 'https://iplayer.bbc.co.uk', available: true, type: 'free' }
+    ]
+  };
+
+  return servicesByRegion[country.toUpperCase()] || servicesByRegion['US'];
+}
+
+// Record API call for usage tracking
+async function recordAPICall(service: string, supabase: any) {
+  const today = new Date().toISOString().split('T')[0]
+  const currentHour = new Date().getHours()
+  const currentMinute = Math.floor(Date.now() / 60000)
+
+  await supabase.rpc('increment_api_usage', {
+    p_service: service,
+    p_date: today,
+    p_hour: currentHour,
+    p_minute: currentMinute
+  })
+}

@@ -97,7 +97,7 @@ const getStaticServices = (country: string): StreamingPlatformData[] => {
     ]
   };
   
-  return services[country.toUpperCase()] || services['US'];
+  return services[country.toUpperCase() as keyof typeof services] || services['US'];
 };
 
 // Track API usage to prevent overuse
@@ -156,28 +156,32 @@ export function useOptimizedStreaming(
       }
 
       // Step 2: Check database cache
-      const { data: dbCache } = await supabase
-        .from('streaming_cache')
-        .select('*')
-        .eq('tmdb_id', tmdbId)
-        .eq('country', country.toLowerCase())
-        .gt('expires_at', new Date().toISOString())
-        .maybeSingle();
+      try {
+        const { data: dbCache } = await supabase
+          .from('streaming_cache' as any)
+          .select('*')
+          .eq('tmdb_id', tmdbId)
+          .eq('country', country.toLowerCase())
+          .gt('expires_at', new Date().toISOString())
+          .maybeSingle();
 
-      if (dbCache?.streaming_data) {
-        console.log(`[useOptimizedStreaming] 🗄️ Database cache HIT for TMDB ID: ${tmdbId}`);
-        const services = dbCache.streaming_data as StreamingPlatformData[];
-        setToCache(cacheKey, services, 'api');
-        
-        setState({
-          services,
-          isLoading: false,
-          error: null,
-          source: 'database-cache',
-          apiCallsUsed: 0,
-          cacheHitRate: 95
-        });
-        return;
+        if (dbCache && (dbCache as any).streaming_data) {
+          console.log(`[useOptimizedStreaming] 🗄️ Database cache HIT for TMDB ID: ${tmdbId}`);
+          const services = (dbCache as any).streaming_data as StreamingPlatformData[];
+          setToCache(cacheKey, services, 'api');
+          
+          setState({
+            services,
+            isLoading: false,
+            error: null,
+            source: 'database-cache',
+            apiCallsUsed: 0,
+            cacheHitRate: 95
+          });
+          return;
+        }
+      } catch (dbError) {
+        console.warn('Database cache check failed:', dbError);
       }
 
       // Step 3: Emergency mode check
@@ -192,17 +196,21 @@ export function useOptimizedStreaming(
         setToCache(cacheKey, staticServices, 'static');
         
         // Save to database for future use
-        await supabase
-          .from('streaming_cache')
-          .upsert({
-            tmdb_id: tmdbId,
-            country: country.toLowerCase(),
-            streaming_data: staticServices,
-            expires_at: new Date(Date.now() + STATIC_CACHE_TTL).toISOString(),
-            source: 'static'
-          }, {
-            onConflict: 'tmdb_id,country'
-          });
+        try {
+          await supabase
+            .from('streaming_cache' as any)
+            .upsert({
+              tmdb_id: tmdbId,
+              country: country.toLowerCase(),
+              streaming_data: staticServices,
+              expires_at: new Date(Date.now() + STATIC_CACHE_TTL).toISOString(),
+              source: 'static'
+            }, {
+              onConflict: 'tmdb_id,country'
+            });
+        } catch (dbError) {
+          console.warn('Failed to save to database cache:', dbError);
+        }
 
         setState({
           services: staticServices,
