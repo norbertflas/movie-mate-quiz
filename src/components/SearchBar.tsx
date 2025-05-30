@@ -33,11 +33,11 @@ export const SearchBar = () => {
         <TabsList className="grid w-full max-w-md mx-auto grid-cols-2">
           <TabsTrigger value="movies" className="flex items-center gap-2">
             <Film className="h-4 w-4" />
-            {t("search.movies")}
+            Movies
           </TabsTrigger>
           <TabsTrigger value="creators" className="flex items-center gap-2">
             <User className="h-4 w-4" />
-            {t("search.creators")}
+            Creators
           </TabsTrigger>
         </TabsList>
       </Tabs>
@@ -45,7 +45,7 @@ export const SearchBar = () => {
       <div className="relative flex items-center">
         <Input 
           type="text"
-          placeholder={searchType === "movies" ? t("search.placeholder") : t("search.creatorPlaceholder")}
+          placeholder={searchType === "movies" ? "Search for movies..." : "Search for directors, actors..."}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className="search-input w-full py-6 pl-12 pr-4 text-base md:text-lg rounded-full shadow-lg focus:ring-2 focus:ring-primary/20 transition-all duration-300"
@@ -66,14 +66,14 @@ export const SearchBar = () => {
             {isSearching ? (
               <Loader2 className="h-5 w-5 animate-spin" />
             ) : (
-              t("search.button")
+              "Search"
             )}
           </Button>
         </motion.div>
       </div>
 
       <div className="mt-4 flex flex-wrap justify-center gap-2 text-sm text-muted-foreground">
-        <span>{t("search.trySearching")}:</span>
+        <span>Try searching for:</span>
         {searchType === "movies" ? 
           ["Action", "Comedy", "Drama", "Sci-Fi"].map((genre) => (
             <motion.button

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { SEOHead } from "@/components/SEOHead";
 import { WelcomeSection } from "@/components/WelcomeSection";
@@ -7,13 +8,15 @@ import { LoadingState } from "@/components/LoadingState";
 import { useMovieData } from "@/hooks/use-movie-data";
 import { useIndexState } from "@/hooks/use-index-state";
 import { useAuth } from "@/hooks/use-auth";
-import { TrendingMoviesSection } from "@/components/sections/TrendingMoviesSection";
+import { UnifiedMovieSection } from "@/components/home/UnifiedMovieSection";
 import { FindYourPerfectMovie } from "@/components/sections/FindYourPerfectMovie";
 import { QuickActions } from "@/components/QuickActions";
 import { Footer } from "@/components/Footer";
 import { RandomMovieSection } from "@/components/sections/RandomMovieSection";
+import { useTranslation } from "react-i18next";
 
 const Index = () => {
+  const { t } = useTranslation();
   const { session } = useAuth();
   const { 
     state, 
@@ -67,12 +70,6 @@ const Index = () => {
   // Modified quiz complete handler to NOT redirect back to welcome
   const handleQuizCompleteWithResults = (results: any) => {
     console.log('Quiz completed with results:', results);
-    // Don't change the view - let the quiz component handle showing results
-    // setState(prev => ({ 
-    //   ...prev, 
-    //   currentView: 'welcome',
-    //   showQuiz: false 
-    // }));
   };
 
   if (isLoading && (!trendingMovies || trendingMovies.length === 0)) {
@@ -88,8 +85,8 @@ const Index = () => {
       
       <div className="min-h-screen bg-background">
         {state.currentView === 'welcome' && (
-          <div className="space-y-8">
-            {/* Panel funkcyjny - WelcomeSection */}
+          <div className="space-y-12">
+            {/* Welcome Section */}
             <WelcomeSection 
               onStartQuiz={handleStartQuizClick}
             />
@@ -115,21 +112,23 @@ const Index = () => {
               />
             </div>
 
-            {/* Trending Movies Section */}
+            {/* Unified Trending Movies Section */}
             <div className="container mx-auto px-4">
-              <TrendingMoviesSection movies={trendingMovies || []} />
+              <UnifiedMovieSection 
+                movies={trendingMovies || []}
+                isLoading={isLoading}
+                title={t('discover.trending')}
+                subtitle="Discover what everyone is watching this week"
+              />
             </div>
 
-            {/* Additional content */}
-            <div className="container mx-auto px-4 py-8">
-              <NewMainContent
-                trendingMovies={trendingMovies || []}
-                popularMovies={popularMovies || []}
+            {/* Unified Popular Movies Section */}
+            <div className="container mx-auto px-4">
+              <UnifiedMovieSection 
+                movies={popularMovies || []}
                 isLoading={isLoading}
-                hasError={hasError}
-                onRetry={retryAll}
-                userPreferences={userPreferences}
-                currentView={state.currentView}
+                title={t('discover.popular')}
+                subtitle="All-time favorites and critically acclaimed films"
               />
             </div>
 

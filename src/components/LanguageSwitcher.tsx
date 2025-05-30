@@ -15,7 +15,6 @@ import { cn } from "@/lib/utils";
 
 const languages = [
   { code: "en", label: "English", flag: "🇺🇸" },
-  { code: "pl", label: "Polski", flag: "🇵🇱" },
 ];
 
 interface LanguageSwitcherProps {
@@ -45,101 +44,54 @@ export const LanguageSwitcher = ({ variant = "default" }: LanguageSwitcherProps)
       const selectedLang = languages.find(lang => lang.code === langCode);
       
       toast({
-        title: t("common.languageChanged", { defaultValue: "Język zmieniony" }),
-        description: t("common.languageChangedTo", { 
-          language: selectedLang?.label,
-          defaultValue: `Język zmieniony na ${selectedLang?.label}`
-        }),
+        title: "Language changed",
+        description: `Language changed to ${selectedLang?.label}`,
         className: "bg-gradient-to-r from-blue-500 to-purple-500 text-white",
       });
       
       // Close dropdown
       setIsOpen(false);
       
-      // Force window reload to ensure all components refresh translations
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
     } catch (error) {
       console.error("Failed to change language:", error);
       toast({
-        title: t("errors.quizError", { defaultValue: "Błąd" }),
-        description: t("errors.tryAgain", { defaultValue: "Spróbuj ponownie" }),
+        title: "Error",
+        description: "Please try again",
         variant: "destructive",
       });
+    } finally {
       setIsChanging(false);
     }
   };
 
-  // Render different button styles based on variant
-  const renderButton = () => {
-    if (variant === "minimal") {
-      return (
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="flex items-center gap-2 px-2.5 py-1.5 h-auto" 
-          disabled={isChanging}
-        >
-          <span className="text-base">{currentLang.flag}</span>
-          <span className="text-sm font-medium">{currentLang.code.toUpperCase()}</span>
-        </Button>
-      );
-    }
-    
+  // Since we only have English now, just show a simple indicator
+  if (variant === "minimal") {
     return (
+      <Button 
+        variant="ghost" 
+        size="sm" 
+        className="flex items-center gap-2 px-2.5 py-1.5 h-auto" 
+        disabled
+      >
+        <span className="text-base">{currentLang.flag}</span>
+        <span className="text-sm font-medium">{currentLang.code.toUpperCase()}</span>
+      </Button>
+    );
+  }
+  
+  return (
+    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
       <Button 
         variant="ghost" 
         size="sm"
         className="flex items-center gap-2 hover:bg-primary/10 transition-colors text-foreground hover:text-primary"
-        disabled={isChanging}
+        disabled
       >
         <Globe className="h-4 w-4" />
         <span className="sr-only sm:not-sr-only sm:inline text-sm">
           {currentLang.flag} {currentLang.code.toUpperCase()}
         </span>
       </Button>
-    );
-  };
-
-  return (
-    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-      <DropdownMenuTrigger asChild>
-        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-          {renderButton()}
-        </motion.div>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent 
-        align="end" 
-        className="w-48 p-2 bg-background/80 backdrop-blur-lg border border-primary/10"
-      >
-        <div className="mb-2 px-2 py-1.5">
-          <p className="text-xs text-muted-foreground">
-            {t("common.selectLanguage", { defaultValue: "Wybierz język" })}
-          </p>
-        </div>
-        {languages.map((lang) => (
-          <DropdownMenuItem
-            key={lang.code}
-            onClick={() => handleLanguageChange(lang.code)}
-            className={cn(
-              "flex items-center gap-3 rounded-md px-2.5 py-2 cursor-pointer",
-              i18n.language === lang.code ? "bg-accent/50" : ""
-            )}
-            disabled={isChanging || i18n.language === lang.code}
-          >
-            <span className="text-base">{lang.flag}</span>
-            <span className="flex-1">{lang.label}</span>
-            {i18n.language === lang.code && (
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                className="w-2 h-2 rounded-full bg-primary"
-              />
-            )}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    </motion.div>
   );
 };
