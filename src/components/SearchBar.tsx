@@ -1,7 +1,6 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Loader2, User, Film } from "lucide-react";
@@ -9,7 +8,6 @@ import { motion } from "framer-motion";
 import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
 
 export const SearchBar = () => {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);

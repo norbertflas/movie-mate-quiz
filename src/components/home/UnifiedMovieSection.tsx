@@ -4,7 +4,6 @@ import { TMDBMovie } from "@/services/tmdb";
 import { LoadingState } from "@/components/LoadingState";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
-import { useTranslation } from "react-i18next";
 
 interface UnifiedMovieSectionProps {
   movies: TMDBMovie[];
@@ -13,7 +12,7 @@ interface UnifiedMovieSectionProps {
   subtitle?: string;
 }
 
-// Genre mapping for translation
+// Genre mapping for display
 const genreMapping: Record<number, string> = {
   28: 'Action',
   12: 'Adventure', 
@@ -42,7 +41,6 @@ export const UnifiedMovieSection = ({
   title, 
   subtitle 
 }: UnifiedMovieSectionProps) => {
-  const { t } = useTranslation();
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -150,7 +148,7 @@ export const UnifiedMovieSection = ({
           className="text-center"
         >
           <button className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full hover:from-blue-600 hover:to-purple-600 transition-all duration-300 transform hover:scale-105">
-            {t('common.showMore')} ({movies.length - 18} more)
+            Show More ({movies.length - 18} more)
           </button>
         </motion.div>
       )}

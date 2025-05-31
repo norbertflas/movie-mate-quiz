@@ -13,10 +13,8 @@ import { FindYourPerfectMovie } from "@/components/sections/FindYourPerfectMovie
 import { QuickActions } from "@/components/QuickActions";
 import { Footer } from "@/components/Footer";
 import { RandomMovieSection } from "@/components/sections/RandomMovieSection";
-import { useTranslation } from "react-i18next";
 
 const Index = () => {
-  const { t } = useTranslation();
   const { session } = useAuth();
   const { 
     state, 
@@ -117,7 +115,7 @@ const Index = () => {
               <UnifiedMovieSection 
                 movies={trendingMovies || []}
                 isLoading={isLoading}
-                title={t('discover.trending')}
+                title="Trending This Week"
                 subtitle="Discover what everyone is watching this week"
               />
             </div>
@@ -127,7 +125,7 @@ const Index = () => {
               <UnifiedMovieSection 
                 movies={popularMovies || []}
                 isLoading={isLoading}
-                title={t('discover.popular')}
+                title="Popular Movies"
                 subtitle="All-time favorites and critically acclaimed films"
               />
             </div>
