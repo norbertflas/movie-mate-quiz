@@ -35,13 +35,13 @@ export const FindYourPerfectMovie = ({ onStartQuiz }: FindYourPerfectMovieProps)
   return (
     <DynamicMovieBackground 
       className="min-h-[600px] relative"
-      variant="gradient"
-      overlayOpacity={0.85}
+      variant="light"
+      overlayOpacity={0.95}
       rowCount={4}
       speed="medium"
     >
       <div className="container mx-auto px-4 py-16">
-        <Card className="w-full bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border border-white/20 shadow-2xl">
+        <Card className="w-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border border-white/30 shadow-2xl">
           <CardHeader className="text-center pb-4">
             <motion.div
               initial={{ opacity: 0, y: 20 }}

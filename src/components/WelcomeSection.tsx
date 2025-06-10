@@ -4,17 +4,21 @@ import { Play, Search, TrendingUp, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import { useTranslation } from "react-i18next";
+import { WelcomeMovieBackground } from "@/components/movie/WelcomeMovieBackground";
 
 interface WelcomeSectionProps {
   onStartQuiz: () => void;
 }
 
 export const WelcomeSection = ({ onStartQuiz }: WelcomeSectionProps) => {
-  const { t } = useTranslation();
-
   return (
-    <div className="relative bg-gradient-to-br from-blue-900 via-purple-900 to-black min-h-[60vh] sm:min-h-[70vh] flex items-center justify-center overflow-hidden">
+    <WelcomeMovieBackground 
+      className="min-h-[60vh] sm:min-h-[70vh] flex items-center justify-center overflow-hidden"
+      variant="gradient"
+      overlayOpacity={0.85}
+      rowCount={5}
+      speed="slow"
+    >
       {/* Background Animation */}
       <div className="absolute inset-0 opacity-20">
         <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
@@ -32,13 +36,13 @@ export const WelcomeSection = ({ onStartQuiz }: WelcomeSectionProps) => {
           {/* Main Title */}
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 sm:mb-6">
             <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-              {t('site.findYourMovie')}
+              Find Your Perfect Movie
             </span>
           </h1>
 
           {/* Subtitle */}
           <p className="text-lg sm:text-xl md:text-2xl text-gray-300 mb-8 sm:mb-12 max-w-3xl mx-auto leading-relaxed">
-            {t('site.exploreCollections')}
+            Explore amazing collections of movies and discover your next favorite film
           </p>
 
           {/* Action Buttons */}
@@ -54,7 +58,7 @@ export const WelcomeSection = ({ onStartQuiz }: WelcomeSectionProps) => {
                 className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 sm:px-8 py-4 sm:py-6 text-base sm:text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 min-w-[200px]"
               >
                 <Play className="mr-2 h-5 w-5" />
-                {t('quiz.start')}
+                Start Quiz
               </Button>
             </motion.div>
 
@@ -69,7 +73,7 @@ export const WelcomeSection = ({ onStartQuiz }: WelcomeSectionProps) => {
                 className="w-full sm:w-auto border-white/30 text-white hover:bg-white/10 px-6 sm:px-8 py-4 sm:py-6 text-base sm:text-lg font-semibold rounded-xl min-w-[200px]"
               >
                 <Search className="mr-2 h-5 w-5" />
-                {t('search.movies')}
+                Search Movies
               </Button>
             </motion.div>
           </div>
@@ -87,10 +91,10 @@ export const WelcomeSection = ({ onStartQuiz }: WelcomeSectionProps) => {
                   <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 text-blue-400" />
                 </div>
                 <h3 className="text-white font-semibold text-base sm:text-lg mb-2">
-                  {t('findPerfect.features.personalized')}
+                  Personalized Recommendations
                 </h3>
                 <p className="text-gray-300 text-sm sm:text-base">
-                  AI-powered recommendations
+                  AI powered recommendations
                 </p>
               </CardContent>
             </Card>
@@ -101,10 +105,10 @@ export const WelcomeSection = ({ onStartQuiz }: WelcomeSectionProps) => {
                   <Search className="h-6 w-6 sm:h-8 sm:w-8 text-purple-400" />
                 </div>
                 <h3 className="text-white font-semibold text-base sm:text-lg mb-2">
-                  {t('findPerfect.features.availability')}
+                  Service Availability
                 </h3>
                 <p className="text-gray-300 text-sm sm:text-base">
-                  Real-time streaming data
+                  Real time streaming data
                 </p>
               </CardContent>
             </Card>
@@ -115,7 +119,7 @@ export const WelcomeSection = ({ onStartQuiz }: WelcomeSectionProps) => {
                   <Star className="h-6 w-6 sm:h-8 sm:w-8 text-pink-400" />
                 </div>
                 <h3 className="text-white font-semibold text-base sm:text-lg mb-2">
-                  {t('findPerfect.features.matching')}
+                  Smart Matching
                 </h3>
                 <p className="text-gray-300 text-sm sm:text-base">
                   Perfect mood matching
@@ -125,6 +129,6 @@ export const WelcomeSection = ({ onStartQuiz }: WelcomeSectionProps) => {
           </motion.div>
         </motion.div>
       </div>
-    </div>
+    </WelcomeMovieBackground>
   );
 };
