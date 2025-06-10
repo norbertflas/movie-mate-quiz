@@ -41,14 +41,14 @@ export const FindYourPerfectMovie = ({ onStartQuiz }: FindYourPerfectMovieProps)
       speed="medium"
     >
       <div className="container mx-auto px-4 py-16">
-        <Card className="w-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border border-white/30 shadow-2xl">
+        <Card className="w-full bg-background/50 dark:bg-background/50 backdrop-blur-sm border border-border/30 shadow-2xl">
           <CardHeader className="text-center pb-4">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
-              <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+              <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent mb-2">
                 Find Your Perfect Movie
               </CardTitle>
               <CardDescription className="text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -102,7 +102,7 @@ export const FindYourPerfectMovie = ({ onStartQuiz }: FindYourPerfectMovieProps)
                   }
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 py-6 text-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm"
+                  className="pl-10 py-6 text-lg bg-background/80 backdrop-blur-sm"
                   onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                 />
               </div>
@@ -146,7 +146,7 @@ export const FindYourPerfectMovie = ({ onStartQuiz }: FindYourPerfectMovieProps)
                 <div className="w-full border-t border-muted-foreground/20" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="bg-white dark:bg-gray-900 px-4 text-muted-foreground">
+                <span className="bg-background px-4 text-muted-foreground">
                   or
                 </span>
               </div>
@@ -171,19 +171,19 @@ export const FindYourPerfectMovie = ({ onStartQuiz }: FindYourPerfectMovieProps)
               {/* Features */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
                 <div className="text-center p-4">
-                  <div className="bg-blue-100 dark:bg-blue-900/30 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-2">
-                    <Sparkles className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                  <div className="bg-primary/20 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-2">
+                    <Sparkles className="h-6 w-6 text-primary" />
                   </div>
                   <h4 className="font-medium text-sm">Personalized recommendations</h4>
                 </div>
                 <div className="text-center p-4">
-                  <div className="bg-green-100 dark:bg-green-900/30 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-2">
+                  <div className="bg-green-500/20 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-2">
                     <Search className="h-6 w-6 text-green-600 dark:text-green-400" />
                   </div>
                   <h4 className="font-medium text-sm">Service availability</h4>
                 </div>
                 <div className="text-center p-4">
-                  <div className="bg-purple-100 dark:bg-purple-900/30 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-2">
+                  <div className="bg-purple-500/20 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-2">
                     <Filter className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                   </div>
                   <h4 className="font-medium text-sm">Smart matching</h4>

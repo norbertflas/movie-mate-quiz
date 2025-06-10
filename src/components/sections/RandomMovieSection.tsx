@@ -71,15 +71,15 @@ export const RandomMovieSection = () => {
   };
 
   return (
-    <Card className="w-full bg-gradient-to-br from-orange-50 via-orange-100 to-red-100 dark:from-orange-900/20 dark:via-red-900/20 dark:to-gray-900 border-0 shadow-lg">
+    <Card className="w-full bg-background/50 dark:bg-background/50 backdrop-blur-sm border border-border/50 shadow-lg">
       <CardHeader className="text-center pb-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent mb-2 flex items-center justify-center gap-2">
-            <Shuffle className="h-6 w-6 text-orange-600" />
+          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent mb-2 flex items-center justify-center gap-2">
+            <Shuffle className="h-6 w-6 text-primary" />
             Random Movie for Today
           </CardTitle>
           <CardDescription className="text-lg text-muted-foreground max-w-xl mx-auto">
@@ -99,7 +99,7 @@ export const RandomMovieSection = () => {
             onClick={generateRandomMovie}
             disabled={isGenerating}
             size="lg"
-            className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white px-8 py-6 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+            className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700 text-primary-foreground px-8 py-6 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
           >
             {isGenerating ? (
               <>
@@ -128,7 +128,7 @@ export const RandomMovieSection = () => {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: -20 }}
               transition={{ duration: 0.5 }}
-              className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg"
+              className="bg-card/80 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-border/50"
             >
               <div className="flex gap-4">
                 <div className="flex-shrink-0">
