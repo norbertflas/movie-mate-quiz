@@ -6,11 +6,9 @@ import { LoadingState } from "@/components/LoadingState";
 import { EmptyRatings } from "@/components/pages/EmptyRatings";
 import { OptimizedMovieGrid } from "@/components/movie/OptimizedMovieGrid";
 import { UnifiedMovieDetails } from "@/components/movie/UnifiedMovieDetails";
-import { useTranslation } from "react-i18next";
 import type { TMDBMovie } from "@/services/tmdb";
 
 const Ratings = () => {
-  const { t } = useTranslation();
   const { session } = useAuth();
   const user = session?.user;
   const [ratedMovies, setRatedMovies] = useState<TMDBMovie[]>([]);
@@ -86,9 +84,9 @@ const Ratings = () => {
     <div className="container mx-auto px-4 py-8">
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">{t("navigation.ratings")}</h1>
+          <h1 className="text-3xl font-bold">My Ratings</h1>
           <p className="text-muted-foreground">
-            {t("ratings.subtitle", { count: ratedMovies.length })}
+            {ratedMovies.length} movie{ratedMovies.length !== 1 ? 's' : ''} you have rated
           </p>
         </div>
 

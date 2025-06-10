@@ -1,14 +1,11 @@
 
 import { motion } from "framer-motion";
 import { Star, Search, Film } from "lucide-react";
-import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 
 export const EmptyRatings = () => {
-  const { t } = useTranslation();
-
   return (
     <div className="container mx-auto px-4 py-8">
       <motion.div
@@ -29,30 +26,30 @@ export const EmptyRatings = () => {
           
           <div className="space-y-4">
             <h1 className="text-3xl font-bold text-foreground">
-              {t("ratings.empty.title")}
+              No Ratings Yet
             </h1>
             <p className="text-muted-foreground text-lg">
-              {t("ratings.empty.description")}
+              Start rating movies to track your preferences
             </p>
           </div>
 
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              {t("ratings.empty.howTo")}
+              Rate movies by clicking on them and selecting your rating
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button asChild>
                 <Link to="/search" className="flex items-center gap-2">
                   <Search className="w-4 h-4" />
-                  {t("ratings.empty.searchMovies")}
+                  Search Movies
                 </Link>
               </Button>
               
               <Button variant="outline" asChild>
                 <Link to="/" className="flex items-center gap-2">
                   <Film className="w-4 h-4" />
-                  {t("ratings.empty.browsePopular")}
+                  Browse Popular
                 </Link>
               </Button>
             </div>

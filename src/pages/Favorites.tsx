@@ -6,11 +6,9 @@ import { LoadingState } from "@/components/LoadingState";
 import { EmptyFavorites } from "@/components/pages/EmptyFavorites";
 import { OptimizedMovieGrid } from "@/components/movie/OptimizedMovieGrid";
 import { UnifiedMovieDetails } from "@/components/movie/UnifiedMovieDetails";
-import { useTranslation } from "react-i18next";
 import type { TMDBMovie } from "@/services/tmdb";
 
 const Favorites = () => {
-  const { t } = useTranslation();
   const { session } = useAuth();
   const user = session?.user;
   const [favorites, setFavorites] = useState<TMDBMovie[]>([]);
@@ -85,9 +83,9 @@ const Favorites = () => {
     <div className="container mx-auto px-4 py-8">
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">{t("navigation.favorites")}</h1>
+          <h1 className="text-3xl font-bold">My Favorites</h1>
           <p className="text-muted-foreground">
-            {t("favorites.subtitle", { count: favorites.length })}
+            {favorites.length} movie{favorites.length !== 1 ? 's' : ''} in your favorites
           </p>
         </div>
 
