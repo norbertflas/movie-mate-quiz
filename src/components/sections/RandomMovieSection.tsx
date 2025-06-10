@@ -4,7 +4,6 @@ import { Shuffle, RefreshCw, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -49,7 +48,6 @@ const sampleMovies: RandomMovie[] = [
 ];
 
 export const RandomMovieSection = () => {
-  const { t } = useTranslation();
   const { toast } = useToast();
   const [randomMovie, setRandomMovie] = useState<RandomMovie | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -67,8 +65,8 @@ export const RandomMovieSection = () => {
     setIsGenerating(false);
     
     toast({
-      title: t('randomMovie.success'),
-      description: t('randomMovie.successDescription', { title: selectedMovie.title }),
+      title: "Random movie generated!",
+      description: `We found for you: ${selectedMovie.title}`,
     });
   };
 
@@ -82,10 +80,10 @@ export const RandomMovieSection = () => {
         >
           <CardTitle className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent mb-2 flex items-center justify-center gap-2">
             <Shuffle className="h-6 w-6 text-orange-600" />
-            {t('randomMovie.title')}
+            Random Movie for Today
           </CardTitle>
           <CardDescription className="text-lg text-muted-foreground max-w-xl mx-auto">
-            {t('randomMovie.subtitle')}
+            Don't know what to watch? Let us pick something for you!
           </CardDescription>
         </motion.div>
       </CardHeader>
@@ -106,17 +104,17 @@ export const RandomMovieSection = () => {
             {isGenerating ? (
               <>
                 <RefreshCw className="mr-2 h-5 w-5 animate-spin" />
-                {t('randomMovie.generating')}
+                Generating...
               </>
             ) : randomMovie ? (
               <>
                 <RefreshCw className="mr-2 h-5 w-5" />
-                {t('randomMovie.regenerate')}
+                Generate Again
               </>
             ) : (
               <>
                 <Shuffle className="mr-2 h-5 w-5" />
-                {t('randomMovie.generate')}
+                Generate Random Movie
               </>
             )}
           </Button>
@@ -165,10 +163,10 @@ export const RandomMovieSection = () => {
                   
                   <div className="flex gap-2">
                     <Badge variant="secondary" className="text-xs">
-                      {t('movie.drama')}
+                      Drama
                     </Badge>
                     <Badge variant="secondary" className="text-xs">
-                      {t('movie.thriller')}
+                      Thriller
                     </Badge>
                   </div>
                 </div>

@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 
 interface FindYourPerfectMovieProps {
@@ -13,7 +12,6 @@ interface FindYourPerfectMovieProps {
 }
 
 export const FindYourPerfectMovie = ({ onStartQuiz }: FindYourPerfectMovieProps) => {
-  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchType, setSearchType] = useState<"movies" | "creators">("movies");
   const [isSearching, setIsSearching] = useState(false);
@@ -42,10 +40,10 @@ export const FindYourPerfectMovie = ({ onStartQuiz }: FindYourPerfectMovieProps)
           transition={{ duration: 0.5 }}
         >
           <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
-            {t('findPerfect.searchTitle')}
+            Discover New Movies
           </CardTitle>
           <CardDescription className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            {t('findPerfect.subtitle')}
+            Search for movies and creators or answer a few questions in our movie quiz
           </CardDescription>
         </motion.div>
       </CardHeader>
@@ -65,7 +63,7 @@ export const FindYourPerfectMovie = ({ onStartQuiz }: FindYourPerfectMovieProps)
               onClick={() => setSearchType("movies")}
               className="rounded-md px-6"
             >
-              {t('findPerfect.searchMovies')}
+              Movies
             </Button>
             <Button
               variant={searchType === "creators" ? "default" : "ghost"}
@@ -73,7 +71,7 @@ export const FindYourPerfectMovie = ({ onStartQuiz }: FindYourPerfectMovieProps)
               onClick={() => setSearchType("creators")}
               className="rounded-md px-6"
             >
-              {t('findPerfect.searchCreators')}
+              Creators
             </Button>
           </div>
         </motion.div>
@@ -90,8 +88,8 @@ export const FindYourPerfectMovie = ({ onStartQuiz }: FindYourPerfectMovieProps)
             <Input
               placeholder={
                 searchType === "movies" 
-                  ? t('findPerfect.searchPlaceholder')
-                  : t('findPerfect.creatorsPlaceholder')
+                  ? "Enter movie title..."
+                  : "Enter actor, director name..."
               }
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -105,7 +103,7 @@ export const FindYourPerfectMovie = ({ onStartQuiz }: FindYourPerfectMovieProps)
             size="lg"
             className="px-8"
           >
-            {isSearching ? t('findPerfect.searching') : t('findPerfect.searchButton')}
+            {isSearching ? "Searching..." : "Search"}
           </Button>
         </motion.div>
 
@@ -117,7 +115,7 @@ export const FindYourPerfectMovie = ({ onStartQuiz }: FindYourPerfectMovieProps)
           className="text-center"
         >
           <p className="text-sm text-muted-foreground mb-3">
-            {t('findPerfect.popularSearches')}
+            Popular searches:
           </p>
           <div className="flex flex-wrap justify-center gap-2">
             {popularSearches.map((search, index) => (
@@ -140,7 +138,7 @@ export const FindYourPerfectMovie = ({ onStartQuiz }: FindYourPerfectMovieProps)
           </div>
           <div className="relative flex justify-center text-sm">
             <span className="bg-background px-4 text-muted-foreground">
-              {t('findPerfect.quizAlternative')}
+              or
             </span>
           </div>
         </div>
@@ -158,7 +156,7 @@ export const FindYourPerfectMovie = ({ onStartQuiz }: FindYourPerfectMovieProps)
             className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-8 py-6 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
           >
             <Sparkles className="mr-2 h-5 w-5" />
-            {t('findPerfect.startQuiz')}
+            Start Movie Quiz
           </Button>
 
           {/* Features */}
@@ -167,19 +165,19 @@ export const FindYourPerfectMovie = ({ onStartQuiz }: FindYourPerfectMovieProps)
               <div className="bg-blue-100 dark:bg-blue-900/30 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-2">
                 <Sparkles className="h-6 w-6 text-blue-600 dark:text-blue-400" />
               </div>
-              <h4 className="font-medium text-sm">{t('findPerfect.features.personalized')}</h4>
+              <h4 className="font-medium text-sm">Personalized recommendations</h4>
             </div>
             <div className="text-center p-4">
               <div className="bg-green-100 dark:bg-green-900/30 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-2">
                 <Search className="h-6 w-6 text-green-600 dark:text-green-400" />
               </div>
-              <h4 className="font-medium text-sm">{t('findPerfect.features.availability')}</h4>
+              <h4 className="font-medium text-sm">Service availability</h4>
             </div>
             <div className="text-center p-4">
               <div className="bg-purple-100 dark:bg-purple-900/30 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-2">
                 <Filter className="h-6 w-6 text-purple-600 dark:text-purple-400" />
               </div>
-              <h4 className="font-medium text-sm">{t('findPerfect.features.matching')}</h4>
+              <h4 className="font-medium text-sm">Smart matching</h4>
             </div>
           </div>
         </motion.div>

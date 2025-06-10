@@ -1,42 +1,40 @@
 
 import { Logo } from "./Logo";
 import { motion } from "framer-motion";
-import { useTranslation } from "react-i18next";
 import { Heart, Github, Mail, Copyright, Link, Globe, MessageSquare, ShieldCheck, Facebook, Twitter, Instagram } from "lucide-react";
 import { Link as RouterLink } from "react-router-dom";
 import { Separator } from "./ui/separator";
 import { Button } from "./ui/button";
 
 export const Footer = () => {
-  const { t } = useTranslation();
   const currentYear = new Date().getFullYear();
 
   const footerLinks = [
     {
-      title: t("footer.companyInfo"),
+      title: "Company",
       links: [
-        { name: t("footer.about"), to: "/about" },
-        { name: t("footer.contact"), to: "/contact" },
-        { name: t("footer.careers"), to: "/careers" },
-        { name: t("footer.press"), to: "/press" },
+        { name: "About Us", to: "/about" },
+        { name: "Contact", to: "/contact" },
+        { name: "Careers", to: "/careers" },
+        { name: "Press", to: "/press" },
       ]
     },
     {
-      title: t("footer.support"),
+      title: "Support",
       links: [
-        { name: t("footer.help"), to: "/help" },
-        { name: t("footer.faq"), to: "/faq" },
-        { name: t("footer.refunds"), to: "/refunds" },
-        { name: t("navigation.streamingServices"), to: "/services" },
+        { name: "Help Center", to: "/help" },
+        { name: "FAQ", to: "/faq" },
+        { name: "Refunds", to: "/refunds" },
+        { name: "Streaming Services", to: "/services" },
       ]
     },
     {
-      title: t("footer.legal"),
+      title: "Legal",
       links: [
-        { name: t("footer.terms"), to: "/terms" },
-        { name: t("footer.privacy"), to: "/privacy" },
-        { name: t("footer.copyright"), to: "/copyright" },
-        { name: t("footer.cookies"), to: "/cookies" },
+        { name: "Terms of Service", to: "/terms" },
+        { name: "Privacy Policy", to: "/privacy" },
+        { name: "Copyright", to: "/copyright" },
+        { name: "Cookie Policy", to: "/cookies" },
       ]
     }
   ];
@@ -100,7 +98,7 @@ export const Footer = () => {
             <div className="md:col-span-1 space-y-4">
               <Logo size="lg" />
               <p className="text-muted-foreground text-sm max-w-md">
-                {t("footer.description")}
+                MovieFinder helps you discover your next favorite movie across all streaming platforms. Find what to watch next with personalized recommendations.
               </p>
               <div className="flex flex-wrap gap-2">
                 {socialLinks.map((link) => (
@@ -168,14 +166,14 @@ export const Footer = () => {
                   <Copyright className="h-3.5 w-3.5" /> {currentYear} MovieFinder
                 </span>
                 <span className="hidden sm:inline text-muted-foreground">•</span>
-                <span className="text-sm text-muted-foreground">{t("footer.allRightsReserved")}</span>
+                <span className="text-sm text-muted-foreground">All Rights Reserved</span>
               </div>
             </div>
 
             <div className="flex items-center gap-4">
               <span className="text-sm text-muted-foreground hidden md:flex items-center">
                 <Heart className="h-3.5 w-3.5 text-red-500 mr-1" />{" "}
-                {t("footer.madeWith")} {t("footer.by")} MovieFinder Team
+                Made with love by MovieFinder Team
               </span>
               <Button 
                 variant="outline" 
@@ -184,7 +182,7 @@ export const Footer = () => {
                 onClick={handleContactClick}
               >
                 <MessageSquare className="h-3 w-3 mr-1.5" />
-                {t("footer.contactUs")}
+                Contact Us
               </Button>
             </div>
           </div>
