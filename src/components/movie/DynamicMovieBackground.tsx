@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { getPopularMovies } from "@/services/tmdb/trending";
 import { useQuery } from "@tanstack/react-query";
 import { useScrollContext } from "@/hooks/use-scroll-context";
 
@@ -23,6 +22,26 @@ interface DynamicMovieBackgroundProps {
   speed?: "slow" | "medium" | "fast";
 }
 
+// Bestseller movies - static list to avoid API calls
+const bestsellerMovies: Movie[] = [
+  { id: 550, title: "Fight Club", image: "https://image.tmdb.org/t/p/w500/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg", posterImage: "https://image.tmdb.org/t/p/w500/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg", year: 1999, rating: 8.8 },
+  { id: 238, title: "The Godfather", image: "https://image.tmdb.org/t/p/w500/3bhkrj58Vtu7enYsRolD1fZdja1.jpg", posterImage: "https://image.tmdb.org/t/p/w500/3bhkrj58Vtu7enYsRolD1fZdja1.jpg", year: 1972, rating: 9.2 },
+  { id: 240, title: "The Godfather: Part II", image: "https://image.tmdb.org/t/p/w500/hek3koDUyRQk7FIhPXsa6mT2Zc3.jpg", posterImage: "https://image.tmdb.org/t/p/w500/hek3koDUyRQk7FIhPXsa6mT2Zc3.jpg", year: 1974, rating: 9.0 },
+  { id: 424, title: "Schindler's List", image: "https://image.tmdb.org/t/p/w500/sF1U4EUQS8YHUYjNl3pMGNIQyr0.jpg", posterImage: "https://image.tmdb.org/t/p/w500/sF1U4EUQS8YHUYjNl3pMGNIQyr0.jpg", year: 1993, rating: 8.9 },
+  { id: 389, title: "12 Angry Men", image: "https://image.tmdb.org/t/p/w500/ppd84D2i9W8jXmsyInGyihiSyqF.jpg", posterImage: "https://image.tmdb.org/t/p/w500/ppd84D2i9W8jXmsyInGyihiSyqF.jpg", year: 1957, rating: 8.9 },
+  { id: 129, title: "Spirited Away", image: "https://image.tmdb.org/t/p/w500/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg", posterImage: "https://image.tmdb.org/t/p/w500/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg", year: 2001, rating: 8.6 },
+  { id: 19404, title: "Dilwale Dulhania Le Jayenge", image: "https://image.tmdb.org/t/p/w500/2CAL2433ZeIihfX1Hb2139CX0pW.jpg", posterImage: "https://image.tmdb.org/t/p/w500/2CAL2433ZeIihfX1Hb2139CX0pW.jpg", year: 1995, rating: 8.7 },
+  { id: 155, title: "The Dark Knight", image: "https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg", posterImage: "https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg", year: 2008, rating: 9.0 },
+  { id: 496243, title: "Parasite", image: "https://image.tmdb.org/t/p/w500/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg", posterImage: "https://image.tmdb.org/t/p/w500/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg", year: 2019, rating: 8.5 },
+  { id: 497, title: "The Green Mile", image: "https://image.tmdb.org/t/p/w500/velWPhVMQeQKcxggNEU8YmIo52R.jpg", posterImage: "https://image.tmdb.org/t/p/w500/velWPhVMQeQKcxggNEU8YmIo52R.jpg", year: 1999, rating: 8.6 },
+  { id: 13, title: "Forrest Gump", image: "https://image.tmdb.org/t/p/w500/arw2vcBveWOVZr6pxd9XTd1TdQa.jpg", posterImage: "https://image.tmdb.org/t/p/w500/arw2vcBveWOVZr6pxd9XTd1TdQa.jpg", year: 1994, rating: 8.8 },
+  { id: 680, title: "Pulp Fiction", image: "https://image.tmdb.org/t/p/w500/d5iIlFn5s0ImszYzBPb8JPIfbXD.jpg", posterImage: "https://image.tmdb.org/t/p/w500/d5iIlFn5s0ImszYzBPb8JPIfbXD.jpg", year: 1994, rating: 8.9 },
+  { id: 122, title: "The Lord of the Rings: The Return of the King", image: "https://image.tmdb.org/t/p/w500/rCzpDGLbOoPwLjy3OAm5NUPOTrC.jpg", posterImage: "https://image.tmdb.org/t/p/w500/rCzpDGLbOoPwLjy3OAm5NUPOTrC.jpg", year: 2003, rating: 8.9 },
+  { id: 429, title: "The Good, the Bad and the Ugly", image: "https://image.tmdb.org/t/p/w500/bX2xnavhMYjWDoZp1VM6VnU1xwe.jpg", posterImage: "https://image.tmdb.org/t/p/w500/bX2xnavhMYjWDoZp1VM6VnU1xwe.jpg", year: 1966, rating: 8.8 },
+  { id: 769, title: "GoodFellas", image: "https://image.tmdb.org/t/p/w500/aKuFiU82s5ISJpGZp7YkIr3kCUd.jpg", posterImage: "https://image.tmdb.org/t/p/w500/aKuFiU82s5ISJpGZp7YkIr3kCUd.jpg", year: 1990, rating: 8.7 },
+  { id: 120, title: "The Lord of the Rings: The Fellowship of the Ring", image: "https://image.tmdb.org/t/p/w500/6oom5QYQ2yQTMJIbnvbkBL9cHo6.jpg", posterImage: "https://image.tmdb.org/t/p/w500/6oom5QYQ2yQTMJIbnvbkBL9cHo6.jpg", year: 2001, rating: 8.8 }
+];
+
 export const DynamicMovieBackground = ({
   className = "",
   children,
@@ -36,28 +55,9 @@ export const DynamicMovieBackground = ({
   const [posterDimensions, setPosterDimensions] = useState({ width: 140, height: 210 });
   const { isScrolling } = useScrollContext();
 
-  // Fetch trending movies from TMDB
-  const { data: trendingMovies = [] } = useQuery({
-    queryKey: ['backgroundMovies'],
-    queryFn: async () => {
-      const movies = await getPopularMovies({ queryKey: ['popularMovies', '', '1'] });
-      return movies.map(movie => ({
-        id: movie.id,
-        title: movie.title,
-        image: movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : "/placeholder.svg",
-        posterImage: movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : "/placeholder.svg",
-        year: movie.release_date ? new Date(movie.release_date).getFullYear() : 2024,
-        rating: movie.vote_average || 5.0,
-      }));
-    },
-    staleTime: 1000 * 60 * 60,
-  });
-
-  // Create rows of movies - simplified
+  // Create rows of movies using bestsellers
   useEffect(() => {
-    if (trendingMovies.length === 0) return;
-    
-    const shuffled = [...trendingMovies].sort(() => 0.5 - Math.random());
+    const shuffled = [...bestsellerMovies].sort(() => 0.5 - Math.random());
     const newRows = [];
     const moviesPerRow = 8;
 
@@ -73,7 +73,7 @@ export const DynamicMovieBackground = ({
     }
 
     setRows(newRows);
-  }, [trendingMovies, rowCount]);
+  }, [rowCount]);
 
   // Responsive dimensions
   useEffect(() => {
@@ -178,7 +178,7 @@ export const DynamicMovieBackground = ({
               marginTop: rowIndex === 0 ? -20 : 0,
               opacity: getPosterOpacity(),
               filter: "brightness(0.7)",
-              willChange: "transform", // Performance optimization
+              willChange: "transform",
             }}
           >
             {row.map((movie, movieIndex) => (
@@ -191,7 +191,7 @@ export const DynamicMovieBackground = ({
                   transform: `rotate(${Math.random() * 6 - 3}deg) translateY(${Math.random() * 10 - 5}px)`,
                   transformOrigin: "center center",
                   zIndex: Math.floor(Math.random() * 10),
-                  pointerEvents: isScrolling ? 'none' : 'auto', // Disable interactions during scroll
+                  pointerEvents: isScrolling ? 'none' : 'auto',
                 }}
               >
                 <img
