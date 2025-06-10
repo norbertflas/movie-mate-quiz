@@ -76,7 +76,7 @@ export const UnifiedMovieSection = ({
   }
 
   return (
-    <div className="space-y-6" id="unified-movie-section">
+    <div className="space-y-8" id="unified-movie-section">
       {/* Section Header */}
       <div className="text-center space-y-2">
         <motion.h2 
@@ -98,7 +98,7 @@ export const UnifiedMovieSection = ({
         )}
       </div>
 
-      {/* Movies Grid */}
+      {/* Movies Grid - Larger cards with more spacing */}
       <AnimatePresence mode="wait">
         {isLoading ? (
           <LoadingState />
@@ -108,14 +108,15 @@ export const UnifiedMovieSection = ({
             animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 20 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5, staggerChildren: 0.1 }}
-            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
+            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 md:gap-8"
           >
-            {movies.slice(0, 18).map((movie, index) => (
+            {movies.slice(0, 15).map((movie, index) => (
               <motion.div
                 key={movie.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.05 }}
+                className="w-full"
               >
                 <MovieCardSwitcher
                   title={movie.title}
@@ -140,15 +141,15 @@ export const UnifiedMovieSection = ({
       </AnimatePresence>
 
       {/* Show more button if there are more movies */}
-      {movies.length > 18 && (
+      {movies.length > 15 && (
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: isVisible ? 1 : 0 }}
           transition={{ delay: 0.3 }}
           className="text-center"
         >
-          <button className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full hover:from-blue-600 hover:to-purple-600 transition-all duration-300 transform hover:scale-105">
-            Show More ({movies.length - 18} more)
+          <button className="px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full hover:from-blue-600 hover:to-purple-600 transition-all duration-300 transform hover:scale-105 text-lg font-medium">
+            Show More ({movies.length - 15} more)
           </button>
         </motion.div>
       )}
