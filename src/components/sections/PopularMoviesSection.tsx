@@ -88,10 +88,15 @@ export const PopularMoviesSection = ({ movies }: PopularMoviesSectionProps) => {
       
       {movies && movies.length > 0 ? (
         <motion.div 
-          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-1"
+          className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-6 gap-3 md:gap-4"
           variants={containerVariants}
           initial="hidden"
           animate={isInView ? "visible" : "hidden"}
+          style={{
+            gridTemplateColumns: isMobile 
+              ? 'repeat(3, minmax(0, 1fr))' 
+              : 'repeat(auto-fill, minmax(180px, 1fr))'
+          }}
         >
           {movies.map((movie, index) => (
             <motion.div

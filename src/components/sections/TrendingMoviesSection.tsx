@@ -122,9 +122,9 @@ export const TrendingMoviesSection = ({ movies }: TrendingMoviesSectionProps) =>
               transition={{ staggerChildren: 0.1, delayChildren: 0.05 }}
             >
               <motion.div 
-                className="flex gap-1 py-4 overflow-x-auto scrollbar-hide group no-select"
+                className="flex gap-3 py-4 overflow-x-auto scrollbar-hide group no-select"
                 animate={{ 
-                  x: [0, isMobile ? -1600 : -2800]
+                  x: [0, isMobile ? -1400 : -2600]
                 }}
                 transition={{ 
                   repeat: Infinity, 
@@ -160,7 +160,7 @@ export const TrendingMoviesSection = ({ movies }: TrendingMoviesSectionProps) =>
                       whileTap={{ scale: 0.95 }}
                       className="flex-none"
                     >
-                      <div className={`${isMobile ? "w-[180px]" : "w-[280px]"}`}>
+                      <div className={`${isMobile ? "w-[140px]" : "w-[200px]"}`}>
                         <UnifiedMovieCard
                           movie={{
                             id: movie.id,
@@ -177,7 +177,7 @@ export const TrendingMoviesSection = ({ movies }: TrendingMoviesSectionProps) =>
                             trailer_url: undefined
                           }}
                           onExpand={() => handleMovieClick(movie)}
-                          variant={isMobile ? "medium" : "large"}
+                          variant={isMobile ? "small" : "medium"}
                           showExpandButton={true}
                         />
                       </div>
@@ -187,8 +187,8 @@ export const TrendingMoviesSection = ({ movies }: TrendingMoviesSectionProps) =>
               </motion.div>
               
               {/* Fade edges for smooth transitions */}
-              <div className="absolute top-0 bottom-0 left-0 w-12 bg-gradient-to-r from-background to-transparent pointer-events-none z-10" />
-              <div className="absolute top-0 bottom-0 right-0 w-12 bg-gradient-to-l from-background to-transparent pointer-events-none z-10" />
+              <div className="absolute top-0 bottom-0 left-0 w-8 bg-gradient-to-r from-background to-transparent pointer-events-none z-10" />
+              <div className="absolute top-0 bottom-0 right-0 w-8 bg-gradient-to-l from-background to-transparent pointer-events-none z-10" />
             </motion.div>
           </div>
         </div>

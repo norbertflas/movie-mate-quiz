@@ -1,3 +1,4 @@
+
 #root {
   margin: 0 auto;
   width: 100%;
@@ -130,8 +131,35 @@ main {
   box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
 }
 
-/* Enhanced mobile responsive styles */
-@media (max-width: 640px) {
+/* Enhanced responsive movie grid */
+.movie-grid {
+  display: grid;
+  gap: 12px;
+}
+
+/* Responsive movie grid for desktop and larger screens */
+@media (min-width: 1200px) {
+  .movie-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 16px;
+  }
+}
+
+/* Tablet view */
+@media (min-width: 768px) and (max-width: 1199px) {
+  .movie-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+  }
+}
+
+/* Mobile view */
+@media (max-width: 767px) {
+  .movie-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+  
   .movie-card {
     max-width: 100%;
   }
@@ -155,11 +183,51 @@ main {
   }
 }
 
-/* Improved responsiveness for movie grid */
-.movie-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
-  gap: 1.5rem;
+/* Trending section specific styles */
+.trending-cards-container {
+  gap: 12px;
+}
+
+@media (max-width: 640px) {
+  .trending-cards-container {
+    gap: 8px;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .trending-cards-container {
+    gap: 12px;
+  }
+}
+
+@media (min-width: 1025px) {
+  .trending-cards-container {
+    gap: 16px;
+  }
+}
+
+/* Horizontal scroll for mobile trending section */
+@media (max-width: 767px) {
+  .trending-horizontal-scroll {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    gap: 8px;
+    padding: 0 16px;
+  }
+  
+  .trending-horizontal-scroll::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .trending-horizontal-scroll > * {
+    flex-shrink: 0;
+    scroll-snap-align: start;
+    min-width: 140px;
+  }
 }
 
 @media (prefers-reduced-motion) {
@@ -233,37 +301,30 @@ button.button-wrap-text {
   padding-bottom: 0.5rem;
 }
 
-/* Enhanced mobile responsive styles */
-@media (max-width: 640px) {
-  .movie-card {
-    max-width: 100%;
-  }
-  
-  .dialog-content {
-    padding: 1rem;
-  }
-  
-  /* Fix for mobile nav text */
-  .mobile-nav-item {
-    font-size: 0.875rem;
-    padding: 0.5rem;
-  }
+/* Card layout improvements for better responsiveness */
+.movie-card-container {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Improved responsiveness for movie grid */
-.movie-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
-  gap: 1.5rem;
+.movie-card-container:hover {
+  transform: translateY(-2px) scale(1.02);
 }
 
-@media (prefers-reduced-motion) {
-  .trending-scroll {
-    animation: none;
-  }
-  
-  .animate-float, 
-  .animate-pulse-glow {
-    animation: none !important;
+/* Improved spacing for card grids */
+.cards-grid-spacing {
+  gap: clamp(8px, 2vw, 16px);
+}
+
+/* Enhanced card sizing for better fit */
+.responsive-card-width {
+  width: 100%;
+  min-width: 140px;
+  max-width: 220px;
+}
+
+@media (min-width: 1200px) {
+  .responsive-card-width {
+    min-width: 180px;
+    max-width: 200px;
   }
 }
