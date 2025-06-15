@@ -122,7 +122,7 @@ export const TrendingMoviesSection = ({ movies }: TrendingMoviesSectionProps) =>
               transition={{ staggerChildren: 0.1, delayChildren: 0.05 }}
             >
               <motion.div 
-                className="flex space-x-2 py-4 overflow-x-auto scrollbar-hide group no-select"
+                className="flex space-x-1 py-4 overflow-x-auto scrollbar-hide group no-select"
                 animate={{ 
                   x: [0, isMobile ? -1600 : -2800]
                 }}
