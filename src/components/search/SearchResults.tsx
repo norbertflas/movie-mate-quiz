@@ -1,4 +1,3 @@
-
 import { motion, AnimatePresence } from "framer-motion";
 import { MovieCard } from "@/components/MovieCard";
 import { CreatorCard } from "./CreatorCard";
@@ -80,7 +79,7 @@ export const SearchResults = ({
         const genreKey = getGenreTranslationKey(id);
         return t(`movie.${genreKey}`, genreKey);
       })
-      .filter(name => name && name !== genreKey);
+      .filter(name => name && name !== getGenreTranslationKey(genreIds[0]));
     
     return genreNames.length > 0 ? genreNames.join(", ") : t("movie.genres");
   };
