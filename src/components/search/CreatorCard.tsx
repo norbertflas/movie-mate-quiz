@@ -29,35 +29,37 @@ export const CreatorCard = ({ person, index, onClick }: CreatorCardProps) => {
     }
   };
 
-  // Extract key achievements from biography if available
   const highlightAchievements = (biography?: string) => {
     if (!biography) return [];
     const achievements = [];
     
-    // Look for awards mentions
     if (biography.toLowerCase().includes('oscar') || 
         biography.toLowerCase().includes('academy award') ||
         biography.toLowerCase().includes('golden globe') ||
         biography.toLowerCase().includes('emmy')) {
-      achievements.push('Award-winning artist');
+      achievements.push(t("creator.awardWinning"));
     }
     
-    // Look for notable works mentions
     if (biography.toLowerCase().includes('best known for') || 
         biography.toLowerCase().includes('famous for')) {
-      achievements.push('Notable works in the industry');
+      achievements.push(t("creator.notableWorks"));
     }
     
-    // Look for career milestones
     if (biography.toLowerCase().includes('breakthrough') || 
         biography.toLowerCase().includes('milestone')) {
-      achievements.push('Career-defining achievements');
+      achievements.push(t("creator.careerMilestones"));
     }
     
     return achievements;
   };
 
   const achievements = highlightAchievements(person.biography);
+
+  const getDepartmentTranslation = (department?: string) => {
+    if (!department) return "";
+    const deptKey = department.toLowerCase();
+    return t(`creator.department.${deptKey}`, department);
+  };
 
   return (
     <div 
@@ -87,14 +89,14 @@ export const CreatorCard = ({ person, index, onClick }: CreatorCardProps) => {
               {person.name}
             </h3>
             <p className="text-lg font-medium text-purple-500 mt-1">
-              {person.known_for_department && t(`creator.department.${person.known_for_department.toLowerCase()}`)}
+              {getDepartmentTranslation(person.known_for_department)}
             </p>
           </div>
 
-          {/* Key Achievements section - Only shown on search page */}
+          {/* Key Achievements section */}
           {isSearchPage && achievements.length > 0 && (
             <div className="mb-4 p-3 bg-purple-500/5 rounded-lg border border-purple-500/10">
-              <h4 className="text-sm font-medium text-purple-500 mb-2">Career Highlights</h4>
+              <h4 className="text-sm font-medium text-purple-500 mb-2">{t("creator.careerHighlights")}</h4>
               <ul className="space-y-2">
                 {achievements.map((achievement, idx) => (
                   <li key={idx} className="flex items-center gap-2 text-sm">
@@ -111,7 +113,7 @@ export const CreatorCard = ({ person, index, onClick }: CreatorCardProps) => {
             {person.birthday && (
               <div className="flex items-center gap-2">
                 <CalendarDays className="h-4 w-4 text-purple-500" />
-                <span className="text-sm font-medium text-purple-500">Born:</span>
+                <span className="text-sm font-medium text-purple-500">{t("creator.born")}:</span>
                 <span className="text-sm text-muted-foreground">
                   {formatDate(person.birthday)}
                 </span>
@@ -121,7 +123,7 @@ export const CreatorCard = ({ person, index, onClick }: CreatorCardProps) => {
             {person.place_of_birth && (
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-purple-500" />
-                <span className="text-sm font-medium text-purple-500">From:</span>
+                <span className="text-sm font-medium text-purple-500">{t("creator.from")}:</span>
                 <span className="text-sm text-muted-foreground">
                   {person.place_of_birth}
                 </span>
@@ -129,12 +131,12 @@ export const CreatorCard = ({ person, index, onClick }: CreatorCardProps) => {
             )}
           </div>
 
-          {/* Biography section - Expanded in search page */}
+          {/* Biography section */}
           {person.biography && (
             <div className="mb-4">
               <div className="flex items-center gap-2 mb-2">
                 <ScrollText className="h-4 w-4 text-purple-500" />
-                <h4 className="text-sm font-medium text-purple-500">Biography</h4>
+                <h4 className="text-sm font-medium text-purple-500">{t("creator.biography")}</h4>
               </div>
               <p className={`text-sm text-muted-foreground ${isSearchPage ? 'line-clamp-6' : 'line-clamp-2'}`}>
                 {person.biography}
@@ -159,15 +161,9 @@ export const CreatorCard = ({ person, index, onClick }: CreatorCardProps) => {
                   </li>
                 ))}
               </ul>
-              {!isSearchPage ? (
-                <p className="text-sm text-purple-500 hover:text-purple-600 transition-colors">
-                  {t("search.clickCreatorInfo")}
-                </p>
-              ) : (
-                <p className="text-sm text-purple-500 hover:text-purple-600 transition-colors">
-                  {t("creator.clickToSeeWorks")}
-                </p>
-              )}
+              <p className="text-sm text-purple-500 hover:text-purple-600 transition-colors">
+                {t("creator.clickToSeeWorks")}
+              </p>
             </div>
           )}
         </div>

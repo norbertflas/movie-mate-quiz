@@ -15,7 +15,7 @@ interface SearchResultsProps {
   searchResults: TMDBMovie[];
   creatorResults: TMDBPerson[];
   getGenreTranslationKey: (genreId: number) => string;
-  streamingSearch?: any; // Add optional streaming search prop
+  streamingSearch?: any;
 }
 
 export const SearchResults = ({ 
@@ -34,7 +34,7 @@ export const SearchResults = ({
     queryFn: async () => {
       if (!selectedCreator?.id) return [];
       
-      const creditsResponse = await tmdbFetch(`/person/${selectedCreator.id}/combined_credits?language=pl`);
+      const creditsResponse = await tmdbFetch(`/person/${selectedCreator.id}/combined_credits?language=en`);
       
       const allWorks = [...creditsResponse.cast, ...creditsResponse.crew];
       const uniqueWorks = Array.from(new Map(allWorks.map(work => [work.id, work])).values());
@@ -71,21 +71,37 @@ export const SearchResults = ({
     setSelectedCreator(person);
   };
 
-  const translateDepartment = (department: string, job?: string) => {
-    if (job) return job;
-    return t(`creator.department.${department}`) || department;
+  const getGenreNames = (genreIds: number[]) => {
+    if (!genreIds || genreIds.length === 0) return t("movie.genres");
+    
+    const genreNames = genreIds
+      .slice(0, 2) // Show only first 2 genres to avoid clutter
+      .map(id => {
+        const genreKey = getGenreTranslationKey(id);
+        return t(`movie.${genreKey}`, genreKey);
+      })
+      .filter(name => name && name !== genreKey);
+    
+    return genreNames.length > 0 ? genreNames.join(", ") : t("movie.genres");
   };
 
   const getMovieDescription = (movie: any) => {
-    let roleDescription = "";
+    const parts = [];
+    
     if (movie.character) {
-      roleDescription = `${t("creator.asRole")} ${movie.character}`;
+      parts.push(`${t("creator.asRole")} ${movie.character}`);
     } else if (movie.job) {
-      roleDescription = `${t("creator.job")}: ${movie.job}`;
+      parts.push(`${t("creator.job")}: ${movie.job}`);
     } else if (movie.department) {
-      roleDescription = translateDepartment(movie.department);
+      parts.push(t(`creator.department.${movie.department}`, movie.department));
     }
-    return `${roleDescription} - ${movie.overview}`;
+    
+    if (movie.overview) {
+      const description = parts.length > 0 ? `${parts.join(" • ")} - ` : "";
+      return `${description}${movie.overview}`;
+    }
+    
+    return parts.join(" • ") || t("movie.noDescription");
   };
 
   return (
@@ -103,7 +119,6 @@ export const SearchResults = ({
           
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
             {searchResults.map((movie, index) => {
-              // Get streaming data if available
               const streamingData = streamingSearch?.getStreamingData(movie.id);
               const hasStreaming = streamingSearch?.hasStreaming(movie.id);
               
@@ -117,11 +132,11 @@ export const SearchResults = ({
                 >
                   <MovieCardSwitcher
                     title={movie.title}
-                    year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "N/A"}
+                    year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : t("common.unknown")}
                     platform="TMDB"
-                    genre={movie.genre_ids?.map(id => getGenreTranslationKey(id)).join(", ") || ""}
+                    genre={getGenreNames(movie.genre_ids || [])}
                     imageUrl={movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : '/placeholder.svg'}
-                    description={movie.overview}
+                    description={movie.overview || t("movie.noDescription")}
                     trailerUrl=""
                     rating={movie.vote_average * 10}
                     tmdbId={movie.id}
@@ -131,7 +146,6 @@ export const SearchResults = ({
                     isWatchlisted={Math.random() > 0.6}
                   />
                   
-                  {/* Show streaming availability badge for instant mode */}
                   {streamingData && hasStreaming && (
                     <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full">
                       ✓ {t("streaming.availableOn")}
@@ -145,28 +159,38 @@ export const SearchResults = ({
       )}
 
       {creatorResults.length > 0 && !selectedCreator && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 0.5 }}
-          className="grid grid-cols-1 gap-6"
-        >
-          {creatorResults.map((person, index) => (
-            <motion.div
-              key={person.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <CreatorCard 
-                person={person} 
-                index={index} 
-                onClick={() => handleCreatorSelect(person)}
-              />
-            </motion.div>
-          ))}
-        </motion.div>
+        <section>
+          <motion.h2 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="text-2xl font-bold mb-6 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent"
+          >
+            {t("search.creatorsFound", { count: creatorResults.length })}
+          </motion.h2>
+          
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.5 }}
+            className="grid grid-cols-1 gap-6"
+          >
+            {creatorResults.map((person, index) => (
+              <motion.div
+                key={person.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <CreatorCard 
+                  person={person} 
+                  index={index} 
+                  onClick={() => handleCreatorSelect(person)}
+                />
+              </motion.div>
+            ))}
+          </motion.div>
+        </section>
       )}
 
       {selectedCreator && (
@@ -210,9 +234,9 @@ export const SearchResults = ({
               >
                 <MovieCard
                   title={movie.title}
-                  year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "N/A"}
+                  year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : t("common.unknown")}
                   platform="TMDB"
-                  genre={t(`movie.${getGenreTranslationKey(movie.genre_ids?.[0] || 0)}`)}
+                  genre={getGenreNames(movie.genre_ids || [])}
                   imageUrl={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
                   description={getMovieDescription(movie)}
                   trailerUrl=""

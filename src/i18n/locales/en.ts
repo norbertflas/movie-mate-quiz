@@ -32,6 +32,7 @@ export const en = {
     showLess: "Show less",
     actors: "Actors",
     directors: "Directors",
+    unknown: "Unknown",
   },
   findPerfect: {
     title: "Find Your Perfect Movie",
@@ -143,6 +144,7 @@ export const en = {
     productionCompanies: "Production Companies",
     productionCountries: "Production Countries",
     genres: "Genres",
+    noDescription: "No description available",
   },
   search: {
     title: "Search",
@@ -161,6 +163,7 @@ export const en = {
     series: "Series",
     people: "People",
     moviesFound: "Movies found ({{count}})",
+    creatorsFound: "Creators found ({{count}})",
     foundMovies: "Found: {{count}} movies",
     availableStreaming: "{{count}} available in streaming",
     applyFilters: "Apply Filters"
@@ -173,11 +176,20 @@ export const en = {
     asRole: "as",
     job: "Job",
     department: {
-      Acting: "Acting",
-      Directing: "Directing",
-      Writing: "Writing",
-      Production: "Production"
-    }
+      acting: "Acting",
+      directing: "Directing",
+      writing: "Writing",
+      production: "Production"
+    },
+    knownFor: "Known for",
+    biography: "Biography",
+    born: "Born",
+    from: "From",
+    careerHighlights: "Career Highlights",
+    awardWinning: "Award-winning artist",
+    notableWorks: "Notable works in the industry",
+    careerMilestones: "Career-defining achievements",
+    clickToSeeWorks: "Click to see complete filmography"
   },
   user: {
     profile: "Profile",
