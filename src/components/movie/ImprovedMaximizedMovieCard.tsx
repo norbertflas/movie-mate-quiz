@@ -14,7 +14,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import type { MovieCardProps } from "@/types/movie";
-import { getMovieDetails } from "@/services/tmdb/movies";
+import { getMovieDetails, getMovieReviews } from "@/services/tmdb/movies";
 import { getMovieTrailer } from "@/services/youtube";
 
 export const ImprovedMaximizedMovieCard = memo(({
@@ -43,6 +43,7 @@ export const ImprovedMaximizedMovieCard = memo(({
   const [showTrailer, setShowTrailer] = useState(false);
   const [trailerUrl, setTrailerUrl] = useState(initialTrailerUrl);
   const [movieDetails, setMovieDetails] = useState(null);
+  const [movieReviews, setMovieReviews] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingTrailer, setLoadingTrailer] = useState(false);
   const [userActions, setUserActions] = useState({
@@ -79,16 +80,27 @@ export const ImprovedMaximizedMovieCard = memo(({
     }
   ]);
 
-  // Load detailed movie data if tmdbId is available
+  // Load comprehensive movie data if tmdbId is available
   useEffect(() => {
     const loadMovieDetails = async () => {
       if (!tmdbId) return;
       
       try {
         setLoading(true);
+        
+        // Fetch comprehensive movie details
         const details = await getMovieDetails(tmdbId);
         setMovieDetails(details);
-        console.log('Movie details loaded:', details);
+        
+        // Fetch additional reviews if available
+        if (details.reviews?.results?.length < 5) {
+          const additionalReviews = await getMovieReviews(tmdbId);
+          setMovieReviews(additionalReviews.results || []);
+        } else {
+          setMovieReviews(details.reviews?.results || []);
+        }
+        
+        console.log('Comprehensive movie details loaded:', details);
       } catch (error) {
         console.error('Error loading movie details:', error);
         toast({
@@ -141,9 +153,24 @@ export const ImprovedMaximizedMovieCard = memo(({
     if (!trailerUrl) {
       try {
         setLoadingTrailer(true);
-        const url = await getMovieTrailer(title, year);
-        setTrailerUrl(url);
-        if (!url) {
+        
+        // First try to get trailer from TMDB videos
+        if (movieDetails?.videos?.results) {
+          const trailer = movieDetails.videos.results.find(
+            (video: any) => video.type === "Trailer" && video.site === "YouTube"
+          );
+          if (trailer) {
+            setTrailerUrl(`https://www.youtube.com/watch?v=${trailer.key}`);
+          }
+        }
+        
+        // If no trailer found in TMDB, try YouTube search
+        if (!trailerUrl) {
+          const url = await getMovieTrailer(title, year);
+          setTrailerUrl(url);
+        }
+        
+        if (!trailerUrl) {
           toast({
             title: "Trailer not found",
             description: "Sorry, we couldn't find a trailer for this movie",
@@ -236,7 +263,7 @@ export const ImprovedMaximizedMovieCard = memo(({
     }
   }, [onMinimize]);
 
-  // Fix image URL - ensure it's a complete URL
+  // Enhanced data preparation
   const posterUrl = imageUrl?.startsWith('http') 
     ? imageUrl 
     : imageUrl?.startsWith('/') 
@@ -250,13 +277,19 @@ export const ImprovedMaximizedMovieCard = memo(({
   // Convert rating from 0-100 to 0-10 scale if needed
   const displayRating = rating > 10 ? (rating / 10).toFixed(1) : rating.toFixed(1);
 
-  // Prepare enhanced data from movieDetails
+  // Enhanced data from comprehensive movieDetails
   const genres = movieDetails?.genres || (genre ? genre.split(',').map((g, i) => ({ id: i, name: g.trim() })) : []);
-  const castData = movieDetails?.credits?.cast?.slice(0, 10) || [];
-  const crewData = movieDetails?.credits?.crew?.slice(0, 8) || [];
+  const castData = movieDetails?.credits?.cast?.slice(0, 15) || [];
+  const crewData = movieDetails?.credits?.crew?.slice(0, 20) || [];
   const directors = crewData.filter(person => person.job === 'Director');
-  const writers = crewData.filter(person => person.job === 'Writer' || person.job === 'Screenplay');
-  const producers = crewData.filter(person => person.job === 'Producer');
+  const writers = crewData.filter(person => person.job === 'Writer' || person.job === 'Screenplay' || person.job === 'Story');
+  const producers = crewData.filter(person => person.job === 'Producer' || person.job === 'Executive Producer');
+  const cinematographers = crewData.filter(person => person.job === 'Director of Photography');
+  const composers = crewData.filter(person => person.job === 'Original Music Composer');
+  const editors = crewData.filter(person => person.job === 'Editor');
+
+  // Enhanced reviews data
+  const allReviews = movieReviews.length > 0 ? movieReviews : (movieDetails?.reviews?.results || []);
 
   return (
     <motion.div
@@ -397,7 +430,7 @@ export const ImprovedMaximizedMovieCard = memo(({
                   ))}
                 </div>
 
-                {/* Action Buttons */}
+                {/* Enhanced Action Buttons */}
                 <div className="flex flex-wrap gap-3">
                   <Button
                     size="lg"
@@ -476,7 +509,7 @@ export const ImprovedMaximizedMovieCard = memo(({
           </div>
         </div>
 
-        {/* Content Tabs with ScrollArea */}
+        {/* Enhanced Content Tabs with ScrollArea */}
         <ScrollArea className="h-[50vh] p-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-5 bg-gray-800 mb-6">
@@ -497,7 +530,21 @@ export const ImprovedMaximizedMovieCard = memo(({
                     </p>
                   </div>
                   
-                  {/* Director and Writers */}
+                  {/* Enhanced Keywords Section */}
+                  {movieDetails?.keywords?.keywords && movieDetails.keywords.keywords.length > 0 && (
+                    <div>
+                      <h4 className="text-lg font-medium text-white mb-2">Keywords</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {movieDetails.keywords.keywords.slice(0, 10).map((keyword, index) => (
+                          <Badge key={keyword.id || index} variant="outline" className="text-xs">
+                            {keyword.name}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Enhanced Director and Writers */}
                   {(directors.length > 0 || writers.length > 0) && (
                     <div className="space-y-3">
                       {directors.length > 0 && (
@@ -527,6 +574,25 @@ export const ImprovedMaximizedMovieCard = memo(({
                       )}
                     </div>
                   )}
+
+                  {/* Enhanced Similar Movies */}
+                  {movieDetails?.similar?.results && movieDetails.similar.results.length > 0 && (
+                    <div>
+                      <h4 className="text-lg font-medium text-white mb-3">Similar Movies</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {movieDetails.similar.results.slice(0, 6).map((movie, index) => (
+                          <div key={movie.id || index} className="bg-gray-800 rounded-lg p-3">
+                            <p className="text-white text-sm font-medium truncate">{movie.title}</p>
+                            <p className="text-gray-400 text-xs">{movie.release_date?.split('-')[0] || 'N/A'}</p>
+                            <div className="flex items-center mt-1">
+                              <Star className="h-3 w-3 text-yellow-400 fill-current mr-1" />
+                              <span className="text-yellow-400 text-xs">{movie.vote_average?.toFixed(1)}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   
                   {/* Personal Rating */}
                   <div className="flex items-center space-x-4 p-4 bg-gray-800 rounded-lg">
@@ -553,14 +619,14 @@ export const ImprovedMaximizedMovieCard = memo(({
                 </div>
 
                 <div className="space-y-4">
-                  {/* Stats */}
+                  {/* Enhanced Stats */}
                   <Card className="bg-gray-800 border-gray-700">
                     <CardHeader>
                       <CardTitle className="text-white">Movie Stats</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-400">IMDb Rating:</span>
+                        <span className="text-gray-400">TMDb Rating:</span>
                         <span className="text-white font-medium">{displayRating}/10</span>
                       </div>
                       <div className="flex justify-between text-sm">
@@ -571,6 +637,12 @@ export const ImprovedMaximizedMovieCard = memo(({
                         <span className="text-gray-400">Popularity:</span>
                         <span className="text-white font-medium">{(movieDetails?.popularity || popularity).toFixed(1)}</span>
                       </div>
+                      {movieDetails?.imdb_id && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-400">IMDb ID:</span>
+                          <span className="text-white font-medium">{movieDetails.imdb_id}</span>
+                        </div>
+                      )}
                       <div className="space-y-1">
                         <div className="flex justify-between text-xs">
                           <span className="text-gray-400">User Score</span>
@@ -629,9 +701,12 @@ export const ImprovedMaximizedMovieCard = memo(({
                             <Users className="h-6 w-6 text-gray-400" />
                           )}
                         </div>
-                        <div>
+                        <div className="flex-1">
                           <p className="text-white font-medium">{actor.name}</p>
                           <p className="text-gray-400 text-sm">{actor.character || 'Unknown Role'}</p>
+                          {actor.known_for_department && (
+                            <p className="text-gray-500 text-xs">{actor.known_for_department}</p>
+                          )}
                         </div>
                       </div>
                     )) : (
@@ -645,26 +720,56 @@ export const ImprovedMaximizedMovieCard = memo(({
                 
                 <div>
                   <h3 className="text-xl font-semibold text-white mb-4">Key Crew</h3>
-                  <div className="space-y-3">
-                    {crewData.length > 0 ? crewData.map((member, index) => (
-                      <div key={index} className="flex items-center space-x-3 p-3 bg-gray-800 rounded-lg">
-                        <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center">
-                          {member.department === 'Directing' && <Film className="h-5 w-5 text-gray-400" />}
-                          {member.department === 'Writing' && <Edit3 className="h-5 w-5 text-gray-400" />}
-                          {member.department === 'Camera' && <Camera className="h-5 w-5 text-gray-400" />}
-                          {member.department === 'Sound' && <Mic className="h-5 w-5 text-gray-400" />}
-                          {!['Directing', 'Writing', 'Camera', 'Sound'].includes(member.department) &&
-                            <Users className="h-5 w-5 text-gray-400" />}
-                        </div>
-                        <div>
-                          <p className="text-white font-medium">{member.name}</p>
-                          <p className="text-gray-400 text-sm">{member.job}</p>
-                        </div>
+                  <div className="space-y-4">
+                    {/* Directors */}
+                    {directors.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-400 mb-2">Directors</h4>
+                        {directors.map((member, index) => (
+                          <div key={index} className="flex items-center space-x-3 p-2 bg-gray-800 rounded">
+                            <Film className="h-4 w-4 text-blue-400" />
+                            <span className="text-white text-sm">{member.name}</span>
+                          </div>
+                        ))}
                       </div>
-                    )) : (
-                      <div className="text-center py-8">
-                        <Film className="h-12 w-12 text-gray-600 mx-auto mb-2" />
-                        <p className="text-gray-400">Crew information not available</p>
+                    )}
+
+                    {/* Cinematographers */}
+                    {cinematographers.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-400 mb-2">Cinematography</h4>
+                        {cinematographers.map((member, index) => (
+                          <div key={index} className="flex items-center space-x-3 p-2 bg-gray-800 rounded">
+                            <Camera className="h-4 w-4 text-green-400" />
+                            <span className="text-white text-sm">{member.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Composers */}
+                    {composers.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-400 mb-2">Music</h4>
+                        {composers.map((member, index) => (
+                          <div key={index} className="flex items-center space-x-3 p-2 bg-gray-800 rounded">
+                            <Mic className="h-4 w-4 text-purple-400" />
+                            <span className="text-white text-sm">{member.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Editors */}
+                    {editors.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-400 mb-2">Editing</h4>
+                        {editors.map((member, index) => (
+                          <div key={index} className="flex items-center space-x-3 p-2 bg-gray-800 rounded">
+                            <Edit3 className="h-4 w-4 text-orange-400" />
+                            <span className="text-white text-sm">{member.name}</span>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
@@ -709,6 +814,18 @@ export const ImprovedMaximizedMovieCard = memo(({
                         <span className="text-white">{formatCurrency(movieDetails.revenue)}</span>
                       </div>
                     )}
+                    
+                    {/* Enhanced certification information */}
+                    {movieDetails?.release_dates?.results && (
+                      <div className="flex justify-between py-2 border-b border-gray-700">
+                        <span className="text-gray-400">Rating:</span>
+                        <span className="text-white">
+                          {movieDetails.release_dates.results
+                            .find(country => country.iso_3166_1 === 'US')
+                            ?.release_dates?.[0]?.certification || 'Not Rated'}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
                 
@@ -737,6 +854,24 @@ export const ImprovedMaximizedMovieCard = memo(({
                         {movieDetails.spoken_languages.map((language, index) => (
                           <p key={index} className="text-white text-sm">• {language.english_name || language.name}</p>
                         ))}
+                      </div>
+                    )}
+                    
+                    {/* Enhanced external IDs */}
+                    {movieDetails?.external_ids && (
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-400 mb-2">External Links:</h4>
+                        <div className="space-y-1">
+                          {movieDetails.external_ids.imdb_id && (
+                            <p className="text-white text-sm">• IMDb: {movieDetails.external_ids.imdb_id}</p>
+                          )}
+                          {movieDetails.external_ids.facebook_id && (
+                            <p className="text-white text-sm">• Facebook: {movieDetails.external_ids.facebook_id}</p>
+                          )}
+                          {movieDetails.external_ids.twitter_id && (
+                            <p className="text-white text-sm">• Twitter: @{movieDetails.external_ids.twitter_id}</p>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -862,36 +997,45 @@ export const ImprovedMaximizedMovieCard = memo(({
                   </CardContent>
                 </Card>
 
-                {/* User Reviews List */}
+                {/* Enhanced User Reviews List */}
                 <div className="space-y-4">
-                  {userReviews.map((review) => (
-                    <Card key={review.id} className="bg-gray-800 border-gray-700">
+                  {allReviews.length > 0 ? allReviews.map((review, index) => (
+                    <Card key={review.id || index} className="bg-gray-800 border-gray-700">
                       <CardContent className="p-4">
                         <div className="flex justify-between items-start mb-3">
                           <div className="flex items-center space-x-3">
                             <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
                               <span className="text-white font-semibold text-sm">
-                                {review.user.charAt(0).toUpperCase()}
+                                {(review.author || review.user || 'A').charAt(0).toUpperCase()}
                               </span>
                             </div>
                             <div>
-                              <p className="text-white font-medium">{review.user}</p>
-                              <p className="text-gray-400 text-sm">{new Date(review.date).toLocaleDateString()}</p>
+                              <p className="text-white font-medium">{review.author || review.user || 'Anonymous'}</p>
+                              <p className="text-gray-400 text-sm">
+                                {review.created_at ? new Date(review.created_at).toLocaleDateString() : 
+                                 review.date ? new Date(review.date).toLocaleDateString() : 'Unknown date'}
+                              </p>
                             </div>
                           </div>
                           <div className="flex items-center space-x-2">
                             <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                            <span className="text-yellow-400 font-medium">{review.rating}/10</span>
+                            <span className="text-yellow-400 font-medium">
+                              {review.author_details?.rating ? 
+                                `${review.author_details.rating}/10` : 
+                                review.rating ? `${review.rating}/10` : 'N/A'}
+                            </span>
                           </div>
                         </div>
                         
-                        <p className="text-gray-300 mb-3 leading-relaxed">{review.review}</p>
+                        <p className="text-gray-300 mb-3 leading-relaxed">
+                          {review.content || review.review || 'No review content available.'}
+                        </p>
                         
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-4">
                             <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
                               <ThumbsUp className="h-4 w-4 mr-1" />
-                              Helpful ({review.helpful})
+                              Helpful ({review.helpful || 0})
                             </Button>
                             <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
                               <ThumbsDown className="h-4 w-4 mr-1" />
@@ -904,7 +1048,12 @@ export const ImprovedMaximizedMovieCard = memo(({
                         </div>
                       </CardContent>
                     </Card>
-                  ))}
+                  )) : (
+                    <div className="text-center py-8">
+                      <Star className="h-12 w-12 text-gray-600 mx-auto mb-2" />
+                      <p className="text-gray-400">No reviews available for this movie</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </TabsContent>
@@ -912,7 +1061,7 @@ export const ImprovedMaximizedMovieCard = memo(({
         </ScrollArea>
       </motion.div>
 
-      {/* Trailer Modal with Exit Button */}
+      {/* Enhanced Trailer Modal with Exit Button */}
       <AnimatePresence>
         {showTrailer && (
           <motion.div
@@ -943,7 +1092,7 @@ export const ImprovedMaximizedMovieCard = memo(({
                 <div className="aspect-video bg-gray-800 flex items-center justify-center">
                   {trailerUrl ? (
                     <iframe
-                      src={trailerUrl}
+                      src={trailerUrl.replace('watch?v=', 'embed/')}
                       title={`${title} trailer`}
                       className="w-full h-full"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
