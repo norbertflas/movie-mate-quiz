@@ -11,23 +11,6 @@ import { Button } from "@/components/ui/button";
 import { useSmartStreamingSearch } from "@/hooks/use-smart-streaming-search";
 import { Filter, Loader2 } from "lucide-react";
 import { useMovieModal, MovieModal } from "@/components/movie/MovieModal";
-import { Movie } from "@/types/movie";
-
-// Convert TMDB movie to our unified Movie interface
-const convertTMDBMovie = (tmdbMovie: TMDBMovie): Movie => ({
-  id: tmdbMovie.id,
-  title: tmdbMovie.title,
-  poster_path: tmdbMovie.poster_path,
-  backdrop_path: tmdbMovie.backdrop_path || '',
-  overview: tmdbMovie.overview,
-  release_date: tmdbMovie.release_date,
-  vote_average: tmdbMovie.vote_average,
-  runtime: undefined,
-  genres: undefined,
-  cast: undefined,
-  director: undefined,
-  trailer_url: undefined
-});
 
 interface SmartMovieSectionProps {
   movies: TMDBMovie[];
@@ -189,7 +172,7 @@ export const SmartMovieSection = ({
             animate="visible"
             className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4"
           >
-            {filteredMovies.map((movie, index) => (
+            {filteredMovies.map((movie) => (
               <motion.div key={movie.id} variants={itemVariants}>
                 <SmartMovieCard
                   movie={movie}
@@ -197,7 +180,7 @@ export const SmartMovieSection = ({
                   selectedServices={selectedServices}
                   onFavorite={handleFavorite}
                   isFavorite={favorites.has(movie.id)}
-                  onClick={() => openModal(convertTMDBMovie(movie))}
+                  onClick={() => openModal(movie)}
                 />
               </motion.div>
             ))}

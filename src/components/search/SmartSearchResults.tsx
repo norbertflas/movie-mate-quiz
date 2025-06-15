@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Film, User } from "lucide-react";
 import { type TMDBMovie, type TMDBPerson } from "@/services/tmdb";
 import { MovieModal, useMovieModal } from "../movie/MovieModal";
-import { Movie } from "@/types/movie";
 
 // Convert TMDB movie to our unified Movie interface
 const convertTMDBMovie = (tmdbMovie: TMDBMovie): Movie => ({
@@ -162,7 +161,7 @@ export const SmartSearchResults = ({
             animate="visible"
             className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4"
           >
-            {filteredMovies.map((movie, index) => (
+            {filteredMovies.map((movie) => (
               <motion.div key={movie.id} variants={itemVariants}>
                 <SmartMovieCard
                   movie={movie}
@@ -170,7 +169,7 @@ export const SmartSearchResults = ({
                   selectedServices={selectedServices}
                   onFavorite={handleFavorite}
                   isFavorite={favorites.has(movie.id)}
-                  onClick={() => openModal(convertTMDBMovie(movie))}
+                  onClick={() => openModal(movie)}
                 />
               </motion.div>
             ))}
@@ -194,7 +193,7 @@ export const SmartSearchResults = ({
           >
             {creatorResults.map((creator, index) => (
               <motion.div key={creator.id} variants={itemVariants}>
-                <CreatorCard {...creator} />
+                <CreatorCard person={creator} index={index} onClick={() => {}} />
               </motion.div>
             ))}
           </motion.div>

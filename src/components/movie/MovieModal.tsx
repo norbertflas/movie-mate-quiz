@@ -1,10 +1,10 @@
 
 import { useState, useCallback } from 'react';
 import { UnifiedMovieDetails } from './UnifiedMovieDetails';
-import type { Movie } from '@/types/movie';
+import type { TMDBMovie } from '@/services/tmdb';
 
 interface MovieModalProps {
-  movie: Movie | null;
+  movie: TMDBMovie | null;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -23,10 +23,10 @@ export const MovieModal = ({ movie, isOpen, onClose }: MovieModalProps) => {
 };
 
 export const useMovieModal = () => {
-  const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
+  const [selectedMovie, setSelectedMovie] = useState<TMDBMovie | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const openModal = useCallback((movie: Movie) => {
+  const openModal = useCallback((movie: TMDBMovie) => {
     setSelectedMovie(movie);
     setIsModalOpen(true);
   }, []);
