@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -51,8 +50,8 @@ export const PersonalizedRecommendationsForm = () => {
         return [...prev, movie];
       } else {
         toast({
-          title: "Limit osiągnięty",
-          description: "Możesz wybrać maksymalnie 5 filmów",
+          title: "Limit reached",
+          description: "You can select up to 5 movies",
           variant: "destructive"
         });
         return prev;
@@ -63,8 +62,8 @@ export const PersonalizedRecommendationsForm = () => {
   const handleSubmit = async () => {
     if (!prompt.trim() && selectedMovies.length === 0) {
       toast({
-        title: "Błąd",
-        description: "Wpisz opis tego czego szukasz lub wybierz filmy które lubisz",
+        title: "Error",
+        description: "Please describe what you're looking for or select movies you like",
         variant: "destructive"
       });
       return;
@@ -72,7 +71,7 @@ export const PersonalizedRecommendationsForm = () => {
 
     setIsLoading(true);
     try {
-      console.log('Wysyłanie żądania rekomendacji:', { prompt, selectedMovies });
+      console.log('Sending recommendation request:', { prompt, selectedMovies });
       
       const { data, error } = await supabase.functions.invoke('get-personalized-recommendations', {
         body: {
@@ -82,27 +81,27 @@ export const PersonalizedRecommendationsForm = () => {
       });
 
       if (error) {
-        console.error('Błąd funkcji edge:', error);
-        throw new Error(error.message || 'Błąd podczas pobierania rekomendacji');
+        console.error('Edge function error:', error);
+        throw new Error(error.message || 'Error getting recommendations');
       }
 
-      console.log('Otrzymane rekomendacje:', data);
+      console.log('Received recommendations:', data);
 
       if (!data || !Array.isArray(data) || data.length === 0) {
-        throw new Error('Brak rekomendacji w odpowiedzi');
+        throw new Error('No recommendations in response');
       }
 
       setRecommendations(data);
       toast({
-        title: "Sukces!",
-        description: `Znaleziono ${data.length} rekomendacji dla Ciebie`,
+        title: "Success!",
+        description: `Found ${data.length} recommendations for you`,
       });
 
     } catch (error) {
-      console.error('Błąd podczas pobierania rekomendacji:', error);
+      console.error('Error getting recommendations:', error);
       toast({
-        title: "Błąd",
-        description: error instanceof Error ? error.message : "Nie udało się pobrać rekomendacji. Spróbuj ponownie.",
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to get recommendations. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -127,12 +126,12 @@ export const PersonalizedRecommendationsForm = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
-            Opisz czego szukasz
+            Describe what you're looking for
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <Textarea
-            placeholder="Np. 'Chcę obejrzeć coś podobnego do Incepcji, ale z lepszym humorem' lub 'Szukam filmu akcji z lat 90' lub 'Coś romantycznego na wieczór'"
+            placeholder="For example: 'I want to watch something like Inception but with better humor' or 'Looking for a 90s action movie' or 'Something romantic for tonight'"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             className="min-h-[100px]"
@@ -140,7 +139,7 @@ export const PersonalizedRecommendationsForm = () => {
           
           <div>
             <p className="text-sm font-medium mb-3">
-              Lub wybierz filmy które lubisz ({selectedMovies.length}/5):
+              Or select movies you like ({selectedMovies.length}/5):
             </p>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
               {POPULAR_MOVIES.map((movie) => (
@@ -166,12 +165,12 @@ export const PersonalizedRecommendationsForm = () => {
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Szukam rekomendacji...
+                Getting recommendations...
               </>
             ) : (
               <>
                 <Sparkles className="mr-2 h-4 w-4" />
-                Pokaż rekomendacje
+                Show Recommendations
               </>
             )}
           </Button>
@@ -182,7 +181,7 @@ export const PersonalizedRecommendationsForm = () => {
       {recommendations.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Filtruj według serwisu</CardTitle>
+            <CardTitle className="text-lg">Filter by streaming service</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
@@ -191,7 +190,7 @@ export const PersonalizedRecommendationsForm = () => {
                 size="sm"
                 onClick={() => setStreamingFilter("")}
               >
-                Wszystkie
+                All
               </Button>
               {streamingServices.map((service) => (
                 <Button
@@ -212,7 +211,7 @@ export const PersonalizedRecommendationsForm = () => {
       {filteredRecommendations.length > 0 && (
         <div className="space-y-4">
           <h3 className="text-xl font-semibold">
-            Twoje rekomendacje ({filteredRecommendations.length})
+            Your recommendations ({filteredRecommendations.length})
           </h3>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {filteredRecommendations.map((movie, index) => (
