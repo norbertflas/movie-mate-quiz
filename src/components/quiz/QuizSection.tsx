@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { QuizResults } from "./QuizResults";
 import { QuizQuestions } from "./QuizQuestions";
@@ -219,7 +218,7 @@ export const QuizSection = () => {
                 className="text-white bg-gray-800 border-gray-700 hover:bg-gray-700 flex items-center gap-2"
               >
                 <ArrowLeft className="h-4 w-4" />
-                {t("quiz.previous") || "Previous"}
+                Previous
               </Button>
             )}
 
@@ -231,16 +230,16 @@ export const QuizSection = () => {
               {isSubmitting ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  {t("quiz.processing") || "Processing..."}
+                  Processing...
                 </>
               ) : isLastStep ? (
                 <>
-                  {t("quiz.finish") || "Finish"}
+                  Finish
                   <Check className="h-4 w-4" />
                 </>
               ) : (
                 <>
-                  {t("quiz.next") || "Next"}
+                  Next
                   <ArrowRight className="h-4 w-4" />
                 </>
               )}

@@ -1,6 +1,5 @@
 
 import { motion } from "framer-motion";
-import { useTranslation } from "react-i18next";
 import { QuestionOption } from "./quiz/QuestionOption";
 import { Film, Tv, Check } from "lucide-react";
 
@@ -23,7 +22,6 @@ export const SurveyStep = ({
   type,
   selectedOptions,
 }: SurveyStepProps) => {
-  const { t } = useTranslation();
 
   const handleOptionSelect = (option: string) => {
     if (type === "single") {
@@ -55,16 +53,16 @@ export const SurveyStep = ({
     : selectedOptions;
 
   // Special rendering for content type (Movies/TV Series)
-  const isContentTypeQuestion = options.includes(t("quiz.options.movie")) && 
-                               options.includes(t("quiz.options.series"));
+  const isContentTypeQuestion = options.includes("Movies") && 
+                               options.includes("TV Series");
                                
   if (isContentTypeQuestion) {
     return (
       <div className="w-full">
         <div className="space-y-4">
           {options.map((option) => {
-            const isMovie = option === t("quiz.options.movie");
-            const isTVSeries = option === t("quiz.options.series");
+            const isMovie = option === "Movies";
+            const isTVSeries = option === "TV Series";
             const isSelected = selectedOptions.includes(option);
             
             if (isMovie || isTVSeries) {

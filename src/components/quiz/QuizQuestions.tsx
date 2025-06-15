@@ -1,7 +1,6 @@
 
 import { motion } from "framer-motion";
 import { QuestionOption } from "./QuestionOption";
-import { useTranslation } from "react-i18next";
 import type { SurveyStep } from "./constants/surveySteps";
 import type { QuizAnswer } from "./QuizTypes";
 
@@ -20,7 +19,6 @@ export const QuizQuestions = ({
   answers,
   answerMap
 }: QuizQuestionsProps) => {
-  const { t } = useTranslation();
   
   const currentQuestion = questions[currentStep];
   
@@ -44,11 +42,11 @@ export const QuizQuestions = ({
     >
       <div className="text-center space-y-2">
         <h2 className="text-2xl sm:text-3xl font-bold text-white">
-          {currentQuestion.title.startsWith('quiz.') ? t(currentQuestion.title) : currentQuestion.title}
+          {currentQuestion.title}
         </h2>
         {currentQuestion.subtitle && (
           <p className="text-gray-300 text-lg">
-            {currentQuestion.subtitle.startsWith('quiz.') ? t(currentQuestion.subtitle) : currentQuestion.subtitle}
+            {currentQuestion.subtitle}
           </p>
         )}
       </div>
@@ -59,13 +57,10 @@ export const QuizQuestions = ({
           const optionValue = typeof option === 'string' ? option : option.value;
           const optionLabel = typeof option === 'string' ? option : (option.label || option.value);
           
-          // Translate if it starts with quiz.
-          const displayLabel = optionLabel.startsWith('quiz.') ? t(optionLabel) : optionLabel;
-          
           return (
             <QuestionOption
               key={optionValue}
-              option={displayLabel}
+              option={optionLabel}
               isSelected={currentAnswer?.answer === optionValue}
               onSelect={() => onAnswer(optionValue)}
               type={currentQuestion.multiSelect ? "multiple" : "single"}
@@ -77,7 +72,7 @@ export const QuizQuestions = ({
       {/* Help text for multi-select questions */}
       {currentQuestion.multiSelect && (
         <div className="text-center text-sm text-gray-400">
-          Możesz wybrać kilka opcji
+          You can select multiple options
         </div>
       )}
     </motion.div>
