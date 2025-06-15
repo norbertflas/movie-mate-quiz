@@ -142,11 +142,15 @@ const UserGuide = () => {
         <Card>
           <CardContent className="p-6">
             <Tabs defaultValue="search" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6">
+              <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6 gap-1 h-auto p-1">
                 {guides.map((guide) => (
-                  <TabsTrigger key={guide.id} value={guide.id} className="flex items-center gap-2">
+                  <TabsTrigger 
+                    key={guide.id} 
+                    value={guide.id} 
+                    className="flex flex-col items-center gap-2 py-3 px-2 text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                  >
                     <guide.icon className="h-4 w-4" />
-                    <span className="hidden sm:inline">{guide.title.split(' ')[0]}</span>
+                    <span className="text-center leading-tight">{guide.title}</span>
                   </TabsTrigger>
                 ))}
               </TabsList>
@@ -176,7 +180,7 @@ const UserGuide = () => {
                               <Badge variant="outline">{index + 1}</Badge>
                               <h3 className="text-lg font-medium">{item.title}</h3>
                             </div>
-                            <p className="text-muted-foreground ml-8">{item.description}</p>
+                            <p className="text-muted-foreground ml-8 leading-relaxed">{item.description}</p>
                             {index < guide.content.length - 1 && <Separator className="ml-8" />}
                           </div>
                         </motion.div>
@@ -197,18 +201,18 @@ const UserGuide = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <h4 className="font-medium mb-2">For Better Recommendations</h4>
-                <ul className="text-sm text-muted-foreground space-y-1">
+                <h4 className="font-medium mb-3">For Better Recommendations</h4>
+                <ul className="text-sm text-muted-foreground space-y-2">
                   <li>• Rate as many movies as possible</li>
                   <li>• Update your preferences regularly</li>
                   <li>• Take the quiz multiple times</li>
                 </ul>
               </div>
               <div>
-                <h4 className="font-medium mb-2">For Faster Discovery</h4>
-                <ul className="text-sm text-muted-foreground space-y-1">
+                <h4 className="font-medium mb-3">For Faster Discovery</h4>
+                <ul className="text-sm text-muted-foreground space-y-2">
                   <li>• Use specific search terms</li>
                   <li>• Apply multiple filters</li>
                   <li>• Browse trending lists</li>
