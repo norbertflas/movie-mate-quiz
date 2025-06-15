@@ -1,4 +1,3 @@
-
 import { useState, useEffect, memo, useCallback } from "react";
 import { 
   X, Heart, Star, Play, Calendar, Clock, Users, MapPin, 
@@ -11,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import type { MovieCardProps } from "@/types/movie";
@@ -52,6 +52,32 @@ export const ImprovedMaximizedMovieCard = memo(({
     personalRating: personalRating || 0
   });
   const [showShareMenu, setShowShareMenu] = useState(false);
+  const [userReviews, setUserReviews] = useState([
+    {
+      id: 1,
+      user: "MovieLover2024",
+      rating: 9,
+      review: "Absolutely incredible cinematography and storytelling. This movie left me speechless.",
+      date: "2024-01-15",
+      helpful: 23
+    },
+    {
+      id: 2,
+      user: "CinematicCritic",
+      rating: 7,
+      review: "Great performances and visual effects, though the pacing could have been better in the second act.",
+      date: "2024-01-12",
+      helpful: 18
+    },
+    {
+      id: 3,
+      user: "FilmFanatic",
+      rating: 8,
+      review: "A masterpiece that will be remembered for years to come. The soundtrack is particularly outstanding.",
+      date: "2024-01-10",
+      helpful: 31
+    }
+  ]);
 
   // Load detailed movie data if tmdbId is available
   useEffect(() => {
@@ -139,6 +165,10 @@ export const ImprovedMaximizedMovieCard = memo(({
     }
     
     setShowTrailer(!showTrailer);
+  };
+
+  const handleCloseTrailer = () => {
+    setShowTrailer(false);
   };
 
   const handleUserAction = useCallback((action, value = null) => {
@@ -446,14 +476,15 @@ export const ImprovedMaximizedMovieCard = memo(({
           </div>
         </div>
 
-        {/* Content Tabs */}
-        <div className="p-6 overflow-y-auto max-h-[50vh]">
+        {/* Content Tabs with ScrollArea */}
+        <ScrollArea className="h-[50vh] p-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-4 bg-gray-800 mb-6">
+            <TabsList className="grid w-full grid-cols-5 bg-gray-800 mb-6">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="cast">Cast & Crew</TabsTrigger>
               <TabsTrigger value="details">Details</TabsTrigger>
-              <TabsTrigger value="reviews">Production</TabsTrigger>
+              <TabsTrigger value="production">Production</TabsTrigger>
+              <TabsTrigger value="reviews">Reviews</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="space-y-6">
@@ -713,7 +744,7 @@ export const ImprovedMaximizedMovieCard = memo(({
               </div>
             </TabsContent>
 
-            <TabsContent value="reviews" className="space-y-6">
+            <TabsContent value="production" className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div>
                   <h3 className="text-xl font-semibold text-white mb-4">Production Info</h3>
@@ -796,11 +827,92 @@ export const ImprovedMaximizedMovieCard = memo(({
                 </div>
               </div>
             </TabsContent>
+
+            <TabsContent value="reviews" className="space-y-6">
+              <div className="space-y-4">
+                <h3 className="text-xl font-semibold text-white">User Reviews</h3>
+                
+                {/* Write a Review Section */}
+                <Card className="bg-gray-800 border-gray-700">
+                  <CardHeader>
+                    <CardTitle className="text-white">Write a Review</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center space-x-4">
+                      <span className="text-white font-medium">Your Rating:</span>
+                      <div className="flex space-x-1">
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((rating) => (
+                          <button
+                            key={rating}
+                            className="w-8 h-8 rounded bg-gray-600 text-gray-400 hover:bg-gray-500 text-sm font-semibold transition-colors"
+                          >
+                            {rating}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <textarea
+                      placeholder="Share your thoughts about this movie..."
+                      className="w-full p-3 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-blue-500 focus:outline-none resize-none"
+                      rows={4}
+                    />
+                    <Button className="bg-blue-600 hover:bg-blue-700">
+                      Submit Review
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* User Reviews List */}
+                <div className="space-y-4">
+                  {userReviews.map((review) => (
+                    <Card key={review.id} className="bg-gray-800 border-gray-700">
+                      <CardContent className="p-4">
+                        <div className="flex justify-between items-start mb-3">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                              <span className="text-white font-semibold text-sm">
+                                {review.user.charAt(0).toUpperCase()}
+                              </span>
+                            </div>
+                            <div>
+                              <p className="text-white font-medium">{review.user}</p>
+                              <p className="text-gray-400 text-sm">{new Date(review.date).toLocaleDateString()}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                            <span className="text-yellow-400 font-medium">{review.rating}/10</span>
+                          </div>
+                        </div>
+                        
+                        <p className="text-gray-300 mb-3 leading-relaxed">{review.review}</p>
+                        
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-4">
+                            <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
+                              <ThumbsUp className="h-4 w-4 mr-1" />
+                              Helpful ({review.helpful})
+                            </Button>
+                            <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
+                              <ThumbsDown className="h-4 w-4 mr-1" />
+                              Not Helpful
+                            </Button>
+                          </div>
+                          <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
+                            Reply
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            </TabsContent>
           </Tabs>
-        </div>
+        </ScrollArea>
       </motion.div>
 
-      {/* Trailer Modal */}
+      {/* Trailer Modal with Exit Button */}
       <AnimatePresence>
         {showTrailer && (
           <motion.div
@@ -808,7 +920,7 @@ export const ImprovedMaximizedMovieCard = memo(({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="absolute inset-0 bg-black/95 flex items-center justify-center z-10"
-            onClick={() => setShowTrailer(false)}
+            onClick={handleCloseTrailer}
           >
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
@@ -817,6 +929,16 @@ export const ImprovedMaximizedMovieCard = memo(({
               className="relative w-full max-w-6xl mx-4"
               onClick={(e) => e.stopPropagation()}
             >
+              {/* Exit Button for Trailer */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute -top-12 right-0 z-20 bg-black/50 hover:bg-black/70 text-white rounded-full h-10 w-10"
+                onClick={handleCloseTrailer}
+              >
+                <X className="h-5 w-5" />
+              </Button>
+              
               <div className="bg-black rounded-lg overflow-hidden shadow-2xl">
                 <div className="aspect-video bg-gray-800 flex items-center justify-center">
                   {trailerUrl ? (
@@ -839,15 +961,6 @@ export const ImprovedMaximizedMovieCard = memo(({
                   )}
                 </div>
               </div>
-              <Button
-                variant="secondary"
-                size="lg"
-                className="absolute -top-16 right-0 bg-gray-800 hover:bg-gray-700"
-                onClick={() => setShowTrailer(false)}
-              >
-                <X className="h-5 w-5 mr-2" />
-                Close Trailer
-              </Button>
             </motion.div>
           </motion.div>
         )}
