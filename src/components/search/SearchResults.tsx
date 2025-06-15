@@ -1,3 +1,4 @@
+
 import { motion, AnimatePresence } from "framer-motion";
 import { MovieCard } from "@/components/MovieCard";
 import { CreatorCard } from "./CreatorCard";
@@ -97,7 +98,7 @@ export const SearchResults = ({
             animate={{ opacity: 1, x: 0 }}
             className="text-2xl font-bold mb-6 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent"
           >
-            {t("search.moviesFound")} ({searchResults.length})
+            {t("search.moviesFound", { count: searchResults.length })}
           </motion.h2>
           
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
@@ -133,7 +134,7 @@ export const SearchResults = ({
                   {/* Show streaming availability badge for instant mode */}
                   {streamingData && hasStreaming && (
                     <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full">
-                      ✓ Dostępny
+                      ✓ {t("streaming.availableOn")}
                     </div>
                   )}
                 </motion.div>

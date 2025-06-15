@@ -27,6 +27,19 @@ export const SearchInput = ({
 }: SearchInputProps) => {
   const { t } = useTranslation();
 
+  const getPlaceholder = () => {
+    switch (searchType) {
+      case "movies":
+        return t("search.placeholder");
+      case "creators":
+        return t("search.creatorPlaceholder");
+      case "personalized":
+        return t("quiz.subtitle");
+      default:
+        return t("search.placeholder");
+    }
+  };
+
   return (
     <motion.div 
       className="space-y-8 w-full px-4 md:px-0 max-w-7xl mx-auto"
@@ -38,11 +51,7 @@ export const SearchInput = ({
         <div className="relative flex-1">
           <Input
             type="text"
-            placeholder={searchType === "movies" 
-              ? t("search.placeholder") 
-              : searchType === "creators" 
-                ? t("search.creatorPlaceholder")
-                : t("recommendations.prompt")}
+            placeholder={getPlaceholder()}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="h-12 pl-12 pr-4 rounded-xl border-2 border-border focus:border-primary transition-colors bg-secondary/30 backdrop-blur-sm"

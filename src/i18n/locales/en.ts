@@ -1,3 +1,4 @@
+
 export const en = {
   site: {
     name: "CineMatch",
@@ -54,6 +55,8 @@ export const en = {
   quiz: {
     start: "Start Quiz",
     restart: "Restart Quiz",
+    title: "Movie Quiz",
+    subtitle: "Answer a few questions to get personalized movie recommendations",
     questions: {
       platforms: "What streaming platforms do you use?",
       platformsSubtitle: "Select all that apply",
@@ -144,6 +147,8 @@ export const en = {
   search: {
     title: "Search",
     placeholder: "Enter movie title...",
+    creatorPlaceholder: "Enter actor, director name...",
+    button: "Search",
     results: "Search Results",
     noResults: "No results found. Please try again.",
     popular: "Popular Searches",
@@ -155,6 +160,24 @@ export const en = {
     movies: "Movies",
     series: "Series",
     people: "People",
+    moviesFound: "Movies found ({{count}})",
+    foundMovies: "Found: {{count}} movies",
+    availableStreaming: "{{count}} available in streaming",
+    applyFilters: "Apply Filters"
+  },
+  creator: {
+    filmographyTitle: "{{name}}'s Filmography",
+    bestMovies: "Best movies and shows",
+    allMovies: "All movies and shows",
+    moviesAndShows: "movies and shows",
+    asRole: "as",
+    job: "Job",
+    department: {
+      Acting: "Acting",
+      Directing: "Directing",
+      Writing: "Writing",
+      Production: "Production"
+    }
   },
   user: {
     profile: "Profile",
@@ -272,6 +295,19 @@ export const en = {
     addServiceError: "Failed to add service. Please try again.",
     editServiceError: "Failed to edit service. Please try again.",
     deleteServiceError: "Failed to delete service. Please try again.",
+  },
+  streaming: {
+    checkingAvailability: "Checking streaming availability...",
+    availableOn: "Available on",
+    notAvailableStreaming: "Not available in streaming",
+    watchNow: "Watch Now",
+    subscription: "Subscription",
+    rent: "Rent", 
+    buy: "Buy",
+    free: "Free",
+    included: "Included",
+    notAvailable: "This movie is not currently available on any streaming platform in your region.",
+    checkBackLater: "Please check back later as availability changes frequently."
   },
   footer: {
     aboutUs: "About Us",
