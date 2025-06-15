@@ -134,14 +134,14 @@ main {
 /* Enhanced responsive movie grid */
 .movie-grid {
   display: grid;
-  gap: 12px;
+  gap: 8px;
 }
 
 /* Responsive movie grid for desktop and larger screens */
 @media (min-width: 1200px) {
   .movie-grid {
     grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 16px;
+    gap: 10px;
   }
 }
 
@@ -149,7 +149,7 @@ main {
 @media (min-width: 768px) and (max-width: 1199px) {
   .movie-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 14px;
+    gap: 8px;
   }
 }
 
@@ -157,7 +157,7 @@ main {
 @media (max-width: 767px) {
   .movie-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
+    gap: 6px;
   }
   
   .movie-card {
@@ -185,24 +185,24 @@ main {
 
 /* Trending section specific styles */
 .trending-cards-container {
-  gap: 12px;
+  gap: 8px;
 }
 
 @media (max-width: 640px) {
   .trending-cards-container {
-    gap: 8px;
+    gap: 6px;
   }
 }
 
 @media (min-width: 641px) and (max-width: 1024px) {
   .trending-cards-container {
-    gap: 12px;
+    gap: 8px;
   }
 }
 
 @media (min-width: 1025px) {
   .trending-cards-container {
-    gap: 16px;
+    gap: 10px;
   }
 }
 
@@ -215,7 +215,7 @@ main {
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     -ms-overflow-style: none;
-    gap: 8px;
+    gap: 6px;
     padding: 0 16px;
   }
   
@@ -312,7 +312,7 @@ button.button-wrap-text {
 
 /* Improved spacing for card grids */
 .cards-grid-spacing {
-  gap: clamp(8px, 2vw, 16px);
+  gap: clamp(6px, 1.5vw, 12px);
 }
 
 /* Enhanced card sizing for better fit */
