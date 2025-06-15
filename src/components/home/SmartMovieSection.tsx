@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from "react";
 import { SmartMovieCard } from "@/components/movie/SmartMovieCard";
 import { MovieFilters, type MovieFilters as MovieFiltersType } from "@/components/MovieFilters";
@@ -11,6 +10,24 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useSmartStreamingSearch } from "@/hooks/use-smart-streaming-search";
 import { Filter, Loader2 } from "lucide-react";
+import { useMovieModal, MovieModal } from "@/components/movie/MovieModal";
+import { Movie } from "@/types/movie";
+
+// Convert TMDB movie to our unified Movie interface
+const convertTMDBMovie = (tmdbMovie: TMDBMovie): Movie => ({
+  id: tmdbMovie.id,
+  title: tmdbMovie.title,
+  poster_path: tmdbMovie.poster_path,
+  backdrop_path: tmdbMovie.backdrop_path || '',
+  overview: tmdbMovie.overview,
+  release_date: tmdbMovie.release_date,
+  vote_average: tmdbMovie.vote_average,
+  runtime: undefined,
+  genres: undefined,
+  cast: undefined,
+  director: undefined,
+  trailer_url: undefined
+});
 
 interface SmartMovieSectionProps {
   movies: TMDBMovie[];
@@ -30,6 +47,7 @@ export const SmartMovieSection = ({
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [favorites, setFavorites] = useState<Set<number>>(new Set());
   const [showFilters, setShowFilters] = useState(false);
+  const { selectedMovie, isModalOpen, openModal, closeModal } = useMovieModal();
 
   // Smart streaming search
   const streamingSearch = useSmartStreamingSearch(
@@ -179,6 +197,7 @@ export const SmartMovieSection = ({
                   selectedServices={selectedServices}
                   onFavorite={handleFavorite}
                   isFavorite={favorites.has(movie.id)}
+                  onClick={() => openModal(convertTMDBMovie(movie))}
                 />
               </motion.div>
             ))}
@@ -194,6 +213,8 @@ export const SmartMovieSection = ({
           </p>
         </Card>
       )}
+      
+      <MovieModal movie={selectedMovie} isOpen={isModalOpen} onClose={closeModal} />
     </div>
   );
 };

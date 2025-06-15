@@ -9,25 +9,26 @@ import { getTrendingMovies, getPopularMovies } from "@/services/tmdb";
 import { Button } from "@/components/ui/button";
 import { Zap, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Footer } from "@/components/Footer";
 
 const Index = () => {
   const navigate = useNavigate();
 
   const { data: trendingMovies, isLoading: trendingLoading } = useQuery({
     queryKey: ['trendingMovies'],
-    queryFn: () => getTrendingMovies('week')
+    queryFn: () => getTrendingMovies('week'),
   });
 
   const { data: popularMovies, isLoading: popularLoading } = useQuery({
     queryKey: ['popularMovies'],
-    queryFn: getPopularMovies
+    queryFn: getPopularMovies,
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex flex-col">
       <Navigation />
       
-      <main className="pt-16">
+      <main className="pt-16 flex-grow">
         <HeroSection />
         
         {/* Quiz CTA Section */}
@@ -67,6 +68,7 @@ const Index = () => {
           </div>
         </div>
       </main>
+      <Footer />
     </div>
   );
 };

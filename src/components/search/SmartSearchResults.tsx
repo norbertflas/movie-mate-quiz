@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { SmartMovieCard } from "@/components/movie/SmartMovieCard";
@@ -8,6 +7,24 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Film, User } from "lucide-react";
 import { type TMDBMovie, type TMDBPerson } from "@/services/tmdb";
+import { MovieModal, useMovieModal } from "../movie/MovieModal";
+import { Movie } from "@/types/movie";
+
+// Convert TMDB movie to our unified Movie interface
+const convertTMDBMovie = (tmdbMovie: TMDBMovie): Movie => ({
+  id: tmdbMovie.id,
+  title: tmdbMovie.title,
+  poster_path: tmdbMovie.poster_path,
+  backdrop_path: tmdbMovie.backdrop_path || '',
+  overview: tmdbMovie.overview,
+  release_date: tmdbMovie.release_date,
+  vote_average: tmdbMovie.vote_average,
+  runtime: undefined,
+  genres: undefined,
+  cast: undefined,
+  director: undefined,
+  trailer_url: undefined
+});
 
 interface SmartSearchResultsProps {
   searchResults: TMDBMovie[];
@@ -27,6 +44,7 @@ export const SmartSearchResults = ({
   country = 'us'
 }: SmartSearchResultsProps) => {
   const [favorites, setFavorites] = useState<Set<number>>(new Set());
+  const { selectedMovie, isModalOpen, openModal, closeModal } = useMovieModal();
 
   // Smart streaming search for movie results
   const streamingSearch = useSmartStreamingSearch(
@@ -152,6 +170,7 @@ export const SmartSearchResults = ({
                   selectedServices={selectedServices}
                   onFavorite={handleFavorite}
                   isFavorite={favorites.has(movie.id)}
+                  onClick={() => openModal(convertTMDBMovie(movie))}
                 />
               </motion.div>
             ))}
@@ -175,7 +194,7 @@ export const SmartSearchResults = ({
           >
             {creatorResults.map((creator, index) => (
               <motion.div key={creator.id} variants={itemVariants}>
-                <CreatorCard creator={creator} />
+                <CreatorCard {...creator} />
               </motion.div>
             ))}
           </motion.div>
@@ -201,6 +220,8 @@ export const SmartSearchResults = ({
           </div>
         </Card>
       )}
+      
+      <MovieModal movie={selectedMovie} isOpen={isModalOpen} onClose={closeModal} />
     </div>
   );
 };
