@@ -6,7 +6,6 @@ import { GenreFilter } from "./GenreFilter";
 import { RangeFilter } from "./RangeFilter";
 import { TagsFilter } from "./TagsFilter";
 import { FilterButtons } from "./FilterButtons";
-import { useTranslation } from "react-i18next";
 import { MOVIE_TAGS } from "../quiz/QuizConstants";
 
 interface FilterContentProps {
@@ -20,7 +19,6 @@ export const FilterContent = ({
   currentFilters,
   isMobile,
 }: FilterContentProps) => {
-  const { t } = useTranslation();
   const currentYear = new Date().getFullYear();
   const [selectedTags, setSelectedTags] = useState<string[]>(currentFilters.tags || []);
 
@@ -59,7 +57,7 @@ export const FilterContent = ({
         }
       />
       <RangeFilter
-        label={t("filters.year")}
+        label="Release Year"
         min={1900}
         max={currentYear}
         step={1}
@@ -69,7 +67,7 @@ export const FilterContent = ({
         }
       />
       <RangeFilter
-        label={t("filters.rating")}
+        label="Minimum Rating"
         min={0}
         max={10}
         step={0.5}

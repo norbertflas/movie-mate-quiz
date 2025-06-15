@@ -1,5 +1,5 @@
+
 import { Badge } from "@/components/ui/badge";
-import { useTranslation } from "react-i18next";
 
 interface TagsFilterProps {
   tags: string[];
@@ -8,11 +8,9 @@ interface TagsFilterProps {
 }
 
 export const TagsFilter = ({ tags, selectedTags, onTagSelect }: TagsFilterProps) => {
-  const { t } = useTranslation();
-
   return (
     <div className="space-y-4">
-      <label className="text-sm font-medium">{t("filters.tags")}</label>
+      <label className="text-sm font-medium">Movie Tags</label>
       <div className="flex flex-wrap gap-2">
         {tags.map((tag) => (
           <Badge
@@ -21,7 +19,7 @@ export const TagsFilter = ({ tags, selectedTags, onTagSelect }: TagsFilterProps)
             className="cursor-pointer"
             onClick={() => onTagSelect(tag)}
           >
-            {t(`movie.${tag.toLowerCase()}`)}
+            {tag}
           </Badge>
         ))}
       </div>
