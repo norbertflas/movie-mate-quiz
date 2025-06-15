@@ -8,11 +8,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Moon, Sun, Monitor } from "lucide-react";
 import { useTheme } from "@/hooks/use-theme";
-import { useTranslation } from "react-i18next";
 
 export const ThemeSwitcher = () => {
   const { theme, setTheme } = useTheme();
-  const { t } = useTranslation();
 
   return (
     <DropdownMenu>
@@ -30,15 +28,15 @@ export const ThemeSwitcher = () => {
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={() => setTheme("light")}>
           <Sun className="mr-2 h-4 w-4" />
-          <span>{t("theme.light")}</span>
+          <span>Light</span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setTheme("dark")}>
           <Moon className="mr-2 h-4 w-4" />
-          <span>{t("theme.dark")}</span>
+          <span>Dark</span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setTheme("system")}>
           <Monitor className="mr-2 h-4 w-4" />
-          <span>{t("theme.system")}</span>
+          <span>System</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
