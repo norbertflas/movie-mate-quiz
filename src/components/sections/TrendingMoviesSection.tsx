@@ -122,9 +122,9 @@ export const TrendingMoviesSection = ({ movies }: TrendingMoviesSectionProps) =>
               transition={{ staggerChildren: 0.1, delayChildren: 0.05 }}
             >
               <motion.div 
-                className="flex space-x-4 py-4 overflow-x-auto scrollbar-hide group no-select"
+                className="flex space-x-2 py-4 overflow-x-auto scrollbar-hide group no-select"
                 animate={{ 
-                  x: [0, isMobile ? -1200 : -2000]
+                  x: [0, isMobile ? -1600 : -2800]
                 }}
                 transition={{ 
                   repeat: Infinity, 
@@ -160,7 +160,7 @@ export const TrendingMoviesSection = ({ movies }: TrendingMoviesSectionProps) =>
                       whileTap={{ scale: 0.95 }}
                       className="flex-none"
                     >
-                      <div className={`${isMobile ? "w-[140px]" : "w-[220px]"}`}>
+                      <div className={`${isMobile ? "w-[180px]" : "w-[280px]"}`}>
                         <UnifiedMovieCard
                           movie={{
                             id: movie.id,
@@ -177,7 +177,7 @@ export const TrendingMoviesSection = ({ movies }: TrendingMoviesSectionProps) =>
                             trailer_url: undefined
                           }}
                           onExpand={() => handleMovieClick(movie)}
-                          variant={isMobile ? "small" : "medium"}
+                          variant={isMobile ? "medium" : "large"}
                           showExpandButton={true}
                         />
                       </div>

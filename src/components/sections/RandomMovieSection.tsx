@@ -71,24 +71,24 @@ export const RandomMovieSection = () => {
   };
 
   return (
-    <Card className="w-full bg-background/50 dark:bg-background/50 backdrop-blur-sm border border-border/50 shadow-lg">
-      <CardHeader className="text-center pb-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent mb-2 flex items-center justify-center gap-2">
+    <div className="space-y-6">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="text-center pb-4">
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent mb-2 flex items-center justify-center gap-2">
             <Shuffle className="h-6 w-6 text-primary" />
             Random Movie for Today
-          </CardTitle>
-          <CardDescription className="text-lg text-muted-foreground max-w-xl mx-auto">
+          </h2>
+          <p className="text-lg text-muted-foreground max-w-xl mx-auto">
             Don't know what to watch? Let us pick something for you!
-          </CardDescription>
-        </motion.div>
-      </CardHeader>
+          </p>
+        </div>
+      </motion.div>
 
-      <CardContent className="space-y-6">
+      <div className="space-y-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -174,7 +174,7 @@ export const RandomMovieSection = () => {
             </motion.div>
           )}
         </AnimatePresence>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
