@@ -28,13 +28,13 @@ export const SearchInput = ({
   const getPlaceholder = () => {
     switch (searchType) {
       case "movies":
-        return "Enter movie title...";
+        return "Search for movies...";
       case "creators":
-        return "Enter actor, director name...";
+        return "Search for actors, directors...";
       case "personalized":
-        return "Answer a few questions to get personalized movie recommendations";
+        return "Take our quiz for personalized movie recommendations";
       default:
-        return "Enter movie title...";
+        return "Search for movies...";
     }
   };
 

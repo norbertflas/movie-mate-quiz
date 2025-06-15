@@ -71,7 +71,7 @@ export const SearchBar = () => {
       </div>
 
       <div className="mt-4 flex flex-wrap justify-center gap-2 text-sm text-muted-foreground">
-        <span>Try searching for:</span>
+        <span>Popular searches:</span>
         {searchType === "movies" ? 
           ["Action", "Comedy", "Drama", "Sci-Fi"].map((genre) => (
             <motion.button
@@ -85,7 +85,7 @@ export const SearchBar = () => {
               {genre}
             </motion.button>
           )) :
-          ["Spielberg", "Nolan", "Tarantino", "Villeneuve"].map((creator) => (
+          ["Steven Spielberg", "Christopher Nolan", "Quentin Tarantino", "Denis Villeneuve"].map((creator) => (
             <motion.button
               key={creator}
               type="button"

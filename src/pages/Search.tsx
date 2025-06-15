@@ -205,7 +205,7 @@ const Search = () => {
                         Found: {filteredMovies.length} movies
                         {streamingSearch.stats.withStreaming > 0 && (
                           <span className="text-green-600 font-medium">
-                            • {streamingSearch.stats.withStreaming} available in streaming
+                            • {streamingSearch.stats.withStreaming} available for streaming
                           </span>
                         )}
                       </div>

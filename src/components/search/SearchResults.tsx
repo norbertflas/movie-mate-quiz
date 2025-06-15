@@ -70,7 +70,7 @@ export const SearchResults = ({
   };
 
   const getGenreNames = (genreIds: number[]) => {
-    if (!genreIds || genreIds.length === 0) return "Genres";
+    if (!genreIds || genreIds.length === 0) return "Various Genres";
     
     const genreMap: { [key: number]: string } = {
       28: "Action",
@@ -96,10 +96,10 @@ export const SearchResults = ({
     
     const genreNames = genreIds
       .slice(0, 2)
-      .map(id => genreMap[id] || "Unknown")
-      .filter(name => name !== "Unknown");
+      .map(id => genreMap[id] || "")
+      .filter(name => name !== "");
     
-    return genreNames.length > 0 ? genreNames.join(", ") : "Genres";
+    return genreNames.length > 0 ? genreNames.join(", ") : "Various Genres";
   };
 
   const getMovieDescription = (movie: any) => {
@@ -108,13 +108,13 @@ export const SearchResults = ({
     if (movie.character) {
       parts.push(`as ${movie.character}`);
     } else if (movie.job) {
-      parts.push(`Job: ${movie.job}`);
+      parts.push(`${movie.job}`);
     } else if (movie.department) {
       const deptMap: { [key: string]: string } = {
-        "Acting": "Acting",
-        "Directing": "Directing", 
-        "Writing": "Writing",
-        "Production": "Production"
+        "Acting": "Actor",
+        "Directing": "Director", 
+        "Writing": "Writer",
+        "Production": "Producer"
       };
       parts.push(deptMap[movie.department] || movie.department);
     }
@@ -188,7 +188,7 @@ export const SearchResults = ({
             animate={{ opacity: 1, x: 0 }}
             className="text-2xl font-bold mb-6 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent"
           >
-            Creators found ({creatorResults.length})
+            People found ({creatorResults.length})
           </motion.h2>
           
           <motion.div
@@ -225,11 +225,11 @@ export const SearchResults = ({
           >
             <div>
               <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-blue-500">
-                {selectedCreator.name}'s Filmography
+                {selectedCreator.name}'s Complete Works
               </h2>
               <p className="text-muted-foreground mt-2">
-                {isMainPage ? "Best movies and shows" : "All movies and shows"} 
-                ({creatorMovies.length} movies and shows)
+                {isMainPage ? "Top movies and shows" : "All movies and shows"} 
+                ({creatorMovies.length} total)
               </p>
             </div>
             <Button
@@ -237,7 +237,7 @@ export const SearchResults = ({
               variant="outline"
               className="hover:bg-primary/10"
             >
-              Back
+              Back to Results
             </Button>
           </motion.div>
 
