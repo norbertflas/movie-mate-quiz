@@ -1,9 +1,7 @@
 
 import { motion } from "framer-motion";
 import type { TMDBPerson } from "@/services/tmdb";
-import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
-import { pl } from "date-fns/locale";
 import { CalendarDays, MapPin, ScrollText, Award, Film, Heart } from "lucide-react";
 import { useLocation } from "react-router-dom";
 
@@ -14,16 +12,13 @@ interface CreatorCardProps {
 }
 
 export const CreatorCard = ({ person, index, onClick }: CreatorCardProps) => {
-  const { t, i18n } = useTranslation();
   const location = useLocation();
   const isSearchPage = location.pathname === "/search";
   
   const formatDate = (dateString?: string) => {
     if (!dateString) return "";
     try {
-      return format(new Date(dateString), "d MMMM yyyy", { 
-        locale: i18n.language === 'pl' ? pl : undefined 
-      });
+      return format(new Date(dateString), "d MMMM yyyy");
     } catch {
       return "";
     }
@@ -37,17 +32,17 @@ export const CreatorCard = ({ person, index, onClick }: CreatorCardProps) => {
         biography.toLowerCase().includes('academy award') ||
         biography.toLowerCase().includes('golden globe') ||
         biography.toLowerCase().includes('emmy')) {
-      achievements.push(t("creator.awardWinning"));
+      achievements.push("Award-winning artist");
     }
     
     if (biography.toLowerCase().includes('best known for') || 
         biography.toLowerCase().includes('famous for')) {
-      achievements.push(t("creator.notableWorks"));
+      achievements.push("Notable works in the industry");
     }
     
     if (biography.toLowerCase().includes('breakthrough') || 
         biography.toLowerCase().includes('milestone')) {
-      achievements.push(t("creator.careerMilestones"));
+      achievements.push("Career-defining achievements");
     }
     
     return achievements;
@@ -57,8 +52,13 @@ export const CreatorCard = ({ person, index, onClick }: CreatorCardProps) => {
 
   const getDepartmentTranslation = (department?: string) => {
     if (!department) return "";
-    const deptKey = department.toLowerCase();
-    return t(`creator.department.${deptKey}`, department);
+    const deptMap: { [key: string]: string } = {
+      "Acting": "Acting",
+      "Directing": "Directing",
+      "Writing": "Writing", 
+      "Production": "Production"
+    };
+    return deptMap[department] || department;
   };
 
   return (
@@ -96,7 +96,7 @@ export const CreatorCard = ({ person, index, onClick }: CreatorCardProps) => {
           {/* Key Achievements section */}
           {isSearchPage && achievements.length > 0 && (
             <div className="mb-4 p-3 bg-purple-500/5 rounded-lg border border-purple-500/10">
-              <h4 className="text-sm font-medium text-purple-500 mb-2">{t("creator.careerHighlights")}</h4>
+              <h4 className="text-sm font-medium text-purple-500 mb-2">Career Highlights</h4>
               <ul className="space-y-2">
                 {achievements.map((achievement, idx) => (
                   <li key={idx} className="flex items-center gap-2 text-sm">
@@ -113,7 +113,7 @@ export const CreatorCard = ({ person, index, onClick }: CreatorCardProps) => {
             {person.birthday && (
               <div className="flex items-center gap-2">
                 <CalendarDays className="h-4 w-4 text-purple-500" />
-                <span className="text-sm font-medium text-purple-500">{t("creator.born")}:</span>
+                <span className="text-sm font-medium text-purple-500">Born:</span>
                 <span className="text-sm text-muted-foreground">
                   {formatDate(person.birthday)}
                 </span>
@@ -123,7 +123,7 @@ export const CreatorCard = ({ person, index, onClick }: CreatorCardProps) => {
             {person.place_of_birth && (
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-purple-500" />
-                <span className="text-sm font-medium text-purple-500">{t("creator.from")}:</span>
+                <span className="text-sm font-medium text-purple-500">From:</span>
                 <span className="text-sm text-muted-foreground">
                   {person.place_of_birth}
                 </span>
@@ -136,7 +136,7 @@ export const CreatorCard = ({ person, index, onClick }: CreatorCardProps) => {
             <div className="mb-4">
               <div className="flex items-center gap-2 mb-2">
                 <ScrollText className="h-4 w-4 text-purple-500" />
-                <h4 className="text-sm font-medium text-purple-500">{t("creator.biography")}</h4>
+                <h4 className="text-sm font-medium text-purple-500">Biography</h4>
               </div>
               <p className={`text-sm text-muted-foreground ${isSearchPage ? 'line-clamp-6' : 'line-clamp-2'}`}>
                 {person.biography}
@@ -150,7 +150,7 @@ export const CreatorCard = ({ person, index, onClick }: CreatorCardProps) => {
               <div className="flex items-center gap-2 mb-2">
                 <Film className="h-4 w-4 text-purple-500" />
                 <h4 className="text-sm font-medium text-purple-500">
-                  {t("creator.knownFor")}
+                  Known for
                 </h4>
               </div>
               <ul className="text-sm text-muted-foreground space-y-1 mb-3">
@@ -162,7 +162,7 @@ export const CreatorCard = ({ person, index, onClick }: CreatorCardProps) => {
                 ))}
               </ul>
               <p className="text-sm text-purple-500 hover:text-purple-600 transition-colors">
-                {t("creator.clickToSeeWorks")}
+                Click to see complete filmography
               </p>
             </div>
           )}

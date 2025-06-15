@@ -7,7 +7,6 @@ import { useQuery } from "@tanstack/react-query";
 import { searchMovies, searchPeople, type TMDBMovie, type TMDBPerson } from "@/services/tmdb";
 import { MovieFilters, type MovieFilters as MovieFiltersType } from "@/components/MovieFilters";
 import { useToast } from "@/hooks/use-toast";
-import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { PersonalizedRecommendationsForm } from "@/components/recommendations/PersonalizedRecommendationsForm";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -37,7 +36,6 @@ const Search = () => {
   const [shouldSearch, setShouldSearch] = useState(!!initialQuery);
   const [isSearching, setIsSearching] = useState(false);
   const { toast } = useToast();
-  const { t, i18n } = useTranslation();
 
   useEffect(() => {
     if (initialQuery) {
@@ -72,7 +70,7 @@ const Search = () => {
     {
       mode: 'instant', // Instant mode for search page
       selectedServices,
-      country: i18n.language === 'pl' ? 'pl' : 'us',
+      country: 'us',
       enabled: shouldSearch && searchType === "movies" && movies.length > 0,
       autoFetch: true
     }
@@ -159,16 +157,16 @@ const Search = () => {
           <TabsList className="grid w-full grid-cols-3 max-w-2xl mx-auto mb-8">
             <TabsTrigger value="movies" className="flex items-center gap-2 text-sm">
               <Film className="h-4 w-4" />
-              {t("search.movies")}
+              Movies
             </TabsTrigger>
             <TabsTrigger value="creators" className="flex items-center gap-2 text-sm">
               <User className="h-4 w-4" />
-              {t("search.people")}
+              People
             </TabsTrigger>
             <TabsTrigger value="personalized" className="flex items-center gap-2 text-xs px-2 py-1">
               <SearchIcon className="h-3 w-3" />
               <span className="whitespace-nowrap">
-                {t("quiz.title")}
+                Movie Quiz
               </span>
             </TabsTrigger>
           </TabsList>
@@ -183,7 +181,7 @@ const Search = () => {
                   <StreamingServiceSelector
                     selectedServices={selectedServices}
                     onServicesChange={setSelectedServices}
-                    country={i18n.language === 'pl' ? 'pl' : 'us'}
+                    country='us'
                     showLabel={true}
                   />
                 </div>
@@ -194,7 +192,7 @@ const Search = () => {
                   variant="secondary"
                 >
                   <SearchIcon className="mr-2 h-4 w-4" />
-                  {t("search.applyFilters")}
+                  Apply Filters
                 </Button>
               </aside>
               
@@ -204,17 +202,17 @@ const Search = () => {
                   <div className="bg-card/50 backdrop-blur-sm p-4 rounded-lg border">
                     <div className="flex items-center justify-between">
                       <div className="text-sm text-muted-foreground">
-                        {t("search.foundMovies", { count: filteredMovies.length })}
+                        Found: {filteredMovies.length} movies
                         {streamingSearch.stats.withStreaming > 0 && (
                           <span className="text-green-600 font-medium">
-                            • {t("search.availableStreaming", { count: streamingSearch.stats.withStreaming })}
+                            • {streamingSearch.stats.withStreaming} available in streaming
                           </span>
                         )}
                       </div>
                       {streamingSearch.loading && (
                         <div className="flex items-center gap-2 text-blue-600">
                           <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full" />
-                          <span className="text-sm">{t("streaming.checkingAvailability")}</span>
+                          <span className="text-sm">Checking streaming availability...</span>
                         </div>
                       )}
                     </div>
@@ -243,10 +241,10 @@ const Search = () => {
             <div className="max-w-4xl mx-auto">
               <div className="bg-card/50 backdrop-blur-sm p-6 rounded-xl border border-border/50">
                 <h2 className="text-2xl font-bold mb-4 text-center">
-                  {t("quiz.title")}
+                  Movie Quiz
                 </h2>
                 <p className="text-muted-foreground text-center mb-6">
-                  {t("quiz.subtitle")}
+                  Answer a few questions to get personalized movie recommendations
                 </p>
                 <PersonalizedRecommendationsForm />
               </div>

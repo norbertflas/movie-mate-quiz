@@ -1,8 +1,8 @@
+
 import { motion, AnimatePresence } from "framer-motion";
 import { MovieCard } from "@/components/MovieCard";
 import { CreatorCard } from "./CreatorCard";
 import type { TMDBMovie, TMDBPerson } from "@/services/tmdb";
-import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { tmdbFetch } from "@/services/tmdb/utils";
 import { useState } from "react";
@@ -23,7 +23,6 @@ export const SearchResults = ({
   getGenreTranslationKey,
   streamingSearch
 }: SearchResultsProps) => {
-  const { t } = useTranslation();
   const [selectedCreator, setSelectedCreator] = useState<TMDBPerson | null>(null);
   const location = useLocation();
   const isMainPage = location.pathname === "/";
@@ -71,28 +70,53 @@ export const SearchResults = ({
   };
 
   const getGenreNames = (genreIds: number[]) => {
-    if (!genreIds || genreIds.length === 0) return t("movie.genres");
+    if (!genreIds || genreIds.length === 0) return "Genres";
+    
+    const genreMap: { [key: number]: string } = {
+      28: "Action",
+      12: "Adventure", 
+      16: "Animation",
+      35: "Comedy",
+      80: "Crime",
+      99: "Documentary",
+      18: "Drama",
+      10751: "Family",
+      14: "Fantasy",
+      36: "History",
+      27: "Horror",
+      10402: "Music",
+      9648: "Mystery",
+      10749: "Romance",
+      878: "Science Fiction",
+      10770: "TV Movie",
+      53: "Thriller",
+      10752: "War",
+      37: "Western"
+    };
     
     const genreNames = genreIds
-      .slice(0, 2) // Show only first 2 genres to avoid clutter
-      .map(id => {
-        const genreKey = getGenreTranslationKey(id);
-        return t(`movie.${genreKey}`, genreKey);
-      })
-      .filter(name => name && name !== getGenreTranslationKey(genreIds[0]));
+      .slice(0, 2)
+      .map(id => genreMap[id] || "Unknown")
+      .filter(name => name !== "Unknown");
     
-    return genreNames.length > 0 ? genreNames.join(", ") : t("movie.genres");
+    return genreNames.length > 0 ? genreNames.join(", ") : "Genres";
   };
 
   const getMovieDescription = (movie: any) => {
     const parts = [];
     
     if (movie.character) {
-      parts.push(`${t("creator.asRole")} ${movie.character}`);
+      parts.push(`as ${movie.character}`);
     } else if (movie.job) {
-      parts.push(`${t("creator.job")}: ${movie.job}`);
+      parts.push(`Job: ${movie.job}`);
     } else if (movie.department) {
-      parts.push(t(`creator.department.${movie.department}`, movie.department));
+      const deptMap: { [key: string]: string } = {
+        "Acting": "Acting",
+        "Directing": "Directing", 
+        "Writing": "Writing",
+        "Production": "Production"
+      };
+      parts.push(deptMap[movie.department] || movie.department);
     }
     
     if (movie.overview) {
@@ -100,7 +124,7 @@ export const SearchResults = ({
       return `${description}${movie.overview}`;
     }
     
-    return parts.join(" • ") || t("movie.noDescription");
+    return parts.join(" • ") || "No description available";
   };
 
   return (
@@ -113,7 +137,7 @@ export const SearchResults = ({
             animate={{ opacity: 1, x: 0 }}
             className="text-2xl font-bold mb-6 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent"
           >
-            {t("search.moviesFound", { count: searchResults.length })}
+            Movies found ({searchResults.length})
           </motion.h2>
           
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
@@ -131,11 +155,11 @@ export const SearchResults = ({
                 >
                   <MovieCardSwitcher
                     title={movie.title}
-                    year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : t("common.unknown")}
+                    year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "Unknown"}
                     platform="TMDB"
                     genre={getGenreNames(movie.genre_ids || [])}
                     imageUrl={movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : '/placeholder.svg'}
-                    description={movie.overview || t("movie.noDescription")}
+                    description={movie.overview || "No description available"}
                     trailerUrl=""
                     rating={movie.vote_average * 10}
                     tmdbId={movie.id}
@@ -147,7 +171,7 @@ export const SearchResults = ({
                   
                   {streamingData && hasStreaming && (
                     <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full">
-                      ✓ {t("streaming.availableOn")}
+                      ✓ Available
                     </div>
                   )}
                 </motion.div>
@@ -164,7 +188,7 @@ export const SearchResults = ({
             animate={{ opacity: 1, x: 0 }}
             className="text-2xl font-bold mb-6 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent"
           >
-            {t("search.creatorsFound", { count: creatorResults.length })}
+            Creators found ({creatorResults.length})
           </motion.h2>
           
           <motion.div
@@ -201,11 +225,11 @@ export const SearchResults = ({
           >
             <div>
               <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-blue-500">
-                {t("creator.filmographyTitle", { name: selectedCreator.name })}
+                {selectedCreator.name}'s Filmography
               </h2>
               <p className="text-muted-foreground mt-2">
-                {isMainPage ? t("creator.bestMovies") : t("creator.allMovies")} 
-                ({creatorMovies.length} {t("creator.moviesAndShows")})
+                {isMainPage ? "Best movies and shows" : "All movies and shows"} 
+                ({creatorMovies.length} movies and shows)
               </p>
             </div>
             <Button
@@ -213,7 +237,7 @@ export const SearchResults = ({
               variant="outline"
               className="hover:bg-primary/10"
             >
-              {t("common.back")}
+              Back
             </Button>
           </motion.div>
 
@@ -233,7 +257,7 @@ export const SearchResults = ({
               >
                 <MovieCard
                   title={movie.title}
-                  year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : t("common.unknown")}
+                  year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "Unknown"}
                   platform="TMDB"
                   genre={getGenreNames(movie.genre_ids || [])}
                   imageUrl={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}

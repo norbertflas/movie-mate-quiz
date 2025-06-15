@@ -2,7 +2,6 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Loader2, Film, User, Sparkles } from "lucide-react";
-import { useTranslation } from "react-i18next";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
 
@@ -25,18 +24,17 @@ export const SearchInput = ({
   searchType,
   setSearchType,
 }: SearchInputProps) => {
-  const { t } = useTranslation();
 
   const getPlaceholder = () => {
     switch (searchType) {
       case "movies":
-        return t("search.placeholder");
+        return "Enter movie title...";
       case "creators":
-        return t("search.creatorPlaceholder");
+        return "Enter actor, director name...";
       case "personalized":
-        return t("quiz.subtitle");
+        return "Answer a few questions to get personalized movie recommendations";
       default:
-        return t("search.placeholder");
+        return "Enter movie title...";
     }
   };
 
@@ -69,7 +67,7 @@ export const SearchInput = ({
           ) : (
             <>
               <Search className="mr-2 h-5 w-5" />
-              <span className="whitespace-nowrap">{t("search.button")}</span>
+              <span className="whitespace-nowrap">Search</span>
             </>
           )}
         </Button>
