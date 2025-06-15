@@ -7,6 +7,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Search, HelpCircle, MessageSquare, Book } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 const Help = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -79,7 +80,9 @@ const Help = () => {
               <p className="text-sm text-muted-foreground mb-4">
                 Learn the basics of using MovieFinder
               </p>
-              <Button variant="outline" size="sm">Learn More</Button>
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/quick-start">Learn More</Link>
+              </Button>
             </CardContent>
           </Card>
 
@@ -90,7 +93,9 @@ const Help = () => {
               <p className="text-sm text-muted-foreground mb-4">
                 Detailed documentation and tutorials
               </p>
-              <Button variant="outline" size="sm">View Guide</Button>
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/user-guide">View Guide</Link>
+              </Button>
             </CardContent>
           </Card>
 
@@ -101,7 +106,9 @@ const Help = () => {
               <p className="text-sm text-muted-foreground mb-4">
                 Get help from our support team
               </p>
-              <Button variant="outline" size="sm">Contact Us</Button>
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/contact">Contact Us</Link>
+              </Button>
             </CardContent>
           </Card>
         </div>

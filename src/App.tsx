@@ -19,6 +19,8 @@ import Privacy from './pages/Privacy';
 import Copyright from './pages/Copyright';
 import Cookies from './pages/Cookies';
 import Refunds from './pages/Refunds';
+import QuickStart from './pages/QuickStart';
+import UserGuide from './pages/UserGuide';
 import { ScrollProvider } from './hooks/use-scroll-context';
 import { Navigation } from './components/Navigation';
 
@@ -48,6 +50,8 @@ function App() {
               <Route path="/copyright" element={<Copyright />} />
               <Route path="/cookies" element={<Cookies />} />
               <Route path="/refunds" element={<Refunds />} />
+              <Route path="/quick-start" element={<QuickStart />} />
+              <Route path="/user-guide" element={<UserGuide />} />
             </Routes>
           </main>
         </ScrollProvider>
