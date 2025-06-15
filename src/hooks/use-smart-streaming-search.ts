@@ -1,264 +1,139 @@
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useTranslation } from 'react-i18next';
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { getStreamingAvailabilityBatch, type MovieStreamingData, getUserCountry, getSupportedServices } from "@/services/streamingAvailabilityPro";
 
-interface StreamingOption {
-  service: string;
-  serviceLogo?: string;
-  link: string;
-  type: 'subscription' | 'rent' | 'buy' | 'free';
-  quality: string;
-  price?: {
-    amount: number;
-    currency: string;
-    formatted: string;
-  };
-  audios: string[];
-  subtitles: string[];
-}
-
-interface StreamingData {
-  tmdbId: number;
-  title: string;
-  year: number;
-  streamingOptions: StreamingOption[];
-  availableServices: string[];
-  hasStreaming: boolean;
-  posterUrl?: string;
-  lastUpdated: number;
-  fetchTime?: number;
-}
-
-interface SmartStreamingOptions {
-  mode: 'instant' | 'lazy'; // instant = search pages, lazy = categories/homepage
-  selectedServices?: string[]; // priority services for filtering
+export interface StreamingSearchOptions {
+  mode: 'instant' | 'lazy';
+  selectedServices: string[];
   country?: string;
   enabled?: boolean;
   autoFetch?: boolean;
 }
 
-export function useSmartStreamingSearch(
+export interface StreamingSearchStats {
+  total: number;
+  processed: number;
+  withStreaming: number;
+  loading: boolean;
+}
+
+export interface UseSmartStreamingSearchReturn {
+  streamingData: Map<number, MovieStreamingData>;
+  getStreamingData: (tmdbId: number) => MovieStreamingData | undefined;
+  stats: StreamingSearchStats;
+  loading: boolean;
+  error: string | null;
+  fetchBatch: (tmdbIds: number[]) => Promise<void>;
+  supportedServices: string[];
+  country: string;
+}
+
+export const useSmartStreamingSearch = (
   tmdbIds: number[],
-  options: SmartStreamingOptions = { mode: 'lazy' } // Provide default mode
-) {
-  const { i18n } = useTranslation();
-  const {
-    mode = 'lazy',
-    selectedServices = [],
-    country = i18n.language === 'pl' ? 'pl' : 'us',
-    enabled = true,
-    autoFetch = true
-  } = options;
-
-  const [data, setData] = useState<Record<number, StreamingData>>({});
+  options: StreamingSearchOptions
+): UseSmartStreamingSearchReturn => {
+  const [streamingData, setStreamingData] = useState<Map<number, MovieStreamingData>>(new Map());
   const [loading, setLoading] = useState(false);
-  const [progress, setProgress] = useState({ current: 0, total: 0 });
-  const [errors, setErrors] = useState<Record<number, string>>({});
+  const [error, setError] = useState<string | null>(null);
+  const [processed, setProcessed] = useState(0);
 
-  // Cache management with shorter TTL for instant mode
-  const CACHE_TTL = mode === 'instant' ? 
-    2 * 60 * 60 * 1000 : // 2 hours for search
-    6 * 60 * 60 * 1000;  // 6 hours for categories
+  const country = options.country || getUserCountry();
+  const supportedServices = useMemo(() => getSupportedServices(country), [country]);
 
-  // Load cache on mount
-  useEffect(() => {
-    const loadCache = () => {
-      try {
-        const cacheKey = `smart_streaming_${country}_${mode}`;
-        const cached = localStorage.getItem(cacheKey);
-        
-        if (cached) {
-          const parsedCache = JSON.parse(cached);
-          const now = Date.now();
-          
-          const validCache: Record<number, StreamingData> = {};
-          Object.entries(parsedCache).forEach(([key, value]: [string, any]) => {
-            if (value.lastUpdated && (now - value.lastUpdated) < CACHE_TTL) {
-              validCache[parseInt(key)] = value;
-            }
-          });
-          
-          if (Object.keys(validCache).length > 0) {
-            setData(validCache);
-            console.log(`📦 Loaded ${Object.keys(validCache).length} items from cache (${mode} mode)`);
-          }
-        }
-      } catch (error) {
-        console.error('Cache load error:', error);
-      }
-    };
-    
-    loadCache();
-  }, [country, mode, CACHE_TTL]);
+  const fetchBatch = useCallback(async (ids: number[]) => {
+    if (!options.enabled || ids.length === 0) return;
 
-  // Save to cache
-  const saveToCache = useCallback((newData: Record<number, StreamingData>) => {
-    try {
-      const cacheKey = `smart_streaming_${country}_${mode}`;
-      localStorage.setItem(cacheKey, JSON.stringify(newData));
-    } catch (error) {
-      console.error('Cache save error:', error);
-    }
-  }, [country, mode]);
-
-  // Fetch streaming data
-  const fetchStreamingData = useCallback(async (ids: number[]) => {
-    if (ids.length === 0) return;
-
-    console.log(`🔍 Smart streaming fetch: ${ids.length} movies (${mode} mode, country: ${country})`);
-    
     setLoading(true);
-    setProgress({ current: 0, total: ids.length });
-    
-    const startTime = Date.now();
-    
+    setError(null);
+
     try {
-      const { data: response, error } = await supabase.functions.invoke(
-        'streaming-availability',
-        {
-          body: {
-            tmdbIds: ids,
-            country: country.toLowerCase(),
-            mode: mode === 'instant' ? 'aggressive' : 'standard'
-          }
-        }
-      );
-
-      if (error) throw error;
-
-      if (response?.results) {
-        const newData = { ...data };
-        const fetchTime = Date.now() - startTime;
-        
-        response.results.forEach((result: any) => {
-          if (result.data) {
-            newData[result.tmdbId] = {
-              tmdbId: result.tmdbId,
-              title: result.data.title || `Movie ${result.tmdbId}`,
-              year: result.data.year || new Date().getFullYear(),
-              streamingOptions: result.data.streamingOptions?.map((option: any) => ({
-                service: option.service || 'Unknown',
-                serviceLogo: `/streaming-icons/${(option.service || 'unknown').toLowerCase().replace(/\s+/g, '')}.svg`,
-                link: option.link || '#',
-                type: option.type || 'subscription',
-                quality: option.quality || 'hd',
-                price: option.price,
-                audios: option.audios || [],
-                subtitles: option.subtitles || []
-              })) || [],
-              availableServices: result.data.streamingOptions?.map((option: any) => option.service) || [],
-              hasStreaming: (result.data.streamingOptions?.length || 0) > 0,
-              posterUrl: result.data.posterUrl,
-              lastUpdated: Date.now(),
-              fetchTime
-            };
-          }
-        });
-
-        setData(newData);
-        saveToCache(newData);
-        setProgress({ current: response.results.length, total: ids.length });
-        
-        console.log(`✅ Smart fetch completed: ${response.results.length}/${ids.length} in ${fetchTime}ms`);
-      }
-
-    } catch (error: any) {
-      console.error('Smart streaming fetch error:', error);
+      console.log(`Fetching streaming data for ${ids.length} movies in ${options.mode} mode`);
       
-      const newErrors = { ...errors };
-      ids.forEach(id => {
-        newErrors[id] = error.message || 'Fetch failed';
+      const results = await getStreamingAvailabilityBatch(ids, options.mode, country);
+      
+      setStreamingData(prev => {
+        const newMap = new Map(prev);
+        results.forEach(result => {
+          newMap.set(result.tmdbId, result);
+        });
+        return newMap;
       });
-      setErrors(newErrors);
+
+      setProcessed(prev => prev + results.length);
+      
+    } catch (err) {
+      console.error('Error fetching streaming data:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch streaming data');
     } finally {
       setLoading(false);
     }
-  }, [data, errors, country, mode, saveToCache]);
+  }, [options.enabled, options.mode, country]);
 
   // Auto-fetch logic based on mode
   useEffect(() => {
-    if (!enabled || !autoFetch || tmdbIds.length === 0) return;
+    if (!options.autoFetch || !tmdbIds.length) return;
 
-    const now = Date.now();
-    const missingIds = tmdbIds.filter(id => {
-      const cached = data[id];
-      if (!cached) return true;
+    if (options.mode === 'instant') {
+      // Instant mode: fetch immediately when tmdbIds change
+      fetchBatch(tmdbIds);
+    } else if (options.mode === 'lazy') {
+      // Lazy mode: only fetch if explicitly requested or for previously viewed movies
+      const viewedMovies = tmdbIds.filter(id => {
+        // Check if we already have this movie's data (was viewed before)
+        return streamingData.has(id);
+      });
       
-      const isStale = (now - cached.lastUpdated) > CACHE_TTL;
-      return isStale;
-    });
-
-    if (missingIds.length > 0) {
-      // For instant mode (search), fetch immediately
-      // For lazy mode (categories), only fetch if explicitly requested
-      if (mode === 'instant') {
-        fetchStreamingData(missingIds);
+      if (viewedMovies.length > 0) {
+        fetchBatch(viewedMovies);
       }
     }
-  }, [tmdbIds, enabled, autoFetch, data, fetchStreamingData, mode, CACHE_TTL]);
+  }, [tmdbIds, options.autoFetch, options.mode, fetchBatch]);
 
-  // Filter by selected services
+  // Filter data by selected services
   const filteredData = useMemo(() => {
-    if (selectedServices.length === 0) return data;
+    if (options.selectedServices.length === 0) return streamingData;
+
+    const filtered = new Map<number, MovieStreamingData>();
     
-    const filtered: Record<number, StreamingData> = {};
-    Object.entries(data).forEach(([key, value]) => {
-      const hasSelectedService = selectedServices.some(service => 
-        value.availableServices.some(available => 
-          available.toLowerCase().includes(service.toLowerCase()) ||
-          service.toLowerCase().includes(available.toLowerCase())
+    streamingData.forEach((data, tmdbId) => {
+      const hasSelectedService = data.availableServices.some(service =>
+        options.selectedServices.some(selected =>
+          service.toLowerCase().includes(selected.toLowerCase()) ||
+          selected.toLowerCase().includes(service.toLowerCase())
         )
       );
       
       if (hasSelectedService) {
-        filtered[parseInt(key)] = value;
+        filtered.set(tmdbId, data);
       }
     });
-    
-    return filtered;
-  }, [data, selectedServices]);
 
-  // Get best streaming option for a movie
-  const getBestOption = useCallback((tmdbId: number) => {
-    const movie = data[tmdbId];
-    if (!movie?.streamingOptions.length) return null;
+    return filtered;
+  }, [streamingData, options.selectedServices]);
+
+  const getStreamingData = useCallback((tmdbId: number): MovieStreamingData | undefined => {
+    return streamingData.get(tmdbId);
+  }, [streamingData]);
+
+  const stats: StreamingSearchStats = useMemo(() => {
+    const withStreaming = Array.from(streamingData.values()).filter(data => data.hasStreaming).length;
     
-    // Priority: subscription > free > rent > buy
-    const priorities = { subscription: 4, free: 3, rent: 2, buy: 1 };
-    return movie.streamingOptions.sort((a, b) => 
-      (priorities[b.type] || 0) - (priorities[a.type] || 0)
-    )[0];
-  }, [data]);
+    return {
+      total: tmdbIds.length,
+      processed,
+      withStreaming,
+      loading
+    };
+  }, [tmdbIds.length, processed, streamingData, loading]);
 
   return {
-    // Data
-    data: selectedServices.length > 0 ? filteredData : data,
+    streamingData: filteredData,
+    getStreamingData,
+    stats,
     loading,
-    progress,
-    errors,
-    
-    // Actions
-    fetchData: fetchStreamingData,
-    refresh: (ids?: number[]) => {
-      const idsToRefresh = ids || tmdbIds;
-      fetchStreamingData(idsToRefresh);
-    },
-    
-    // Helpers
-    getStreamingData: (tmdbId: number) => data[tmdbId],
-    hasStreaming: (tmdbId: number) => data[tmdbId]?.hasStreaming || false,
-    getServices: (tmdbId: number) => data[tmdbId]?.availableServices || [],
-    getBestOption,
-    isLoading: (tmdbId: number) => loading && !data[tmdbId],
-    hasError: (tmdbId: number) => !!errors[tmdbId],
-    
-    // Stats
-    stats: {
-      total: tmdbIds.length,
-      cached: tmdbIds.filter(id => data[id]).length,
-      withStreaming: tmdbIds.filter(id => data[id]?.hasStreaming).length,
-      errors: Object.keys(errors).length
-    }
+    error,
+    fetchBatch,
+    supportedServices,
+    country
   };
-}
+};

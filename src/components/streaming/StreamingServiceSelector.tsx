@@ -1,146 +1,125 @@
 
-import { motion } from "framer-motion";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Check } from "lucide-react";
-import { useTranslation } from "react-i18next";
-
-interface StreamingService {
-  id: string;
-  name: string;
-  logo: string;
-  color: string;
-  available_countries: string[];
-}
-
-const STREAMING_SERVICES: Record<string, StreamingService> = {
-  netflix: {
-    id: 'netflix',
-    name: 'Netflix',
-    logo: '/streaming-icons/netflix.svg',
-    color: '#E50914',
-    available_countries: ['pl', 'us', 'gb', 'de', 'fr', 'es', 'it']
-  },
-  prime: {
-    id: 'prime',
-    name: 'Amazon Prime Video',
-    logo: '/streaming-icons/prime.svg',
-    color: '#00A8E1',
-    available_countries: ['pl', 'us', 'gb', 'de', 'fr', 'es', 'it']
-  },
-  disney: {
-    id: 'disney',
-    name: 'Disney+',
-    logo: '/streaming-icons/disney.svg',
-    color: '#113CCF',
-    available_countries: ['pl', 'us', 'gb', 'de', 'fr', 'es']
-  },
-  hbo: {
-    id: 'hbo',
-    name: 'HBO Max',
-    logo: '/streaming-icons/hbomax.svg',
-    color: '#9B59B6',
-    available_countries: ['pl', 'us']
-  },
-  apple: {
-    id: 'apple',
-    name: 'Apple TV+',
-    logo: '/streaming-icons/apple.svg',
-    color: '#000000',
-    available_countries: ['pl', 'us', 'gb', 'de', 'fr']
-  },
-  paramount: {
-    id: 'paramount',
-    name: 'Paramount+',
-    logo: '/streaming-icons/paramount.svg',
-    color: '#0064FF',
-    available_countries: ['us', 'gb']
-  }
-};
+import { getSupportedServices, getUserCountry } from "@/services/streamingAvailabilityPro";
 
 interface StreamingServiceSelectorProps {
   selectedServices: string[];
   onServicesChange: (services: string[]) => void;
-  country: string;
-  className?: string;
+  country?: string;
   showLabel?: boolean;
 }
 
-export function StreamingServiceSelector({ 
-  selectedServices, 
-  onServicesChange, 
-  country,
-  className = "",
-  showLabel = true
-}: StreamingServiceSelectorProps) {
-  const { t } = useTranslation();
-  
-  // Filter services available in country
-  const availableServices = Object.values(STREAMING_SERVICES).filter(service =>
-    service.available_countries.includes(country)
-  );
+const serviceLogos: Record<string, string> = {
+  'Netflix': '/streaming-icons/netflix.svg',
+  'Amazon Prime Video': '/streaming-icons/prime.svg',
+  'Disney+': '/streaming-icons/disney.svg',
+  'HBO Max': '/streaming-icons/hbo.svg',
+  'Apple TV+': '/streaming-icons/apple.svg',
+  'Hulu': '/streaming-icons/hulu.svg',
+  'Paramount+': '/streaming-icons/paramount.svg',
+  'Peacock': '/streaming-icons/peacock.svg',
+  'Canal+': '/streaming-icons/canal.svg',
+  'Player.pl': '/streaming-icons/player.svg'
+};
 
-  const toggleService = (serviceId: string) => {
-    if (selectedServices.includes(serviceId)) {
-      onServicesChange(selectedServices.filter(id => id !== serviceId));
+const serviceColors: Record<string, string> = {
+  'Netflix': 'bg-red-600 hover:bg-red-700',
+  'Amazon Prime Video': 'bg-blue-600 hover:bg-blue-700',
+  'Disney+': 'bg-blue-700 hover:bg-blue-800',
+  'HBO Max': 'bg-purple-600 hover:bg-purple-700',
+  'Apple TV+': 'bg-gray-800 hover:bg-gray-900',
+  'Hulu': 'bg-green-600 hover:bg-green-700',
+  'Paramount+': 'bg-blue-500 hover:bg-blue-600',
+  'Peacock': 'bg-purple-500 hover:bg-purple-600',
+  'Canal+': 'bg-black hover:bg-gray-900',
+  'Player.pl': 'bg-red-500 hover:bg-red-600'
+};
+
+export const StreamingServiceSelector = ({
+  selectedServices,
+  onServicesChange,
+  country,
+  showLabel = false
+}: StreamingServiceSelectorProps) => {
+  const targetCountry = country || getUserCountry();
+  const supportedServices = getSupportedServices(targetCountry);
+
+  const toggleService = (service: string) => {
+    if (selectedServices.includes(service)) {
+      onServicesChange(selectedServices.filter(s => s !== service));
     } else {
-      onServicesChange([...selectedServices, serviceId]);
+      onServicesChange([...selectedServices, service]);
     }
   };
 
+  const clearAll = () => {
+    onServicesChange([]);
+  };
+
   return (
-    <div className={className}>
+    <div className="space-y-3">
       {showLabel && (
-        <h3 className="text-lg font-semibold mb-4">
-          {t("filters.platform")}
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-medium">Filter by Streaming Service</h3>
+          {selectedServices.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearAll}
+              className="text-xs"
+            >
+              Clear all
+            </Button>
+          )}
+        </div>
       )}
       
-      <div className="flex flex-wrap gap-3">
-        {availableServices.map(service => {
-          const isSelected = selectedServices.includes(service.id);
+      <div className="flex flex-wrap gap-2">
+        {supportedServices.map((service) => {
+          const isSelected = selectedServices.includes(service);
+          const colorClass = serviceColors[service] || 'bg-gray-600 hover:bg-gray-700';
           
           return (
-            <motion.button
-              key={service.id}
-              onClick={() => toggleService(service.id)}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className={`
-                relative flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all duration-200
-                ${isSelected 
-                  ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-md' 
-                  : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:shadow-sm'
-                }
-              `}
+            <Button
+              key={service}
+              variant={isSelected ? "default" : "outline"}
+              size="sm"
+              onClick={() => toggleService(service)}
+              className={`flex items-center gap-2 h-8 px-3 ${
+                isSelected ? colorClass : 'border-gray-600 hover:bg-gray-700'
+              } transition-colors`}
             >
-              <img 
-                src={service.logo} 
-                alt={service.name}
-                className="w-6 h-6 object-contain"
+              <img
+                src={serviceLogos[service] || '/streaming-icons/default.svg'}
+                alt={service}
+                className="w-4 h-4 object-contain"
                 onError={(e) => {
-                  e.currentTarget.style.display = 'none';
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
                 }}
               />
-              <span className="text-sm font-medium">{service.name}</span>
-              
-              {isSelected && (
-                <motion.div
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  className="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center"
-                >
-                  <Check className="w-3 h-3 text-white" />
-                </motion.div>
-              )}
-            </motion.button>
+              <span className="text-xs font-medium">{service}</span>
+              {isSelected && <Check className="w-3 h-3" />}
+            </Button>
           );
         })}
       </div>
       
       {selectedServices.length > 0 && (
-        <div className="mt-3 text-sm text-gray-600">
-          {t("common.selected")}: {selectedServices.length} {t("services.services")}
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">Selected:</span>
+          <div className="flex flex-wrap gap-1">
+            {selectedServices.map((service) => (
+              <Badge key={service} variant="secondary" className="text-xs">
+                {service}
+              </Badge>
+            ))}
+          </div>
         </div>
       )}
     </div>
   );
-}
+};
