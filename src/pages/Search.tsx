@@ -10,12 +10,10 @@ import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { PersonalizedRecommendationsForm } from "@/components/recommendations/PersonalizedRecommendationsForm";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CreatorCard } from "@/components/search/CreatorCard";
 import { getGenreTranslationKey } from "@/utils/genreTranslation";
-import { SearchResults } from "@/components/search/SearchResults";
+import { SmartSearchResults } from "@/components/search/SmartSearchResults";
 import { useLocation } from "react-router-dom";
 import { SearchInput } from "@/components/search/SearchInput";
-import { useSmartStreamingSearch } from "@/hooks/use-smart-streaming-search";
 import { StreamingServiceSelector } from "@/components/streaming/StreamingServiceSelector";
 
 type SearchType = "movies" | "creators" | "personalized";
@@ -64,19 +62,7 @@ const Search = () => {
     enabled: shouldSearch && searchType === "creators",
   });
 
-  // Smart streaming search for instant mode
-  const streamingSearch = useSmartStreamingSearch(
-    movies.map(m => m.id),
-    {
-      mode: 'instant', // Instant mode for search page
-      selectedServices,
-      country: 'us',
-      enabled: shouldSearch && searchType === "movies" && movies.length > 0,
-      autoFetch: true
-    }
-  );
-
-  // Filter movies based on streaming availability and other criteria
+  // Filter movies based on other criteria
   const filteredMovies = useMemo(() => {
     let filtered = [...movies];
 
@@ -96,23 +82,8 @@ const Search = () => {
       return matchesYear && matchesRating && matchesGenre && matchesTags;
     });
 
-    // Filter by selected streaming services
-    if (selectedServices.length > 0) {
-      filtered = filtered.filter(movie => {
-        const streamingData = streamingSearch.getStreamingData(movie.id);
-        if (!streamingData) return false;
-        
-        return selectedServices.some(serviceId => 
-          streamingData.availableServices.some(available => 
-            available.toLowerCase().includes(serviceId) ||
-            serviceId.toLowerCase().includes(available.toLowerCase())
-          )
-        );
-      });
-    }
-
     return filtered;
-  }, [movies, filters, selectedServices, streamingSearch]);
+  }, [movies, filters]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -197,43 +168,26 @@ const Search = () => {
               </aside>
               
               <main className="flex-1 space-y-6">
-                {/* Streaming Stats */}
-                {shouldSearch && streamingSearch.stats.total > 0 && (
-                  <div className="bg-card/50 backdrop-blur-sm p-4 rounded-lg border">
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm text-muted-foreground">
-                        Found: {filteredMovies.length} movies
-                        {streamingSearch.stats.withStreaming > 0 && (
-                          <span className="text-green-600 font-medium">
-                            • {streamingSearch.stats.withStreaming} available for streaming
-                          </span>
-                        )}
-                      </div>
-                      {streamingSearch.loading && (
-                        <div className="flex items-center gap-2 text-blue-600">
-                          <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full" />
-                          <span className="text-sm">Checking streaming availability...</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                <SearchResults 
-                  searchResults={filteredMovies} 
+                <SmartSearchResults
+                  searchResults={filteredMovies}
                   creatorResults={[]}
                   getGenreTranslationKey={getGenreTranslationKey}
-                  streamingSearch={streamingSearch} // Pass streaming search to results
+                  selectedServices={selectedServices}
+                  mode="instant"
+                  country="us"
                 />
               </main>
             </div>
           </TabsContent>
 
           <TabsContent value="creators" className="animate-in fade-in-50 duration-300">
-            <SearchResults 
-              searchResults={[]} 
+            <SmartSearchResults
+              searchResults={[]}
               creatorResults={creators}
               getGenreTranslationKey={getGenreTranslationKey}
+              selectedServices={[]}
+              mode="instant"
+              country="us"
             />
           </TabsContent>
 
