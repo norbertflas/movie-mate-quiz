@@ -1,3 +1,4 @@
+
 import { MovieFilterSection } from "../movie/MovieFilterSection";
 import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
@@ -32,8 +33,8 @@ export const PlatformFilter = ({
       } catch (error) {
         console.error('[PlatformFilter] Error fetching streaming services:', error);
         toast({
-          title: t("errors.loadingServices"),
-          description: t("errors.tryAgain"),
+          title: "Error loading services",
+          description: "Please try again later",
           variant: "destructive",
         });
       } finally {
@@ -42,20 +43,20 @@ export const PlatformFilter = ({
     };
 
     fetchStreamingServices();
-  }, [t, toast, i18n.language]); // Now includes language dependency
+  }, [toast, i18n.language]); // Now includes language dependency
 
   // Create translated options for the filter
   const translatedOptions = streamingServices.map(service => ({
     id: service.id,
-    name: t(`services.${service.name.toLowerCase()}`, { defaultValue: service.name })
+    name: service.name // Use the service name directly instead of translation
   }));
 
   return (
     <MovieFilterSection
-      label={t("filters.platform")}
+      label="Streaming Platform"
       value={selectedPlatforms.join(',')}
       onValueChange={(value) => onPlatformChange(value ? value.split(',') : [])}
-      placeholder={isLoading ? t("common.loading") : t("filters.selectPlatform")}
+      placeholder={isLoading ? "Loading..." : "Select Platform"}
       options={translatedOptions}
     />
   );

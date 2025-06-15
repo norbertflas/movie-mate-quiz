@@ -36,14 +36,11 @@ export const GenreFilter = ({
 
   return (
     <MovieFilterSection
-      label={t("filters.genre")}
+      label="Genre"
       value={selectedGenres.join(',')}
       onValueChange={(value) => onGenreChange(value ? value.split(',') : [])}
-      placeholder={t("filters.selectGenre")}
-      options={MOVIE_GENRES.map(genre => ({
-        id: genre.id,
-        name: t(`movie.${genre.id.toLowerCase()}`),
-      }))}
+      placeholder="Select Genre"
+      options={MOVIE_GENRES}
     />
   );
 };

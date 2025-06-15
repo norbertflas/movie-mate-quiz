@@ -1,3 +1,4 @@
+
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Filter, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -28,7 +29,7 @@ export const MobileFilterSheet = ({
       <SheetTrigger asChild>
         <Button variant="outline" size="sm" className="mb-4">
           <Filter className="h-4 w-4 mr-2" />
-          {t("filters.title")}
+          Filters
           {activeFiltersCount > 0 && (
             <Badge variant="secondary" className="ml-2">
               {activeFiltersCount}
@@ -39,7 +40,7 @@ export const MobileFilterSheet = ({
       <SheetContent side="left" className="w-[300px] sm:w-[400px]">
         <SheetHeader>
           <div className="flex items-center justify-between">
-            <SheetTitle>{t("filters.title")}</SheetTitle>
+            <SheetTitle>Filters</SheetTitle>
             <Button
               variant="ghost"
               size="icon"
