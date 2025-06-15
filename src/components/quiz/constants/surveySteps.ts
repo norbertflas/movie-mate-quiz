@@ -32,7 +32,8 @@ export const useSurveySteps = (): SurveyStep[] => {
         { value: "apple", label: "Apple TV+", icon: "🍎" },
         { value: "hulu", label: "Hulu", icon: "📺" },
         { value: "paramount", label: "Paramount+", icon: "🗻" },
-        { value: "peacock", label: "Peacock", icon: "🦚" }
+        { value: "peacock", label: "Peacock", icon: "🦚" },
+        { value: "any", label: "Nie mam preferencji", icon: "🌐" }
       ]
     },
     {
@@ -48,52 +49,110 @@ export const useSurveySteps = (): SurveyStep[] => {
     },
     {
       id: "movie_length",
-      title: "quiz.questions.movieLength",
-      subtitle: "quiz.questions.movieLengthSubtitle",
+      title: "Jaki czas trwania filmu preferujesz?",
+      subtitle: "To pomoże mi dobrać filmy odpowiednie na Twój dostępny czas",
       shouldShow: (answers) => {
         const contentType = answers.content_type;
         return contentType === "movies" || contentType === "both";
       },
       options: [
-        { value: "short", label: "quiz.options.short", icon: "⏱️" },
-        { value: "standard", label: "quiz.options.standard", icon: "⏰" },
-        { value: "long", label: "quiz.options.long", icon: "🎞️" }
+        { value: "short", label: "Krótkie (do 90 min)", icon: "⏱️" },
+        { value: "standard", label: "Standardowe (90-150 min)", icon: "⏰" },
+        { value: "long", label: "Długie (ponad 150 min)", icon: "🎞️" },
+        { value: "no_preference", label: "Bez preferencji", icon: "🤷" }
       ]
     },
     {
-      id: "mood",
-      title: "quiz.questions.mood",
-      subtitle: "quiz.questions.moodSubtitle",
+      id: "current_mood",
+      title: "W jakim jesteś nastroju?",
+      subtitle: "Dobiorę filmy pasujące do Twojego aktualnego stanu",
       options: [
-        { value: "funny", label: "quiz.options.funny", icon: "😄" },
-        { value: "touching", label: "quiz.options.touching", icon: "❤️" },
-        { value: "adrenaline", label: "quiz.options.adrenaline", icon: "⚡" },
-        { value: "relaxing", label: "quiz.options.relaxing", icon: "😌" }
+        { value: "happy", label: "Chcę się pośmiać", icon: "😄" },
+        { value: "sad", label: "Chcę się wzruszyć", icon: "😢" },
+        { value: "excited", label: "Chcę adrenaliny", icon: "⚡" },
+        { value: "relaxed", label: "Chcę się zrelaksować", icon: "😌" },
+        { value: "thoughtful", label: "Chcę się zamyślić", icon: "🤔" },
+        { value: "nostalgic", label: "Tęsknię za starymi czasami", icon: "📼" },
+        { value: "no_preference", label: "Bez preferencji", icon: "🎭" }
+      ]
+    },
+    {
+      id: "viewing_context",
+      title: "W jakiej sytuacji będziesz oglądać?",
+      subtitle: "To wpłynie na rodzaj polecanych treści",
+      options: [
+        { value: "alone", label: "Sam/sama", icon: "🎧" },
+        { value: "partner", label: "Z partnerem/partnerką", icon: "💑" },
+        { value: "family", label: "Z rodziną", icon: "👨‍👩‍👧‍👦" },
+        { value: "friends", label: "Ze znajomymi", icon: "👥" },
+        { value: "background", label: "W tle podczas innych zajęć", icon: "📱" }
       ]
     },
     {
       id: "genres",
-      title: "quiz.questions.genres",
-      subtitle: "quiz.questions.genresSubtitle",
+      title: "Które gatunki Cię interesują?",
+      subtitle: "Wybierz wszystkie, które lubisz (możesz wybrać kilka)",
       multiSelect: true,
       options: [
-        { value: "action", label: "movie.action", icon: "💥" },
-        { value: "comedy", label: "movie.comedy", icon: "😂" },
-        { value: "drama", label: "movie.drama", icon: "🎭" },
-        { value: "horror", label: "movie.horror", icon: "👻" },
-        { value: "romance", label: "movie.romance", icon: "💕" },
-        { value: "sci-fi", label: "movie.sciFi", icon: "🚀" },
-        { value: "thriller", label: "movie.thriller", icon: "🔥" },
-        { value: "documentary", label: "movie.documentary", icon: "📚" }
+        { value: "action", label: "Akcja", icon: "💥" },
+        { value: "comedy", label: "Komedia", icon: "😂" },
+        { value: "drama", label: "Dramat", icon: "🎭" },
+        { value: "horror", label: "Horror", icon: "👻" },
+        { value: "romance", label: "Romans", icon: "💕" },
+        { value: "sci-fi", label: "Science Fiction", icon: "🚀" },
+        { value: "thriller", label: "Thriller", icon: "🔥" },
+        { value: "documentary", label: "Dokumentalne", icon: "📚" },
+        { value: "fantasy", label: "Fantasy", icon: "🧙" },
+        { value: "crime", label: "Kryminalne", icon: "🕵️" },
+        { value: "animation", label: "Animowane", icon: "🎨" },
+        { value: "mystery", label: "Tajemnica", icon: "🔍" }
       ]
     },
     {
-      id: "challenges",
-      title: "quiz.questions.challenges || 'Are you up for challenges?'",
-      subtitle: "quiz.questions.challengesSubtitle || 'This will determine the complexity of your recommendations'",
+      id: "rating_preference",
+      title: "Jaki poziom treści preferujesz?",
+      subtitle: "Wybierz odpowiedni dla siebie poziom",
       options: [
-        { value: "yes", label: "quiz.options.yes || 'Yes, bring it on!'", icon: "💪" },
-        { value: "no", label: "quiz.options.no || 'No, keep it simple'", icon: "😌" }
+        { value: "family", label: "Rodzinne (dla wszystkich)", icon: "👨‍👩‍👧‍👦" },
+        { value: "teen", label: "Dla młodzieży (13+)", icon: "🧑‍🎓" },
+        { value: "adult", label: "Dla dorosłych (18+)", icon: "🔞" },
+        { value: "no_preference", label: "Bez preferencji", icon: "🎬" }
+      ]
+    },
+    {
+      id: "era_preference",
+      title: "Z jakiego okresu preferujesz filmy?",
+      subtitle: "Może masz ochotę na klasyki lub najnowsze produkcje?",
+      options: [
+        { value: "latest", label: "Najnowsze (2020+)", icon: "🆕" },
+        { value: "recent", label: "Ostatnie lata (2010-2020)", icon: "📅" },
+        { value: "modern", label: "Nowoczesne (2000-2010)", icon: "💿" },
+        { value: "retro", label: "Retro (1990-2000)", icon: "📼" },
+        { value: "classic", label: "Klasyczne (przed 1990)", icon: "🎞️" },
+        { value: "no_preference", label: "Bez preferencji", icon: "🎭" }
+      ]
+    },
+    {
+      id: "intensity_level",
+      title: "Jaki poziom intensywności preferujesz?",
+      subtitle: "Chcesz czegoś spokojnego czy pełnego akcji?",
+      options: [
+        { value: "very_calm", label: "Bardzo spokojne", icon: "🧘" },
+        { value: "calm", label: "Spokojne", icon: "😌" },
+        { value: "moderate", label: "Umiarkowane", icon: "⚖️" },
+        { value: "intense", label: "Intensywne", icon: "🔥" },
+        { value: "very_intense", label: "Bardzo intensywne", icon: "💥" }
+      ]
+    },
+    {
+      id: "language_preference",
+      title: "Jakiej wersji językowej preferujesz?",
+      subtitle: "To pomoże mi dobrać odpowiednie tytuły",
+      options: [
+        { value: "polish", label: "Polski dubbing", icon: "🇵🇱" },
+        { value: "original_subtitles", label: "Oryginał z napisami", icon: "📝" },
+        { value: "english", label: "Angielski", icon: "🇺🇸" },
+        { value: "no_preference", label: "Bez preferencji", icon: "🌐" }
       ]
     }
   ], [t]);
