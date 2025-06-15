@@ -8,6 +8,17 @@ import Favorites from './pages/Favorites';
 import Ratings from './pages/Ratings';
 import Services from './pages/Services';
 import Auth from './pages/Auth';
+import About from './pages/About';
+import Contact from './pages/Contact';
+import Careers from './pages/Careers';
+import Press from './pages/Press';
+import Help from './pages/Help';
+import FAQ from './pages/FAQ';
+import Terms from './pages/Terms';
+import Privacy from './pages/Privacy';
+import Copyright from './pages/Copyright';
+import Cookies from './pages/Cookies';
+import Refunds from './pages/Refunds';
 import { ScrollProvider } from './hooks/use-scroll-context';
 import { Navigation } from './components/Navigation';
 
@@ -26,6 +37,17 @@ function App() {
               <Route path="/ratings" element={<Ratings />} />
               <Route path="/services" element={<Services />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/careers" element={<Careers />} />
+              <Route path="/press" element={<Press />} />
+              <Route path="/help" element={<Help />} />
+              <Route path="/faq" element={<FAQ />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/copyright" element={<Copyright />} />
+              <Route path="/cookies" element={<Cookies />} />
+              <Route path="/refunds" element={<Refunds />} />
             </Routes>
           </main>
         </ScrollProvider>
