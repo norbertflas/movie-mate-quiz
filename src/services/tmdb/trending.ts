@@ -3,20 +3,17 @@ import { TMDBMovie } from "./types";
 import { TMDB_BASE_URL, getTMDBApiKey } from "./config";
 import i18n from "@/i18n";
 
-export const getTrendingMovies = async (context: { queryKey: string[] }): Promise<TMDBMovie[]> => {
+export const getTrendingMovies = async (context?: { queryKey: string[] }): Promise<TMDBMovie[]> => {
   const apiKey = await getTMDBApiKey();
   const currentLang = i18n.language || "en";
   
   // Extract parameters from query key safely
-  const queryKey = context.queryKey;
-  
-  // Handle both array and object formats for backward compatibility
   let region = "";
   let page = "1";
   
-  if (queryKey && queryKey.length > 1) {
-    region = queryKey[1] || "";
-    page = queryKey[2] || "1";
+  if (context?.queryKey && context.queryKey.length > 1) {
+    region = context.queryKey[1] || "";
+    page = context.queryKey[2] || "1";
   }
   
   console.log(`Fetching trending movies with language: ${currentLang}, region: ${region}, page: ${page}`);
@@ -44,20 +41,17 @@ export const getTrendingMovies = async (context: { queryKey: string[] }): Promis
   }
 };
 
-export const getPopularMovies = async (context: { queryKey: string[] }): Promise<TMDBMovie[]> => {
+export const getPopularMovies = async (context?: { queryKey: string[] }): Promise<TMDBMovie[]> => {
   const apiKey = await getTMDBApiKey();
   const currentLang = i18n.language || "en";
   
   // Extract parameters from query key safely
-  const queryKey = context.queryKey;
-  
-  // Handle both array and object formats for backward compatibility
   let region = "";
   let page = "1";
   
-  if (queryKey && queryKey.length > 1) {
-    region = queryKey[1] || "";
-    page = queryKey[2] || "1";
+  if (context?.queryKey && context.queryKey.length > 1) {
+    region = context.queryKey[1] || "";
+    page = context.queryKey[2] || "1";
   }
   
   console.log(`Fetching popular movies with language: ${currentLang}, region: ${region}, page: ${page}`);

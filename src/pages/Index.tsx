@@ -16,12 +16,12 @@ const Index = () => {
 
   const { data: trendingMovies, isLoading: trendingLoading } = useQuery({
     queryKey: ['trendingMovies'],
-    queryFn: () => getTrendingMovies('week'),
+    queryFn: () => getTrendingMovies({ queryKey: ['trendingMovies'] }),
   });
 
   const { data: popularMovies, isLoading: popularLoading } = useQuery({
     queryKey: ['popularMovies'],
-    queryFn: getPopularMovies,
+    queryFn: () => getPopularMovies({ queryKey: ['popularMovies'] }),
   });
 
   return (

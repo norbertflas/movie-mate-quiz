@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { SmartMovieCard } from "@/components/movie/SmartMovieCard";
@@ -8,22 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Film, User } from "lucide-react";
 import { type TMDBMovie, type TMDBPerson } from "@/services/tmdb";
 import { MovieModal, useMovieModal } from "../movie/MovieModal";
-
-// Convert TMDB movie to our unified Movie interface
-const convertTMDBMovie = (tmdbMovie: TMDBMovie): Movie => ({
-  id: tmdbMovie.id,
-  title: tmdbMovie.title,
-  poster_path: tmdbMovie.poster_path,
-  backdrop_path: tmdbMovie.backdrop_path || '',
-  overview: tmdbMovie.overview,
-  release_date: tmdbMovie.release_date,
-  vote_average: tmdbMovie.vote_average,
-  runtime: undefined,
-  genres: undefined,
-  cast: undefined,
-  director: undefined,
-  trailer_url: undefined
-});
 
 interface SmartSearchResultsProps {
   searchResults: TMDBMovie[];
