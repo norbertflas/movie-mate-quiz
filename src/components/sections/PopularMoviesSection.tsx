@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { MovieCardSwitcher } from "@/components/movie/MovieCardSwitcher";
 import { TMDBMovie } from "@/services/tmdb";
 import { MovieModal, useMovieModal } from "@/components/movie/MovieModal";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { useEffect, useState } from "react";
 
 interface PopularMoviesSectionProps {
