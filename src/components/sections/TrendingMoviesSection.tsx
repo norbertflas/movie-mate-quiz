@@ -2,7 +2,7 @@
 import { useTranslation } from "react-i18next";
 import { MovieCardSwitcher } from "@/components/movie/MovieCardSwitcher";
 import { TMDBMovie } from "@/services/tmdb";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MovieModal, useMovieModal } from "@/components/movie/MovieModal";
 
 interface TrendingMoviesSectionProps {
@@ -12,8 +12,30 @@ interface TrendingMoviesSectionProps {
 export const TrendingMoviesSection = ({ movies }: TrendingMoviesSectionProps) => {
   const { t } = useTranslation();
   const { selectedMovie, isModalOpen, openModal, closeModal } = useMovieModal();
+  const [moviesToShow, setMoviesToShow] = useState(8);
 
-  console.log('TrendingMoviesSection rendering with movies count:', movies?.length || 0);
+  useEffect(() => {
+    const updateMovieCount = () => {
+      const width = window.innerWidth;
+      if (width < 768) {
+        // Mobile: 1 column, 2 rows = 2 movies
+        setMoviesToShow(2);
+      } else if (width < 1024) {
+        // md: 2 columns, 2 rows = 4 movies
+        setMoviesToShow(4);
+      } else if (width < 1280) {
+        // lg: 3 columns, 2 rows = 6 movies
+        setMoviesToShow(6);
+      } else {
+        // xl: 4 columns, 2 rows = 8 movies
+        setMoviesToShow(8);
+      }
+    };
+
+    updateMovieCount();
+    window.addEventListener('resize', updateMovieCount);
+    return () => window.removeEventListener('resize', updateMovieCount);
+  }, []);
 
   if (!movies || movies.length === 0) {
     return null;
@@ -26,7 +48,7 @@ export const TrendingMoviesSection = ({ movies }: TrendingMoviesSectionProps) =>
           {t("trending.thisWeek")}
         </h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {movies.slice(0, 8).map((movie) => (
+          {movies.slice(0, moviesToShow).map((movie) => (
             <div
               key={movie.id}
               className="cursor-pointer transition-transform hover:scale-105"

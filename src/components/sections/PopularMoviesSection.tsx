@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import { MovieCardSwitcher } from "@/components/movie/MovieCardSwitcher";
 import { TMDBMovie } from "@/services/tmdb";
 import { MovieModal, useMovieModal } from "@/components/movie/MovieModal";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useEffect, useState } from "react";
 
 interface PopularMoviesSectionProps {
   movies: TMDBMovie[];
@@ -11,6 +13,30 @@ interface PopularMoviesSectionProps {
 export const PopularMoviesSection = ({ movies }: PopularMoviesSectionProps) => {
   const { t } = useTranslation();
   const { selectedMovie, isModalOpen, openModal, closeModal } = useMovieModal();
+  const [moviesToShow, setMoviesToShow] = useState(8);
+
+  useEffect(() => {
+    const updateMovieCount = () => {
+      const width = window.innerWidth;
+      if (width < 768) {
+        // Mobile: 1 column, 2 rows = 2 movies
+        setMoviesToShow(2);
+      } else if (width < 1024) {
+        // md: 2 columns, 2 rows = 4 movies
+        setMoviesToShow(4);
+      } else if (width < 1280) {
+        // lg: 3 columns, 2 rows = 6 movies
+        setMoviesToShow(6);
+      } else {
+        // xl: 4 columns, 2 rows = 8 movies
+        setMoviesToShow(8);
+      }
+    };
+
+    updateMovieCount();
+    window.addEventListener('resize', updateMovieCount);
+    return () => window.removeEventListener('resize', updateMovieCount);
+  }, []);
 
   if (!movies || movies.length === 0) {
     return null;
@@ -23,7 +49,7 @@ export const PopularMoviesSection = ({ movies }: PopularMoviesSectionProps) => {
           {t("popular.movies")}
         </h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {movies.slice(0, 8).map((movie) => (
+          {movies.slice(0, moviesToShow).map((movie) => (
             <div
               key={movie.id}
               className="cursor-pointer transition-transform hover:scale-105"
