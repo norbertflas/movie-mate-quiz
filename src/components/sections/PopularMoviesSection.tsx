@@ -36,6 +36,7 @@ export const PopularMoviesSection = ({ movies }: PopularMoviesSectionProps) => {
                 genre={movie.genre_ids?.join(", ") || ""}
                 imageUrl={movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : '/placeholder.svg'}
                 description={movie.overview}
+                trailerUrl=""
                 rating={Math.round(movie.vote_average * 10)}
                 initialState="minimized"
               />
