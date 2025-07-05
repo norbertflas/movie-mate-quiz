@@ -1,0 +1,83 @@
+
+{
+  "nav": {
+    "home": "Strona główna",
+    "search": "Wyszukaj", 
+    "quiz": "Quiz filmowy",
+    "about": "O nas"
+  },
+  "hero": {
+    "title": "Odkryj Swój Idealny Film",
+    "subtitle": "Znajdź filmy dopasowane do Twojego gustu i preferencji streamingowych",
+    "searchPlaceholder": "Szukaj filmów...",
+    "cta": "Rozpocznij Eksplorację"
+  },
+  "trending": {
+    "thisWeek": "Popularne W Tym Tygodniu",
+    "title": "Popularne Filmy"
+  },
+  "popular": {
+    "movies": "Popularne Filmy",
+    "title": "Popularne Filmy"
+  },
+  "movie": {
+    "details": "Szczegóły Filmu",
+    "releaseDate": "Data premiery",
+    "rating": "Ocena",
+    "votes": "Głosy",
+    "popularity": "Popularność",
+    "description": "Opis",
+    "trailer": "Zobacz Zwiastun",
+    "addToFavorites": "Dodaj do Ulubionych",
+    "removeFromFavorites": "Usuń z Ulubionych"
+  },
+  "streaming": {
+    "availableOn": "Dostępne Na",
+    "notAvailable": "Obecnie niedostępne w streamingu",
+    "checkAvailability": "Sprawdź Dostępność Streamingową",
+    "checking": "Sprawdzanie dostępności...",
+    "checkingDescription": "Szukanie opcji streamingowych dla {{title}}",
+    "lastChecked": "Ostatnio sprawdzono",
+    "watchOn": "Oglądaj na {{service}}",
+    "clickToWatch": "Kliknij aby oglądać",
+    "availableSince": "Dostępne od",
+    "leavingSoon": "Niedługo schodzi",
+    "errorChecking": "Błąd sprawdzania dostępności streamingowej",
+    "dataStale": "Dane streamingowe mogą być nieaktualne",
+    "linkError": "Błąd Linku",
+    "noLinkAvailable": "Brak bezpośredniego linku dla {{service}}",
+    "alreadyChecking": "Już sprawdzam dostępność",
+    "pleaseWait": "Poczekaj na zakończenie bieżącego sprawdzania",
+    "retrying": "Ponawiam próbę...",
+    "retryingDescription": "Ponawiam próbę pobrania danych streamingowych",
+    "searching": "Szukanie opcji streamingowych...",
+    "checkError": "Nie udało się sprawdzić dostępności streamingowej"
+  },
+  "common": {
+    "loading": "Ładowanie...",
+    "error": "Błąd",
+    "retry": "Ponów",
+    "close": "Zamknij",
+    "viewDetails": "Zobacz Szczegóły",
+    "refresh": "Odśwież",
+    "tryAgain": "Spróbuj Ponownie"
+  },
+  "errors": {
+    "generalError": "Wystąpił błąd",
+    "trailerNotFound": "Nie znaleziono zwiastuna",
+    "trailerError": "Błąd ładowania zwiastuna",
+    "tryAgain": "Spróbuj ponownie później"
+  },
+  "ratings": {
+    "saved": "Ocena zapisana",
+    "savedDescription": "Twoja ocena dla {{title}} została zapisana"
+  },
+  "search": {
+    "placeholder": "Szukaj filmów, aktorów, reżyserów...",
+    "noResults": "Brak wyników",
+    "searching": "Wyszukiwanie...",
+    "movies": "Filmy",
+    "people": "Ludzie",
+    "quiz": "Quiz Filmowy"
+  }
+}

@@ -1,0 +1,83 @@
+
+{
+  "nav": {
+    "home": "Home",
+    "search": "Search", 
+    "quiz": "Movie Quiz",
+    "about": "About"
+  },
+  "hero": {
+    "title": "Discover Your Perfect Movie",
+    "subtitle": "Find movies tailored to your taste and streaming preferences",
+    "searchPlaceholder": "Search for movies...",
+    "cta": "Start Exploring"
+  },
+  "trending": {
+    "thisWeek": "Trending This Week",
+    "title": "Trending Movies"
+  },
+  "popular": {
+    "movies": "Popular Movies",
+    "title": "Popular Movies"
+  },
+  "movie": {
+    "details": "Movie Details",
+    "releaseDate": "Release Date",
+    "rating": "Rating",
+    "votes": "Votes",
+    "popularity": "Popularity",
+    "description": "Description",
+    "trailer": "Watch Trailer",
+    "addToFavorites": "Add to Favorites",
+    "removeFromFavorites": "Remove from Favorites"
+  },
+  "streaming": {
+    "availableOn": "Available On",
+    "notAvailable": "Not currently available for streaming",
+    "checkAvailability": "Check Streaming Availability",
+    "checking": "Checking availability...",
+    "checkingDescription": "Looking for streaming options for {{title}}",
+    "lastChecked": "Last checked",
+    "watchOn": "Watch on {{service}}",
+    "clickToWatch": "Click to watch",
+    "availableSince": "Available since",
+    "leavingSoon": "Leaving soon",
+    "errorChecking": "Error checking streaming availability",
+    "dataStale": "Streaming data may be outdated",
+    "linkError": "Link Error",
+    "noLinkAvailable": "No direct link available for {{service}}",
+    "alreadyChecking": "Already checking availability",
+    "pleaseWait": "Please wait for the current check to complete",
+    "retrying": "Retrying...",
+    "retryingDescription": "Retrying to fetch streaming data",
+    "searching": "Searching for streaming options...",
+    "checkError": "Failed to check streaming availability"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "retry": "Retry",
+    "close": "Close",
+    "viewDetails": "View Details",
+    "refresh": "Refresh",
+    "tryAgain": "Try Again"
+  },
+  "errors": {
+    "generalError": "An error occurred",
+    "trailerNotFound": "Trailer not found",
+    "trailerError": "Error loading trailer",
+    "tryAgain": "Please try again later"
+  },
+  "ratings": {
+    "saved": "Rating saved",
+    "savedDescription": "Your rating for {{title}} has been saved"
+  },
+  "search": {
+    "placeholder": "Search for movies, actors, directors...",
+    "noResults": "No results found",
+    "searching": "Searching...",
+    "movies": "Movies",
+    "people": "People",
+    "quiz": "Movie Quiz"
+  }
+}
