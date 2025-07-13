@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { getMovieDetails } from '@/services/tmdb/movies';
 import type { QuizPreferences, MovieRecommendation, TMDB_GENRE_MAPPING, SERVICE_LINKS } from '../types/comprehensiveQuizTypes';
 
@@ -83,17 +84,17 @@ export const useComprehensiveQuizLogic = () => {
 
   const getStreamingAvailability = async (movieId: number): Promise<any[]> => {
     try {
-      const accessToken = import.meta.env.VITE_TMDB_ACCESS_TOKEN;
-      if (!accessToken) return getFallbackServices();
+      // Get TMDB API key from Supabase edge function
+      const { data: tmdbKeyData, error: keyError } = await supabase.functions.invoke('get-tmdb-key');
+      
+      if (keyError || !tmdbKeyData?.TMDB_API_KEY) {
+        return getFallbackServices();
+      }
+      
+      const TMDB_API_KEY = tmdbKeyData.TMDB_API_KEY;
 
       const response = await fetch(
-        `https://api.themoviedb.org/3/movie/${movieId}/watch/providers`,
-        {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-          }
-        }
+        `https://api.themoviedb.org/3/movie/${movieId}/watch/providers?api_key=${TMDB_API_KEY}`
       );
 
       if (!response.ok) return getFallbackServices();
@@ -159,13 +160,18 @@ export const useComprehensiveQuizLogic = () => {
     setError(null);
 
     try {
-      const accessToken = import.meta.env.VITE_TMDB_ACCESS_TOKEN;
-      if (!accessToken) {
-        throw new Error('TMDB access token not found');
+      // Get TMDB API key from Supabase edge function
+      const { data: tmdbKeyData, error: keyError } = await supabase.functions.invoke('get-tmdb-key');
+      
+      if (keyError || !tmdbKeyData?.TMDB_API_KEY) {
+        throw new Error('Failed to get TMDB API key');
       }
+      
+      const TMDB_API_KEY = tmdbKeyData.TMDB_API_KEY;
 
       // Build query parameters
       const params = new URLSearchParams({
+        'api_key': TMDB_API_KEY,
         'sort_by': 'popularity.desc',
         'page': '1',
         'vote_average.gte': '6.0'
@@ -191,28 +197,33 @@ export const useComprehensiveQuizLogic = () => {
         params.append(key, value.toString());
       });
 
-      // Add certification
+      // Add certification (only for US region)
       const certification = getCertification(preferences.rating);
-      Object.entries(certification).forEach(([key, value]) => {
-        params.append(key, value);
-      });
+      if (Object.keys(certification).length > 0) {
+        params.append('certification_country', 'US');
+        Object.entries(certification).forEach(([key, value]) => {
+          params.append(key, value);
+        });
+      }
+
+      console.log('🎬 Quiz API call with params:', params.toString());
 
       const response = await fetch(
-        `https://api.themoviedb.org/3/discover/movie?${params}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-          }
-        }
+        `https://api.themoviedb.org/3/discover/movie?${params}`
       );
 
       if (!response.ok) {
-        throw new Error('Failed to fetch recommendations');
+        throw new Error(`TMDB API error: ${response.status}`);
       }
 
       const data = await response.json();
       const movies = data.results?.slice(0, 9) || [];
+
+      console.log('🎭 Got movies from TMDB:', movies.length);
+
+      if (movies.length === 0) {
+        throw new Error('No movies found matching preferences');
+      }
 
       // Process each movie and add streaming data
       const processedMovies = await Promise.all(
@@ -245,14 +256,15 @@ export const useComprehensiveQuizLogic = () => {
         })
       );
 
+      console.log('✅ Processed quiz recommendations:', processedMovies.length);
       setRecommendations(processedMovies);
       setIsComplete(true);
     } catch (err) {
-      console.error('Error getting recommendations:', err);
+      console.error('❌ Error getting quiz recommendations:', err);
       setError('Failed to get recommendations. Please try again.');
       
-      // Provide fallback recommendations
-      const fallbackMovies = getFallbackRecommendations();
+      // Provide enhanced fallback recommendations based on preferences
+      const fallbackMovies = getEnhancedFallbackRecommendations(preferences);
       setRecommendations(fallbackMovies);
       setIsComplete(true);
     } finally {
@@ -260,8 +272,56 @@ export const useComprehensiveQuizLogic = () => {
     }
   };
 
-  const getFallbackRecommendations = (): MovieRecommendation[] => {
-    return [
+  const getEnhancedFallbackRecommendations = (preferences: QuizPreferences): MovieRecommendation[] => {
+    // Enhanced fallback based on preferences
+    const allMovies = [
+      // Action movies
+      {
+        id: 155,
+        title: "The Dark Knight",
+        year: 2008,
+        poster: "/qJ2tW6WMUDux911r6m7haRef0WH.jpg",
+        overview: "Batman must accept one of the greatest psychological and physical tests of his ability to fight injustice.",
+        genres: ["Action", "Drama"],
+        rating: 9.0,
+        streaming: getFallbackServices(),
+        tmdbId: 155
+      },
+      {
+        id: 245891,
+        title: "John Wick",
+        year: 2014,
+        poster: "/fZPSd91yGE9fCcCe6OoQr6E3Bev.jpg",
+        overview: "An ex-hitman comes out of retirement to track down the gangsters that took everything from him.",
+        genres: ["Action", "Thriller"],
+        rating: 7.4,
+        streaming: getFallbackServices(),
+        tmdbId: 245891
+      },
+      // Comedy movies
+      {
+        id: 12,
+        title: "Finding Nemo",
+        year: 2003,
+        poster: "/eHuGQ10FUzK1mdOY69wF5pGgEf5.jpg",
+        overview: "A clown fish named Marlin lives in the Great Barrier Reef and loses his son, Nemo.",
+        genres: ["Animation", "Comedy"],
+        rating: 8.2,
+        streaming: getFallbackServices(),
+        tmdbId: 12
+      },
+      {
+        id: 862,
+        title: "Toy Story",
+        year: 1995,
+        poster: "/uXDfjJbdP4ijW5hWSBrPrlKpxab.jpg",
+        overview: "A cowboy doll is profoundly threatened when a new spaceman figure supplants him as top toy.",
+        genres: ["Animation", "Comedy"],
+        rating: 8.3,
+        streaming: getFallbackServices(),
+        tmdbId: 862
+      },
+      // Drama movies
       {
         id: 550,
         title: "Fight Club",
@@ -284,18 +344,89 @@ export const useComprehensiveQuizLogic = () => {
         streaming: getFallbackServices(),
         tmdbId: 238
       },
+      // Sci-Fi movies
       {
-        id: 13,
-        title: "Forrest Gump",
-        year: 1994,
-        poster: "/arw2vcBveWOVZr6pxd9XTd1TdQa.jpg",
-        overview: "The presidencies of Kennedy and Johnson through the eyes of an Alabama man.",
-        genres: ["Drama", "Romance"],
-        rating: 8.8,
+        id: 603,
+        title: "The Matrix",
+        year: 1999,
+        poster: "/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg",
+        overview: "A computer hacker learns from mysterious rebels about the true nature of his reality.",
+        genres: ["Sci-Fi", "Action"],
+        rating: 8.7,
         streaming: getFallbackServices(),
-        tmdbId: 13
+        tmdbId: 603
+      },
+      {
+        id: 19995,
+        title: "Avatar",
+        year: 2009,
+        poster: "/jRXYjXNq0Cs2TcJjLkki24MLp7u.jpg",
+        overview: "A paraplegic Marine dispatched to the moon Pandora on a unique mission.",
+        genres: ["Sci-Fi", "Adventure"],
+        rating: 7.6,
+        streaming: getFallbackServices(),
+        tmdbId: 19995
+      },
+      // Horror movies
+      {
+        id: 694,
+        title: "The Shining",
+        year: 1980,
+        poster: "/b6ko0IKC8MdYBBPkkA1aBPLe2yz.jpg",
+        overview: "A family heads to an isolated hotel for the winter where an evil presence influences the father.",
+        genres: ["Horror", "Thriller"],
+        rating: 8.2,
+        streaming: getFallbackServices(),
+        tmdbId: 694
+      },
+      // Romance movies
+      {
+        id: 597,
+        title: "Titanic",
+        year: 1997,
+        poster: "/9xjZS2rlVxm8SFx8kPC3aIGCOYQ.jpg",
+        overview: "A seventeen-year-old aristocrat falls in love with a kind but poor artist aboard the Titanic.",
+        genres: ["Romance", "Drama"],
+        rating: 7.9,
+        streaming: getFallbackServices(),
+        tmdbId: 597
       }
     ];
+
+    // Filter by selected genres
+    let filteredMovies = allMovies;
+    if (preferences.genres.length > 0 && !preferences.genres.includes("No preference")) {
+      filteredMovies = allMovies.filter(movie => 
+        movie.genres.some(genre => preferences.genres.includes(genre))
+      );
+    }
+
+    // Filter by era
+    if (preferences.era !== "No preference") {
+      filteredMovies = filteredMovies.filter(movie => {
+        switch (preferences.era) {
+          case 'Latest releases (2020-2024)':
+            return movie.year >= 2020;
+          case 'Modern classics (2010-2019)':
+            return movie.year >= 2010 && movie.year <= 2019;
+          case 'Golden era (2000-2009)':
+            return movie.year >= 2000 && movie.year <= 2009;
+          case 'Vintage movies (before 2000)':
+            return movie.year < 2000;
+          default:
+            return true;
+        }
+      });
+    }
+
+    // If no movies match, return some popular ones
+    if (filteredMovies.length === 0) {
+      filteredMovies = allMovies.slice(0, 6);
+    }
+
+    // Shuffle and return up to 6 movies
+    const shuffled = filteredMovies.sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, 6);
   };
 
   return {

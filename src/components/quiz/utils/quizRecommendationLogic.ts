@@ -28,61 +28,64 @@ export const parseQuizAnswers = (answers: QuizAnswer[]): QuizFilters => {
 
   // Parse platforms
   let platforms: string[] = [];
-  if (answerMap.platforms) {
+  if (answerMap.platforms || answerMap.streaming_platforms || answerMap.platform) {
+    const platformValue = answerMap.platforms || answerMap.streaming_platforms || answerMap.platform;
     try {
-      platforms = JSON.parse(answerMap.platforms);
+      platforms = JSON.parse(platformValue);
     } catch {
-      platforms = answerMap.platforms.split(',').filter(p => p.trim());
+      platforms = platformValue.split(',').filter(p => p.trim());
     }
   }
 
   // Parse genres
   let genres: string[] = [];
-  if (answerMap.genres) {
+  if (answerMap.genres || answerMap.genre || answerMap.preferred_genres) {
+    const genreValue = answerMap.genres || answerMap.genre || answerMap.preferred_genres;
     try {
-      genres = JSON.parse(answerMap.genres);
+      genres = JSON.parse(genreValue);
     } catch {
-      genres = answerMap.genres.split(',').filter(g => g.trim());
+      genres = genreValue.split(',').filter(g => g.trim());
     }
   }
 
+  // Enhanced mood detection
+  const mood = answerMap.mood || answerMap.current_mood || answerMap.feeling || 'not_sure';
+  
   // Map mood to genres for better recommendations
   const moodToGenres: Record<string, string[]> = {
     happy: ['comedy', 'animation', 'family'],
+    funny: ['comedy', 'animation'],
     sad: ['drama', 'romance'],
     excited: ['action', 'thriller', 'adventure'],
+    adrenaline: ['action', 'thriller'],
     relaxed: ['documentary', 'animation', 'family'],
     thoughtful: ['drama', 'documentary', 'mystery'],
-    nostalgic: ['classic', 'retro']
+    nostalgic: ['drama', 'romance'],
+    romantic: ['romance', 'drama'],
+    scary: ['horror', 'thriller']
   };
 
   // Add mood-based genres
-  const currentMood = answerMap.current_mood;
-  if (currentMood && moodToGenres[currentMood]) {
+  const currentMood = mood.toLowerCase();
+  if (moodToGenres[currentMood]) {
     genres = [...genres, ...moodToGenres[currentMood]];
   }
 
-  // Map viewing context to content preferences
-  const contextToContentType: Record<string, string> = {
-    family: 'family-friendly',
-    friends: 'popular',
-    partner: 'romantic',
-    alone: 'personal',
-    background: 'light'
-  };
+  // Detect era from answers
+  const eraPreference = answerMap.era_preference || answerMap.era || answerMap.year_preference || 'no_preference';
 
   const filters: QuizFilters = {
     platforms: platforms.filter(p => p !== 'any'),
     contentType: answerMap.content_type || 'not_sure',
     genres: [...new Set(genres)], // Remove duplicates
-    mood: answerMap.mood || 'not_sure',
-    movieLength: answerMap.movie_length,
-    currentMood: answerMap.current_mood,
-    viewingContext: answerMap.viewing_context,
-    ratingPreference: answerMap.rating_preference,
-    eraPreference: answerMap.era_preference,
-    intensityLevel: answerMap.intensity_level,
-    languagePreference: answerMap.language_preference,
+    mood: mood,
+    movieLength: answerMap.movie_length || answerMap.length,
+    currentMood: answerMap.current_mood || mood,
+    viewingContext: answerMap.viewing_context || answerMap.context,
+    ratingPreference: answerMap.rating_preference || answerMap.rating,
+    eraPreference: eraPreference,
+    intensityLevel: answerMap.intensity_level || answerMap.intensity,
+    languagePreference: answerMap.language_preference || answerMap.language,
     minRating: getMinRatingFromPreferences(answerMap),
     maxResults: 20
   };
@@ -119,13 +122,14 @@ export const getPersonalizedRecommendations = async (filters: QuizFilters): Prom
       throw error;
     }
 
-    if (!data || !data.recommendations) {
+    // Edge function returns array directly, not wrapped in recommendations
+    if (!data || !Array.isArray(data)) {
       console.warn('⚠️ No recommendations from edge function');
       return [];
     }
 
-    console.log('✅ Got recommendations:', data.recommendations.length);
-    return data.recommendations;
+    console.log('✅ Got recommendations:', data.length);
+    return data;
   } catch (error) {
     console.error('💥 Error getting personalized recommendations:', error);
     throw error;
