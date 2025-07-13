@@ -4,12 +4,14 @@ import { SmartMovieCard } from "@/components/movie/SmartMovieCard";
 import { TMDBMovie } from "@/services/tmdb";
 import { MovieModal, useMovieModal } from "@/components/movie/MovieModal";
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 
 interface PopularMoviesSectionProps {
   movies: TMDBMovie[];
+  isLoading?: boolean;
 }
 
-export const PopularMoviesSection = ({ movies }: PopularMoviesSectionProps) => {
+export const PopularMoviesSection = ({ movies, isLoading = false }: PopularMoviesSectionProps) => {
   const { t } = useTranslation();
   const { selectedMovie, isModalOpen, openModal, closeModal } = useMovieModal();
   const [moviesToShow, setMoviesToShow] = useState(8);
@@ -38,26 +40,70 @@ export const PopularMoviesSection = ({ movies }: PopularMoviesSectionProps) => {
   }, []);
 
   if (!movies || movies.length === 0) {
+    if (isLoading) {
+      return (
+        <section className="py-12">
+          <div className="container mx-auto px-4">
+            <h2 className="text-3xl font-bold mb-8 text-foreground">
+              {t("popular.movies")}
+            </h2>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {Array.from({ length: 8 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="aspect-[2/3] bg-muted rounded-lg animate-pulse"
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+      );
+    }
     return null;
   }
 
   return (
     <section className="py-12">
       <div className="container mx-auto px-4">
-        <h2 className="text-3xl font-bold mb-8 text-white">
-          {t("popular.movies")}
-        </h2>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {movies.slice(0, moviesToShow).map((movie) => (
-            <SmartMovieCard
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <h2 className="text-3xl font-bold mb-2 text-foreground">
+            {t("popular.movies")}
+          </h2>
+          <p className="text-muted-foreground mb-8">
+            Najpopularniejsze filmy w tym tygodniu
+          </p>
+        </motion.div>
+        
+        <motion.div 
+          className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+        >
+          {movies.slice(0, moviesToShow).map((movie, index) => (
+            <motion.div
               key={movie.id}
-              movie={movie}
-              mode="instant"
-              selectedServices={[]}
-              onClick={() => openModal(movie)}
-            />
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ 
+                duration: 0.5,
+                delay: index * 0.1,
+                ease: "easeOut"
+              }}
+            >
+              <SmartMovieCard
+                movie={movie}
+                mode="instant"
+                selectedServices={[]}
+                onClick={() => openModal(movie)}
+              />
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
         
         <MovieModal movie={selectedMovie} isOpen={isModalOpen} onClose={closeModal} />
       </div>
