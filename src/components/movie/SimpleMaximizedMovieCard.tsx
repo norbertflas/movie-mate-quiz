@@ -97,13 +97,14 @@ export const SimpleMaximizedMovieCard = memo(({
   }, [title, description, toast]);
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-      onClick={handleClose}
-    >
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        onClick={handleClose}
+      >
       <motion.div
         initial={{ scale: 0.9, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -290,7 +291,8 @@ export const SimpleMaximizedMovieCard = memo(({
           </ScrollArea>
         </motion.div>
       </motion.div>
-    );
+    </AnimatePresence>
+  );
 });
 
 SimpleMaximizedMovieCard.displayName = "SimpleMaximizedMovieCard";

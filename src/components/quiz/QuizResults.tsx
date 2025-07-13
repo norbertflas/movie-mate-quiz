@@ -26,8 +26,8 @@ export const QuizResults = ({ recommendations, isGroupQuiz = false }: QuizResult
     setSelectedMovie(null);
   };
 
-  // Ensure we display all recommendations
-  const displayRecommendations = recommendations.slice(0, 8);
+  // Ensure we display exactly 5 recommendations as requested
+  const displayRecommendations = recommendations.slice(0, 5);
   
   return (
     <div className="w-full bg-black text-white rounded-xl overflow-hidden">

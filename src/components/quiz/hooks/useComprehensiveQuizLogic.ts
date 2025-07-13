@@ -236,7 +236,7 @@ export const useComprehensiveQuizLogic = () => {
       }
 
       const data = await response.json();
-      const movies = data.results?.slice(0, 9) || [];
+      const movies = data.results?.slice(0, 5) || [];
 
       console.log('🎭 Got movies from TMDB:', movies.length);
 
@@ -303,12 +303,12 @@ export const useComprehensiveQuizLogic = () => {
         console.log('🎯 Movies filtered by platforms:', filteredMovies.length, 'from', validMovies.length);
         
         // If we have too few movies after platform filtering, get more from TMDB
-        if (filteredMovies.length < 6 && validMovies.length > 0) {
+        if (filteredMovies.length < 3 && validMovies.length > 0) {
           console.log('⚠️ Too few movies after platform filtering, adding more...');
           // Keep all movies but prioritize platform-available ones
           const platformMovies = filteredMovies;
           const otherMovies = validMovies.filter(movie => !filteredMovies.includes(movie));
-          filteredMovies = [...platformMovies, ...otherMovies.slice(0, 9 - platformMovies.length)];
+          filteredMovies = [...platformMovies, ...otherMovies.slice(0, 5 - platformMovies.length)];
         }
       }
 
