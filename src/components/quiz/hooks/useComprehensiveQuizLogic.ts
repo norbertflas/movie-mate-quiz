@@ -256,8 +256,32 @@ export const useComprehensiveQuizLogic = () => {
         })
       );
 
-      console.log('✅ Processed quiz recommendations:', processedMovies.length);
-      setRecommendations(processedMovies);
+      console.log('🎬 All processed movies:', processedMovies.length);
+
+      // Filter movies by selected streaming platforms
+      let filteredMovies = processedMovies;
+      if (preferences.platforms.length > 0 && !preferences.platforms.includes("I don't have a preference")) {
+        filteredMovies = processedMovies.filter(movie => {
+          // Check if movie is available on any of the user's preferred platforms
+          return movie.streaming.some((streamingService: any) => 
+            preferences.platforms.includes(streamingService.service)
+          );
+        });
+        
+        console.log('🎯 Movies filtered by platforms:', filteredMovies.length, 'from', processedMovies.length);
+        
+        // If we have too few movies after platform filtering, get more from TMDB
+        if (filteredMovies.length < 6 && processedMovies.length > 0) {
+          console.log('⚠️ Too few movies after platform filtering, adding more...');
+          // Keep all movies but prioritize platform-available ones
+          const platformMovies = filteredMovies;
+          const otherMovies = processedMovies.filter(movie => !filteredMovies.includes(movie));
+          filteredMovies = [...platformMovies, ...otherMovies.slice(0, 9 - platformMovies.length)];
+        }
+      }
+
+      console.log('✅ Final quiz recommendations:', filteredMovies.length);
+      setRecommendations(filteredMovies);
       setIsComplete(true);
     } catch (err) {
       console.error('❌ Error getting quiz recommendations:', err);
@@ -417,6 +441,23 @@ export const useComprehensiveQuizLogic = () => {
             return true;
         }
       });
+    }
+
+    // Filter by selected platforms (same logic as main recommendations)
+    if (preferences.platforms.length > 0 && !preferences.platforms.includes("I don't have a preference")) {
+      const platformFilteredMovies = filteredMovies.filter(movie => {
+        // Check if movie is available on any of the user's preferred platforms
+        return movie.streaming.some((streamingService: any) => 
+          preferences.platforms.includes(streamingService.service)
+        );
+      });
+      
+      // If we have movies after platform filtering, use them, otherwise keep all
+      if (platformFilteredMovies.length > 0) {
+        filteredMovies = platformFilteredMovies;
+      }
+      
+      console.log('🎯 Fallback movies filtered by platforms:', filteredMovies.length);
     }
 
     // If no movies match, return some popular ones
