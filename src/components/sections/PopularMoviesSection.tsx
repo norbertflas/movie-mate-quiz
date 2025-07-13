@@ -1,6 +1,6 @@
 
 import { useTranslation } from "react-i18next";
-import { MovieCardSwitcher } from "@/components/movie/MovieCardSwitcher";
+import { SmartMovieCard } from "@/components/movie/SmartMovieCard";
 import { TMDBMovie } from "@/services/tmdb";
 import { MovieModal, useMovieModal } from "@/components/movie/MovieModal";
 import { useEffect, useState } from "react";
@@ -49,23 +49,13 @@ export const PopularMoviesSection = ({ movies }: PopularMoviesSectionProps) => {
         </h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {movies.slice(0, moviesToShow).map((movie) => (
-            <div
+            <SmartMovieCard
               key={movie.id}
-              className="cursor-pointer transition-transform hover:scale-105"
+              movie={movie}
+              mode="instant"
+              selectedServices={[]}
               onClick={() => openModal(movie)}
-            >
-              <MovieCardSwitcher
-                title={movie.title}
-                year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : ""}
-                platform="TMDB"
-                genre={movie.genre_ids?.join(", ") || ""}
-                imageUrl={movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : '/placeholder.svg'}
-                description={movie.overview}
-                trailerUrl=""
-                rating={Math.round(movie.vote_average * 10)}
-                initialState="minimized"
-              />
-            </div>
+            />
           ))}
         </div>
         

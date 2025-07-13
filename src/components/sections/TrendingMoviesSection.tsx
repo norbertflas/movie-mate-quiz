@@ -1,6 +1,6 @@
 
 import { useTranslation } from "react-i18next";
-import { MovieCardSwitcher } from "@/components/movie/MovieCardSwitcher";
+import { SmartMovieCard } from "@/components/movie/SmartMovieCard";
 import { TMDBMovie } from "@/services/tmdb";
 import { MovieModal, useMovieModal } from "@/components/movie/MovieModal";
 
@@ -24,21 +24,12 @@ export const TrendingMoviesSection = ({ movies }: TrendingMoviesSectionProps) =>
         </h2>
         <div className="flex overflow-x-auto gap-4 pb-4 scrollbar-hide trending-horizontal-scroll">
           {movies.slice(0, 12).map((movie) => (
-            <div
-              key={movie.id}
-              className="flex-shrink-0 w-48 cursor-pointer transition-transform hover:scale-105"
-              onClick={() => openModal(movie)}
-            >
-              <MovieCardSwitcher
-                title={movie.title}
-                year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : ""}
-                platform="TMDB"
-                genre={movie.genre_ids?.join(", ") || ""}
-                imageUrl={movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : '/placeholder.svg'}
-                description={movie.overview}
-                trailerUrl=""
-                rating={Math.round(movie.vote_average * 10)}
-                initialState="minimized"
+            <div key={movie.id} className="flex-shrink-0 w-48">
+              <SmartMovieCard
+                movie={movie}
+                mode="lazy"
+                selectedServices={[]}
+                onClick={() => openModal(movie)}
               />
             </div>
           ))}
