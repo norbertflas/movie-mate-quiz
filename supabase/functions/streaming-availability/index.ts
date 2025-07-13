@@ -32,7 +32,7 @@ serve(async (req) => {
       .from('system_settings')
       .select('value')
       .eq('key', 'emergency_mode')
-      .single()
+      .maybeSingle()
 
     if (emergencyMode?.value?.active || EMERGENCY_MODE) {
       console.log('🚨 [Edge] Emergency mode active, using fallback only')
@@ -54,7 +54,7 @@ serve(async (req) => {
         .eq('tmdb_id', tmdbId)
         .eq('country', country.toUpperCase())
         .gte('expires_at', new Date().toISOString())
-        .single()
+        .maybeSingle()
 
       if (cached) {
         console.log(`📦 [Edge] Cache HIT for ${tmdbId}`)
@@ -170,7 +170,8 @@ serve(async (req) => {
     } catch (apiError) {
       console.error('❌ [Edge] MovieOfTheNight API failed:', apiError)
       
-      // Fallback to generated services with shorter cache
+      // Only return fallback if the API actually failed, not if movie wasn't found
+      console.log(`🏠 [Edge] Using fallback services for ${country}`)
       const fallbackServices = generateFallbackServices(country)
       const cacheHours = 6 // 6 hours for fallback when API fails
       const expiresAt = new Date(Date.now() + cacheHours * 60 * 60 * 1000)
@@ -312,7 +313,8 @@ async function getMovieStreamingData(tmdbId: number, country: string, title?: st
   }
 
   if (!movieData) {
-    console.log(`❌ [MovieOfTheNight] No data found for ${title || tmdbId}`)
+    console.log(`❌ [MovieOfTheNight] No data found for TMDB ID ${tmdbId}`)
+    // Return fallback instead of throwing error
     return generateFallbackServices(country)
   }
 

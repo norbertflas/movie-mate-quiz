@@ -93,7 +93,9 @@ export const useComprehensiveQuizLogic = () => {
       const { data, error } = await supabase.functions.invoke('streaming-availability', {
         body: { 
           tmdbId: movieId, 
-          country: userCountry 
+          country: userCountry,
+          title: '', // Will be provided by the edge function from TMDB data
+          year: new Date().getFullYear() // Current year as fallback
         }
       });
 
@@ -215,7 +217,16 @@ export const useComprehensiveQuizLogic = () => {
       }
 
       const data = await response.json();
-      const movies = data.results?.slice(0, 5) || [];
+      const movies = data.results?.filter((movie: any) => {
+        // Filter out movies not yet released  
+        if (movie.release_date) {
+          const releaseDate = new Date(movie.release_date);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0); // Reset time for accurate comparison
+          return releaseDate <= today;
+        }
+        return true;
+      }).slice(0, 5) || [];
 
       console.log('🎭 Got movies from TMDB:', movies.length);
 
@@ -226,16 +237,8 @@ export const useComprehensiveQuizLogic = () => {
       // Process each movie and add streaming data
       const processedMovies = await Promise.all(
         movies.map(async (movie: any) => {
-          // Skip movies that are not yet released
-          if (movie.release_date) {
-            const releaseDate = new Date(movie.release_date);
-            const today = new Date();
-            if (releaseDate > today) {
-              console.log(`⏩ Skipping upcoming movie: ${movie.title} (${movie.release_date})`);
-              return null; // Skip this movie
-            }
-          }
-
+          console.log(`🎭 Processing movie: ${movie.title} (${movie.release_date})`);
+          
           const streaming = await getStreamingAvailability(movie.id);
           
           return {
@@ -264,8 +267,8 @@ export const useComprehensiveQuizLogic = () => {
         })
       );
 
-      // Filter out null values (upcoming movies)
-      const validMovies = processedMovies.filter(movie => movie !== null);
+      // All movies are already filtered - no need to filter again
+      const validMovies = processedMovies;
 
       console.log('🎬 Valid movies after filtering upcoming:', validMovies.length);
 

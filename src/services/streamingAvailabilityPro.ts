@@ -75,11 +75,25 @@ const setCachedData = (tmdbId: number, country: string, data: MovieStreamingData
   }
 };
 
-// Get user's country based on locale
+// Get user's country based on locale with better detection
 export const getUserCountry = (): string => {
+  // Check browser language settings
   const language = navigator.language.toLowerCase();
-  if (language.startsWith('pl')) return 'pl';
-  return 'us';
+  const languages = navigator.languages?.map(lang => lang.toLowerCase()) || [];
+  
+  // Check for Polish
+  if (language.includes('pl') || languages.some(lang => lang.includes('pl'))) {
+    return 'pl';
+  }
+  
+  // Check timezone as backup
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  if (timezone.includes('Warsaw') || timezone.includes('Europe/Warsaw')) {
+    return 'pl';
+  }
+  
+  console.log('🌍 Detected country: pl (default for this app)');
+  return 'pl'; // Default to Poland for this app
 };
 
 // Get streaming data for multiple movies
