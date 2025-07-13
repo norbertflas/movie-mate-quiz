@@ -8,7 +8,7 @@ const corsHeaders = {
 }
 
 // Emergency mode settings
-const EMERGENCY_MODE = true; // Set to true to prevent API overuse
+const EMERGENCY_MODE = false; // Disabled to use real MovieOfTheNight API
 const RAPID_API_DAILY_LIMIT = 500;
 const WATCHMODE_DAILY_LIMIT = 100;
 
@@ -133,34 +133,69 @@ serve(async (req) => {
       }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
-    // STEP 4: Use fallback for now (preventing actual API calls)
-    console.log('🏠 [Edge] Using fallback to prevent API costs')
-    const fallbackServices = generateFallbackServices(country)
+    // STEP 4: Try MovieOfTheNight API
+    console.log('🎬 [Edge] Calling MovieOfTheNight API for streaming data')
+    
+    try {
+      const streamingData = await getMovieStreamingData(tmdbId, country, title, year)
+      
+      // Cache the API results
+      const cacheHours = 24 * 3 // 3 days for API data
+      const expiresAt = new Date(Date.now() + cacheHours * 60 * 60 * 1000)
 
-    // Cache fallback services
-    const cacheHours = 24 * 7 // 7 days for fallback
-    const expiresAt = new Date(Date.now() + cacheHours * 60 * 60 * 1000)
+      await supabase
+        .from('streaming_cache')
+        .upsert({
+          tmdb_id: tmdbId,
+          country: country.toUpperCase(),
+          streaming_data: streamingData,
+          cached_at: new Date().toISOString(),
+          expires_at: expiresAt.toISOString(),
+          source: 'movieofthenight_api'
+        })
 
-    await supabase
-      .from('streaming_cache')
-      .upsert({
-        tmdb_id: tmdbId,
-        country: country.toUpperCase(),
-        streaming_data: fallbackServices,
-        cached_at: new Date().toISOString(),
-        expires_at: expiresAt.toISOString(),
-        source: 'fallback'
-      })
+      // Record API usage
+      await recordAPICall('rapidapi', supabase)
 
-    return new Response(JSON.stringify({
-      result: fallbackServices,
-      source: 'fallback',
-      api_calls_remaining: {
-        rapidapi: RAPID_API_DAILY_LIMIT - rapidApiCalls,
-        watchmode: WATCHMODE_DAILY_LIMIT - watchmodeCalls
-      },
-      cached_until: expiresAt.toISOString()
-    }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      return new Response(JSON.stringify({
+        result: streamingData,
+        source: 'movieofthenight_api',
+        api_calls_remaining: {
+          rapidapi: RAPID_API_DAILY_LIMIT - rapidApiCalls - 1,
+          watchmode: WATCHMODE_DAILY_LIMIT - watchmodeCalls
+        },
+        cached_until: expiresAt.toISOString()
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+
+    } catch (apiError) {
+      console.error('❌ [Edge] MovieOfTheNight API failed:', apiError)
+      
+      // Fallback to generated services with shorter cache
+      const fallbackServices = generateFallbackServices(country)
+      const cacheHours = 6 // 6 hours for fallback when API fails
+      const expiresAt = new Date(Date.now() + cacheHours * 60 * 60 * 1000)
+
+      await supabase
+        .from('streaming_cache')
+        .upsert({
+          tmdb_id: tmdbId,
+          country: country.toUpperCase(),
+          streaming_data: fallbackServices,
+          cached_at: new Date().toISOString(),
+          expires_at: expiresAt.toISOString(),
+          source: 'api_error_fallback'
+        })
+
+      return new Response(JSON.stringify({
+        result: fallbackServices,
+        source: 'api_error_fallback',
+        error: apiError.message,
+        api_calls_remaining: {
+          rapidapi: RAPID_API_DAILY_LIMIT - rapidApiCalls,
+          watchmode: WATCHMODE_DAILY_LIMIT - watchmodeCalls
+        }
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
 
   } catch (error) {
     console.error('❌ [Edge] Error:', error)
@@ -205,6 +240,154 @@ function generateFallbackServices(country: string) {
   };
 
   return servicesByRegion[country.toUpperCase()] || servicesByRegion['US'];
+}
+
+// Get streaming data from MovieOfTheNight API
+async function getMovieStreamingData(tmdbId: number, country: string, title?: string, year?: number) {
+  const rapidApiKey = Deno.env.get('RAPIDAPI_KEY')
+  if (!rapidApiKey) {
+    throw new Error('RAPIDAPI_KEY not configured')
+  }
+
+  // Try to get by TMDB ID first
+  let movieData = null
+  
+  try {
+    console.log(`🔍 [MovieOfTheNight] Searching by TMDB ID: ${tmdbId}`)
+    
+    const response = await fetch(`https://streaming-availability.p.rapidapi.com/shows/${tmdbId}`, {
+      method: 'GET',
+      headers: {
+        'X-RapidAPI-Key': rapidApiKey,
+        'X-RapidAPI-Host': 'streaming-availability.p.rapidapi.com'
+      }
+    })
+
+    if (response.ok) {
+      movieData = await response.json()
+      console.log(`✅ [MovieOfTheNight] Found by TMDB ID: ${movieData.title}`)
+    } else {
+      console.log(`⚠️ [MovieOfTheNight] TMDB ID ${tmdbId} not found, trying search...`)
+    }
+  } catch (error) {
+    console.log(`⚠️ [MovieOfTheNight] TMDB ID search failed: ${error.message}`)
+  }
+
+  // If TMDB ID lookup failed, try search by title
+  if (!movieData && title) {
+    try {
+      console.log(`🔍 [MovieOfTheNight] Searching by title: ${title}`)
+      
+      const searchParams = new URLSearchParams({
+        country: country.toLowerCase(),
+        show_type: 'movie',
+        output_language: 'en'
+      })
+      
+      if (title) searchParams.append('keyword', title)
+      if (year) searchParams.append('year_min', year.toString())
+      if (year) searchParams.append('year_max', year.toString())
+
+      const searchResponse = await fetch(
+        `https://streaming-availability.p.rapidapi.com/shows/search/title?${searchParams}`,
+        {
+          method: 'GET',
+          headers: {
+            'X-RapidAPI-Key': rapidApiKey,
+            'X-RapidAPI-Host': 'streaming-availability.p.rapidapi.com'
+          }
+        }
+      )
+
+      if (searchResponse.ok) {
+        const searchResults = await searchResponse.json()
+        if (searchResults?.length > 0) {
+          movieData = searchResults[0]
+          console.log(`✅ [MovieOfTheNight] Found by search: ${movieData.title}`)
+        }
+      }
+    } catch (error) {
+      console.error(`❌ [MovieOfTheNight] Search failed: ${error.message}`)
+    }
+  }
+
+  if (!movieData) {
+    console.log(`❌ [MovieOfTheNight] No data found for ${title || tmdbId}`)
+    return generateFallbackServices(country)
+  }
+
+  // Extract streaming services for the target country
+  const streamingInfo = movieData.streamingInfo?.[country.toLowerCase()] || {}
+  const services = []
+
+  // Process different streaming types
+  for (const [serviceId, options] of Object.entries(streamingInfo)) {
+    if (Array.isArray(options) && options.length > 0) {
+      const option = options[0] // Take first option
+      
+      services.push({
+        service: getServiceDisplayName(serviceId),
+        type: getStreamingType(option),
+        link: option.link || getServiceHomeUrl(serviceId),
+        available: true,
+        quality: option.quality || 'hd',
+        price: option.price ? {
+          amount: option.price.amount,
+          currency: option.price.currency,
+          formatted: option.price.formatted
+        } : undefined
+      })
+    }
+  }
+
+  console.log(`📺 [MovieOfTheNight] Found ${services.length} streaming options for ${country}`)
+  
+  return services.length > 0 ? services : generateFallbackServices(country)
+}
+
+// Helper functions for MovieOfTheNight API
+function getServiceDisplayName(serviceId: string): string {
+  const serviceNames: Record<string, string> = {
+    'netflix': 'Netflix',
+    'prime': 'Amazon Prime Video',
+    'disney': 'Disney+',
+    'hbo': 'HBO Max',
+    'hulu': 'Hulu',
+    'apple': 'Apple TV+',
+    'paramount': 'Paramount+',
+    'canal': 'Canal+',
+    'player': 'Player.pl',
+    'polsat': 'Polsat Box Go',
+    'tvp': 'TVP VOD'
+  }
+  
+  return serviceNames[serviceId] || serviceId.charAt(0).toUpperCase() + serviceId.slice(1)
+}
+
+function getStreamingType(option: any): string {
+  if (option.type === 'subscription') return 'subscription'
+  if (option.type === 'rent') return 'rent'
+  if (option.type === 'buy') return 'buy'
+  if (option.type === 'free') return 'free'
+  return 'subscription' // default
+}
+
+function getServiceHomeUrl(serviceId: string): string {
+  const serviceUrls: Record<string, string> = {
+    'netflix': 'https://netflix.com',
+    'prime': 'https://amazon.com/prime-video',
+    'disney': 'https://disneyplus.com',
+    'hbo': 'https://max.com',
+    'hulu': 'https://hulu.com',
+    'apple': 'https://tv.apple.com',
+    'paramount': 'https://paramountplus.com',
+    'canal': 'https://canalplus.pl',
+    'player': 'https://player.pl',
+    'polsat': 'https://polsatboxgo.pl',
+    'tvp': 'https://vod.tvp.pl'
+  }
+  
+  return serviceUrls[serviceId] || `https://${serviceId}.com`
 }
 
 // Record API call for usage tracking
