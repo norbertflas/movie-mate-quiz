@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { getMovieDetails } from '@/services/tmdb/movies';
+import { getUserCountry } from '@/services/streamingAvailabilityPro';
 import type { QuizPreferences, MovieRecommendation, TMDB_GENRE_MAPPING, SERVICE_LINKS } from '../types/comprehensiveQuizTypes';
 
 export const useComprehensiveQuizLogic = () => {
@@ -84,11 +85,14 @@ export const useComprehensiveQuizLogic = () => {
 
   const getStreamingAvailability = async (movieId: number): Promise<any[]> => {
     try {
+      const userCountry = getUserCountry();
+      const countryCode = userCountry.toUpperCase();
+      
       // Get TMDB API key from Supabase edge function
       const { data: tmdbKeyData, error: keyError } = await supabase.functions.invoke('get-tmdb-key');
       
       if (keyError || !tmdbKeyData?.TMDB_API_KEY) {
-        return getFallbackServices();
+        return getFallbackServices(userCountry);
       }
       
       const TMDB_API_KEY = tmdbKeyData.TMDB_API_KEY;
@@ -97,38 +101,39 @@ export const useComprehensiveQuizLogic = () => {
         `https://api.themoviedb.org/3/movie/${movieId}/watch/providers?api_key=${TMDB_API_KEY}`
       );
 
-      if (!response.ok) return getFallbackServices();
+      if (!response.ok) return getFallbackServices(userCountry);
 
       const data = await response.json();
-      const usData = data.results?.US;
+      const regionData = data.results?.[countryCode];
       
-      if (!usData) return getFallbackServices();
+      if (!regionData) return getFallbackServices(userCountry);
 
       const services: any[] = [];
 
       // Add subscription services
-      if (usData.flatrate) {
-        services.push(...usData.flatrate.map((provider: any) => ({
+      if (regionData.flatrate) {
+        services.push(...regionData.flatrate.map((provider: any) => ({
           service: provider.provider_name,
           type: 'subscription',
-          link: usData.link || getServiceLink(provider.provider_name),
+          link: regionData.link || getServiceLink(provider.provider_name),
           logo: `https://image.tmdb.org/t/p/original${provider.logo_path}`
         })));
       }
 
       // Add rental options
-      if (usData.rent) {
-        services.push(...usData.rent.map((provider: any) => ({
+      if (regionData.rent) {
+        services.push(...regionData.rent.map((provider: any) => ({
           service: provider.provider_name,
           type: 'rent',
-          link: usData.link || getServiceLink(provider.provider_name),
+          link: regionData.link || getServiceLink(provider.provider_name),
           logo: `https://image.tmdb.org/t/p/original${provider.logo_path}`
         })));
       }
 
-      return services.length > 0 ? services : getFallbackServices();
+      console.log(`🌍 Found streaming data for ${countryCode}:`, services.length, 'services');
+      return services.length > 0 ? services : getFallbackServices(userCountry);
     } catch (error) {
-      console.error('Error fetching streaming data:', error);
+      console.error('❌ Error getting streaming availability:', error);
       return getFallbackServices();
     }
   };
@@ -147,12 +152,26 @@ export const useComprehensiveQuizLogic = () => {
     return serviceLinks[serviceName] || '#';
   };
 
-  const getFallbackServices = () => {
-    return [
-      { service: 'Netflix', type: 'subscription' as const, link: 'https://netflix.com' },
-      { service: 'Amazon Prime Video', type: 'subscription' as const, link: 'https://amazon.com/prime-video' },
-      { service: 'Disney+', type: 'subscription' as const, link: 'https://disneyplus.com' }
-    ];
+  const getFallbackServices = (country?: string) => {
+    const userCountry = country || getUserCountry();
+    
+    const servicesByRegion: Record<string, any[]> = {
+      'pl': [
+        { service: 'Netflix', type: 'subscription' as const, link: 'https://netflix.com' },
+        { service: 'Amazon Prime Video', type: 'subscription' as const, link: 'https://amazon.com/prime-video' },
+        { service: 'Disney+', type: 'subscription' as const, link: 'https://disneyplus.com' },
+        { service: 'Canal+', type: 'subscription' as const, link: 'https://canalplus.pl' },
+        { service: 'Player.pl', type: 'subscription' as const, link: 'https://player.pl' }
+      ],
+      'us': [
+        { service: 'Netflix', type: 'subscription' as const, link: 'https://netflix.com' },
+        { service: 'Amazon Prime Video', type: 'subscription' as const, link: 'https://amazon.com/prime-video' },
+        { service: 'Disney+', type: 'subscription' as const, link: 'https://disneyplus.com' },
+        { service: 'Hulu', type: 'subscription' as const, link: 'https://hulu.com' }
+      ]
+    };
+    
+    return servicesByRegion[userCountry] || servicesByRegion['us'];
   };
 
   const getRecommendations = async (preferences: QuizPreferences) => {
