@@ -14,7 +14,10 @@ export const Navigation = () => {
 
   const navItems = [
     { name: "Home", href: "/", icon: Film },
-    { name: "Find Perfect Movie", href: "/quiz", icon: Zap },
+    { name: "Search", href: "/search", icon: Search },
+    { name: "Quiz", href: "/quiz", icon: Zap },
+    { name: "Favorites", href: "/favorites", icon: Menu },
+    { name: "About", href: "/about", icon: Film },
   ];
 
   return (
