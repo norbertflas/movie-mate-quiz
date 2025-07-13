@@ -33,7 +33,17 @@ export const getTrendingMovies = async (context?: { queryKey: string[] }): Promi
     }
     
     const data = await response.json();
-    return data.results;
+    
+    // Filter out upcoming movies
+    const today = new Date();
+    const releasedMovies = data.results.filter((movie: TMDBMovie) => {
+      if (!movie.release_date) return false;
+      const releaseDate = new Date(movie.release_date);
+      return releaseDate <= today;
+    });
+    
+    console.log(`Filtered ${data.results.length - releasedMovies.length} upcoming movies from trending`);
+    return releasedMovies;
   } catch (error) {
     console.error('Error fetching trending movies:', error);
     // Return empty array instead of throwing to prevent UI issues
@@ -71,7 +81,17 @@ export const getPopularMovies = async (context?: { queryKey: string[] }): Promis
     }
     
     const data = await response.json();
-    return data.results;
+    
+    // Filter out upcoming movies
+    const today = new Date();
+    const releasedMovies = data.results.filter((movie: TMDBMovie) => {
+      if (!movie.release_date) return false;
+      const releaseDate = new Date(movie.release_date);
+      return releaseDate <= today;
+    });
+    
+    console.log(`Filtered ${data.results.length - releasedMovies.length} upcoming movies from popular`);
+    return releasedMovies;
   } catch (error) {
     console.error('Error fetching popular movies:', error);
     // Return empty array instead of throwing to prevent UI issues

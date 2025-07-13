@@ -247,6 +247,16 @@ export const useComprehensiveQuizLogic = () => {
       // Process each movie and add streaming data
       const processedMovies = await Promise.all(
         movies.map(async (movie: any) => {
+          // Skip movies that are not yet released
+          if (movie.release_date) {
+            const releaseDate = new Date(movie.release_date);
+            const today = new Date();
+            if (releaseDate > today) {
+              console.log(`⏩ Skipping upcoming movie: ${movie.title} (${movie.release_date})`);
+              return null; // Skip this movie
+            }
+          }
+
           const streaming = await getStreamingAvailability(movie.id);
           
           return {
@@ -275,26 +285,29 @@ export const useComprehensiveQuizLogic = () => {
         })
       );
 
-      console.log('🎬 All processed movies:', processedMovies.length);
+      // Filter out null values (upcoming movies)
+      const validMovies = processedMovies.filter(movie => movie !== null);
+
+      console.log('🎬 Valid movies after filtering upcoming:', validMovies.length);
 
       // Filter movies by selected streaming platforms
-      let filteredMovies = processedMovies;
+      let filteredMovies = validMovies;
       if (preferences.platforms.length > 0 && !preferences.platforms.includes("I don't have a preference")) {
-        filteredMovies = processedMovies.filter(movie => {
+        filteredMovies = validMovies.filter(movie => {
           // Check if movie is available on any of the user's preferred platforms
           return movie.streaming.some((streamingService: any) => 
             preferences.platforms.includes(streamingService.service)
           );
         });
         
-        console.log('🎯 Movies filtered by platforms:', filteredMovies.length, 'from', processedMovies.length);
+        console.log('🎯 Movies filtered by platforms:', filteredMovies.length, 'from', validMovies.length);
         
         // If we have too few movies after platform filtering, get more from TMDB
-        if (filteredMovies.length < 6 && processedMovies.length > 0) {
+        if (filteredMovies.length < 6 && validMovies.length > 0) {
           console.log('⚠️ Too few movies after platform filtering, adding more...');
           // Keep all movies but prioritize platform-available ones
           const platformMovies = filteredMovies;
-          const otherMovies = processedMovies.filter(movie => !filteredMovies.includes(movie));
+          const otherMovies = validMovies.filter(movie => !filteredMovies.includes(movie));
           filteredMovies = [...platformMovies, ...otherMovies.slice(0, 9 - platformMovies.length)];
         }
       }

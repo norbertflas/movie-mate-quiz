@@ -1,21 +1,17 @@
 
+import { getTMDBApiKey } from "./config";
+import { supabase } from "@/integrations/supabase/client";
 import { TMDB_BASE_URL } from "./config";
 
 export async function getMovieDetails(movieId: number) {
   try {
-    // Use the access token instead of API key for better reliability
-    const accessToken = import.meta.env.VITE_TMDB_ACCESS_TOKEN;
-    
-    if (!accessToken) {
-      throw new Error('TMDB access token not found');
-    }
+    const apiKey = await getTMDBApiKey();
 
     // Fetch comprehensive movie details with all append_to_response options
     const response = await fetch(
-      `${TMDB_BASE_URL}/movie/${movieId}?language=en-US&append_to_response=credits,videos,keywords,reviews,recommendations,similar,release_dates,watch/providers,images,external_ids`,
+      `${TMDB_BASE_URL}/movie/${movieId}?language=en-US&append_to_response=credits,videos,keywords,reviews,recommendations,similar,release_dates,watch/providers,images,external_ids&api_key=${apiKey}`,
       {
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json'
         }
       }
@@ -36,17 +32,12 @@ export async function getMovieDetails(movieId: number) {
 
 export async function getMovieReviews(movieId: number, page: number = 1) {
   try {
-    const accessToken = import.meta.env.VITE_TMDB_ACCESS_TOKEN;
-    
-    if (!accessToken) {
-      throw new Error('TMDB access token not found');
-    }
+    const apiKey = await getTMDBApiKey();
 
     const response = await fetch(
-      `${TMDB_BASE_URL}/movie/${movieId}/reviews?language=en-US&page=${page}`,
+      `${TMDB_BASE_URL}/movie/${movieId}/reviews?language=en-US&page=${page}&api_key=${apiKey}`,
       {
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json'
         }
       }
@@ -66,17 +57,12 @@ export async function getMovieReviews(movieId: number, page: number = 1) {
 
 export async function getMovieVideos(movieId: number) {
   try {
-    const accessToken = import.meta.env.VITE_TMDB_ACCESS_TOKEN;
-    
-    if (!accessToken) {
-      throw new Error('TMDB access token not found');
-    }
+    const apiKey = await getTMDBApiKey();
 
     const response = await fetch(
-      `${TMDB_BASE_URL}/movie/${movieId}/videos?language=en-US`,
+      `${TMDB_BASE_URL}/movie/${movieId}/videos?language=en-US&api_key=${apiKey}`,
       {
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json'
         }
       }
