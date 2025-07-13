@@ -86,52 +86,31 @@ export const useComprehensiveQuizLogic = () => {
   const getStreamingAvailability = async (movieId: number): Promise<any[]> => {
     try {
       const userCountry = getUserCountry();
-      const countryCode = userCountry.toUpperCase();
       
-      // Get TMDB API key from Supabase edge function
-      const { data: tmdbKeyData, error: keyError } = await supabase.functions.invoke('get-tmdb-key');
+      console.log(`🎬 Getting streaming data for movie ${movieId} in ${userCountry}`);
       
-      if (keyError || !tmdbKeyData?.TMDB_API_KEY) {
+      // Call our MovieOfTheNight edge function
+      const { data, error } = await supabase.functions.invoke('streaming-availability', {
+        body: { 
+          tmdbId: movieId, 
+          country: userCountry 
+        }
+      });
+
+      if (error) {
+        console.error('❌ Error calling streaming-availability function:', error);
         return getFallbackServices(userCountry);
       }
-      
-      const TMDB_API_KEY = tmdbKeyData.TMDB_API_KEY;
 
-      const response = await fetch(
-        `https://api.themoviedb.org/3/movie/${movieId}/watch/providers?api_key=${TMDB_API_KEY}`
-      );
-
-      if (!response.ok) return getFallbackServices(userCountry);
-
-      const data = await response.json();
-      const regionData = data.results?.[countryCode];
-      
-      if (!regionData) return getFallbackServices(userCountry);
-
-      const services: any[] = [];
-
-      // Add subscription services
-      if (regionData.flatrate) {
-        services.push(...regionData.flatrate.map((provider: any) => ({
-          service: provider.provider_name,
-          type: 'subscription',
-          link: regionData.link || getServiceLink(provider.provider_name),
-          logo: `https://image.tmdb.org/t/p/original${provider.logo_path}`
-        })));
+      if (!data?.result || !Array.isArray(data.result)) {
+        console.log('⚠️ No streaming data returned from API');
+        return getFallbackServices(userCountry);
       }
 
-      // Add rental options
-      if (regionData.rent) {
-        services.push(...regionData.rent.map((provider: any) => ({
-          service: provider.provider_name,
-          type: 'rent',
-          link: regionData.link || getServiceLink(provider.provider_name),
-          logo: `https://image.tmdb.org/t/p/original${provider.logo_path}`
-        })));
-      }
-
-      console.log(`🌍 Found streaming data for ${countryCode}:`, services.length, 'services');
-      return services.length > 0 ? services : getFallbackServices(userCountry);
+      console.log(`🌍 Found ${data.result.length} streaming services for ${userCountry}:`, 
+        data.result.map((s: any) => s.service).join(', '));
+      
+      return data.result;
     } catch (error) {
       console.error('❌ Error getting streaming availability:', error);
       return getFallbackServices();
