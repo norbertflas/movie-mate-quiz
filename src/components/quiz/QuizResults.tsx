@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { UnifiedMovieDetails } from "../movie/UnifiedMovieDetails";
+import { SimpleMaximizedMovieCard } from "../movie/SimpleMaximizedMovieCard";
 import { StreamingServices } from "../movie/StreamingServices";
 import type { TMDBMovie } from "@/services/tmdb";
 import { Check, Plus, Star } from "lucide-react";
@@ -17,15 +17,12 @@ interface QuizResultsProps {
 export const QuizResults = ({ recommendations, isGroupQuiz = false }: QuizResultsProps) => {
   const { t } = useTranslation();
   const [selectedMovie, setSelectedMovie] = useState<TMDBMovie | null>(null);
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   const handleMovieClick = (movie: TMDBMovie) => {
     setSelectedMovie(movie);
-    setIsDetailsOpen(true);
   };
 
   const handleCloseDetails = () => {
-    setIsDetailsOpen(false);
     setSelectedMovie(null);
   };
 
@@ -144,12 +141,27 @@ export const QuizResults = ({ recommendations, isGroupQuiz = false }: QuizResult
         </div>
       </div>
 
-      <UnifiedMovieDetails
-        isOpen={isDetailsOpen}
-        onClose={handleCloseDetails}
-        movie={selectedMovie}
-        explanations={selectedMovie?.explanations}
-      />
+      {selectedMovie && (
+        <SimpleMaximizedMovieCard
+          title={selectedMovie?.title || "Unknown Movie"}
+          year={selectedMovie?.release_date ? new Date(selectedMovie.release_date).getFullYear().toString() : "N/A"}
+          platform="TMDB"
+          imageUrl={selectedMovie?.poster_path ? `https://image.tmdb.org/t/p/w500${selectedMovie.poster_path}` : '/placeholder.svg'}
+          description={selectedMovie?.overview || ""}
+          rating={selectedMovie?.vote_average || 0}
+          genre={selectedMovie?.genre_ids?.map(id => {
+            const genreMap: Record<number, string> = {
+              28: 'Action', 35: 'Comedy', 18: 'Drama', 27: 'Horror',
+              878: 'Sci-Fi', 10749: 'Romance', 53: 'Thriller',
+              16: 'Animation', 99: 'Documentary', 14: 'Fantasy'
+            };
+            return genreMap[id];
+          }).filter(Boolean).join(', ') || ""}
+          tmdbId={selectedMovie?.id}
+          trailerUrl=""
+          onClose={handleCloseDetails}
+        />
+      )}
     </div>
   );
 };

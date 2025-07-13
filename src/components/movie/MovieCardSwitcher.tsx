@@ -1,7 +1,7 @@
 
 import { useState, memo, useCallback } from "react";
 import { ImprovedMinimizedMovieCard } from "./ImprovedMinimizedMovieCard";
-import { ImprovedMaximizedMovieCard } from "./ImprovedMaximizedMovieCard";
+import { SimpleMaximizedMovieCard } from "./SimpleMaximizedMovieCard";
 import type { MovieCardProps } from "@/types/movie";
 
 interface MovieCardSwitcherProps extends MovieCardProps {
@@ -58,7 +58,7 @@ export const MovieCardSwitcher = memo(({
   try {
     if (isMaximized) {
       return (
-        <ImprovedMaximizedMovieCard
+        <SimpleMaximizedMovieCard
           {...movieProps}
           onMinimize={handleMinimize}
           onClose={handleClose}
