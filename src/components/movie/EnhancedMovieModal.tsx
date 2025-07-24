@@ -49,7 +49,7 @@ export const EnhancedMovieModal = ({
 
   // Format utility functions
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('pl-PL', {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 0
@@ -57,7 +57,7 @@ export const EnhancedMovieModal = ({
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pl-PL', {
+    return new Date(dateString).toLocaleDateString('en-US', {
       day: '2-digit',
       month: 'long',
       year: 'numeric'
@@ -84,32 +84,33 @@ export const EnhancedMovieModal = ({
     const fetchMovieDetails = async () => {
       setLoading(true);
       try {
-        // Fetch detailed movie data from TMDB API
-        const response = await fetch(
-          `https://api.themoviedb.org/3/movie/${movie.id}?api_key=YOUR_API_KEY&append_to_response=credits,videos,images,similar,reviews&language=pl-PL`
-        );
-        
-        if (response.ok) {
-          const data = await response.json();
-          setMovieDetails(data);
-        } else {
-          // Fallback to basic movie data with enhanced structure
-          setMovieDetails({
-            ...movie,
-            runtime: 120,
-            budget: 0,
-            revenue: 0,
-            status: "Released",
-            production_companies: [{ name: "Unknown Studio" }],
-            production_countries: [{ name: "Unknown" }],
-            spoken_languages: [{ english_name: "English" }],
-            credits: { cast: [], crew: [] },
-            videos: { results: [] },
-            images: { backdrops: [] },
-            similar: { results: [] },
-            reviews: { results: [] }
-          });
-        }
+        // For demo purposes, use basic movie data
+        // In production, you'd fetch from TMDB API
+        const data = {
+          ...movie,
+          runtime: 120,
+          budget: 80000000,
+          revenue: 273144151,
+          status: "Released",
+          production_companies: [{ name: "Walt Disney Pictures" }],
+          production_countries: [{ name: "United States" }],
+          spoken_languages: [{ english_name: "English" }],
+          credits: { 
+            cast: [
+              { id: 1, name: "Main Actor", character: "Main Character", profile_path: null },
+              { id: 2, name: "Supporting Actor", character: "Supporting Character", profile_path: null }
+            ], 
+            crew: [
+              { id: 1, name: "Director Name", job: "Director", department: "Directing" },
+              { id: 2, name: "Writer Name", job: "Writer", department: "Writing" }
+            ] 
+          },
+          videos: { results: [] },
+          images: { backdrops: [] },
+          similar: { results: [] },
+          reviews: { results: [] }
+        };
+        setMovieDetails(data);
       } catch (error) {
         console.error("Error fetching movie details:", error);
         // Use basic movie data as fallback
@@ -151,7 +152,7 @@ export const EnhancedMovieModal = ({
   const handleShare = async (platform: string) => {
     const shareData = {
       title: movie?.title || '',
-      text: `Sprawdź "${movie?.title}" - ${movie?.overview?.slice(0, 100)}...`,
+      text: `Check out "${movie?.title}" - ${movie?.overview?.slice(0, 100)}...`,
       url: `${window.location.origin}/movie/${movie?.id}`
     };
 
@@ -182,7 +183,7 @@ export const EnhancedMovieModal = ({
       >
         <div className="bg-gray-900 rounded-xl p-8">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto"></div>
-          <p className="text-white mt-4 text-center">Ładowanie szczegółów filmu...</p>
+          <p className="text-white mt-4 text-center">Loading movie details...</p>
         </div>
       </motion.div>
     );
@@ -314,7 +315,7 @@ export const EnhancedMovieModal = ({
                 {/* Streaming Services */}
                 {streamingData?.streamingOptions && streamingData.streamingOptions.length > 0 && (
                   <div className="mb-4">
-                    <h4 className="text-sm font-medium text-gray-400 mb-2">Dostępne na:</h4>
+                    <h4 className="text-sm font-medium text-gray-400 mb-2">Available on:</h4>
                     <StreamingBadge streamingOptions={streamingData.streamingOptions} mode="compact" maxServices={4} />
                   </div>
                 )}
@@ -328,7 +329,7 @@ export const EnhancedMovieModal = ({
                       onClick={() => setShowTrailer(true)}
                     >
                       <Play className="h-5 w-5 mr-2 fill-white" />
-                      Obejrzyj Zwiastun
+                      Watch Trailer
                     </Button>
                   )}
                   
@@ -339,7 +340,7 @@ export const EnhancedMovieModal = ({
                     className={`border-white/30 ${userActions.isFavorite ? 'bg-red-600/20 text-red-400 border-red-600/50' : 'text-white hover:bg-white/10'}`}
                   >
                     <Heart className={`h-5 w-5 mr-2 ${userActions.isFavorite ? 'fill-current' : ''}`} />
-                    {userActions.isFavorite ? 'Ulubione' : 'Dodaj do ulubionych'}
+                    {userActions.isFavorite ? 'Favorite' : 'Add to Favorites'}
                   </Button>
                   
                   <Button
@@ -349,7 +350,7 @@ export const EnhancedMovieModal = ({
                     className={`border-white/30 ${userActions.isWatchlisted ? 'bg-blue-600/20 text-blue-400 border-blue-600/50' : 'text-white hover:bg-white/10'}`}
                   >
                     <Bookmark className={`h-5 w-5 mr-2 ${userActions.isWatchlisted ? 'fill-current' : ''}`} />
-                    {userActions.isWatchlisted ? 'Na liście' : 'Dodaj do listy'}
+                    {userActions.isWatchlisted ? 'On Watchlist' : 'Add to Watchlist'}
                   </Button>
 
                   <div className="relative">
@@ -360,7 +361,7 @@ export const EnhancedMovieModal = ({
                       className="border-white/30 text-white hover:bg-white/10"
                     >
                       <Share2 className="h-5 w-5 mr-2" />
-                      Udostępnij
+                      Share
                     </Button>
                     
                     <AnimatePresence>
@@ -378,7 +379,7 @@ export const EnhancedMovieModal = ({
                             className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-700"
                           >
                             <Copy className="h-4 w-4 mr-2" />
-                            Kopiuj Link
+                            Copy Link
                           </Button>
                           <Button
                             variant="ghost"
@@ -387,7 +388,7 @@ export const EnhancedMovieModal = ({
                             className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-700"
                           >
                             <ExternalLink className="h-4 w-4 mr-2" />
-                            Udostępnij
+                            Share
                           </Button>
                         </motion.div>
                       )}
@@ -403,24 +404,24 @@ export const EnhancedMovieModal = ({
         <div className="p-6 overflow-y-auto max-h-[calc(95vh-400px)]">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-5 bg-gray-800 mb-6">
-              <TabsTrigger value="overview">Przegląd</TabsTrigger>
-              <TabsTrigger value="cast">Obsada</TabsTrigger>
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="cast">Cast</TabsTrigger>
               <TabsTrigger value="media">Media</TabsTrigger>
-              <TabsTrigger value="details">Szczegóły</TabsTrigger>
-              <TabsTrigger value="reviews">Recenzje</TabsTrigger>
+              <TabsTrigger value="details">Details</TabsTrigger>
+              <TabsTrigger value="reviews">Reviews</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 space-y-4">
                   <div>
-                    <h3 className="text-xl font-semibold text-white mb-3">Opis fabularny</h3>
+                    <h3 className="text-xl font-semibold text-white mb-3">Plot Summary</h3>
                     <p className="text-gray-300 leading-relaxed">{movieDetails.overview || movie.overview}</p>
                   </div>
                   
                   {/* Personal Rating */}
                   <div className="flex items-center space-x-4 p-4 bg-gray-800 rounded-lg">
-                    <span className="text-white font-medium">Twoja ocena:</span>
+                    <span className="text-white font-medium">Your Rating:</span>
                     <div className="flex space-x-1">
                       {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((rating) => (
                         <button
@@ -446,24 +447,24 @@ export const EnhancedMovieModal = ({
                   {/* Stats */}
                   <Card className="bg-gray-800 border-gray-700">
                     <CardHeader>
-                      <CardTitle className="text-white">Statystyki filmu</CardTitle>
+                      <CardTitle className="text-white">Movie Stats</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-400">Ocena TMDB:</span>
+                        <span className="text-gray-400">TMDB Rating:</span>
                         <span className="text-white font-medium">{(movieDetails.vote_average || 0).toFixed(1)}/10</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-400">Głosy:</span>
+                        <span className="text-gray-400">Votes:</span>
                         <span className="text-white font-medium">{(movieDetails.vote_count || 0).toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-400">Popularność:</span>
+                        <span className="text-gray-400">Popularity:</span>
                         <span className="text-white font-medium">{(movieDetails.popularity || 0).toFixed(1)}</span>
                       </div>
                       <div className="space-y-1">
                         <div className="flex justify-between text-xs">
-                          <span className="text-gray-400">Wynik użytkowników</span>
+                          <span className="text-gray-400">User Score</span>
                           <span className="text-white">{Math.round((movieDetails.vote_average || 0) * 10)}%</span>
                         </div>
                         <Progress value={(movieDetails.vote_average || 0) * 10} className="h-2" />
@@ -475,7 +476,7 @@ export const EnhancedMovieModal = ({
                   {movieDetails.similar?.results?.length > 0 && (
                     <Card className="bg-gray-800 border-gray-700">
                       <CardHeader>
-                        <CardTitle className="text-white">Podobne filmy</CardTitle>
+                        <CardTitle className="text-white">Similar Movies</CardTitle>
                       </CardHeader>
                       <CardContent>
                         <div className="grid grid-cols-3 gap-2">
@@ -500,7 +501,7 @@ export const EnhancedMovieModal = ({
             <TabsContent value="cast" className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div>
-                  <h3 className="text-xl font-semibold text-white mb-4">Główna obsada</h3>
+                  <h3 className="text-xl font-semibold text-white mb-4">Main Cast</h3>
                   <div className="space-y-3">
                     {movieDetails.credits?.cast?.slice(0, 8).map((actor: any) => (
                       <div key={actor.id} className="flex items-center space-x-3 p-3 bg-gray-800 rounded-lg">
@@ -521,13 +522,13 @@ export const EnhancedMovieModal = ({
                         </div>
                       </div>
                     )) || (
-                      <p className="text-gray-400">Brak informacji o obsadzie</p>
+                      <p className="text-gray-400">No cast information available</p>
                     )}
                   </div>
                 </div>
                 
                 <div>
-                  <h3 className="text-xl font-semibold text-white mb-4">Kluczowa ekipa</h3>
+                  <h3 className="text-xl font-semibold text-white mb-4">Key Crew</h3>
                   <div className="space-y-3">
                     {movieDetails.credits?.crew?.slice(0, 8).map((member: any, index: number) => (
                       <div key={index} className="flex items-center space-x-3 p-3 bg-gray-800 rounded-lg">
@@ -545,7 +546,7 @@ export const EnhancedMovieModal = ({
                         </div>
                       </div>
                     )) || (
-                      <p className="text-gray-400">Brak informacji o ekipie</p>
+                      <p className="text-gray-400">No crew information available</p>
                     )}
                   </div>
                 </div>
@@ -554,7 +555,7 @@ export const EnhancedMovieModal = ({
 
             <TabsContent value="media" className="space-y-6">
               <div>
-                <h3 className="text-xl font-semibold text-white mb-4">Filmy</h3>
+                <h3 className="text-xl font-semibold text-white mb-4">Videos</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {movieDetails.videos?.results?.map((video: any, index: number) => (
                     <div key={index} className="bg-gray-800 rounded-lg p-4">
@@ -565,7 +566,7 @@ export const EnhancedMovieModal = ({
                       <p className="text-gray-400 text-xs">{video.type}</p>
                     </div>
                   )) || (
-                    <p className="text-gray-400 col-span-2">Brak dostępnych filmów</p>
+                    <p className="text-gray-400 col-span-2">No videos available</p>
                   )}
                 </div>
               </div>
@@ -574,14 +575,14 @@ export const EnhancedMovieModal = ({
             <TabsContent value="details" className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="space-y-4">
-                  <h3 className="text-xl font-semibold text-white">Informacje produkcyjne</h3>
+                  <h3 className="text-xl font-semibold text-white">Production Info</h3>
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between py-2 border-b border-gray-700">
-                      <span className="text-gray-400">Budżet:</span>
+                      <span className="text-gray-400">Budget:</span>
                       <span className="text-white">{formatCurrency(movieDetails.budget || 0)}</span>
                     </div>
                     <div className="flex justify-between py-2 border-b border-gray-700">
-                      <span className="text-gray-400">Przychody:</span>
+                      <span className="text-gray-400">Revenue:</span>
                       <span className="text-white">{formatCurrency(movieDetails.revenue || 0)}</span>
                     </div>
                     <div className="flex justify-between py-2 border-b border-gray-700">
@@ -589,32 +590,32 @@ export const EnhancedMovieModal = ({
                       <span className="text-white">{movieDetails.status || "Released"}</span>
                     </div>
                     <div className="flex justify-between py-2 border-b border-gray-700">
-                      <span className="text-gray-400">Czas trwania:</span>
+                      <span className="text-gray-400">Runtime:</span>
                       <span className="text-white">{formatRuntime(movieDetails.runtime || 120)}</span>
                     </div>
                   </div>
                 </div>
                 
                 <div className="space-y-4">
-                  <h3 className="text-xl font-semibold text-white">Firmy i kraje</h3>
+                  <h3 className="text-xl font-semibold text-white">Companies & Countries</h3>
                   <div className="space-y-3">
                     <div>
-                      <h4 className="text-sm font-medium text-gray-400 mb-2">Firmy produkcyjne:</h4>
+                      <h4 className="text-sm font-medium text-gray-400 mb-2">Production Companies:</h4>
                       {movieDetails.production_companies?.map((company: any, index: number) => (
                         <p key={index} className="text-white text-sm">• {company.name}</p>
-                      )) || <p className="text-gray-400 text-sm">Brak informacji</p>}
+                      )) || <p className="text-gray-400 text-sm">No information available</p>}
                     </div>
                     <div>
-                      <h4 className="text-sm font-medium text-gray-400 mb-2">Kraje:</h4>
+                      <h4 className="text-sm font-medium text-gray-400 mb-2">Countries:</h4>
                       {movieDetails.production_countries?.map((country: any, index: number) => (
                         <p key={index} className="text-white text-sm">• {country.name}</p>
-                      )) || <p className="text-gray-400 text-sm">Brak informacji</p>}
+                      )) || <p className="text-gray-400 text-sm">No information available</p>}
                     </div>
                     <div>
-                      <h4 className="text-sm font-medium text-gray-400 mb-2">Języki:</h4>
+                      <h4 className="text-sm font-medium text-gray-400 mb-2">Languages:</h4>
                       {movieDetails.spoken_languages?.map((lang: any, index: number) => (
                         <p key={index} className="text-white text-sm">• {lang.english_name}</p>
-                      )) || <p className="text-gray-400 text-sm">Brak informacji</p>}
+                      )) || <p className="text-gray-400 text-sm">No information available</p>}
                     </div>
                   </div>
                 </div>
@@ -623,7 +624,7 @@ export const EnhancedMovieModal = ({
 
             <TabsContent value="reviews" className="space-y-6">
               <div>
-                <h3 className="text-xl font-semibold text-white mb-4">Recenzje użytkowników</h3>
+                <h3 className="text-xl font-semibold text-white mb-4">User Reviews</h3>
                 <div className="space-y-4">
                   {movieDetails.reviews?.results?.length > 0 ? (
                     movieDetails.reviews.results.map((review: any, index: number) => (
@@ -648,7 +649,7 @@ export const EnhancedMovieModal = ({
                       </Card>
                     ))
                   ) : (
-                    <p className="text-gray-400">Brak dostępnych recenzji</p>
+                    <p className="text-gray-400">No reviews available</p>
                   )}
                 </div>
               </div>
@@ -678,12 +679,12 @@ export const EnhancedMovieModal = ({
                 <div className="aspect-video bg-gray-800 flex items-center justify-center">
                   <div className="text-center text-white">
                     <Play className="h-20 w-20 mx-auto mb-4 text-red-500" />
-                    <h3 className="text-2xl font-bold mb-2">{movieDetails.title} - Zwiastun</h3>
+                    <h3 className="text-2xl font-bold mb-2">{movieDetails.title} - Trailer</h3>
                     <p className="text-gray-400 mb-4">
-                      {movieDetails.videos?.results?.[0]?.name || "Oficjalny zwiastun"}
+                      {movieDetails.videos?.results?.[0]?.name || "Official Trailer"}
                     </p>
                     <p className="text-sm text-gray-500">
-                      Odtwarzacz wideo zostałby zintegrowany tutaj z YouTube/Vimeo
+                      Video player would be embedded here with YouTube/Vimeo integration
                     </p>
                   </div>
                 </div>
@@ -695,7 +696,7 @@ export const EnhancedMovieModal = ({
                 onClick={() => setShowTrailer(false)}
               >
                 <X className="h-5 w-5 mr-2" />
-                Zamknij zwiastun
+                Close Trailer
               </Button>
             </motion.div>
           </motion.div>
