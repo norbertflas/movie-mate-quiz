@@ -1,5 +1,6 @@
 
 import { Footer } from "@/components/Footer";
+import { Navigation } from "@/components/Navigation";
 import { motion } from "framer-motion";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -12,7 +13,8 @@ export const PageContainer = ({ children }: PageContainerProps) => {
   
   return (
     <div className="min-h-screen flex flex-col w-full">
-      <div className={`container mx-auto ${isMobile ? 'px-2' : 'px-4'} py-4 sm:py-8 flex-grow max-w-full overflow-x-hidden`}>
+      <Navigation />
+      <div className={`container mx-auto ${isMobile ? 'px-2' : 'px-4'} py-4 sm:py-8 pt-20 flex-grow max-w-full overflow-x-hidden`}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
