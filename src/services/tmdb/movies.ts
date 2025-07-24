@@ -97,3 +97,21 @@ export async function getMovieWatchProviders(movieId: number, region: string = '
     return { services: [], region, timestamp: new Date().toISOString(), source: 'tmdb' };
   }
 }
+
+export async function getWatchmodeAvailability(movieId: number, region: string = 'US') {
+  try {
+    const { data, error } = await supabase.functions.invoke('get-watchmode-availability', {
+      body: { tmdb_id: movieId, region }
+    });
+
+    if (error) {
+      console.error('Error fetching Watchmode availability:', error);
+      return { services: [], region, timestamp: new Date().toISOString(), source: 'watchmode' };
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error in getWatchmodeAvailability:', error);
+    return { services: [], region, timestamp: new Date().toISOString(), source: 'watchmode' };
+  }
+}
