@@ -70,8 +70,8 @@ const fetchStreamingData = async (tmdbId: number, country: string): Promise<Movi
       `https://streaming-availability.p.rapidapi.com/shows/movie/${tmdbId}?country=${country}`,
       {
         headers: {
-          'X-RapidAPI-Key': RAPIDAPI_KEY!,
-          'X-RapidAPI-Host': 'streaming-availability.p.rapidapi.com'
+          'x-rapidapi-key': RAPIDAPI_KEY!,
+          'x-rapidapi-host': 'streaming-availability.p.rapidapi.com'
         }
       }
     );
@@ -93,28 +93,30 @@ const fetchStreamingData = async (tmdbId: number, country: string): Promise<Movi
     const streamingOptions: StreamingOption[] = [];
     const availableServices: string[] = [];
 
-    // Process streaming options
-    if (data.streamingOptions && data.streamingOptions[country]) {
-      const countryOptions = data.streamingOptions[country];
-      
-      for (const option of countryOptions) {
-        const streamingOption: StreamingOption = {
-          service: option.service.name,
-          serviceLogo: option.service.imageSet?.lightThemeImage || '',
-          link: option.link,
-          type: option.type,
-          quality: option.quality || 'HD',
-          price: option.price ? {
-            amount: parseFloat(option.price.amount),
-            currency: option.price.currency,
-            formatted: option.price.formatted
-          } : undefined
-        };
+    // Process streaming options - new API structure
+    const streamingInfo = data.streamingInfo?.[country] || {};
+    
+    for (const [serviceId, options] of Object.entries(streamingInfo)) {
+      if (Array.isArray(options) && options.length > 0) {
+        for (const option of options) {
+          const streamingOption: StreamingOption = {
+            service: getServiceDisplayName(serviceId),
+            serviceLogo: getServiceLogo(serviceId),
+            link: option.link || getServiceHomeUrl(serviceId),
+            type: getStreamingType(option),
+            quality: option.quality || 'HD',
+            price: option.price ? {
+              amount: parseFloat(option.price.amount),
+              currency: option.price.currency,
+              formatted: option.price.formatted
+            } : undefined
+          };
 
-        streamingOptions.push(streamingOption);
-        
-        if (!availableServices.includes(option.service.name)) {
-          availableServices.push(option.service.name);
+          streamingOptions.push(streamingOption);
+          
+          if (!availableServices.includes(streamingOption.service)) {
+            availableServices.push(streamingOption.service);
+          }
         }
       }
     }
@@ -239,3 +241,62 @@ Deno.serve(async (req) => {
     );
   }
 });
+
+// Helper functions
+function getServiceDisplayName(serviceId: string): string {
+  const serviceNames: Record<string, string> = {
+    'netflix': 'Netflix',
+    'prime': 'Amazon Prime Video',
+    'disney': 'Disney+',
+    'hbo': 'HBO Max',
+    'hulu': 'Hulu',
+    'apple': 'Apple TV+',
+    'paramount': 'Paramount+',
+    'canal': 'Canal+',
+    'player': 'Player.pl',
+    'polsat': 'Polsat Box Go',
+    'tvp': 'TVP VOD'
+  }
+  
+  return serviceNames[serviceId] || serviceId.charAt(0).toUpperCase() + serviceId.slice(1)
+}
+
+function getServiceLogo(serviceId: string): string {
+  const logoMap: Record<string, string> = {
+    'netflix': '/streaming-icons/netflix.svg',
+    'prime': '/streaming-icons/prime.svg',
+    'disney': '/streaming-icons/disney.svg',
+    'hbo': '/streaming-icons/hbomax.svg',
+    'hulu': '/streaming-icons/hulu.svg',
+    'apple': '/streaming-icons/apple.svg',
+    'paramount': '/streaming-icons/paramount.svg'
+  }
+  
+  return logoMap[serviceId] || '/streaming-icons/default.svg'
+}
+
+function getStreamingType(option: any): 'subscription' | 'rent' | 'buy' | 'free' {
+  if (option.type === 'subscription') return 'subscription'
+  if (option.type === 'rent') return 'rent'
+  if (option.type === 'buy') return 'buy'
+  if (option.type === 'free') return 'free'
+  return 'subscription' // default
+}
+
+function getServiceHomeUrl(serviceId: string): string {
+  const serviceUrls: Record<string, string> = {
+    'netflix': 'https://netflix.com',
+    'prime': 'https://amazon.com/prime-video',
+    'disney': 'https://disneyplus.com',
+    'hbo': 'https://max.com',
+    'hulu': 'https://hulu.com',
+    'apple': 'https://tv.apple.com',
+    'paramount': 'https://paramountplus.com',
+    'canal': 'https://canalplus.pl',
+    'player': 'https://player.pl',
+    'polsat': 'https://polsatboxgo.pl',
+    'tvp': 'https://vod.tvp.pl'
+  }
+  
+  return serviceUrls[serviceId] || `https://${serviceId}.com`
+}
