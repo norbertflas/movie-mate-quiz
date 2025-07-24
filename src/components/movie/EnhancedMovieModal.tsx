@@ -704,17 +704,30 @@ export const EnhancedMovieModal = ({
               onClick={(e) => e.stopPropagation()}
             >
               <div className="bg-black rounded-lg overflow-hidden shadow-2xl">
-                <div className="aspect-video bg-gray-800 flex items-center justify-center">
-                  <div className="text-center text-white">
-                    <Play className="h-20 w-20 mx-auto mb-4 text-red-500" />
-                    <h3 className="text-2xl font-bold mb-2">{movieDetails.title} - Trailer</h3>
-                    <p className="text-gray-400 mb-4">
-                      {movieDetails.videos?.results?.[0]?.name || "Official Trailer"}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      Video player would be embedded here with YouTube/Vimeo integration
-                    </p>
-                  </div>
+                <div className="aspect-video bg-gray-800">
+                  {movieDetails.videos?.results?.[0]?.key && movieDetails.videos.results[0].site === 'YouTube' ? (
+                    <iframe
+                      src={`https://www.youtube.com/embed/${movieDetails.videos.results[0].key}?autoplay=1&rel=0`}
+                      title={movieDetails.videos.results[0].name || `${movieDetails.title} - Trailer`}
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="w-full h-full"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <div className="text-center text-white">
+                        <Play className="h-20 w-20 mx-auto mb-4 text-red-500" />
+                        <h3 className="text-2xl font-bold mb-2">{movieDetails.title} - Trailer</h3>
+                        <p className="text-gray-400 mb-4">
+                          {movieDetails.videos?.results?.[0]?.name || "Official Trailer"}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          No trailer available
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
               <Button
