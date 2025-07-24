@@ -1,8 +1,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { SimpleMaximizedMovieCard } from "../movie/SimpleMaximizedMovieCard";
-import { StreamingServices } from "../movie/StreamingServices";
+import { EnhancedMovieModal } from "../movie/EnhancedMovieModal";
 import type { TMDBMovie } from "@/services/tmdb";
 import { Check, Plus, Star } from "lucide-react";
 import { Button } from "../ui/button";
@@ -17,12 +16,37 @@ interface QuizResultsProps {
 export const QuizResults = ({ recommendations, isGroupQuiz = false }: QuizResultsProps) => {
   const { t } = useTranslation();
   const [selectedMovie, setSelectedMovie] = useState<TMDBMovie | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleMovieClick = (movie: TMDBMovie) => {
-    setSelectedMovie(movie);
+  const handleMovieClick = (movie: any) => {
+    console.log('Opening movie modal for:', movie.title);
+    // Convert the movie data to TMDBMovie format
+    const tmdbMovie: TMDBMovie = {
+      id: movie.id || movie.tmdbId,
+      title: movie.title,
+      overview: movie.overview || movie.description,
+      poster_path: movie.poster_path,
+      release_date: movie.release_date || movie.year,
+      vote_average: movie.vote_average || movie.rating,
+      genre_ids: movie.genre_ids || [],
+      popularity: movie.popularity || 0,
+      adult: false,
+      backdrop_path: movie.backdrop_path,
+      original_language: movie.original_language || 'en',
+      original_title: movie.original_title || movie.title,
+      video: false,
+      vote_count: movie.vote_count || 0,
+      explanations: movie.explanations || [],
+      availableOn: movie.availableOn || [],
+      streamingLinks: movie.streamingLinks || {}
+    };
+    
+    setSelectedMovie(tmdbMovie);
+    setIsModalOpen(true);
   };
 
-  const handleCloseDetails = () => {
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
     setSelectedMovie(null);
   };
 
@@ -59,17 +83,24 @@ export const QuizResults = ({ recommendations, isGroupQuiz = false }: QuizResult
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1, duration: 0.4 }}
             >
-              <div className="bg-gray-900 rounded-xl overflow-hidden hover:bg-gray-800 transition-colors">
+              <div className="bg-gray-900 rounded-xl overflow-hidden hover:bg-gray-800 transition-colors cursor-pointer"
+                   onClick={() => handleMovieClick(movie)}>
                 <div className="relative aspect-[2/3] overflow-hidden">
                   <img
-                    src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+                    src={movie.poster_path 
+                      ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+                      : '/placeholder.svg'
+                    }
                     alt={movie.title}
-                    className="w-full h-full object-cover transition-transform duration-300 hover:scale-105 cursor-pointer"
-                    onClick={() => handleMovieClick(movie)}
+                    className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                    loading="lazy"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/placeholder.svg';
+                    }}
                   />
                   <div className="absolute top-2 right-2 bg-black/70 rounded-full px-2 py-1 flex items-center gap-1">
                     <Star className="h-3 w-3 text-yellow-400" />
-                    <span className="text-xs font-medium">{movie.vote_average?.toFixed(1)}</span>
+                    <span className="text-xs font-medium">{movie.vote_average?.toFixed(1) || 'N/A'}</span>
                   </div>
                 </div>
                 
@@ -79,10 +110,10 @@ export const QuizResults = ({ recommendations, isGroupQuiz = false }: QuizResult
                   </div>
                   
                   <p className="text-gray-400 text-xs sm:text-sm mt-1 line-clamp-2 mb-3">
-                    {movie.overview}
+                    {movie.overview || movie.description}
                   </p>
 
-                  {/* Wyjaśnienia dlaczego film został polecony */}
+                  {/* Explanations */}
                   {movie.explanations && movie.explanations.length > 0 && (
                     <div className="mb-3">
                       {movie.explanations.slice(0, 2).map((explanation: string, idx: number) => (
@@ -93,7 +124,7 @@ export const QuizResults = ({ recommendations, isGroupQuiz = false }: QuizResult
                     </div>
                   )}
 
-                  {/* Dostępność streamingowa - od razu widoczna */}
+                  {/* Streaming availability */}
                   {movie.availableOn && movie.availableOn.length > 0 && (
                     <div className="mb-3">
                       <p className="text-xs text-gray-300 mb-2">{t("common.availableOn")}:</p>
@@ -111,18 +142,13 @@ export const QuizResults = ({ recommendations, isGroupQuiz = false }: QuizResult
                       </div>
                     </div>
                   )}
-
-                  {/* Jeśli dostępność streamingowa ma linki */}
-                  {movie.streamingLinks && Object.keys(movie.streamingLinks).length > 0 && (
-                    <StreamingServices 
-                      services={movie.availableOn || []} 
-                      links={movie.streamingLinks}
-                    />
-                  )}
                   
                   <Button
                     className="w-full mt-3 bg-blue-600 hover:bg-blue-700 text-xs sm:text-sm"
-                    onClick={() => handleMovieClick(movie)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleMovieClick(movie);
+                    }}
                   >
                     <Plus className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                     {t("common.viewDetails")}
@@ -141,25 +167,13 @@ export const QuizResults = ({ recommendations, isGroupQuiz = false }: QuizResult
         </div>
       </div>
 
+      {/* Enhanced Movie Modal */}
       {selectedMovie && (
-        <SimpleMaximizedMovieCard
-          title={selectedMovie?.title || "Unknown Movie"}
-          year={selectedMovie?.release_date ? new Date(selectedMovie.release_date).getFullYear().toString() : "N/A"}
-          platform="TMDB"
-          imageUrl={selectedMovie?.poster_path ? `https://image.tmdb.org/t/p/w500${selectedMovie.poster_path}` : '/placeholder.svg'}
-          description={selectedMovie?.overview || ""}
-          rating={selectedMovie?.vote_average || 0}
-          genre={selectedMovie?.genre_ids?.map(id => {
-            const genreMap: Record<number, string> = {
-              28: 'Action', 35: 'Comedy', 18: 'Drama', 27: 'Horror',
-              878: 'Sci-Fi', 10749: 'Romance', 53: 'Thriller',
-              16: 'Animation', 99: 'Documentary', 14: 'Fantasy'
-            };
-            return genreMap[id];
-          }).filter(Boolean).join(', ') || ""}
-          tmdbId={selectedMovie?.id}
-          trailerUrl=""
-          onClose={handleCloseDetails}
+        <EnhancedMovieModal
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          movie={selectedMovie}
+          explanations={selectedMovie.explanations || []}
         />
       )}
     </div>
