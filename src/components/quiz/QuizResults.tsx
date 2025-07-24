@@ -30,15 +30,9 @@ export const QuizResults = ({ recommendations, isGroupQuiz = false }: QuizResult
       vote_average: movie.vote_average || movie.rating,
       genre_ids: movie.genre_ids || [],
       popularity: movie.popularity || 0,
-      adult: false,
       backdrop_path: movie.backdrop_path,
-      original_language: movie.original_language || 'en',
-      original_title: movie.original_title || movie.title,
-      video: false,
       vote_count: movie.vote_count || 0,
-      explanations: movie.explanations || [],
-      availableOn: movie.availableOn || [],
-      streamingLinks: movie.streamingLinks || {}
+      explanations: movie.explanations || []
     };
     
     setSelectedMovie(tmdbMovie);
