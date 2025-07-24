@@ -3,7 +3,9 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Star, Play, RefreshCw, ExternalLink } from "lucide-react";
+import { Star, Play, RefreshCw, ExternalLink, Home, Eye } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { MovieModal, useMovieModal } from "../movie/MovieModal";
 import type { MovieRecommendation, QuizPreferences } from "./types/comprehensiveQuizTypes";
 
 interface ComprehensiveQuizResultsProps {
@@ -17,6 +19,8 @@ export const ComprehensiveQuizResults = ({
   preferences, 
   onRetakeQuiz 
 }: ComprehensiveQuizResultsProps) => {
+  const navigate = useNavigate();
+  const { selectedMovie, isModalOpen, openModal, closeModal } = useMovieModal();
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -43,6 +47,28 @@ export const ComprehensiveQuizResults = ({
   const truncateText = (text: string, maxLength: number = 120) => {
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
+  };
+
+  const handleMovieClick = (movie: MovieRecommendation) => {
+    // Convert recommendation to TMDBMovie format
+    const tmdbMovie = {
+      id: movie.id,
+      title: movie.title,
+      poster_path: movie.poster.replace('https://image.tmdb.org/t/p/w500', ''),
+      backdrop_path: movie.poster.replace('https://image.tmdb.org/t/p/w500', '').replace('w500', 'w1280'),
+      overview: movie.overview,
+      release_date: `${movie.year}-01-01`,
+      vote_average: movie.rating,
+      genre_ids: [],
+      popularity: 0,
+      vote_count: 0,
+      adult: false,
+      original_language: 'en',
+      original_title: movie.title,
+      video: false,
+      explanations: []
+    };
+    openModal(tmdbMovie);
   };
 
   return (
@@ -154,6 +180,16 @@ export const ComprehensiveQuizResults = ({
                   )}
                 </div>
 
+                {/* View Details Button */}
+                <Button
+                  onClick={() => handleMovieClick(movie)}
+                  className="w-full mb-3 bg-blue-600 hover:bg-blue-700"
+                  size="sm"
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  View Details
+                </Button>
+
                 {/* Streaming Availability */}
                 <div className="mt-4 space-y-3">
                   <h4 className="text-sm font-semibold text-gray-300 flex items-center gap-2">
@@ -223,6 +259,14 @@ export const ComprehensiveQuizResults = ({
         className="flex justify-center space-x-4"
       >
         <Button
+          onClick={() => navigate('/')}
+          className="bg-green-600 hover:bg-green-700 flex items-center gap-2"
+        >
+          <Home className="h-4 w-4" />
+          Back to Home
+        </Button>
+
+        <Button
           onClick={onRetakeQuiz}
           variant="outline"
           className="flex items-center gap-2"
@@ -238,6 +282,13 @@ export const ComprehensiveQuizResults = ({
           Back to Top
         </Button>
       </motion.div>
+
+      {/* Movie Modal */}
+      <MovieModal
+        movie={selectedMovie}
+        isOpen={isModalOpen}
+        onClose={closeModal}
+      />
     </div>
   );
 };

@@ -46,6 +46,7 @@ export const EnhancedMovieModal = ({
   const [loading, setLoading] = useState(true);
 
   const { fetchSingleMovie, getStreamingData } = useStreamingPro();
+  const [streamingAvailability, setStreamingAvailability] = useState<any[]>([]);
 
   // Format utility functions
   const formatCurrency = (amount: number) => {
@@ -154,6 +155,21 @@ export const EnhancedMovieModal = ({
     // Fetch streaming data
     if (movie.id) {
       fetchSingleMovie(movie.id);
+      
+      // Fetch streaming availability using the new API
+      const fetchStreamingData = async () => {
+        try {
+          const response = await fetch(`/api/streaming-availability/${movie.id}`);
+          if (response.ok) {
+            const data = await response.json();
+            setStreamingAvailability(data.services || []);
+          }
+        } catch (error) {
+          console.error('Error fetching streaming data:', error);
+        }
+      };
+      
+      fetchStreamingData();
     }
   }, [movie, isOpen, fetchSingleMovie]);
 
@@ -328,12 +344,22 @@ export const EnhancedMovieModal = ({
                 </div>
 
                 {/* Streaming Services */}
-                {streamingData?.streamingOptions && streamingData.streamingOptions.length > 0 && (
+                {(streamingData?.streamingOptions && streamingData.streamingOptions.length > 0) || streamingAvailability.length > 0 ? (
                   <div className="mb-4">
                     <h4 className="text-sm font-medium text-gray-400 mb-2">Available on:</h4>
-                    <StreamingBadge streamingOptions={streamingData.streamingOptions} mode="compact" maxServices={4} />
+                    {streamingData?.streamingOptions && streamingData.streamingOptions.length > 0 ? (
+                      <StreamingBadge streamingOptions={streamingData.streamingOptions} mode="compact" maxServices={4} />
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {streamingAvailability.slice(0, 4).map((service, index) => (
+                          <Badge key={index} className="bg-blue-600/20 text-blue-300 border-blue-600/30">
+                            {service.service}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                )}
+                ) : null}
 
                 {/* Action Buttons */}
                 <div className="flex flex-wrap gap-3">
