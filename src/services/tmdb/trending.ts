@@ -5,7 +5,9 @@ import i18n from "@/i18n";
 
 export const getTrendingMovies = async (context?: { queryKey: string[] }): Promise<TMDBMovie[]> => {
   const apiKey = await getTMDBApiKey();
-  const currentLang = i18n.language || "en";
+  // Detect user locale for movie content (not UI language)
+  const userLocale = navigator.language || "en-US";
+  const movieLang = userLocale.split('-')[0]; // Extract language part (en, pl, de, etc.)
   
   // Extract parameters from query key safely
   let region = "";
@@ -16,11 +18,11 @@ export const getTrendingMovies = async (context?: { queryKey: string[] }): Promi
     page = context.queryKey[2] || "1";
   }
   
-  console.log(`Fetching trending movies with language: ${currentLang}, region: ${region}, page: ${page}`);
+  console.log(`Fetching trending movies with language: ${movieLang}, region: ${region}, page: ${page}`);
   
   const queryParams = new URLSearchParams({
     api_key: apiKey,
-    language: currentLang,
+    language: movieLang,
     page: page,
     ...(region ? { region } : {})
   });
@@ -53,7 +55,9 @@ export const getTrendingMovies = async (context?: { queryKey: string[] }): Promi
 
 export const getPopularMovies = async (context?: { queryKey: string[] }): Promise<TMDBMovie[]> => {
   const apiKey = await getTMDBApiKey();
-  const currentLang = i18n.language || "en";
+  // Detect user locale for movie content (not UI language)
+  const userLocale = navigator.language || "en-US";
+  const movieLang = userLocale.split('-')[0]; // Extract language part (en, pl, de, etc.)
   
   // Extract parameters from query key safely
   let region = "";
@@ -64,11 +68,11 @@ export const getPopularMovies = async (context?: { queryKey: string[] }): Promis
     page = context.queryKey[2] || "1";
   }
   
-  console.log(`Fetching popular movies with language: ${currentLang}, region: ${region}, page: ${page}`);
+  console.log(`Fetching popular movies with language: ${movieLang}, region: ${region}, page: ${page}`);
   
   const queryParams = new URLSearchParams({
     api_key: apiKey,
-    language: currentLang,
+    language: movieLang,
     page: page,
     ...(region ? { region } : {})
   });

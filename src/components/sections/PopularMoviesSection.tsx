@@ -74,7 +74,7 @@ export const PopularMoviesSection = ({ movies, isLoading = false }: PopularMovie
             {t("popular.movies")}
           </h2>
           <p className="text-muted-foreground mb-8">
-            Najpopularniejsze filmy w tym tygodniu
+            Most popular movies this week
           </p>
         </motion.div>
         

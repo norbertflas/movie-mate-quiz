@@ -20,7 +20,7 @@ export const TrendingMoviesSection = ({ movies }: TrendingMoviesSectionProps) =>
     <section className="py-12">
       <div className="container mx-auto px-4">
         <h2 className="text-3xl font-bold mb-8 text-white">
-          {t("trending.thisWeek")}
+          Trending This Week
         </h2>
         <div className="flex overflow-x-auto gap-4 pb-4 scrollbar-hide trending-horizontal-scroll">
           {movies.slice(0, 12).map((movie) => (
