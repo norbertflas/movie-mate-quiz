@@ -1,7 +1,7 @@
 
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import ProMovieCard from "@/components/movie/ProMovieCard";
+import { ProMovieCard } from "@/components/movie/ProMovieCard";
 import { CreatorCard } from "./CreatorCard";
 import { useSmartStreamingSearch } from "@/hooks/use-smart-streaming-search";
 import { Card, CardContent } from "@/components/ui/card";
