@@ -1,6 +1,6 @@
 
 import { useTranslation } from "react-i18next";
-import ProMovieCard from "@/components/movie/ProMovieCard";
+import { ProMovieCard } from "@/components/movie/ProMovieCard";
 import { TMDBMovie } from "@/services/tmdb";
 import { MovieModal, useMovieModal } from "@/components/movie/MovieModal";
 import { useEffect, useState } from "react";
@@ -95,17 +95,17 @@ export const PopularMoviesSection = ({ movies, isLoading = false }: PopularMovie
                 ease: "easeOut"
               }}
             >
-              <ProMovieCard
-                title={movie.title}
-                year={movie.release_date}
-                imageUrl={movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : '/placeholder.svg'}
-                description={movie.overview}
-                rating={(movie.vote_average || 0) * 10}
-                tmdbId={movie.id}
-                mode="lazy"
-                showStreamingBadges={false}
-                onClick={() => openModal(movie)}
-              />
+                <ProMovieCard
+                  title={movie.title}
+                  year={movie.release_date ? new Date(movie.release_date).getFullYear().toString() : "N/A"}
+                  imageUrl={movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : '/placeholder.svg'}
+                  description={movie.overview}
+                  rating={(movie.vote_average || 0) * 10}
+                  tmdbId={movie.id}
+                  mode="lazy"
+                  showStreamingBadges={false}
+                  onClick={() => openModal(movie)}
+                />
             </motion.div>
           ))}
         </motion.div>
