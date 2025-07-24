@@ -256,11 +256,11 @@ async function getMovieStreamingData(tmdbId: number, country: string, title?: st
   try {
     console.log(`🔍 [MovieOfTheNight] Searching by TMDB ID: ${tmdbId}`)
     
-    const response = await fetch(`https://streaming-availability.p.rapidapi.com/shows/${tmdbId}`, {
+    const response = await fetch(`https://streaming-availability.p.rapidapi.com/shows/movie/${tmdbId}?country=${country.toLowerCase()}`, {
       method: 'GET',
       headers: {
-        'X-RapidAPI-Key': rapidApiKey,
-        'X-RapidAPI-Host': 'streaming-availability.p.rapidapi.com'
+        'x-rapidapi-key': rapidApiKey,
+        'x-rapidapi-host': 'streaming-availability.p.rapidapi.com'
       }
     })
 
