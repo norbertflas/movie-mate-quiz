@@ -574,8 +574,21 @@ export const EnhancedMovieModal = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {movieDetails.videos?.results?.map((video: any, index: number) => (
                     <div key={index} className="bg-gray-800 rounded-lg p-4">
-                      <div className="aspect-video bg-gray-700 rounded mb-2 flex items-center justify-center cursor-pointer hover:bg-gray-600 transition-colors">
-                        <Play className="h-12 w-12 text-white" />
+                      <div className="aspect-video bg-gray-700 rounded mb-2 overflow-hidden">
+                        {video.site === 'YouTube' ? (
+                          <iframe
+                            src={`https://www.youtube.com/embed/${video.key}`}
+                            title={video.name}
+                            frameBorder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                            className="w-full h-full"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center cursor-pointer hover:bg-gray-600 transition-colors">
+                            <Play className="h-12 w-12 text-white" />
+                          </div>
+                        )}
                       </div>
                       <h4 className="text-white font-medium text-sm">{video.name}</h4>
                       <p className="text-gray-400 text-xs">{video.type}</p>
