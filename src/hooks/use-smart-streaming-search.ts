@@ -71,23 +71,21 @@ export const useSmartStreamingSearch = (
 
   // Auto-fetch logic based on mode
   useEffect(() => {
-    if (!options.autoFetch || !tmdbIds.length) return;
+    if (!options.autoFetch || !tmdbIds.length || loading) return;
 
-    if (options.mode === 'instant') {
-      // Instant mode: fetch immediately when tmdbIds change
-      fetchBatch(tmdbIds);
-    } else if (options.mode === 'lazy') {
-      // Lazy mode: only fetch if explicitly requested or for previously viewed movies
-      const viewedMovies = tmdbIds.filter(id => {
-        // Check if we already have this movie's data (was viewed before)
-        return streamingData.has(id);
-      });
-      
-      if (viewedMovies.length > 0) {
-        fetchBatch(viewedMovies);
+    // Prevent refetching if we already have most of the data
+    const missingIds = tmdbIds.filter(id => !streamingData.has(id));
+    if (missingIds.length === 0) return;
+
+    const timeoutId = setTimeout(() => {
+      if (options.mode === 'instant') {
+        // Instant mode: fetch only missing data
+        fetchBatch(missingIds);
       }
-    }
-  }, [tmdbIds, options.autoFetch, options.mode, fetchBatch]);
+    }, 300); // Debounce to prevent rapid refetches
+
+    return () => clearTimeout(timeoutId);
+  }, [tmdbIds.join(','), options.autoFetch, options.mode, loading]); // Use join to prevent array reference issues
 
   // Filter data by selected services
   const filteredData = useMemo(() => {

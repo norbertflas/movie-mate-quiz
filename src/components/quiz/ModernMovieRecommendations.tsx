@@ -346,29 +346,28 @@ export const ModernMovieRecommendations = ({
         </div>
       </section>
 
-      {/* Movie Modal */}
+      {/* Enhanced Movie Modal with proper TMDBMovie interface */}
       {selectedMovie && (
         <EnhancedMovieModal
           isOpen={!!selectedMovie}
           onClose={() => setSelectedMovie(null)}
           movie={{
+            id: selectedMovie.id,
             title: selectedMovie.title,
-            platform: "TMDB",
-            genre: Array.isArray(selectedMovie.genres) && selectedMovie.genres.length > 0 
-              ? (typeof selectedMovie.genres[0] === 'string' ? selectedMovie.genres[0] : selectedMovie.genres[0].name)
-              : "Unknown",
-            imageUrl: selectedMovie.poster_path ? `https://image.tmdb.org/t/p/w500${selectedMovie.poster_path}` : "",
-            description: selectedMovie.overview || "",
-            trailerUrl: "",
-            rating: selectedMovie.vote_average ? selectedMovie.vote_average * 10 : 0,
-            tmdbId: selectedMovie.id,
-            runtime: selectedMovie.runtime,
-            director: typeof selectedMovie.director === 'string' ? selectedMovie.director : selectedMovie.director?.[0],
-            cast: Array.isArray(selectedMovie.cast) 
-              ? selectedMovie.cast.map(c => typeof c === 'string' ? c : c.name)
+            poster_path: selectedMovie.poster_path,
+            backdrop_path: selectedMovie.backdrop_path,
+            overview: selectedMovie.overview || "",
+            release_date: selectedMovie.release_date,
+            vote_average: selectedMovie.vote_average || 0,
+            vote_count: selectedMovie.vote_count || 0,
+            popularity: selectedMovie.popularity || 0,
+            genre_ids: [],
+            video_id: selectedMovie.trailer_url,
+            genres: Array.isArray(selectedMovie.genres) 
+              ? selectedMovie.genres.map(g => typeof g === 'string' ? { id: 0, name: g } : g)
               : [],
-            releaseDate: selectedMovie.release_date
-          } as any}
+            explanations: []
+          }}
         />
       )}
 
