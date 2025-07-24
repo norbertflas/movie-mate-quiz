@@ -11,20 +11,23 @@ import { Heart } from "lucide-react";
 import { OptimizedMovieImage } from "./OptimizedMovieImage";
 import StreamingBadge from "../streaming/StreamingBadge";
 
-interface ProMovieCardProps extends MovieCardProps {
+interface ProMovieCardProps extends Partial<MovieCardProps> {
   mode?: 'instant' | 'lazy';
   showStreamingBadges?: boolean;
+  // Override required props
+  title: string;
+  tmdbId: number;
 }
 
 export const ProMovieCard = memo(({
   title,
-  year,
-  platform,
-  genre,
-  imageUrl,
-  description,
-  trailerUrl: initialTrailerUrl,
-  rating,
+  year = '',
+  platform = '',
+  genre = '',
+  imageUrl = '',
+  description = '',
+  trailerUrl: initialTrailerUrl = '',
+  rating = 0,
   tags = [],
   streamingServices = [],
   tmdbId,

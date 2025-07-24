@@ -14,7 +14,7 @@ import { getGenreTranslationKey } from "@/utils/genreTranslation";
 import { SmartSearchResults } from "@/components/search/SmartSearchResults";
 import { useLocation } from "react-router-dom";
 import { SearchInput } from "@/components/search/SearchInput";
-import { StreamingServiceSelector } from "@/components/streaming/StreamingServiceSelector";
+import StreamingServiceFilter from "@/components/streaming/StreamingServiceFilter";
 
 type SearchType = "movies" | "creators" | "personalized";
 
@@ -147,13 +147,13 @@ const Search = () => {
               <aside className="w-full lg:w-64 lg:sticky lg:top-24 lg:self-start bg-card/50 backdrop-blur-sm p-4 rounded-xl border border-border/50">
                 <MovieFilters onFilterChange={handleFilterChange} />
                 
-                {/* Streaming Service Selector for instant filtering */}
+                {/* Streaming Service Filter for instant filtering */}
                 <div className="mt-6 pt-6 border-t">
-                  <StreamingServiceSelector
+                  <StreamingServiceFilter
+                    country="pl"
                     selectedServices={selectedServices}
                     onServicesChange={setSelectedServices}
-                    country='us'
-                    showLabel={true}
+                    availableServices={[]}
                   />
                 </div>
 
@@ -174,7 +174,7 @@ const Search = () => {
                   getGenreTranslationKey={getGenreTranslationKey}
                   selectedServices={selectedServices}
                   mode="instant"
-                  country="us"
+                  country="pl"
                 />
               </main>
             </div>

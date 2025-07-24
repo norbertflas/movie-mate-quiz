@@ -1,7 +1,7 @@
 
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { SmartMovieCard } from "@/components/movie/SmartMovieCard";
+import ProMovieCard from "@/components/movie/ProMovieCard";
 import { CreatorCard } from "./CreatorCard";
 import { useSmartStreamingSearch } from "@/hooks/use-smart-streaming-search";
 import { Card, CardContent } from "@/components/ui/card";
@@ -148,12 +148,15 @@ export const SmartSearchResults = ({
           >
             {filteredMovies.map((movie) => (
               <motion.div key={movie.id} variants={itemVariants}>
-                <SmartMovieCard
-                  movie={movie}
+                <ProMovieCard
+                  title={movie.title}
+                  year={movie.release_date}
+                  imageUrl={movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : '/placeholder.svg'}
+                  description={movie.overview}
+                  rating={(movie.vote_average || 0) * 10}
+                  tmdbId={movie.id}
                   mode={mode}
-                  selectedServices={selectedServices}
-                  onFavorite={handleFavorite}
-                  isFavorite={favorites.has(movie.id)}
+                  showStreamingBadges={mode === 'instant'}
                   onClick={() => openModal(movie)}
                 />
               </motion.div>
