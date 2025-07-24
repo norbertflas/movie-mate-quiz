@@ -49,7 +49,7 @@ export const ProMovieCard = memo(({
     loading: streamingLoading 
   } = useStreamingPro();
 
-  // Load streaming data based on mode
+  // Load streaming data based on mode - optimized to prevent glitching
   useEffect(() => {
     if (!tmdbId || tmdbId <= 0) return;
 
@@ -60,19 +60,26 @@ export const ProMovieCard = memo(({
       return;
     }
 
-    // In INSTANT mode, fetch streaming data immediately
+    // Only fetch in INSTANT mode and if badges should be shown
     if (mode === 'instant' && showStreamingBadges) {
-      fetchSingleMovie(tmdbId, { 
-        country: getUserCountry(),
-        mode: 'instant',
-        cacheEnabled: true 
-      }).then(data => {
-        if (data) {
-          setStreamingData(data);
-        }
-      });
+      // Add a small delay to prevent rapid requests
+      const timeoutId = setTimeout(() => {
+        fetchSingleMovie(tmdbId, { 
+          country: getUserCountry(),
+          mode: 'instant',
+          cacheEnabled: true 
+        }).then(data => {
+          if (data) {
+            setStreamingData(data);
+          }
+        }).catch(error => {
+          console.error('Failed to fetch streaming data:', error);
+        });
+      }, 100);
+
+      return () => clearTimeout(timeoutId);
     }
-  }, [tmdbId, mode, showStreamingBadges, fetchSingleMovie, getStreamingData, getUserCountry]);
+  }, [tmdbId, mode, showStreamingBadges]); // Removed fetchSingleMovie and other functions from deps to prevent re-renders
 
   const handleCardClick = useCallback(() => {
     if (onClick) {
@@ -134,6 +141,9 @@ export const ProMovieCard = memo(({
 
   const hasStreamingData = streamingData?.streamingOptions?.length > 0;
   const isLoadingStreaming = streamingLoading && mode === 'instant' && showStreamingBadges;
+  
+  // Debug logging for glitching issues
+  console.log(`ProMovieCard ${title} (${tmdbId}): mode=${mode}, showBadges=${showStreamingBadges}, loading=${isLoadingStreaming}, hasData=${hasStreamingData}`);
 
   return (
     <>
