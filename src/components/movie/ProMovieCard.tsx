@@ -142,11 +142,14 @@ export const ProMovieCard = memo(({
         onClick={handleCardClick}
       >
         <div className="relative h-[240px] overflow-hidden rounded-t-xl">
-          <OptimizedMovieImage
-            imageUrl={imageUrl}
-            title={title}
-            className="w-full h-full"
+          <img
+            src={imageUrl || '/placeholder.svg'}
+            alt={title}
+            className="w-full h-full object-cover"
             loading="lazy"
+            onError={(e) => {
+              e.currentTarget.src = '/placeholder.svg';
+            }}
           />
           
           {/* Favorite button */}
