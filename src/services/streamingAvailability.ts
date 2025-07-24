@@ -1,6 +1,8 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import type { StreamingPlatformData, StreamingAvailabilityCache } from "@/types/streaming";
+import { getMovieWatchProviders } from "./tmdb/movies";
+import { getUserRegion } from "@/utils/regionDetection";
 
 const RETRY_DELAY = 2000;
 const MAX_RETRIES = 3;
@@ -73,39 +75,71 @@ function normalizeServiceName(serviceName: string, region: string = 'US'): strin
   return regionMap[normalized] || serviceName;
 }
 
-// Główna funkcja z obsługą regionów
+// Główna funkcja z automatyczną detekcją regionu
 export async function getStreamingAvailability(
   tmdbId: number,
   title?: string,
   year?: string,
-  region: string = 'us'
+  region?: string
 ): Promise<StreamingPlatformData[]> {
   try {
-    console.log(`[getStreamingAvailability] TMDB ID: ${tmdbId}, region: ${region.toUpperCase()}`);
+    // Auto-detect region if not provided
+    const userRegion = region || await getUserRegion();
+    console.log(`[getStreamingAvailability] TMDB ID: ${tmdbId}, region: ${userRegion.toUpperCase()}`);
     
     // Cache key uwzględnia region
-    const cacheKey = `${tmdbId}-${region.toLowerCase()}`;
+    const cacheKey = `${tmdbId}-${userRegion.toLowerCase()}`;
     if (localCache[cacheKey]) {
       const cached = localCache[cacheKey];
       const age = Date.now() - cached.timestamp;
       const maxAge = cached.data.length > 0 ? CACHE_DURATION : ERROR_CACHE_DURATION;
       
       if (age < maxAge) {
-        console.log(`[getStreamingAvailability] Using cached data for ${region.toUpperCase()} (age: ${Math.round(age / 1000 / 60)}min)`);
+        console.log(`[getStreamingAvailability] Using cached data for ${userRegion.toUpperCase()} (age: ${Math.round(age / 1000 / 60)}min)`);
         return cached.data;
       } else {
         delete localCache[cacheKey];
       }
     }
     
-    // Wywołaj Supabase Edge Function z regionem
-    console.log('[getStreamingAvailability] Calling Supabase edge function');
+    // First try TMDB Watch Providers (most reliable)
+    console.log('[getStreamingAvailability] Trying TMDB Watch Providers API');
+    try {
+      const tmdbData = await getMovieWatchProviders(tmdbId, userRegion);
+      
+      if (tmdbData.services && tmdbData.services.length > 0) {
+        console.log(`[getStreamingAvailability] Found ${tmdbData.services.length} services from TMDB for ${userRegion.toUpperCase()}`);
+        
+        // Transform TMDB data to our format
+        const tmdbServices: StreamingPlatformData[] = tmdbData.services.map(service => ({
+          service: service.service,
+          available: service.available,
+          type: service.type as any,
+          link: service.link || '#',
+          source: 'tmdb',
+          logo: service.logo || `/streaming-icons/${service.service?.toLowerCase().replace(/\s+/g, '') || 'unknown'}.svg`
+        }));
+
+        // Cache TMDB result
+        localCache[cacheKey] = {
+          data: tmdbServices,
+          timestamp: Date.now()
+        };
+
+        return tmdbServices;
+      }
+    } catch (tmdbError) {
+      console.warn('[getStreamingAvailability] TMDB API failed, falling back to legacy API:', tmdbError);
+    }
+    
+    // Fallback to legacy Supabase Edge Function
+    console.log('[getStreamingAvailability] Falling back to legacy streaming API');
     
     const { data, error } = await retryWithBackoff(async () => {
       return await supabase.functions.invoke('streaming-availability', {
         body: { 
           tmdbId, 
-          country: region.toLowerCase(),
+          country: userRegion.toLowerCase(),
           title: title?.trim(), 
           year: year?.trim() 
         }
@@ -129,7 +163,7 @@ export async function getStreamingAvailability(
     }
     
     const services = data.result || [];
-    console.log(`[getStreamingAvailability] Received ${services.length} services for ${region.toUpperCase()}`);
+    console.log(`[getStreamingAvailability] Received ${services.length} services from legacy API for ${userRegion.toUpperCase()}`);
     
     if (!Array.isArray(services)) {
       console.error('[getStreamingAvailability] Invalid response format');
@@ -139,7 +173,7 @@ export async function getStreamingAvailability(
     // Przetwórz i znormalizuj wyniki z uwzględnieniem regionu
     const processedServices: StreamingPlatformData[] = services
       .map((service: any) => ({
-        service: normalizeServiceName(service.service, region.toUpperCase()),
+        service: normalizeServiceName(service.service, userRegion.toUpperCase()),
         link: service.link || '#',
         available: true,
         type: service.type || 'subscription',
@@ -160,7 +194,7 @@ export async function getStreamingAvailability(
       timestamp: Date.now()
     };
     
-    console.log(`[getStreamingAvailability] Final result: ${processedServices.length} services for ${region.toUpperCase()}`);
+    console.log(`[getStreamingAvailability] Final result: ${processedServices.length} services for ${userRegion.toUpperCase()}`);
     
     return processedServices;
     

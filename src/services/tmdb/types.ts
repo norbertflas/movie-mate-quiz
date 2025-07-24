@@ -52,3 +52,32 @@ export interface TMDBRecommendationParams {
   language?: string;
   region?: string;
 }
+
+export interface TMDBWatchProvider {
+  display_priority: number;
+  logo_path: string;
+  provider_id: number;
+  provider_name: string;
+}
+
+export interface TMDBRegionWatchProviders {
+  link?: string;
+  flatrate?: TMDBWatchProvider[];
+  rent?: TMDBWatchProvider[];
+  buy?: TMDBWatchProvider[];
+}
+
+export interface TMDBWatchProvidersResponse {
+  id: number;
+  results: Record<string, TMDBRegionWatchProviders>;
+}
+
+export interface StreamingProviderData {
+  service: string;
+  available: boolean;
+  type: 'subscription' | 'rent' | 'buy';
+  link?: string;
+  logo?: string;
+  priority: number;
+  provider_id: number;
+}
