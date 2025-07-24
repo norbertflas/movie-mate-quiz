@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import type { StreamingPlatformData, StreamingAvailabilityCache } from "@/types/streaming";
-import { getMovieWatchProviders } from "./tmdb/movies";
+import { getMovieWatchProviders, getWatchmodeAvailability } from "./tmdb/movies";
 import { getUserRegion } from "@/utils/regionDetection";
 
 const RETRY_DELAY = 2000;
@@ -129,7 +129,38 @@ export async function getStreamingAvailability(
         return tmdbServices;
       }
     } catch (tmdbError) {
-      console.warn('[getStreamingAvailability] TMDB API failed, falling back to legacy API:', tmdbError);
+      console.warn('[getStreamingAvailability] TMDB API failed, trying Watchmode API:', tmdbError);
+    }
+    
+    // Second try: Watchmode API (very accurate and up-to-date)
+    console.log('[getStreamingAvailability] Trying Watchmode API');
+    try {
+      const watchmodeData = await getWatchmodeAvailability(tmdbId, userRegion);
+      
+      if (watchmodeData.services && watchmodeData.services.length > 0) {
+        console.log(`[getStreamingAvailability] Found ${watchmodeData.services.length} services from Watchmode for ${userRegion.toUpperCase()}`);
+        
+        // Transform Watchmode data to our format
+        const watchmodeServices: StreamingPlatformData[] = watchmodeData.services.map(service => ({
+          service: normalizeServiceName(service.service, userRegion),
+          available: service.available,
+          type: service.type as any,
+          link: service.link || '#',
+          source: 'watchmode',
+          price: service.price,
+          logo: `/streaming-icons/${service.service?.toLowerCase().replace(/\s+/g, '') || 'unknown'}.svg`
+        }));
+
+        // Cache Watchmode result
+        localCache[cacheKey] = {
+          data: watchmodeServices,
+          timestamp: Date.now()
+        };
+
+        return watchmodeServices;
+      }
+    } catch (watchmodeError) {
+      console.warn('[getStreamingAvailability] Watchmode API failed, falling back to legacy API:', watchmodeError);
     }
     
     // Fallback to legacy Supabase Edge Function

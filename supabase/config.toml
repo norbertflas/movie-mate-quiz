@@ -4,6 +4,9 @@ project_id = "haerhfrlzkvkmzllxpvu"
 [functions.get-tmdb-watch-providers]
 verify_jwt = false
 
+[functions.get-watchmode-availability]
+verify_jwt = false
+
 [api]
 enabled = true
 port = 54321
