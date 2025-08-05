@@ -96,6 +96,14 @@ export const EnhancedMovieModal = ({
         if (response.ok) {
           const data = await response.json();
           setMovieDetails(data);
+          
+          // Fetch streaming availability
+          fetchSingleMovie(movie.id).then(() => {
+            const streaming = getStreamingData(movie.id);
+            if (streaming) {
+              setStreamingAvailability(streaming.streamingOptions || []);
+            }
+          });
         } else {
           throw new Error('API failed');
         }
