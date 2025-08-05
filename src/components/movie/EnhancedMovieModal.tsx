@@ -14,7 +14,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { TMDBMovie } from "@/services/tmdb";
 import { useTranslation } from "react-i18next";
 import { useStreamingPro } from "@/hooks/use-streaming-pro";
-import StreamingBadge from "../streaming/StreamingBadge";
+import StreamingServiceButtons from "../streaming/StreamingServiceButtons";
 
 interface EnhancedMovieModalProps {
   isOpen: boolean;
@@ -352,22 +352,14 @@ export const EnhancedMovieModal = ({
                 </div>
 
                 {/* Streaming Services */}
-                {(streamingData?.streamingOptions && streamingData.streamingOptions.length > 0) || streamingAvailability.length > 0 ? (
-                  <div className="mb-4">
-                    <h4 className="text-sm font-medium text-gray-400 mb-2">Available on:</h4>
-                    {streamingData?.streamingOptions && streamingData.streamingOptions.length > 0 ? (
-                      <StreamingBadge streamingOptions={streamingData.streamingOptions} mode="compact" maxServices={4} />
-                    ) : (
-                      <div className="flex flex-wrap gap-2">
-                        {streamingAvailability.slice(0, 4).map((service, index) => (
-                          <Badge key={index} className="bg-blue-600/20 text-blue-300 border-blue-600/30">
-                            {service.service}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ) : null}
+                <div className="mb-4">
+                  <h4 className="text-sm font-medium text-gray-400 mb-2">Dostępne na:</h4>
+                  <StreamingServiceButtons 
+                    tmdbId={movie.id} 
+                    title={movieDetails.title} 
+                    year={movieDetails.release_date?.split('-')[0]}
+                  />
+                </div>
 
                 {/* Action Buttons */}
                 <div className="flex flex-wrap gap-3">
