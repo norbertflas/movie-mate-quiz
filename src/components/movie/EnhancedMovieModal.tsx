@@ -45,8 +45,9 @@ export const EnhancedMovieModal = ({
   const [movieDetails, setMovieDetails] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  const { fetchSingleMovie, getStreamingData } = useStreamingPro();
-  const [streamingAvailability, setStreamingAvailability] = useState<any[]>([]);
+  // Remove unused streaming state
+  // const { fetchSingleMovie, getStreamingData } = useStreamingPro();
+  // const [streamingAvailability, setStreamingAvailability] = useState<any[]>([]);
 
   // Format utility functions
   const formatCurrency = (amount: number) => {
@@ -97,13 +98,7 @@ export const EnhancedMovieModal = ({
           const data = await response.json();
           setMovieDetails(data);
           
-          // Fetch streaming availability
-          fetchSingleMovie(movie.id).then(() => {
-            const streaming = getStreamingData(movie.id);
-            if (streaming) {
-              setStreamingAvailability(streaming.streamingOptions || []);
-            }
-          });
+          // Remove the old streaming fetch logic that was causing infinite loops
         } else {
           throw new Error('API failed');
         }
@@ -160,26 +155,8 @@ export const EnhancedMovieModal = ({
 
     fetchMovieDetails();
     
-    // Fetch streaming data
-    if (movie.id) {
-      fetchSingleMovie(movie.id);
-      
-      // Fetch streaming availability using the new API
-      const fetchStreamingData = async () => {
-        try {
-          const response = await fetch(`/api/streaming-availability/${movie.id}`);
-          if (response.ok) {
-            const data = await response.json();
-            setStreamingAvailability(data.services || []);
-          }
-        } catch (error) {
-          console.error('Error fetching streaming data:', error);
-        }
-      };
-      
-      fetchStreamingData();
-    }
-  }, [movie, isOpen, fetchSingleMovie]);
+    // Remove the old streaming fetch logic that was causing infinite loops
+  }, [movie, isOpen]);
 
   const handleUserAction = (action: string, value: any = null) => {
     setUserActions(prev => ({
@@ -208,7 +185,8 @@ export const EnhancedMovieModal = ({
     setShowShareMenu(false);
   };
 
-  const streamingData = movie?.id ? getStreamingData(movie.id) : null;
+  // Remove unused streaming data getter
+  // const streamingData = movie?.id ? getStreamingData(movie.id) : null;
 
   if (!isOpen || !movie) return null;
 
