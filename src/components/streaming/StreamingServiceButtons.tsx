@@ -65,19 +65,20 @@ export const StreamingServiceButtons = ({
 
   useEffect(() => {
     const initializeData = async () => {
+      if (!tmdbId || !title || isLoading) return;
+      
       setIsLoading(true);
       
-      // Get user region
-      const region = await getUserRegion();
-      setUserRegion(region);
-      
-      // Fetch streaming data for this movie
       try {
-        await fetchSingleMovie(tmdbId, { country: region.toLowerCase() });
-        const streamingData = getStreamingData(tmdbId);
+        // Get user region
+        const region = await getUserRegion();
+        setUserRegion(region);
         
-        if (streamingData?.streamingOptions) {
-          const services: StreamingService[] = streamingData.streamingOptions.map(option => ({
+        // Fetch streaming data for this movie
+        const result = await fetchSingleMovie(tmdbId, { country: region.toLowerCase() });
+        
+        if (result?.streamingOptions) {
+          const services: StreamingService[] = result.streamingOptions.map(option => ({
             service: option.service,
             logo: serviceLogos[option.service] || '/streaming-icons/default.svg',
             link: option.link || defaultLinks[option.service]?.(title, year) || '#',
@@ -106,15 +107,16 @@ export const StreamingServiceButtons = ({
       } catch (error) {
         console.error('Error fetching streaming data:', error);
         setStreamingServices([]);
+      } finally {
+        setIsLoading(false);
       }
-      
-      setIsLoading(false);
     };
 
-    if (tmdbId && title) {
+    // Only run once when component mounts with valid data
+    if (tmdbId && title && streamingServices.length === 0 && !isLoading) {
       initializeData();
     }
-  }, [tmdbId, title, year, fetchSingleMovie, getStreamingData]);
+  }, [tmdbId, title]); // Simplified dependencies
 
   const handleServiceClick = (service: StreamingService) => {
     if (service.link && service.link !== '#') {
