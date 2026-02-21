@@ -30,9 +30,9 @@ serve(async (req) => {
   }
 
   try {
-    const url = new URL(req.url);
-    const tmdbId = url.searchParams.get('tmdb_id');
-    const region = url.searchParams.get('region') || 'US';
+    const body = await req.json();
+    const tmdbId = body.tmdb_id?.toString();
+    const region = body.region || 'US';
 
     if (!tmdbId) {
       return new Response(
