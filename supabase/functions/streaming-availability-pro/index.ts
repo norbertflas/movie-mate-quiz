@@ -93,31 +93,28 @@ const fetchStreamingData = async (tmdbId: number, country: string): Promise<Movi
     const streamingOptions: StreamingOption[] = [];
     const availableServices: string[] = [];
 
-    // Process streaming options - new API structure
-    const streamingInfo = data.streamingInfo?.[country] || {};
-    
-    for (const [serviceId, options] of Object.entries(streamingInfo)) {
-      if (Array.isArray(options) && options.length > 0) {
-        for (const option of options) {
-          const streamingOption: StreamingOption = {
-            service: getServiceDisplayName(serviceId),
-            serviceLogo: getServiceLogo(serviceId),
-            link: option.link || getServiceHomeUrl(serviceId),
-            type: getStreamingType(option),
-            quality: option.quality || 'HD',
-            price: option.price ? {
-              amount: parseFloat(option.price.amount),
-              currency: option.price.currency,
-              formatted: option.price.formatted
-            } : undefined
-          };
+    // Process streaming options - v4 API structure (streamingOptions is an array per country)
+    const countryStreamingOptions = data.streamingOptions?.[country] || [];
 
-          streamingOptions.push(streamingOption);
-          
-          if (!availableServices.includes(streamingOption.service)) {
-            availableServices.push(streamingOption.service);
-          }
-        }
+    for (const option of countryStreamingOptions) {
+      const serviceId = option.service?.id || '';
+      const streamingOption: StreamingOption = {
+        service: getServiceDisplayName(serviceId) || option.service?.name || serviceId,
+        serviceLogo: getServiceLogo(serviceId),
+        link: option.link || getServiceHomeUrl(serviceId),
+        type: getStreamingType(option),
+        quality: option.quality || 'HD',
+        price: option.price ? {
+          amount: parseFloat(option.price.amount),
+          currency: option.price.currency,
+          formatted: option.price.formatted
+        } : undefined
+      };
+
+      streamingOptions.push(streamingOption);
+
+      if (!availableServices.includes(streamingOption.service)) {
+        availableServices.push(streamingOption.service);
       }
     }
 
