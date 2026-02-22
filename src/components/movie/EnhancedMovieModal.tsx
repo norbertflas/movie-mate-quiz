@@ -217,10 +217,10 @@ export const EnhancedMovieModal = ({
         initial={{ scale: 0.9, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.9, opacity: 0, y: 20 }}
-        className="bg-gray-900 rounded-xl max-w-6xl w-full max-h-[95vh] overflow-hidden shadow-2xl border border-gray-700"
+        className="bg-gray-900 rounded-xl max-w-6xl w-full max-h-[95vh] overflow-hidden shadow-2xl border border-gray-700 flex flex-col"
       >
         {/* Enhanced Header */}
-        <div className="relative h-96 overflow-hidden">
+        <div className="relative h-52 sm:h-72 md:h-96 overflow-hidden flex-shrink-0">
           {/* Backdrop Image */}
           <div className="absolute inset-0">
             <img
@@ -246,8 +246,8 @@ export const EnhancedMovieModal = ({
           </Button>
 
           {/* Main Content Overlay */}
-          <div className="absolute bottom-0 left-0 right-0 p-8">
-            <div className="flex items-end space-x-6">
+          <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-6 lg:p-8">
+            <div className="flex items-end gap-3 sm:gap-6">
               {/* Poster */}
               <motion.div
                 initial={{ x: -50, opacity: 0 }}
@@ -258,7 +258,7 @@ export const EnhancedMovieModal = ({
                 <img
                   src={movieDetails.poster_path ? `https://image.tmdb.org/t/p/w500${movieDetails.poster_path}` : "/placeholder.svg"}
                   alt={movieDetails.title}
-                  className="w-32 h-48 object-cover rounded-lg shadow-2xl border-2 border-white/20"
+                  className="w-16 h-24 sm:w-24 sm:h-36 md:w-32 md:h-48 object-cover rounded-lg shadow-2xl border-2 border-white/20"
                   onError={(e) => {
                     e.currentTarget.src = "/placeholder.svg";
                   }}
@@ -273,17 +273,17 @@ export const EnhancedMovieModal = ({
                 className="flex-1 text-white"
               >
                 <div className="mb-2">
-                  <h1 className="text-4xl font-bold mb-2">{movieDetails.title}</h1>
+                  <h1 className="text-xl sm:text-3xl lg:text-4xl font-bold mb-1 sm:mb-2 leading-tight">{movieDetails.title}</h1>
                   {movieDetails.original_title !== movieDetails.title && (
-                    <p className="text-xl text-gray-300 italic mb-2">{movieDetails.original_title}</p>
+                    <p className="text-sm sm:text-xl text-gray-300 italic mb-1 sm:mb-2 hidden sm:block">{movieDetails.original_title}</p>
                   )}
                   {movieDetails.tagline && (
-                    <p className="text-lg text-gray-400 italic">"{movieDetails.tagline}"</p>
+                    <p className="text-sm sm:text-lg text-gray-400 italic hidden sm:block">"{movieDetails.tagline}"</p>
                   )}
                 </div>
 
                 {/* Meta Info */}
-                <div className="flex flex-wrap items-center space-x-4 text-sm text-gray-300 mb-4">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:text-sm text-gray-300 mb-2 sm:mb-4">
                   <div className="flex items-center">
                     <Calendar className="h-4 w-4 mr-1" />
                     {formatDate(movieDetails.release_date)}
@@ -302,13 +302,13 @@ export const EnhancedMovieModal = ({
                 </div>
 
                 {/* Rating and Genres */}
-                <div className="flex items-center space-x-4 mb-4">
+                <div className="flex items-center gap-3 mb-2 sm:mb-4">
                   <div className="flex items-center space-x-2">
                     <Star className="h-5 w-5 text-yellow-400 fill-current" />
-                    <span className={`text-xl font-bold ${getRatingColor(movieDetails.vote_average || 0)}`}>
+                    <span className={`text-base sm:text-xl font-bold ${getRatingColor(movieDetails.vote_average || 0)}`}>
                       {(movieDetails.vote_average || 0).toFixed(1)}
                     </span>
-                    <span className="text-gray-400">({(movieDetails.vote_count || 0).toLocaleString()} votes)</span>
+                    <span className="text-gray-400 text-xs sm:text-sm hidden sm:inline">({(movieDetails.vote_count || 0).toLocaleString()} votes)</span>
                   </div>
                   <div className="flex items-center space-x-1">
                     <TrendingUp className="h-4 w-4 text-blue-400" />
@@ -317,7 +317,7 @@ export const EnhancedMovieModal = ({
                 </div>
 
                 {/* Genres */}
-                <div className="flex flex-wrap gap-2 mb-6">
+                <div className="flex flex-wrap gap-1 sm:gap-2 mb-3 sm:mb-6">
                   {movieDetails.genres?.map((genre: any) => (
                     <Badge key={genre.id} className="bg-blue-600/20 text-blue-300 border-blue-600/30">
                       {genre.name}
@@ -330,8 +330,8 @@ export const EnhancedMovieModal = ({
                 </div>
 
                 {/* Streaming Services */}
-                <div className="mb-4">
-                  <h4 className="text-sm font-medium text-gray-400 mb-2">Dostępne na:</h4>
+                <div className="mb-2 sm:mb-4">
+                  <h4 className="text-xs sm:text-sm font-medium text-gray-400 mb-2">Dostępne na:</h4>
                   <StreamingServiceButtons 
                     tmdbId={movie.id} 
                     title={movieDetails.title} 
@@ -340,47 +340,47 @@ export const EnhancedMovieModal = ({
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex flex-wrap gap-3">
+                <div className="flex flex-wrap gap-2">
                   {movieDetails.videos?.results?.length > 0 && (
                     <Button
-                      size="lg"
-                      className="bg-red-600 hover:bg-red-700"
+                      size="sm"
+                      className="bg-red-600 hover:bg-red-700 text-xs sm:text-sm"
                       onClick={() => setShowTrailer(true)}
                     >
-                      <Play className="h-5 w-5 mr-2 fill-white" />
-                      Watch Trailer
+                      <Play className="h-4 w-4 mr-1 fill-white" />
+                      Trailer
                     </Button>
                   )}
-                  
+
                   <Button
                     variant="outline"
-                    size="lg"
+                    size="sm"
                     onClick={() => handleUserAction('isFavorite')}
-                    className={`border-white/30 ${userActions.isFavorite ? 'bg-red-600/20 text-red-400 border-red-600/50' : 'text-white hover:bg-white/10'}`}
+                    className={`border-white/30 text-xs sm:text-sm ${userActions.isFavorite ? 'bg-red-600/20 text-red-400 border-red-600/50' : 'text-white hover:bg-white/10'}`}
                   >
-                    <Heart className={`h-5 w-5 mr-2 ${userActions.isFavorite ? 'fill-current' : ''}`} />
-                    {userActions.isFavorite ? 'Favorite' : 'Add to Favorites'}
+                    <Heart className={`h-4 w-4 mr-1 ${userActions.isFavorite ? 'fill-current' : ''}`} />
+                    {userActions.isFavorite ? 'Ulubione' : 'Ulubione'}
                   </Button>
-                  
+
                   <Button
                     variant="outline"
-                    size="lg"
+                    size="sm"
                     onClick={() => handleUserAction('isWatchlisted')}
-                    className={`border-white/30 ${userActions.isWatchlisted ? 'bg-blue-600/20 text-blue-400 border-blue-600/50' : 'text-white hover:bg-white/10'}`}
+                    className={`border-white/30 text-xs sm:text-sm ${userActions.isWatchlisted ? 'bg-blue-600/20 text-blue-400 border-blue-600/50' : 'text-white hover:bg-white/10'}`}
                   >
-                    <Bookmark className={`h-5 w-5 mr-2 ${userActions.isWatchlisted ? 'fill-current' : ''}`} />
-                    {userActions.isWatchlisted ? 'On Watchlist' : 'Add to Watchlist'}
+                    <Bookmark className={`h-4 w-4 mr-1 ${userActions.isWatchlisted ? 'fill-current' : ''}`} />
+                    {userActions.isWatchlisted ? 'Lista' : 'Do obejrzenia'}
                   </Button>
 
                   <div className="relative">
                     <Button
                       variant="outline"
-                      size="lg"
+                      size="sm"
                       onClick={() => setShowShareMenu(!showShareMenu)}
-                      className="border-white/30 text-white hover:bg-white/10"
+                      className="border-white/30 text-white hover:bg-white/10 text-xs sm:text-sm"
                     >
-                      <Share2 className="h-5 w-5 mr-2" />
-                      Share
+                      <Share2 className="h-4 w-4 mr-1" />
+                      Udostępnij
                     </Button>
                     
                     <AnimatePresence>
@@ -420,14 +420,14 @@ export const EnhancedMovieModal = ({
         </div>
 
         {/* Content Tabs */}
-        <div className="p-6 overflow-y-auto max-h-[calc(95vh-400px)]">
+        <div className="p-3 sm:p-6 overflow-y-auto flex-1 min-h-0">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-5 bg-gray-800 mb-6">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="cast">Cast</TabsTrigger>
-              <TabsTrigger value="media">Media</TabsTrigger>
-              <TabsTrigger value="details">Details</TabsTrigger>
-              <TabsTrigger value="reviews">Reviews</TabsTrigger>
+            <TabsList className="flex w-full overflow-x-auto bg-gray-800 mb-4 sm:mb-6 scrollbar-none">
+              <TabsTrigger value="overview" className="flex-shrink-0 text-xs sm:text-sm px-2 sm:px-4">Opis</TabsTrigger>
+              <TabsTrigger value="cast" className="flex-shrink-0 text-xs sm:text-sm px-2 sm:px-4">Obsada</TabsTrigger>
+              <TabsTrigger value="media" className="flex-shrink-0 text-xs sm:text-sm px-2 sm:px-4">Media</TabsTrigger>
+              <TabsTrigger value="details" className="flex-shrink-0 text-xs sm:text-sm px-2 sm:px-4">Szczegóły</TabsTrigger>
+              <TabsTrigger value="reviews" className="flex-shrink-0 text-xs sm:text-sm px-2 sm:px-4">Recenzje</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="space-y-6">
