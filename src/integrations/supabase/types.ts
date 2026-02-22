@@ -14,13 +14,268 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      api_usage_stats: {
+        Row: {
+          created_at: string
+          daily_calls: number
+          date: string
+          hourly_calls: number
+          id: string
+          last_call_hour: number | null
+          last_call_minute: number | null
+          minute_calls: number
+          service: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          daily_calls?: number
+          date?: string
+          hourly_calls?: number
+          id?: string
+          last_call_hour?: number | null
+          last_call_minute?: number | null
+          minute_calls?: number
+          service: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          daily_calls?: number
+          date?: string
+          hourly_calls?: number
+          id?: string
+          last_call_hour?: number | null
+          last_call_minute?: number | null
+          minute_calls?: number
+          service?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      favorite_creators: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          role: string
+          tmdb_person_id: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          role: string
+          tmdb_person_id?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          role?: string
+          tmdb_person_id?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      quiz_groups: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      quiz_history: {
+        Row: {
+          answers: Json
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          answers?: Json
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      saved_movies: {
+        Row: {
+          created_at: string
+          id: string
+          poster_path: string | null
+          title: string
+          tmdb_id: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          poster_path?: string | null
+          title?: string
+          tmdb_id: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          poster_path?: string | null
+          title?: string
+          tmdb_id?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      streaming_cache: {
+        Row: {
+          country: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          source: string | null
+          streaming_data: Json | null
+          tmdb_id: number
+          updated_at: string
+        }
+        Insert: {
+          country?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          source?: string | null
+          streaming_data?: Json | null
+          tmdb_id: number
+          updated_at?: string
+        }
+        Update: {
+          country?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          source?: string | null
+          streaming_data?: Json | null
+          tmdb_id?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      streaming_services: {
+        Row: {
+          created_at: string
+          id: string
+          logo_url: string | null
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          logo_url?: string | null
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name?: string
+        }
+        Relationships: []
+      }
+      user_streaming_preferences: {
+        Row: {
+          created_at: string
+          id: string
+          service_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          service_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          service_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_streaming_preferences_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "streaming_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      watched_movies: {
+        Row: {
+          created_at: string
+          id: string
+          rating: number | null
+          title: string
+          tmdb_id: number
+          user_id: string
+          watched_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          rating?: number | null
+          title?: string
+          tmdb_id: number
+          user_id: string
+          watched_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          rating?: number | null
+          title?: string
+          tmdb_id?: number
+          user_id?: string
+          watched_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_api_usage: {
+        Args: {
+          p_date: string
+          p_hour: number
+          p_minute: number
+          p_service: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
