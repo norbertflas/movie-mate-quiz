@@ -1,8 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { ExternalLink } from "lucide-react";
 import { getUserRegion } from "@/utils/regionDetection";
-import { useStreamingPro } from "@/hooks/use-streaming-pro";
 
 interface StreamingServiceButtonsProps {
   tmdbId: number;
@@ -13,124 +12,118 @@ interface StreamingServiceButtonsProps {
 
 interface StreamingService {
   service: string;
-  logo: string;
+  logoPath: string;
   link: string;
   type: 'subscription' | 'rent' | 'buy' | 'free';
-  available: boolean;
 }
 
-const serviceLogos: Record<string, string> = {
-  'Netflix': '/streaming-icons/netflix.svg',
-  'Amazon Prime Video': '/streaming-icons/prime.svg',
-  'Disney+': '/streaming-icons/disneyplus.svg',
-  'Disney Plus': '/streaming-icons/disneyplus.svg',
-  'HBO Max': '/streaming-icons/hbomax.svg',
-  'Max': '/streaming-icons/max.svg',
-  'Apple TV+': '/streaming-icons/appletv.svg',
-  'Apple TV Plus': '/streaming-icons/appletv.svg',
-  'Hulu': '/streaming-icons/hulu.svg',
-  'Paramount+': '/streaming-icons/paramount.svg',
-  'Paramount Plus': '/streaming-icons/paramount.svg',
-  'Canal+': '/streaming-icons/default.svg',
-  'Player.pl': '/streaming-icons/default.svg',
-  'Polsat Box Go': '/streaming-icons/default.svg',
-  'TVP VOD': '/streaming-icons/default.svg'
+const TMDB_ACCESS_TOKEN = import.meta.env.VITE_TMDB_ACCESS_TOKEN;
+const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
+const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/original";
+
+const defaultSearchLinks: Record<string, (title: string) => string> = {
+  'Netflix': (t) => `https://www.netflix.com/search?q=${encodeURIComponent(t)}`,
+  'Amazon Prime Video': (t) => `https://www.primevideo.com/search/ref=atv_nb_sr?phrase=${encodeURIComponent(t)}`,
+  'Disney Plus': (t) => `https://www.disneyplus.com/search?q=${encodeURIComponent(t)}`,
+  'Disney+': (t) => `https://www.disneyplus.com/search?q=${encodeURIComponent(t)}`,
+  'Max': (t) => `https://www.max.com/search?q=${encodeURIComponent(t)}`,
+  'HBO Max': (t) => `https://www.max.com/search?q=${encodeURIComponent(t)}`,
+  'Apple TV Plus': (t) => `https://tv.apple.com/search?term=${encodeURIComponent(t)}`,
+  'Apple TV+': (t) => `https://tv.apple.com/search?term=${encodeURIComponent(t)}`,
+  'Hulu': (t) => `https://www.hulu.com/search?q=${encodeURIComponent(t)}`,
+  'Paramount Plus': (t) => `https://www.paramountplus.com/search/${encodeURIComponent(t)}`,
+  'Paramount+': (t) => `https://www.paramountplus.com/search/${encodeURIComponent(t)}`,
 };
 
-const defaultLinks: Record<string, (title: string, year?: string) => string> = {
-  'Netflix': (title: string, year?: string) => `https://www.netflix.com/search?q=${encodeURIComponent(title)}`,
-  'Amazon Prime Video': (title: string, year?: string) => `https://www.primevideo.com/search/ref=atv_nb_sr?phrase=${encodeURIComponent(title)}`,
-  'Disney+': (title: string, year?: string) => `https://www.disneyplus.com/search?q=${encodeURIComponent(title)}`,
-  'Disney Plus': (title: string, year?: string) => `https://www.disneyplus.com/search?q=${encodeURIComponent(title)}`,
-  'HBO Max': (title: string, year?: string) => `https://www.max.com/search?q=${encodeURIComponent(title)}`,
-  'Max': (title: string, year?: string) => `https://www.max.com/search?q=${encodeURIComponent(title)}`,
-  'Apple TV+': (title: string, year?: string) => `https://tv.apple.com/search?term=${encodeURIComponent(title)}`,
-  'Apple TV Plus': (title: string, year?: string) => `https://tv.apple.com/search?term=${encodeURIComponent(title)}`,
-  'Hulu': (title: string, year?: string) => `https://www.hulu.com/search?q=${encodeURIComponent(title)}`,
-  'Paramount+': (title: string, year?: string) => `https://www.paramountplus.com/search/${encodeURIComponent(title)}`,
-  'Paramount Plus': (title: string, year?: string) => `https://www.paramountplus.com/search/${encodeURIComponent(title)}`
-};
-
-export const StreamingServiceButtons = ({ 
-  tmdbId, 
-  title = "", 
+export const StreamingServiceButtons = ({
+  tmdbId,
+  title = "",
   year,
-  className = "" 
+  className = ""
 }: StreamingServiceButtonsProps) => {
-  const [streamingServices, setStreamingServices] = useState<StreamingService[]>([]);
-  const [userRegion, setUserRegion] = useState<string>('US');
+  const [services, setServices] = useState<StreamingService[]>([]);
+  const [userRegion, setUserRegion] = useState<string>('PL');
   const [isLoading, setIsLoading] = useState(false);
-  
-  const { fetchSingleMovie, getStreamingData } = useStreamingPro();
+  const [providerLink, setProviderLink] = useState<string>('');
+  const hasFetched = useRef(false);
 
   useEffect(() => {
-    const initializeData = async () => {
-      if (!tmdbId || !title || isLoading) return;
-      
+    if (!tmdbId || hasFetched.current) return;
+    hasFetched.current = true;
+
+    const fetchWatchProviders = async () => {
       setIsLoading(true);
-      
       try {
-        // Get user region
         const region = await getUserRegion();
         setUserRegion(region);
-        
-        // Fetch streaming data for this movie
-        const result = await fetchSingleMovie(tmdbId, { country: region.toLowerCase() });
-        
-        if (result?.streamingOptions) {
-          const services: StreamingService[] = result.streamingOptions.map(option => ({
-            service: option.service,
-            logo: serviceLogos[option.service] || '/streaming-icons/default.svg',
-            link: option.link || defaultLinks[option.service]?.(title, year) || '#',
-            type: option.type as 'subscription' | 'rent' | 'buy' | 'free',
-            available: true
-          }));
-          
-          // Remove duplicates (prefer subscription over other types)
-          const uniqueServices = services.reduce((acc, service) => {
-            const existing = acc.find(s => s.service === service.service);
-            if (!existing) {
-              acc.push(service);
-            } else {
-              const priority = { subscription: 4, free: 3, rent: 2, buy: 1 };
-              if ((priority[service.type] || 0) > (priority[existing.type] || 0)) {
-                acc[acc.indexOf(existing)] = service;
-              }
-            }
-            return acc;
-          }, [] as StreamingService[]);
-          
-          setStreamingServices(uniqueServices);
-        } else {
-          setStreamingServices([]);
+
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+        };
+        let url = `https://api.themoviedb.org/3/movie/${tmdbId}/watch/providers`;
+
+        if (TMDB_ACCESS_TOKEN) {
+          headers['Authorization'] = `Bearer ${TMDB_ACCESS_TOKEN}`;
+        } else if (TMDB_API_KEY) {
+          url += `?api_key=${TMDB_API_KEY}`;
         }
+
+        const response = await fetch(url, { headers });
+
+        if (!response.ok) throw new Error(`TMDB error: ${response.status}`);
+
+        const data = await response.json();
+        const regionData = data.results?.[region];
+
+        if (!regionData) {
+          setServices([]);
+          return;
+        }
+
+        if (regionData.link) setProviderLink(regionData.link);
+
+        const collected: StreamingService[] = [];
+        const seen = new Set<string>();
+
+        const addProviders = (list: any[], type: StreamingService['type']) => {
+          for (const p of list || []) {
+            const name: string = p.provider_name;
+            if (!seen.has(name)) {
+              seen.add(name);
+              collected.push({
+                service: name,
+                logoPath: p.logo_path ? `${TMDB_IMAGE_BASE}${p.logo_path}` : '',
+                link: regionData.link || defaultSearchLinks[name]?.(title) || '#',
+                type,
+              });
+            }
+          }
+        };
+
+        addProviders(regionData.flatrate, 'subscription');
+        addProviders(regionData.free, 'free');
+        addProviders(regionData.ads, 'free');
+        addProviders(regionData.rent, 'rent');
+        addProviders(regionData.buy, 'buy');
+
+        setServices(collected);
       } catch (error) {
-        console.error('Error fetching streaming data:', error);
-        setStreamingServices([]);
+        console.error('Error fetching TMDB watch providers:', error);
+        setServices([]);
       } finally {
         setIsLoading(false);
       }
     };
 
-    // Only run once when component mounts with valid data
-    if (tmdbId && title && streamingServices.length === 0 && !isLoading) {
-      initializeData();
-    }
-  }, [tmdbId, title]); // Simplified dependencies
+    fetchWatchProviders();
+  }, [tmdbId]);
 
-  const handleServiceClick = (service: StreamingService) => {
-    if (service.link && service.link !== '#') {
-      window.open(service.link, '_blank', 'noopener,noreferrer');
-    }
-  };
-
-  const getTypeIcon = (type: string): string => {
+  const getTypeLabel = (type: StreamingService['type']): string => {
     switch (type) {
-      case 'subscription': return '∞';
-      case 'rent': return '⏰';
-      case 'buy': return '💰';
-      case 'free': return '🆓';
-      default: return '▶';
+      case 'subscription': return 'abonament';
+      case 'free': return 'za darmo';
+      case 'rent': return 'wynajem';
+      case 'buy': return 'kup';
     }
   };
 
@@ -138,45 +131,46 @@ export const StreamingServiceButtons = ({
     return (
       <div className={`flex flex-wrap gap-2 ${className}`}>
         {[1, 2, 3].map(i => (
-          <div key={i} className="h-10 w-20 bg-muted animate-pulse rounded-md" />
+          <div key={i} className="h-10 w-24 bg-muted animate-pulse rounded-md" />
         ))}
       </div>
     );
   }
 
-  if (streamingServices.length === 0) {
+  if (services.length === 0) {
     return (
       <div className={`text-sm text-muted-foreground ${className}`}>
-        Brak dostępności w regionie: {userRegion}
+        Brak informacji o dostępności w regionie: {userRegion}
       </div>
     );
   }
 
   return (
     <div className={`flex flex-wrap gap-2 ${className}`}>
-      {streamingServices.map((service, index) => (
+      {services.map((s, i) => (
         <Button
-          key={`${service.service}-${index}`}
+          key={`${s.service}-${i}`}
           variant="outline"
           size="sm"
-          onClick={() => handleServiceClick(service)}
+          onClick={() => s.link && s.link !== '#' && window.open(s.link, '_blank', 'noopener,noreferrer')}
           className="h-10 px-3 py-2 flex items-center gap-2 hover:scale-105 transition-transform"
-          disabled={!service.link || service.link === '#'}
+          title={`${s.service} · ${getTypeLabel(s.type)}`}
+          disabled={!s.link || s.link === '#'}
         >
-          <img 
-            src={service.logo} 
-            alt={service.service}
-            className="w-4 h-4 object-contain"
-            onError={(e) => {
-              e.currentTarget.src = '/streaming-icons/default.svg';
-            }}
-          />
-          <span className="text-xs font-medium">{getTypeIcon(service.type)}</span>
-          <ExternalLink className="w-3 h-3" />
+          {s.logoPath ? (
+            <img
+              src={s.logoPath}
+              alt={s.service}
+              className="w-5 h-5 rounded object-contain"
+              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+            />
+          ) : null}
+          <span className="text-xs font-medium max-w-[80px] truncate">{s.service}</span>
+          <ExternalLink className="w-3 h-3 shrink-0" />
         </Button>
       ))}
-      <div className="text-xs text-muted-foreground mt-1">
-        Region: {userRegion}
+      <div className="w-full text-xs text-muted-foreground mt-1">
+        Region: {userRegion} · źródło: JustWatch via TMDB
       </div>
     </div>
   );
