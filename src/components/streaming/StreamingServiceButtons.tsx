@@ -59,7 +59,7 @@ export const StreamingServiceButtons = ({
 }: StreamingServiceButtonsProps) => {
   const [streamingServices, setStreamingServices] = useState<StreamingService[]>([]);
   const [userRegion, setUserRegion] = useState<string>('US');
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   
   const { fetchSingleMovie, getStreamingData } = useStreamingPro();
 
