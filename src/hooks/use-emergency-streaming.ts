@@ -11,7 +11,7 @@ interface EmergencyStreamingData {
   cacheHitRate: number;
 }
 
-const EMERGENCY_MODE = true; // Set to true to prevent API overuse
+const EMERGENCY_MODE = false; // Disabled - API calls are now allowed
 const CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 // Static fallback services by region

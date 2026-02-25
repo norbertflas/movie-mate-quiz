@@ -19,8 +19,8 @@ const STATIC_CACHE_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days for static data
 const ERROR_CACHE_TTL = 60 * 60 * 1000; // 1 hour for errors
 
 // CRITICAL: Emergency mode prevents ALL API calls
-const EMERGENCY_MODE = true;
-const MAX_DAILY_API_CALLS = 50; // Drastically reduced from unlimited
+const EMERGENCY_MODE = false;
+const MAX_DAILY_API_CALLS = 500; // Increased for normal operation
 
 interface CacheEntry {
   data: StreamingPlatformData[];

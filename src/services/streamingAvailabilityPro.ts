@@ -75,25 +75,25 @@ const setCachedData = (tmdbId: number, country: string, data: MovieStreamingData
   }
 };
 
-// Get user's country based on locale with better detection
+// Get user's country based on locale with dynamic detection
 export const getUserCountry = (): string => {
-  // Check browser language settings
-  const language = navigator.language.toLowerCase();
-  const languages = navigator.languages?.map(lang => lang.toLowerCase()) || [];
+  const language = navigator.language || 'en-US';
   
-  // Check for Polish
-  if (language.includes('pl') || languages.some(lang => lang.includes('pl'))) {
-    return 'pl';
+  // Try to extract country from locale (e.g., "pl-PL" -> "PL", "en-US" -> "US")
+  const parts = language.split('-');
+  if (parts.length >= 2) {
+    const country = parts[1].toLowerCase();
+    console.log(`🌍 Detected country from locale: ${country}`);
+    return country;
   }
   
-  // Check timezone as backup
-  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  if (timezone.includes('Warsaw') || timezone.includes('Europe/Warsaw')) {
-    return 'pl';
-  }
-  
-  console.log('🌍 Detected country: pl (default for this app)');
-  return 'pl'; // Default to Poland for this app
+  // Fallback: use language code as country hint
+  const langToCountry: Record<string, string> = {
+    'pl': 'pl', 'en': 'us', 'de': 'de', 'fr': 'fr', 'es': 'es', 'it': 'it'
+  };
+  const country = langToCountry[parts[0].toLowerCase()] || 'pl';
+  console.log(`🌍 Detected country from language: ${country}`);
+  return country;
 };
 
 // Get streaming data for multiple movies
