@@ -139,7 +139,7 @@ export async function getWatchmodeTitleDetails(
       return await supabase.functions.invoke('watchmode-title-details', {
         body: { 
           titleId, 
-          region: 'US', // Force US region for reliable data
+          region: region, // Use dynamic region
           includeSources: true
         }
       });
@@ -196,7 +196,7 @@ export async function getWatchmodeStreamingAvailability(
       return await supabase.functions.invoke('watchmode-availability', {
         body: { 
           tmdbId, 
-          region: 'US' // Force US region for reliable data
+          region: region // Use dynamic region
         }
       });
     });

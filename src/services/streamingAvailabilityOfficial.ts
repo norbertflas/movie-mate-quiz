@@ -2,7 +2,7 @@
 import * as streamingAvailability from "streaming-availability";
 import type { StreamingPlatformData } from "@/types/streaming";
 
-const RAPID_API_KEY = "670d047a2bmsh3dff18a0b6211fcp17d3cdjsn9d8d3e10bfc9";
+const RAPID_API_KEY = import.meta.env.VITE_RAPIDAPI_KEY || "";
 
 interface StreamingOption {
   service: {
