@@ -140,15 +140,27 @@ export const getStreamingAvailabilityBatch = async (
       throw new Error('API call failed');
     }
 
-    // Cache the new results
-    response.data.forEach(movieData => {
+    // Cache the new results (including empty placeholders for IDs with no streaming data)
+    const responseDataMap = new Map(response.data.map(movie => [movie.tmdbId, movie]));
+    const normalizedResponseData = uncachedIds.map(tmdbId =>
+      responseDataMap.get(tmdbId) ?? {
+        tmdbId,
+        title: '',
+        streamingOptions: [],
+        availableServices: [],
+        hasStreaming: false,
+        lastUpdated: new Date().toISOString()
+      }
+    );
+
+    normalizedResponseData.forEach(movieData => {
       setCachedData(movieData.tmdbId, targetCountry, movieData);
     });
 
     // Combine cached and new results
-    const allResults = [...cachedResults, ...response.data];
+    const allResults = [...cachedResults, ...normalizedResponseData];
     
-    console.log(`Streaming data fetched: ${response.totalFound}/${response.totalProcessed} movies have streaming options`);
+    console.log(`Streaming data fetched: ${allResults.filter(m => m.hasStreaming).length}/${response.totalProcessed} movies have streaming options`);
     
     return allResults;
 

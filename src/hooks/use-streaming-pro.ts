@@ -166,16 +166,29 @@ export const useStreamingPro = () => {
 
       const apiResults: MovieStreamingData[] = data.data || [];
 
-      // Cache the new results
+      // Fill missing IDs with explicit empty results so they can be cached too
+      const apiResultMap = new Map(apiResults.map(movie => [movie.tmdbId, movie]));
+      const normalizedResults = uncachedIds.map(tmdbId =>
+        apiResultMap.get(tmdbId) ?? {
+          tmdbId,
+          title: '',
+          streamingOptions: [],
+          availableServices: [],
+          hasStreaming: false,
+          lastUpdated: new Date().toISOString()
+        }
+      );
+
+      // Cache the normalized results (including empty ones) to stop repeated calls
       if (cacheEnabled) {
-        apiResults.forEach(movieData => {
+        normalizedResults.forEach(movieData => {
           setCachedData(movieData.tmdbId, country, movieData);
           setStreamingData(prev => new Map(prev.set(movieData.tmdbId, movieData)));
         });
       }
 
       // Combine cached and API results
-      const allResults = [...cachedResults, ...apiResults];
+      const allResults = [...cachedResults, ...normalizedResults];
 
       console.log(`✅ [Pro] Retrieved streaming data for ${allResults.length}/${tmdbIds.length} movies`);
 
