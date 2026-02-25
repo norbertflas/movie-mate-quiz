@@ -1,0 +1,1 @@
+ALTER TABLE public.streaming_services ADD COLUMN IF NOT EXISTS regions TEXT[];

@@ -59,25 +59,36 @@ export const StreamingServiceButtons = ({
 }: StreamingServiceButtonsProps) => {
   const [streamingServices, setStreamingServices] = useState<StreamingService[]>([]);
   const [userRegion, setUserRegion] = useState<string>('US');
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasFetched, setHasFetched] = useState(false);
+  const [isInTheaters, setIsInTheaters] = useState(false);
   
-  const { fetchSingleMovie, getStreamingData } = useStreamingPro();
+  const { fetchSingleMovie } = useStreamingPro();
 
   useEffect(() => {
+    if (!tmdbId || !title || hasFetched) return;
+
     const initializeData = async () => {
-      if (!tmdbId || !title || isLoading) return;
-      
       setIsLoading(true);
       
       try {
-        // Get user region
         const region = await getUserRegion();
         setUserRegion(region);
+
+        // Check if movie is currently in theaters (released within last 3 months, no streaming)
+        if (year) {
+          const releaseDate = new Date(year);
+          const now = new Date();
+          const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+          if (releaseDate > threeMonthsAgo && releaseDate <= now) {
+            setIsInTheaters(true);
+          }
+        }
         
-        // Fetch streaming data for this movie
         const result = await fetchSingleMovie(tmdbId, { country: region.toLowerCase() });
         
-        if (result?.streamingOptions) {
+        if (result?.streamingOptions && result.streamingOptions.length > 0) {
+          setIsInTheaters(false); // If streaming is available, it's not just in theaters
           const services: StreamingService[] = result.streamingOptions.map(option => ({
             service: option.service,
             logo: serviceLogos[option.service] || '/streaming-icons/default.svg',
@@ -86,7 +97,6 @@ export const StreamingServiceButtons = ({
             available: true
           }));
           
-          // Remove duplicates (prefer subscription over other types)
           const uniqueServices = services.reduce((acc, service) => {
             const existing = acc.find(s => s.service === service.service);
             if (!existing) {
@@ -109,14 +119,12 @@ export const StreamingServiceButtons = ({
         setStreamingServices([]);
       } finally {
         setIsLoading(false);
+        setHasFetched(true);
       }
     };
 
-    // Only run once when component mounts with valid data
-    if (tmdbId && title && streamingServices.length === 0 && !isLoading) {
-      initializeData();
-    }
-  }, [tmdbId, title]); // Simplified dependencies
+    initializeData();
+  }, [tmdbId, title, hasFetched, fetchSingleMovie]);
 
   const handleServiceClick = (service: StreamingService) => {
     if (service.link && service.link !== '#') {
@@ -144,10 +152,14 @@ export const StreamingServiceButtons = ({
     );
   }
 
-  if (streamingServices.length === 0) {
+  if (hasFetched && streamingServices.length === 0) {
     return (
       <div className={`text-sm text-muted-foreground ${className}`}>
-        Brak dostępności w regionie: {userRegion}
+        {isInTheaters ? (
+          <span>🎬 Ten film jest aktualnie wyświetlany w kinach</span>
+        ) : (
+          <span>Film aktualnie nie jest dostępny w żadnym serwisie streamingowym w Twoim regionie ({userRegion})</span>
+        )}
       </div>
     );
   }
