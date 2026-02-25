@@ -101,12 +101,12 @@ export const useComprehensiveQuizLogic = () => {
 
       if (error) {
         console.error('❌ Error calling streaming-availability function:', error);
-        return getFallbackServices(userCountry);
+        return [];
       }
 
       if (!data?.result || !Array.isArray(data.result)) {
         console.log('⚠️ No streaming data returned from API');
-        return getFallbackServices(userCountry);
+        return [];
       }
 
       console.log(`🌍 Found ${data.result.length} streaming services for ${userCountry}:`, 
@@ -115,8 +115,22 @@ export const useComprehensiveQuizLogic = () => {
       return data.result;
     } catch (error) {
       console.error('❌ Error getting streaming availability:', error);
-      return getFallbackServices();
+      return [];
     }
+  };
+
+  const normalizeServiceName = (serviceName: string): string => {
+    const normalized = serviceName.toLowerCase().trim();
+
+    if (normalized.includes('amazon') || normalized.includes('prime')) return 'amazon prime video';
+    if (normalized.includes('disney')) return 'disney+';
+    if (normalized.includes('hbo') || normalized === 'max' || normalized.includes('hbo max')) return 'hbo max';
+    if (normalized.includes('apple')) return 'apple tv+';
+    if (normalized.includes('paramount')) return 'paramount+';
+    if (normalized.includes('netflix')) return 'netflix';
+    if (normalized.includes('hulu')) return 'hulu';
+
+    return normalized;
   };
 
   const getServiceLink = (serviceName: string): string => {
@@ -275,22 +289,20 @@ export const useComprehensiveQuizLogic = () => {
       // Filter movies by selected streaming platforms
       let filteredMovies = validMovies;
       if (preferences.platforms.length > 0 && !preferences.platforms.includes("I don't have a preference")) {
+        const preferredPlatforms = preferences.platforms.map(normalizeServiceName);
+
         filteredMovies = validMovies.filter(movie => {
-          // Check if movie is available on any of the user's preferred platforms
-          return movie.streaming.some((streamingService: any) => 
-            preferences.platforms.includes(streamingService.service)
+          const availableServices = movie.streaming.map((streamingService: any) =>
+            normalizeServiceName(streamingService.service)
           );
+
+          return availableServices.some((service: string) => preferredPlatforms.includes(service));
         });
         
         console.log('🎯 Movies filtered by platforms:', filteredMovies.length, 'from', validMovies.length);
-        
-        // If we have too few movies after platform filtering, get more from TMDB
-        if (filteredMovies.length < 3 && validMovies.length > 0) {
-          console.log('⚠️ Too few movies after platform filtering, adding more...');
-          // Keep all movies but prioritize platform-available ones
-          const platformMovies = filteredMovies;
-          const otherMovies = validMovies.filter(movie => !filteredMovies.includes(movie));
-          filteredMovies = [...platformMovies, ...otherMovies.slice(0, 5 - platformMovies.length)];
+
+        if (filteredMovies.length === 0) {
+          setError('Nie znaleziono filmów dostępnych na wybranych platformach streamingowych. Spróbuj zmienić platformy lub gatunki.');
         }
       }
 
