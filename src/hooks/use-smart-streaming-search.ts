@@ -50,16 +50,29 @@ export const useSmartStreamingSearch = (
       console.log(`Fetching streaming data for ${ids.length} movies in ${options.mode} mode`);
       
       const results = await getStreamingAvailabilityBatch(ids, options.mode, country);
+
+      // Fill missing IDs with explicit "no streaming" entries to avoid infinite refetch loops
+      const resultMap = new Map(results.map(result => [result.tmdbId, result]));
+      const normalizedResults = ids.map(id =>
+        resultMap.get(id) ?? {
+          tmdbId: id,
+          title: '',
+          streamingOptions: [],
+          availableServices: [],
+          hasStreaming: false,
+          lastUpdated: new Date().toISOString()
+        }
+      );
       
       setStreamingData(prev => {
         const newMap = new Map(prev);
-        results.forEach(result => {
+        normalizedResults.forEach(result => {
           newMap.set(result.tmdbId, result);
         });
         return newMap;
       });
 
-      setProcessed(prev => prev + results.length);
+      setProcessed(prev => prev + ids.length);
       
     } catch (err) {
       console.error('Error fetching streaming data:', err);

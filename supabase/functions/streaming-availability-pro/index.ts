@@ -66,30 +66,42 @@ const fetchStreamingData = async (tmdbId: number, country: string): Promise<Movi
   requestCount++;
 
   try {
-    const response = await fetch(
+    const endpoints = [
       `https://streaming-availability.p.rapidapi.com/shows/movie/${tmdbId}?country=${country}`,
-      {
+      `https://streaming-availability.p.rapidapi.com/shows/series/${tmdbId}?country=${country}`
+    ];
+
+    let data: any = null;
+
+    for (const endpoint of endpoints) {
+      const response = await fetch(endpoint, {
         headers: {
           'x-rapidapi-key': RAPIDAPI_KEY!,
           'x-rapidapi-host': 'streaming-availability.p.rapidapi.com'
         }
-      }
-    );
+      });
 
-    if (!response.ok) {
+      if (response.ok) {
+        data = await response.json();
+        break;
+      }
+
       if (response.status === 429) {
         console.log('Rate limited by API, waiting...');
         await delay(2000);
-        return null;
+        continue;
       }
-      if (response.status === 404) {
-        console.log(`Movie ${tmdbId} not found`);
-        return null;
+
+      if (response.status !== 404) {
+        throw new Error(`API error: ${response.status}`);
       }
-      throw new Error(`API error: ${response.status}`);
     }
 
-    const data = await response.json();
+    if (!data) {
+      console.log(`Title ${tmdbId} not found (movie/series)`);
+      return null;
+    }
+
     console.log(`Raw API response keys for ${tmdbId}:`, Object.keys(data));
     console.log(`streamingOptions keys:`, data.streamingOptions ? Object.keys(data.streamingOptions) : 'none');
     console.log(`streamingInfo keys:`, data.streamingInfo ? Object.keys(data.streamingInfo) : 'none');
