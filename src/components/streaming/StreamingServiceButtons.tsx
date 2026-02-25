@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { ExternalLink } from "lucide-react";
 import { getUserRegion } from "@/utils/regionDetection";
@@ -64,6 +64,8 @@ export const StreamingServiceButtons = ({
   const [isInTheaters, setIsInTheaters] = useState(false);
   
   const { fetchSingleMovie } = useStreamingPro();
+  const fetchRef = useRef(fetchSingleMovie);
+  fetchRef.current = fetchSingleMovie;
 
   useEffect(() => {
     if (!tmdbId || !title || hasFetched) return;
@@ -85,7 +87,7 @@ export const StreamingServiceButtons = ({
           }
         }
         
-        const result = await fetchSingleMovie(tmdbId, { country: region.toLowerCase() });
+        const result = await fetchRef.current(tmdbId, { country: region.toLowerCase() });
         
         if (result?.streamingOptions && result.streamingOptions.length > 0) {
           setIsInTheaters(false); // If streaming is available, it's not just in theaters
@@ -124,7 +126,7 @@ export const StreamingServiceButtons = ({
     };
 
     initializeData();
-  }, [tmdbId, title, hasFetched, fetchSingleMovie]);
+  }, [tmdbId, title, hasFetched]);
 
   const handleServiceClick = (service: StreamingService) => {
     if (service.link && service.link !== '#') {
