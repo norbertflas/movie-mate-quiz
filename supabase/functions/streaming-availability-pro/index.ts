@@ -90,32 +90,62 @@ const fetchStreamingData = async (tmdbId: number, country: string): Promise<Movi
     }
 
     const data = await response.json();
+    console.log(`Raw API response keys for ${tmdbId}:`, Object.keys(data));
+    console.log(`streamingOptions keys:`, data.streamingOptions ? Object.keys(data.streamingOptions) : 'none');
+    console.log(`streamingInfo keys:`, data.streamingInfo ? Object.keys(data.streamingInfo) : 'none');
+    
     const streamingOptions: StreamingOption[] = [];
     const availableServices: string[] = [];
 
-    // Process streaming options - new API structure
-    const streamingInfo = data.streamingInfo?.[country] || {};
+    // Process streaming options - support both v3 (streamingInfo) and v4 (streamingOptions) API structures
+    // v4 API: streamingOptions is an object with country codes as keys, each containing arrays
+    const countryData = data.streamingOptions?.[country] || data.streamingInfo?.[country] || [];
+    console.log(`Country data for ${country}:`, JSON.stringify(countryData).substring(0, 500));
     
-    for (const [serviceId, options] of Object.entries(streamingInfo)) {
-      if (Array.isArray(options) && options.length > 0) {
-        for (const option of options) {
-          const streamingOption: StreamingOption = {
-            service: getServiceDisplayName(serviceId),
-            serviceLogo: getServiceLogo(serviceId),
-            link: option.link || getServiceHomeUrl(serviceId),
-            type: getStreamingType(option),
-            quality: option.quality || 'HD',
-            price: option.price ? {
-              amount: parseFloat(option.price.amount),
-              currency: option.price.currency,
-              formatted: option.price.formatted
-            } : undefined
-          };
-
-          streamingOptions.push(streamingOption);
-          
-          if (!availableServices.includes(streamingOption.service)) {
-            availableServices.push(streamingOption.service);
+    // v4 API: countryData is an array of streaming option objects
+    const streamingEntries = Array.isArray(countryData) ? countryData : Object.entries(countryData);
+    
+    for (const item of (Array.isArray(countryData) ? countryData : [])) {
+      const serviceId = item.service?.id || item.service || 'unknown';
+      const streamingOption: StreamingOption = {
+        service: getServiceDisplayName(serviceId),
+        serviceLogo: getServiceLogo(serviceId),
+        link: item.link || getServiceHomeUrl(serviceId),
+        type: getStreamingType(item),
+        quality: item.quality || 'HD',
+        price: item.price ? {
+          amount: parseFloat(item.price.amount),
+          currency: item.price.currency,
+          formatted: item.price.formatted
+        } : undefined
+      };
+      streamingOptions.push(streamingOption);
+      if (!availableServices.includes(streamingOption.service)) {
+        availableServices.push(streamingOption.service);
+      }
+    }
+    
+    // Fallback: v3 API format (object with serviceId keys -> arrays of options)
+    if (streamingOptions.length === 0 && !Array.isArray(countryData) && typeof countryData === 'object') {
+      for (const [serviceId, options] of Object.entries(countryData)) {
+        if (Array.isArray(options) && options.length > 0) {
+          for (const option of options) {
+            const streamingOption: StreamingOption = {
+              service: getServiceDisplayName(serviceId),
+              serviceLogo: getServiceLogo(serviceId),
+              link: (option as any).link || getServiceHomeUrl(serviceId),
+              type: getStreamingType(option),
+              quality: (option as any).quality || 'HD',
+              price: (option as any).price ? {
+                amount: parseFloat((option as any).price.amount),
+                currency: (option as any).price.currency,
+                formatted: (option as any).price.formatted
+              } : undefined
+            };
+            streamingOptions.push(streamingOption);
+            if (!availableServices.includes(streamingOption.service)) {
+              availableServices.push(streamingOption.service);
+            }
           }
         }
       }
