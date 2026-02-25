@@ -80,6 +80,139 @@ export type Database = {
         }
         Relationships: []
       }
+      movie_list_items: {
+        Row: {
+          added_at: string
+          id: string
+          list_id: string
+          title: string
+          tmdb_id: number
+        }
+        Insert: {
+          added_at?: string
+          id?: string
+          list_id: string
+          title: string
+          tmdb_id: number
+        }
+        Update: {
+          added_at?: string
+          id?: string
+          list_id?: string
+          title?: string
+          tmdb_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "movie_list_items_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "movie_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      movie_lists: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_public: boolean | null
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      movie_metadata: {
+        Row: {
+          created_at: string
+          id: string
+          overview: string | null
+          popularity: number | null
+          poster_path: string | null
+          release_date: string | null
+          title: string
+          tmdb_id: number
+          vote_average: number | null
+          vote_count: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          overview?: string | null
+          popularity?: number | null
+          poster_path?: string | null
+          release_date?: string | null
+          title: string
+          tmdb_id: number
+          vote_average?: number | null
+          vote_count?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          overview?: string | null
+          popularity?: number | null
+          poster_path?: string | null
+          release_date?: string | null
+          title?: string
+          tmdb_id?: number
+          vote_average?: number | null
+          vote_count?: number | null
+        }
+        Relationships: []
+      }
+      movie_streaming_availability: {
+        Row: {
+          available_since: string
+          id: string
+          movie_id: string | null
+          region: string
+          service_id: string | null
+          tmdb_id: number | null
+        }
+        Insert: {
+          available_since?: string
+          id?: string
+          movie_id?: string | null
+          region: string
+          service_id?: string | null
+          tmdb_id?: number | null
+        }
+        Update: {
+          available_since?: string
+          id?: string
+          movie_id?: string | null
+          region?: string
+          service_id?: string | null
+          tmdb_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "movie_streaming_availability_movie_id_fkey"
+            columns: ["movie_id"]
+            isOneToOne: false
+            referencedRelation: "movie_metadata"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quiz_groups: {
         Row: {
           created_at: string
@@ -121,6 +254,41 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      quiz_responses: {
+        Row: {
+          answers: Json
+          created_at: string
+          group_id: string
+          id: string
+          recommendation_explanations: Json | null
+          user_id: string
+        }
+        Insert: {
+          answers: Json
+          created_at?: string
+          group_id: string
+          id?: string
+          recommendation_explanations?: Json | null
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          created_at?: string
+          group_id?: string
+          id?: string
+          recommendation_explanations?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_responses_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "quiz_groups"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       saved_movies: {
         Row: {
@@ -200,6 +368,24 @@ export type Database = {
           id?: string
           logo_url?: string | null
           name?: string
+        }
+        Relationships: []
+      }
+      system_settings: {
+        Row: {
+          key: string
+          updated_at: string | null
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string | null
+          value: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string | null
+          value?: Json
         }
         Relationships: []
       }
