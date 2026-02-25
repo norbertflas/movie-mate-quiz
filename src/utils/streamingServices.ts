@@ -175,17 +175,22 @@ export const getStreamingServicesByRegion = async (region: string): Promise<Stre
   try {
     console.log(`[getStreamingServicesByRegion] Fetching for region: ${region.toUpperCase()}`);
     
+    // First try with regions column, fallback to all services if column doesn't have data yet
     const { data, error } = await supabase
       .from('streaming_services')
-      .select('*')
-      .contains('regions', [region.toLowerCase()]);
+      .select('*');
 
     if (error) {
       console.error("Error fetching streaming services:", error);
       return [];
     }
 
-    return data || [];
+    // Filter client-side if regions data exists
+    const filtered = data?.filter((s: any) => 
+      !s.regions || s.regions.length === 0 || s.regions.includes(region.toLowerCase())
+    );
+
+    return filtered || [];
   } catch (error) {
     console.error("Error in getStreamingServicesByRegion:", error);
     return [];

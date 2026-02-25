@@ -356,18 +356,21 @@ export type Database = {
           id: string
           logo_url: string | null
           name: string
+          regions: string[] | null
         }
         Insert: {
           created_at?: string
           id: string
           logo_url?: string | null
           name: string
+          regions?: string[] | null
         }
         Update: {
           created_at?: string
           id?: string
           logo_url?: string | null
           name?: string
+          regions?: string[] | null
         }
         Relationships: []
       }
