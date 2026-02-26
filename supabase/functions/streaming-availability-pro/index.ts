@@ -95,6 +95,7 @@ const fetchTmdbWatchProviders = async (tmdbId: number, country: string): Promise
       const streamingOptions: StreamingOption[] = [];
       const availableServices: string[] = [];
       const seenProviders = new Set<string>();
+      const movieTitle = data.title || data.name || data.original_title || data.original_name || '';
 
       for (const group of providerGroups) {
         const providers = Array.isArray(watchProviders[group.key]) ? watchProviders[group.key] : [];
@@ -102,17 +103,18 @@ const fetchTmdbWatchProviders = async (tmdbId: number, country: string): Promise
           const serviceName = provider.provider_name || 'Unknown';
           const normalizedName = getServiceDisplayName(serviceName.toLowerCase());
           
-          // Deduplicate - keep highest priority type (subscription > free > rent > buy)
-          const dedupKey = `${normalizedName}-${group.type}`;
           if (seenProviders.has(normalizedName) && group.type !== 'subscription') continue;
           seenProviders.add(normalizedName);
+
+          // Use direct service search URL, NOT the TMDB referral link
+          const directLink = getServiceSearchUrl(serviceName.toLowerCase(), movieTitle);
 
           streamingOptions.push({
             service: normalizedName,
             serviceLogo: provider.logo_path 
               ? `https://image.tmdb.org/t/p/w154${provider.logo_path}` 
               : getServiceLogo(serviceName.toLowerCase()),
-            link: watchProviders.link || getServiceHomeUrl(serviceName.toLowerCase()),
+            link: directLink,
             type: group.type,
             quality: 'HD'
           });
@@ -452,4 +454,46 @@ function getServiceHomeUrl(serviceId: string): string {
     'mubi': 'https://mubi.com',
   };
   return serviceUrls[key] || `https://${key.replace(/\s+/g, '')}.com`;
+}
+
+function getServiceSearchUrl(serviceId: string, title: string): string {
+  const key = serviceId.toLowerCase().trim();
+  const encoded = encodeURIComponent(title);
+  const searchUrls: Record<string, string> = {
+    'netflix': `https://www.netflix.com/search?q=${encoded}`,
+    'prime': `https://www.primevideo.com/search/ref=atv_nb_sr?phrase=${encoded}`,
+    'amazon': `https://www.primevideo.com/search/ref=atv_nb_sr?phrase=${encoded}`,
+    'amazon prime video': `https://www.primevideo.com/search/ref=atv_nb_sr?phrase=${encoded}`,
+    'amazonprimevideo': `https://www.primevideo.com/search/ref=atv_nb_sr?phrase=${encoded}`,
+    'disney': `https://www.disneyplus.com/search?q=${encoded}`,
+    'disney+': `https://www.disneyplus.com/search?q=${encoded}`,
+    'disneyplus': `https://www.disneyplus.com/search?q=${encoded}`,
+    'disney plus': `https://www.disneyplus.com/search?q=${encoded}`,
+    'hbo': `https://www.max.com/search?q=${encoded}`,
+    'hbo max': `https://www.max.com/search?q=${encoded}`,
+    'max': `https://www.max.com/search?q=${encoded}`,
+    'hulu': `https://www.hulu.com/search?q=${encoded}`,
+    'apple': `https://tv.apple.com/search?term=${encoded}`,
+    'apple tv': `https://tv.apple.com/search?term=${encoded}`,
+    'apple tv+': `https://tv.apple.com/search?term=${encoded}`,
+    'appletv': `https://tv.apple.com/search?term=${encoded}`,
+    'paramount': `https://www.paramountplus.com/search/${encoded}`,
+    'paramount+': `https://www.paramountplus.com/search/${encoded}`,
+    'canal': `https://www.canalplus.com/pl/search?q=${encoded}`,
+    'canal+': `https://www.canalplus.com/pl/search?q=${encoded}`,
+    'canal+ online': `https://www.canalplus.com/pl/search?q=${encoded}`,
+    'player': `https://player.pl/szukaj?query=${encoded}`,
+    'player.pl': `https://player.pl/szukaj?query=${encoded}`,
+    'polsat': `https://polsatboxgo.pl/szukaj?query=${encoded}`,
+    'polsat box go': `https://polsatboxgo.pl/szukaj?query=${encoded}`,
+    'skyshowtime': `https://www.skyshowtime.com/search?q=${encoded}`,
+    'viaplay': `https://viaplay.pl/search?query=${encoded}`,
+    'mubi': `https://mubi.com/search?query=${encoded}`,
+    'rakuten': `https://www.rakuten.tv/pl/search?q=${encoded}`,
+    'rakuten tv': `https://www.rakuten.tv/pl/search?q=${encoded}`,
+    'curiositystream': `https://curiositystream.com/search/${encoded}`,
+    'crunchyroll': `https://www.crunchyroll.com/search?q=${encoded}`,
+    'peacock': `https://www.peacocktv.com/search?q=${encoded}`,
+  };
+  return searchUrls[key] || getServiceHomeUrl(key);
 }
