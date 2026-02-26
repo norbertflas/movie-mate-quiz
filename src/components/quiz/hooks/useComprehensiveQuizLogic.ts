@@ -1,7 +1,6 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { getMovieDetails } from '@/services/tmdb/movies';
 import { getUserCountry } from '@/services/streamingAvailabilityPro';
 import type { QuizPreferences, MovieRecommendation, TMDB_GENRE_MAPPING, SERVICE_LINKS } from '../types/comprehensiveQuizTypes';
 
@@ -83,39 +82,43 @@ export const useComprehensiveQuizLogic = () => {
       .join(',');
   };
 
-  const getStreamingAvailability = async (movieId: number): Promise<any[]> => {
+  const getStreamingAvailabilityBatchForQuiz = async (movieIds: number[]): Promise<Map<number, any[]>> => {
+    const userCountry = getUserCountry();
+
+    if (movieIds.length === 0) return new Map();
+
     try {
-      const userCountry = getUserCountry();
-      
-      console.log(`🎬 Getting streaming data for movie ${movieId} in ${userCountry}`);
-      
-      // Call our MovieOfTheNight edge function
-      const { data, error } = await supabase.functions.invoke('streaming-availability', {
-        body: { 
-          tmdbId: movieId, 
+      const { data, error } = await supabase.functions.invoke('streaming-availability-pro', {
+        body: {
+          tmdbIds: movieIds,
           country: userCountry,
-          title: '', // Will be provided by the edge function from TMDB data
-          year: new Date().getFullYear() // Current year as fallback
+          mode: 'lazy'
         }
       });
 
-      if (error) {
-        console.error('❌ Error calling streaming-availability function:', error);
-        return [];
+      if (error || !data?.success || !Array.isArray(data.data)) {
+        console.error('❌ Error calling streaming-availability-pro:', error || data);
+        return new Map();
       }
 
-      if (!data?.result || !Array.isArray(data.result)) {
-        console.log('⚠️ No streaming data returned from API');
-        return [];
-      }
+      const mapped = new Map<number, any[]>();
 
-      console.log(`🌍 Found ${data.result.length} streaming services for ${userCountry}:`, 
-        data.result.map((s: any) => s.service).join(', '));
-      
-      return data.result;
+      data.data.forEach((movie: any) => {
+        const normalizedStreaming = Array.isArray(movie.streamingOptions)
+          ? movie.streamingOptions.map((option: any) => ({
+              service: option.service,
+              type: option.type || 'subscription',
+              link: option.link || getServiceLink(option.service)
+            }))
+          : [];
+
+        mapped.set(movie.tmdbId, normalizedStreaming);
+      });
+
+      return mapped;
     } catch (error) {
-      console.error('❌ Error getting streaming availability:', error);
-      return [];
+      console.error('❌ Error getting batch streaming availability:', error);
+      return new Map();
     }
   };
 
@@ -232,15 +235,15 @@ export const useComprehensiveQuizLogic = () => {
 
       const data = await response.json();
       const movies = data.results?.filter((movie: any) => {
-        // Filter out movies not yet released  
+        // Filter out movies not yet released
         if (movie.release_date) {
           const releaseDate = new Date(movie.release_date);
           const today = new Date();
-          today.setHours(0, 0, 0, 0); // Reset time for accurate comparison
+          today.setHours(0, 0, 0, 0);
           return releaseDate <= today;
         }
         return true;
-      }).slice(0, 5) || [];
+      }).slice(0, 20) || [];
 
       console.log('🎭 Got movies from TMDB:', movies.length);
 
@@ -248,38 +251,39 @@ export const useComprehensiveQuizLogic = () => {
         throw new Error('No movies found matching preferences');
       }
 
+      const movieIds = movies.map((movie: any) => movie.id);
+      const streamingByMovieId = await getStreamingAvailabilityBatchForQuiz(movieIds);
+
       // Process each movie and add streaming data
-      const processedMovies = await Promise.all(
-        movies.map(async (movie: any) => {
-          console.log(`🎭 Processing movie: ${movie.title} (${movie.release_date})`);
-          
-          const streaming = await getStreamingAvailability(movie.id);
-          
-          return {
-            id: movie.id,
-            title: movie.title,
-            year: new Date(movie.release_date || '2023').getFullYear(),
-            poster: movie.poster_path 
-              ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
-              : '/placeholder.svg',
-            overview: movie.overview || 'No description available.',
-            genres: movie.genre_ids?.map((id: number) => {
-              const genreMap: Record<number, string> = {
-                28: 'Action', 35: 'Comedy', 18: 'Drama', 27: 'Horror',
-                878: 'Sci-Fi', 10749: 'Romance', 53: 'Thriller',
-                16: 'Animation', 99: 'Documentary', 14: 'Fantasy'
-              };
-              return genreMap[id];
-            }).filter(Boolean) || [],
-            rating: movie.vote_average || 0,
-            streaming,
-            tmdbId: movie.id,
-            backdrop: movie.backdrop_path 
-              ? `https://image.tmdb.org/t/p/w1280${movie.backdrop_path}`
-              : undefined
-          };
-        })
-      );
+      const processedMovies = movies.map((movie: any) => {
+        console.log(`🎭 Processing movie: ${movie.title} (${movie.release_date})`);
+
+        const streaming = streamingByMovieId.get(movie.id) || [];
+
+        return {
+          id: movie.id,
+          title: movie.title,
+          year: new Date(movie.release_date || '2023').getFullYear(),
+          poster: movie.poster_path 
+            ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+            : '/placeholder.svg',
+          overview: movie.overview || 'No description available.',
+          genres: movie.genre_ids?.map((id: number) => {
+            const genreMap: Record<number, string> = {
+              28: 'Action', 35: 'Comedy', 18: 'Drama', 27: 'Horror',
+              878: 'Sci-Fi', 10749: 'Romance', 53: 'Thriller',
+              16: 'Animation', 99: 'Documentary', 14: 'Fantasy'
+            };
+            return genreMap[id];
+          }).filter(Boolean) || [],
+          rating: movie.vote_average || 0,
+          streaming,
+          tmdbId: movie.id,
+          backdrop: movie.backdrop_path 
+            ? `https://image.tmdb.org/t/p/w1280${movie.backdrop_path}`
+            : undefined
+        };
+      });
 
       // All movies are already filtered - no need to filter again
       const validMovies = processedMovies;
@@ -307,7 +311,7 @@ export const useComprehensiveQuizLogic = () => {
       }
 
       console.log('✅ Final quiz recommendations:', filteredMovies.length);
-      setRecommendations(filteredMovies);
+      setRecommendations(filteredMovies.slice(0, 6));
       setIsComplete(true);
     } catch (err) {
       console.error('❌ Error getting quiz recommendations:', err);
@@ -471,11 +475,14 @@ export const useComprehensiveQuizLogic = () => {
 
     // Filter by selected platforms (same logic as main recommendations)
     if (preferences.platforms.length > 0 && !preferences.platforms.includes("I don't have a preference")) {
+      const preferredPlatforms = preferences.platforms.map(normalizeServiceName);
+
       const platformFilteredMovies = filteredMovies.filter(movie => {
-        // Check if movie is available on any of the user's preferred platforms
-        return movie.streaming.some((streamingService: any) => 
-          preferences.platforms.includes(streamingService.service)
+        const availableServices = movie.streaming.map((streamingService: any) =>
+          normalizeServiceName(streamingService.service)
         );
+
+        return availableServices.some((service: string) => preferredPlatforms.includes(service));
       });
       
       // If we have movies after platform filtering, use them, otherwise keep all
