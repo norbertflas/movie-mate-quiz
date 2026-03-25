@@ -5,40 +5,48 @@
  
 @layer base {
   :root {
-    --background: 230 25% 7%;
-    --foreground: 210 40% 93%;
+    --background: 240 33% 2%;
+    --foreground: 0 0% 100%;
 
-    --card: 230 25% 10%;
-    --card-foreground: 210 40% 93%;
+    --card: 240 25% 5%;
+    --card-foreground: 0 0% 100%;
  
-    --popover: 230 25% 10%;
-    --popover-foreground: 210 40% 93%;
+    --popover: 240 25% 5%;
+    --popover-foreground: 0 0% 100%;
  
-    --primary: 270 80% 60%;
+    --primary: 270 80% 56%;
     --primary-foreground: 0 0% 100%;
  
-    --secondary: 230 25% 15%;
-    --secondary-foreground: 210 40% 93%;
+    --secondary: 240 20% 10%;
+    --secondary-foreground: 0 0% 100%;
  
-    --muted: 230 20% 18%;
-    --muted-foreground: 215 20% 55%;
+    --muted: 240 15% 12%;
+    --muted-foreground: 240 5% 55%;
  
-    --accent: 190 90% 50%;
+    --accent: 270 80% 56%;
     --accent-foreground: 0 0% 100%;
  
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 100%;
  
-    --border: 230 20% 18%;
-    --input: 230 20% 18%;
-    --ring: 270 80% 60%;
+    --border: 0 0% 100% / 0.08;
+    --input: 0 0% 100% / 0.08;
+    --ring: 270 80% 56%;
 
     --radius: 0.75rem;
 
     --neon-cyan: 190 90% 50%;
     --neon-magenta: 310 90% 60%;
-    --neon-purple: 270 80% 60%;
+    --neon-purple: 270 80% 56%;
     --neon-green: 150 80% 45%;
+
+    --color-brand-purple: 270 80% 56%;
+    --color-brand-blue: 217 91% 60%;
+    --color-brand-cyan: 187 92% 41%;
+    --color-brand-pink: 330 81% 48%;
+
+    --font-display: "Space Grotesk", sans-serif;
+    --font-body: "Outfit", sans-serif;
   }
  
   .light {
@@ -88,12 +96,12 @@
   }
 
   ::-webkit-scrollbar-track {
-    background: hsl(var(--background));
+    background: transparent;
   }
 
   ::-webkit-scrollbar-thumb {
     background: hsl(var(--primary) / 0.3);
-    border-radius: 3px;
+    border-radius: 10px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
@@ -106,16 +114,46 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground font-sans;
+    @apply bg-background text-foreground overflow-x-hidden;
+    font-family: var(--font-body);
+    background-color: #02020a;
   }
   h1, h2, h3, h4, h5, h6 {
-    @apply font-heading font-semibold;
+    font-family: var(--font-display);
+    @apply font-bold;
   }
 }
 
 @layer components {
+  .font-display {
+    font-family: var(--font-display);
+  }
+
+  .font-body {
+    font-family: var(--font-body);
+  }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  }
+
+  .text-gradient-hero {
+    background: linear-gradient(135deg, #60a5fa 0%, #c084fc 50%, #f472b6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 15px rgba(192, 132, 252, 0.3));
+  }
+
+  .neon-text-purple {
+    text-shadow: 0 0 10px rgba(147, 51, 234, 0.8), 0 0 20px rgba(147, 51, 234, 0.4);
+  }
+
   .movie-card {
-    @apply relative overflow-hidden rounded-xl bg-card border border-border/50 shadow-lg transition-all duration-300 hover:shadow-xl hover:shadow-primary/10 hover:border-primary/30 hover:-translate-y-1;
+    @apply relative overflow-hidden rounded-xl border border-white/5 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-white/20 hover:-translate-y-1;
+    background: rgba(255, 255, 255, 0.03);
   }
   
   .movie-gradient {
@@ -123,42 +161,90 @@
   }
   
   .text-gradient-neon {
-    @apply bg-gradient-to-r from-[hsl(var(--neon-cyan))] via-[hsl(var(--neon-purple))] to-[hsl(var(--neon-magenta))] bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-[#60a5fa] via-[#c084fc] to-[#f472b6] bg-clip-text text-transparent;
   }
   
   .glass-effect {
-    @apply bg-black/20 backdrop-blur-md border border-white/10;
+    @apply bg-white/5 backdrop-blur-xl border border-white/10;
   }
 
   .nav-pill {
-    @apply px-4 py-2 text-sm font-medium text-foreground/70 transition-all duration-200 hover:text-foreground rounded-full;
+    @apply px-4 py-2 text-sm font-medium text-white/60 transition-all duration-200 hover:text-white rounded-full;
   }
   
   .nav-pill.active {
-    @apply bg-white/10 text-foreground;
+    @apply bg-white/10 text-white shadow-inner;
+    border: 1px solid rgba(255, 255, 255, 0.05);
   }
   
   .card-hover {
-    @apply hover:scale-[1.02] hover:border-primary/30 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300;
+    @apply hover:scale-[1.02] hover:border-white/20 hover:shadow-lg transition-all duration-300;
   }
   
   .cosmic-bg {
     background: 
-      radial-gradient(ellipse at 30% 0%, hsl(270 60% 30% / 0.4) 0%, transparent 50%),
-      radial-gradient(ellipse at 70% 0%, hsl(310 60% 25% / 0.3) 0%, transparent 50%),
-      radial-gradient(ellipse at 50% 20%, hsl(220 50% 20% / 0.5) 0%, transparent 60%),
-      hsl(var(--background));
+      radial-gradient(ellipse at 30% 0%, rgba(147, 51, 234, 0.15) 0%, transparent 50%),
+      radial-gradient(ellipse at 70% 0%, rgba(219, 39, 119, 0.1) 0%, transparent 50%),
+      #02020a;
   }
 
   .btn-gradient {
-    @apply bg-gradient-to-r from-[hsl(var(--neon-purple))] to-[hsl(var(--neon-magenta))] text-white font-semibold rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-primary/30;
+    @apply bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-2xl transition-all duration-300 hover:shadow-lg;
+    box-shadow: 0 8px 30px rgba(147, 51, 234, 0.3);
+  }
+
+  .btn-gradient:hover {
+    box-shadow: 0 0 25px rgba(147, 51, 234, 0.6);
+    transform: scale(1.05);
   }
 
   .btn-outline-glow {
-    @apply border border-white/20 text-white font-semibold rounded-xl transition-all duration-300 hover:border-white/40 hover:bg-white/5;
+    @apply border border-white/10 text-white font-bold rounded-2xl transition-all duration-300 hover:border-white/20 hover:bg-white/10;
+    backdrop-filter: blur(12px);
   }
 
   .neon-card {
-    @apply bg-card/80 border border-border/50 rounded-2xl backdrop-blur-sm transition-all duration-300 hover:border-primary/40;
+    @apply rounded-2xl backdrop-blur-sm transition-all duration-300;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .step-number-bg {
+    font-family: var(--font-display);
+    background: linear-gradient(to bottom, rgba(255,255,255,0.1), transparent);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .animated-glow {
+    position: absolute;
+    width: 40vw;
+    height: 40vw;
+    background: radial-gradient(circle, rgba(147, 51, 234, 0.15) 0%, transparent 70%);
+    filter: blur(60px);
+    pointer-events: none;
+    animation: glow-float 20s infinite alternate;
+  }
+
+  @keyframes glow-float {
+    0% { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(10vw, 10vh) scale(1.2); }
+  }
+
+  @keyframes grain {
+    0%, 100% { transform: translate(0, 0); }
+    10% { transform: translate(-5%, -10%); }
+    20% { transform: translate(-15%, 5%); }
+    30% { transform: translate(7%, -25%); }
+    40% { transform: translate(-5%, 25%); }
+    50% { transform: translate(-15%, 10%); }
+    60% { transform: translate(15%, 0%); }
+    70% { transform: translate(0%, 15%); }
+    80% { transform: translate(3%, 35%); }
+    90% { transform: translate(-10%, 10%); }
+  }
+
+  .animate-grain {
+    animation: grain 8s steps(10) infinite;
   }
 }
