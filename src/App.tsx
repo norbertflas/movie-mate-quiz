@@ -20,6 +20,7 @@ import UserGuide from "./pages/UserGuide";
 import QuickStart from "./pages/QuickStart";
 import Services from "./pages/Services";
 import Auth from "./pages/Auth";
+import Dashboard from "./pages/Dashboard";
 import "./App.css";
 
 const queryClient = new QueryClient();
@@ -48,6 +49,7 @@ function App() {
               <Route path="/quickstart" element={<QuickStart />} />
               <Route path="/services" element={<Services />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/dashboard" element={<Dashboard />} />
             </Routes>
           </Suspense>
         </BrowserRouter>
