@@ -2,6 +2,7 @@
 import { useState, useCallback } from "react";
 import { getStreamingAvailability } from "@/services/streamingAvailability";
 import type { StreamingPlatformData } from "@/types/streaming";
+import { getUserRegion } from "@/utils/regionDetection";
 
 export interface StreamingAvailabilityState {
   services: StreamingPlatformData[];
@@ -18,7 +19,7 @@ export function useStreamingAvailability(
   tmdbId: number, 
   title?: string, 
   year?: string,
-  region: string = 'us'
+  region?: string
 ) {
   const [state, setState] = useState<StreamingAvailabilityState>({
     services: [],
@@ -27,7 +28,7 @@ export function useStreamingAvailability(
     timestamp: 0,
     source: 'none',
     requested: false,
-    region: region,
+    region: region || 'US',
     links: {}
   });
 
@@ -51,11 +52,14 @@ export function useStreamingAvailability(
     }
 
     setState(prev => ({ ...prev, isLoading: true, requested: true, error: null }));
+
+    // Auto-detect region if not provided
+    const userRegion = region || await getUserRegion();
     
-    console.log(`[useStreamingAvailability] Fetching for TMDB ID: ${tmdbId}, region: ${region.toUpperCase()}`);
+    console.log(`[useStreamingAvailability] Fetching for TMDB ID: ${tmdbId}, region: ${userRegion}`);
     
     try {
-      const services = await getStreamingAvailability(tmdbId, title, year, region);
+      const services = await getStreamingAvailability(tmdbId, title, year, userRegion);
       
       console.log(`[useStreamingAvailability] Received ${services.length} streaming services`);
       
@@ -73,16 +77,16 @@ export function useStreamingAvailability(
         timestamp: Date.now(),
         source: services.length > 0 ? services[0].source || 'api' : 'none',
         requested: true,
-        region: region,
+        region: userRegion,
         links
       });
       
       if (services.length > 0) {
-        console.log(`[useStreamingAvailability] Services found in ${region.toUpperCase()}:`, 
+        console.log(`[useStreamingAvailability] Services found:`, 
           services.map(s => `${s.service} (${s.type})`).join(', ')
         );
       } else {
-        console.log(`[useStreamingAvailability] No streaming services found in ${region.toUpperCase()}`);
+        console.log(`[useStreamingAvailability] No streaming services found in ${userRegion}`);
       }
     } catch (error: any) {
       console.error('[useStreamingAvailability] Error:', error);
@@ -94,14 +98,14 @@ export function useStreamingAvailability(
         timestamp: Date.now(),
         source: 'error',
         requested: true,
-        region: region,
+        region: region || 'US',
         links: {}
       });
     }
   }, [tmdbId, title, year, region, state.isLoading]);
 
   const refetch = useCallback(() => {
-    console.log(`[useStreamingAvailability] Refetching data for ${region.toUpperCase()}...`);
+    console.log(`[useStreamingAvailability] Refetching...`);
     setState(prev => ({
       ...prev,
       requested: false,

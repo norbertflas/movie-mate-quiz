@@ -83,7 +83,7 @@ export async function getMovieVideos(movieId: number) {
 export async function getMovieWatchProviders(movieId: number, region: string = 'US') {
   try {
     const response = await supabase.functions.invoke('get-tmdb-watch-providers', {
-      body: JSON.stringify({ tmdb_id: movieId, region })
+      body: { tmdb_id: movieId, region }
     });
 
     if (response.error) {
