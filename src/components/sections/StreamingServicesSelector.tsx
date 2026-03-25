@@ -34,7 +34,7 @@ export const StreamingServicesSelector = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
               onClick={() => toggleService(service.id)}
-              className={`relative bg-gradient-to-br ${service.color} border rounded-2xl p-6 flex flex-col items-center justify-center gap-3 h-28 transition-all duration-300 ${
+              className={`relative bg-gradient-to-br ${service.color} border rounded-2xl p-8 flex flex-col items-center justify-center gap-4 h-40 transition-all duration-300 ${
                 selected.includes(service.id) 
                   ? 'border-neon-cyan shadow-lg shadow-accent/20' 
                   : 'border-border/40 hover:border-border'
@@ -52,7 +52,7 @@ export const StreamingServicesSelector = () => {
               <img 
                 src={service.logo} 
                 alt={service.name} 
-                className="h-10 w-auto object-contain opacity-90"
+                className="h-16 w-auto object-contain opacity-90"
                 onError={(e) => {
                   (e.target as HTMLImageElement).style.display = 'none';
                 }}
