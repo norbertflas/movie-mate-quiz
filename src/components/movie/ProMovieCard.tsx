@@ -1,20 +1,14 @@
 import { useState, memo, useCallback, useEffect } from "react";
-import { CardContent } from "../ui/card";
 import { Badge } from "../ui/badge";
 import type { MovieCardProps } from "@/types/movie";
 import type { StreamingPlatformData } from "@/types/streaming";
 import { UnifiedMovieDetails } from "./UnifiedMovieDetails";
-import { useTranslation } from "react-i18next";
 import { useStreamingPro, MovieStreamingData } from "@/hooks/use-streaming-pro";
-import { MovieRating } from "./MovieRating";
-import { Heart } from "lucide-react";
-import { OptimizedMovieImage } from "./OptimizedMovieImage";
-import StreamingBadge from "../streaming/StreamingBadge";
+import { Star } from "lucide-react";
 
 interface ProMovieCardProps extends Partial<MovieCardProps> {
   mode?: 'instant' | 'lazy';
   showStreamingBadges?: boolean;
-  // Override required props
   title: string;
   tmdbId: number;
 }
@@ -22,25 +16,19 @@ interface ProMovieCardProps extends Partial<MovieCardProps> {
 export const ProMovieCard = memo(({
   title,
   year = '',
-  platform = '',
-  genre = '',
   imageUrl = '',
   description = '',
-  trailerUrl: initialTrailerUrl = '',
   rating = 0,
-  tags = [],
   streamingServices = [],
   tmdbId,
   explanations = [],
   onClose,
   onClick,
   mode = 'lazy',
-  showStreamingBadges = false
+  showStreamingBadges = false,
 }: ProMovieCardProps) => {
-  const [isFavorite, setIsFavorite] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [streamingData, setStreamingData] = useState<MovieStreamingData | null>(null);
-  const { t } = useTranslation();
   
   const { 
     fetchSingleMovie, 
@@ -49,52 +37,38 @@ export const ProMovieCard = memo(({
     loading: streamingLoading 
   } = useStreamingPro();
 
-  // Load streaming data based on mode - optimized to prevent glitching
   useEffect(() => {
     if (!tmdbId || tmdbId <= 0) return;
-
-    // Check if we already have cached data
     const cachedData = getStreamingData(tmdbId);
     if (cachedData) {
       setStreamingData(cachedData);
       return;
     }
-
-    // Only fetch in INSTANT mode and if badges should be shown
     if (mode === 'instant' && showStreamingBadges) {
-      // Add a small delay to prevent rapid requests
       const timeoutId = setTimeout(() => {
         fetchSingleMovie(tmdbId, { 
           country: getUserCountry(),
           mode: 'instant',
           cacheEnabled: true 
         }).then(data => {
-          if (data) {
-            setStreamingData(data);
-          }
-        }).catch(error => {
-          console.error('Failed to fetch streaming data:', error);
-        });
+          if (data) setStreamingData(data);
+        }).catch(() => {});
       }, 100);
-
       return () => clearTimeout(timeoutId);
     }
-  }, [tmdbId, mode, showStreamingBadges]); // Removed fetchSingleMovie and other functions from deps to prevent re-renders
+  }, [tmdbId, mode, showStreamingBadges]);
 
   const handleCardClick = useCallback(() => {
     if (onClick) {
       onClick();
     } else {
-      // In LAZY mode, fetch streaming data when opening details
       if (mode === 'lazy' && tmdbId && tmdbId > 0 && !streamingData) {
         fetchSingleMovie(tmdbId, {
           country: getUserCountry(),
           mode: 'lazy',
           cacheEnabled: true
         }).then(data => {
-          if (data) {
-            setStreamingData(data);
-          }
+          if (data) setStreamingData(data);
         });
       }
       setIsDetailsOpen(true);
@@ -102,29 +76,14 @@ export const ProMovieCard = memo(({
   }, [onClick, mode, tmdbId, streamingData, fetchSingleMovie, getUserCountry]);
 
   const handleCloseDetails = useCallback((e?: React.MouseEvent) => {
-    if (e) {
-      e.stopPropagation();
-    }
+    if (e) e.stopPropagation();
     setIsDetailsOpen(false);
-    if (onClose) {
-      onClose();
-    }
+    if (onClose) onClose();
   }, [onClose]);
 
-  const handleToggleFavorite = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsFavorite(!isFavorite);
-  }, [isFavorite]);
-
-  // Transform legacy streaming services to new format if needed
   const transformedServices: StreamingPlatformData[] = streamingServices.map(service => {
     if (typeof service === 'string') {
-      return {
-        service,
-        available: true,
-        tmdbId,
-        type: 'subscription' as const
-      };
+      return { service, available: true, tmdbId, type: 'subscription' as const };
     }
     return {
       service: service.service,
@@ -136,105 +95,67 @@ export const ProMovieCard = memo(({
     };
   });
 
-  // Use legacy transformed services - keep it simple to avoid type conflicts
-  const availableServices = transformedServices;
+  const displayRating = rating > 10 ? (rating / 10).toFixed(1) : rating.toFixed(1);
+  const hasStreaming = streamingData?.streamingOptions?.length > 0;
 
-  const hasStreamingData = streamingData?.streamingOptions?.length > 0;
-  const isLoadingStreaming = streamingLoading && mode === 'instant' && showStreamingBadges;
-  
-  // Debug logging for glitching issues
-  console.log(`ProMovieCard ${title} (${tmdbId}): mode=${mode}, showBadges=${showStreamingBadges}, loading=${isLoadingStreaming}, hasData=${hasStreamingData}`);
+  // Get up to 3 streaming service icons
+  const streamingIcons = streamingData?.streamingOptions?.slice(0, 3).map(opt => ({
+    name: opt.service,
+    logo: opt.serviceLogo
+  })) || [];
 
   return (
     <>
       <div 
-        className="movie-card flex flex-col h-full cursor-pointer hover-lift relative"
+        className="group cursor-pointer relative rounded-xl overflow-hidden bg-card border border-border/30 transition-all duration-300 hover:border-primary/30 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/10"
         onClick={handleCardClick}
       >
-        <div className="relative h-[240px] overflow-hidden rounded-t-xl">
+        {/* Poster */}
+        <div className="relative aspect-[2/3] overflow-hidden">
           <img
             src={imageUrl || '/placeholder.svg'}
             alt={title}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
-            onError={(e) => {
-              e.currentTarget.src = '/placeholder.svg';
-            }}
+            onError={(e) => { e.currentTarget.src = '/placeholder.svg'; }}
           />
           
-          {/* Favorite button */}
-          <div className="absolute top-3 left-3 z-20">
-            <button
-              className={`rounded-full p-2 ${isFavorite ? 'bg-primary/20 backdrop-blur-sm' : 'bg-black/30 backdrop-blur-sm'} transition-colors`}
-              onClick={handleToggleFavorite}
-            >
-              <Heart 
-                className={`h-5 w-5 ${isFavorite ? 'text-red-500 fill-red-500' : 'text-white'}`} 
-              />
-            </button>
-          </div>
-
-          {/* Streaming badges - only in INSTANT mode */}
-          {mode === 'instant' && showStreamingBadges && (
-            <div className="absolute top-3 right-3 z-10">
-              {isLoadingStreaming ? (
-                <Badge variant="outline" className="text-xs bg-black/50 text-white border-white/20">
-                  Sprawdzanie...
-                </Badge>
-              ) : hasStreamingData ? (
-                <StreamingBadge 
-                  streamingOptions={streamingData!.streamingOptions}
-                  mode="compact"
-                  maxServices={2}
-                />
-              ) : null}
+          {/* Rating badge */}
+          {rating > 0 && (
+            <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/70 backdrop-blur-sm rounded-lg px-2 py-1">
+              <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+              <span className="text-xs font-bold text-white">{displayRating}</span>
             </div>
           )}
+
+          {/* Bottom gradient overlay */}
+          <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/80 to-transparent" />
         </div>
-        
-        <CardContent className="flex flex-col flex-grow p-4 space-y-3">
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex-1">
-              <h3 className="font-bold text-lg" title={title}>
-                <span className="line-clamp-1">{title}</span>
-              </h3>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span>{year}</span>
-                {genre && (
-                  <>
-                    <span>•</span>
-                    <span>{genre}</span>
-                  </>
-                )}
-              </div>
-            </div>
+
+        {/* Info */}
+        <div className="p-3 space-y-2">
+          <h3 className="font-semibold text-sm text-foreground line-clamp-1" title={title}>
+            {title}
+          </h3>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">{year}</span>
             
-            <MovieRating rating={rating} />
+            {/* Streaming icons */}
+            {streamingIcons.length > 0 && (
+              <div className="flex items-center gap-1">
+                {streamingIcons.map((s, i) => (
+                  <img
+                    key={i}
+                    src={s.logo || `/streaming-icons/default.svg`}
+                    alt={s.name}
+                    className="w-4 h-4 rounded-sm object-contain"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  />
+                ))}
+              </div>
+            )}
           </div>
-
-          {description && (
-            <p className="text-sm text-muted-foreground line-clamp-3" title={description}>
-              {description}
-            </p>
-          )}
-
-          {/* Streaming availability indicator for LAZY mode */}
-          {mode === 'lazy' && availableServices.length > 0 && (
-            <div className="flex items-center gap-1">
-              <Badge variant="secondary" className="text-xs">
-                {availableServices.length} serwis{availableServices.length > 1 ? 'ów' : ''}
-              </Badge>
-            </div>
-          )}
-
-          {/* Loading indicator for streaming data */}
-          {isLoadingStreaming && (
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-              <span className="text-xs text-muted-foreground">Sprawdzanie dostępności...</span>
-            </div>
-          )}
-        </CardContent>
+        </div>
       </div>
 
       {isDetailsOpen && (
@@ -255,9 +176,7 @@ export const ProMovieCard = memo(({
             explanations
           }}
           explanations={explanations}
-          streamingServices={availableServices}
-          // Pass raw streaming data for detailed view
-          // streamingData={streamingData}
+          streamingServices={transformedServices}
         />
       )}
     </>
