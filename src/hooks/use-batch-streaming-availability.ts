@@ -17,7 +17,7 @@ interface BatchResult {
 
 // Global batch queue and timer
 let batchQueue: BatchRequest[] = [];
-let batchTimer: NodeJS.Timeout | null = null;
+let batchTimer: ReturnType<typeof setTimeout> | null = null;
 const BATCH_DELAY = 50; // 50ms delay to collect requests
 const BATCH_SIZE = 5; // Process 5 movies at once
 

@@ -11,7 +11,7 @@ export function useDebouncedScroll(
   options: UseDeboucedScrollOptions = {}
 ) {
   const { delay = 100, threshold = 10 } = options;
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const lastScrollY = useRef(0);
   const ticking = useRef(false);
 
