@@ -51,7 +51,7 @@ export const ScrollProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   );
 
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
+    let timeoutId: ReturnType<typeof setTimeout>;
 
     const throttledScroll = () => {
       handleScroll();
