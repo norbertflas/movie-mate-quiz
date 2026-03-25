@@ -4,11 +4,13 @@ import { motion } from "framer-motion";
 import { Check } from "lucide-react";
 
 const services = [
-  { id: "netflix", name: "Netflix", logo: "/streaming-icons/netflix.svg", color: "from-red-900/40 to-red-800/20" },
-  { id: "disney", name: "Disney+", logo: "/streaming-icons/disneyplus.svg", color: "from-blue-900/40 to-blue-800/20" },
-  { id: "hbomax", name: "HBO Max", logo: "/streaming-icons/max.svg", color: "from-purple-900/40 to-purple-800/20" },
-  { id: "prime", name: "Prime Video", logo: "/streaming-icons/prime.svg", color: "from-cyan-900/40 to-cyan-800/20" },
-  { id: "hulu", name: "Hulu", logo: "/streaming-icons/hulu.svg", color: "from-green-900/40 to-green-800/20" },
+  { id: "netflix", name: "Netflix", logo: "/streaming-icons/netflix.png", color: "from-red-900/40 to-red-800/20" },
+  { id: "disney", name: "Disney+", logo: "/streaming-icons/disneyplus.png", color: "from-blue-900/40 to-blue-800/20" },
+  { id: "hbomax", name: "HBO Max", logo: "/streaming-icons/max.png", color: "from-purple-900/40 to-purple-800/20" },
+  { id: "prime", name: "Prime Video", logo: "/streaming-icons/prime.png", color: "from-cyan-900/40 to-cyan-800/20" },
+  { id: "hulu", name: "Hulu", logo: "/streaming-icons/hulu.png", color: "from-green-900/40 to-green-800/20" },
+  { id: "appletv", name: "Apple TV+", logo: "/streaming-icons/appletv.png", color: "from-gray-900/40 to-gray-800/20" },
+  { id: "paramount", name: "Paramount+", logo: "/streaming-icons/paramount.png", color: "from-blue-900/40 to-blue-700/20" },
 ];
 
 export const StreamingServicesSelector = () => {
