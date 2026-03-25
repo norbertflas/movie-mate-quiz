@@ -148,7 +148,7 @@ export const ProMovieCard = memo(({
                   streamingOptions={streamingDataServices.map(s => ({
                     service: s.service,
                     serviceLogo: s.logo || '',
-                    type: s.type || 'subscription',
+                    type: (s.type === 'addon' ? 'subscription' : s.type || 'subscription') as 'subscription' | 'rent' | 'buy' | 'free',
                     link: s.link || '#',
                     quality: 'HD'
                   }))}
