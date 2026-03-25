@@ -1,5 +1,6 @@
 
 import { useState, useEffect, useMemo } from "react";
+import { Navigation } from "@/components/Navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search as SearchIcon, User, Film } from "lucide-react";
@@ -108,8 +109,9 @@ const Search = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background/80 to-background/40">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-background">
+      <Navigation />
+      <div className="container mx-auto px-4 pt-24 pb-8">
         <SearchInput
           searchQuery={query}
           setSearchQuery={setQuery}
