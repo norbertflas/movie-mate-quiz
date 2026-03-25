@@ -61,10 +61,10 @@ const Search = () => {
       <div className="relative z-10">
         <Navigation />
 
-        <div className="pt-40 pb-24 px-4 sm:px-12 max-w-7xl mx-auto w-full min-h-screen">
+        <div className="pt-24 sm:pt-40 pb-12 sm:pb-24 px-3 sm:px-12 max-w-7xl mx-auto w-full min-h-screen">
           {/* Search Bar - Command-K Style */}
           <div className="relative mb-16">
-            <div className="absolute inset-y-0 left-8 flex items-center pointer-events-none">
+            <div className="absolute inset-y-0 left-4 sm:left-8 flex items-center pointer-events-none">
               <SearchIcon className={`w-7 h-7 transition-all ${isLoadingMovies || isLoadingPeople ? "text-purple-500 animate-pulse" : "text-white/30"}`} />
             </div>
             <input
@@ -72,17 +72,17 @@ const Search = () => {
               placeholder="Search for movies, TV shows, actors..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-full py-7 pl-20 pr-10 text-xl text-white focus:outline-none focus:border-purple-500/50 transition-all shadow-2xl backdrop-blur-3xl placeholder:text-white/20 font-display"
+              className="w-full bg-white/5 border border-white/10 rounded-full py-4 sm:py-7 pl-14 sm:pl-20 pr-6 sm:pr-10 text-base sm:text-xl text-white focus:outline-none focus:border-purple-500/50 transition-all shadow-2xl backdrop-blur-3xl placeholder:text-white/20 font-display"
             />
           </div>
 
           {/* Category Tabs */}
-          <div className="flex items-center gap-4 mb-10">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4 mb-6 sm:mb-10">
             {(["Movies", "Cast", "Directors"] as const).map((type) => (
               <button
                 key={type}
                 onClick={() => setSearchType(type)}
-                className={`px-6 py-3 rounded-2xl text-sm font-bold transition-all border ${
+                className={`px-4 sm:px-6 py-2.5 sm:py-3 rounded-2xl text-xs sm:text-sm font-bold transition-all border ${
                   searchType === type
                     ? "bg-purple-600 border-purple-500 text-white shadow-lg shadow-purple-500/20"
                     : "bg-white/5 border-white/10 text-white/40 hover:text-white"
@@ -97,11 +97,11 @@ const Search = () => {
           </div>
 
           {/* Filters Bento Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-16">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-6 mb-8 sm:mb-16">
             {/* Streaming Services */}
-            <div className="p-8 rounded-[2.5rem] bg-white/5 border border-white/10 backdrop-blur-2xl shadow-xl">
-              <h3 className="text-sm font-bold text-white/40 uppercase tracking-widest mb-6">
-                Streaming Services
+            <div className="p-4 sm:p-8 rounded-2xl sm:rounded-[2.5rem] bg-white/5 border border-white/10 backdrop-blur-2xl shadow-xl col-span-2 md:col-span-1">
+              <h3 className="text-xs sm:text-sm font-bold text-white/40 uppercase tracking-widest mb-3 sm:mb-6">
+                Streaming
               </h3>
               <div className="flex flex-wrap gap-2.5">
                 {streamingServices.map((service) => (
@@ -121,9 +121,9 @@ const Search = () => {
             </div>
 
             {/* Release Year */}
-            <div className="p-8 rounded-[2.5rem] bg-white/5 border border-white/10 backdrop-blur-2xl shadow-xl">
-              <h3 className="text-sm font-bold text-white/40 uppercase tracking-widest mb-6">
-                Release Year (Up to)
+            <div className="p-4 sm:p-8 rounded-2xl sm:rounded-[2.5rem] bg-white/5 border border-white/10 backdrop-blur-2xl shadow-xl">
+              <h3 className="text-xs sm:text-sm font-bold text-white/40 uppercase tracking-widest mb-3 sm:mb-6">
+                Year
               </h3>
               <div className="space-y-6">
                 <input
@@ -142,8 +142,8 @@ const Search = () => {
             </div>
 
             {/* Genre */}
-            <div className="p-8 rounded-[2.5rem] bg-white/5 border border-white/10 backdrop-blur-2xl shadow-xl">
-              <h3 className="text-sm font-bold text-white/40 uppercase tracking-widest mb-6">
+            <div className="p-4 sm:p-8 rounded-2xl sm:rounded-[2.5rem] bg-white/5 border border-white/10 backdrop-blur-2xl shadow-xl">
+              <h3 className="text-xs sm:text-sm font-bold text-white/40 uppercase tracking-widest mb-3 sm:mb-6">
                 Genre
               </h3>
               <div className="flex flex-wrap gap-2.5">
@@ -164,9 +164,9 @@ const Search = () => {
             </div>
 
             {/* IMDb Rating */}
-            <div className="p-8 rounded-[2.5rem] bg-white/5 border border-white/10 backdrop-blur-2xl shadow-xl">
-              <h3 className="text-sm font-bold text-white/40 uppercase tracking-widest mb-6">
-                Min Rating
+            <div className="p-4 sm:p-8 rounded-2xl sm:rounded-[2.5rem] bg-white/5 border border-white/10 backdrop-blur-2xl shadow-xl">
+              <h3 className="text-xs sm:text-sm font-bold text-white/40 uppercase tracking-widest mb-3 sm:mb-6">
+                Rating
               </h3>
               <div className="space-y-6">
                 <input
@@ -186,8 +186,8 @@ const Search = () => {
             </div>
 
             {/* Sort By */}
-            <div className="p-8 rounded-[2.5rem] bg-white/5 border border-white/10 backdrop-blur-2xl shadow-xl">
-              <h3 className="text-sm font-bold text-white/40 uppercase tracking-widest mb-6">
+            <div className="p-4 sm:p-8 rounded-2xl sm:rounded-[2.5rem] bg-white/5 border border-white/10 backdrop-blur-2xl shadow-xl">
+              <h3 className="text-xs sm:text-sm font-bold text-white/40 uppercase tracking-widest mb-3 sm:mb-6">
                 Sort By
               </h3>
               <div className="flex flex-col gap-3">
@@ -210,7 +210,7 @@ const Search = () => {
 
           {/* Results */}
           {searchType === "Movies" && filteredMovies.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-8">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-4 sm:gap-8">
               {filteredMovies.map((movie, idx) => (
                 <motion.div
                   key={movie.id}
