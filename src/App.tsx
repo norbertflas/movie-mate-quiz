@@ -51,6 +51,7 @@ function App() {
               <Route path="/services" element={<Services />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/quiz/group/:groupId" element={<GroupQuizPage />} />
             </Routes>
           </Suspense>
         </BrowserRouter>
