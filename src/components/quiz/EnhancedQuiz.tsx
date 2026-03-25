@@ -7,9 +7,11 @@ import {
   ArrowLeft, ArrowRight, Check, Sparkles, Users, 
   Trophy, Star, Laugh, Zap, Heart, Brain, Film, Tv, BookOpen, Clapperboard,
   Sofa, PartyPopper, Baby, Monitor, MessageCircle, RotateCcw, ThumbsDown,
-  Clock, Popcorn, Globe, Palette, Drama, Flame, Shield
+  Clock, Popcorn, Globe, Palette, Drama, Flame, Shield, Link2, Copy, Loader2
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { UserStats, Challenge } from "./types/GamificationTypes";
 import { Movie } from "@/types/movie";
@@ -178,6 +180,7 @@ const MOVIE_POOL: Movie[] = [
 const EnhancedQuiz: React.FC<EnhancedQuizProps> = ({ onBack, onComplete, userPreferences = {} }) => {
   const { t } = useTranslation();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -185,6 +188,7 @@ const EnhancedQuiz: React.FC<EnhancedQuizProps> = ({ onBack, onComplete, userPre
   const [recommendations, setRecommendations] = useState<Movie[]>([]);
   const [currentMovieIndex, setCurrentMovieIndex] = useState(0);
   const [likedMovie, setLikedMovie] = useState<Movie | null>(null);
+  const [isCreatingGroup, setIsCreatingGroup] = useState(false);
 
   const currentQuizStep = quizSteps[currentStep];
   const totalSteps = quizSteps.length;
