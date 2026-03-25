@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Suspense } from "react";
 import Index from "./pages/Index";
 import { ComprehensiveQuizPage } from "./pages/ComprehensiveQuizPage";
+import GroupQuizPage from "./pages/GroupQuizPage";
 import Search from "./pages/Search";
 import Favorites from "./pages/Favorites";
 import Ratings from "./pages/Ratings";
@@ -50,6 +51,7 @@ function App() {
               <Route path="/services" element={<Services />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/quiz/group/:groupId" element={<GroupQuizPage />} />
             </Routes>
           </Suspense>
         </BrowserRouter>

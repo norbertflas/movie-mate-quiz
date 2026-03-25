@@ -7,9 +7,11 @@ import {
   ArrowLeft, ArrowRight, Check, Sparkles, Users, 
   Trophy, Star, Laugh, Zap, Heart, Brain, Film, Tv, BookOpen, Clapperboard,
   Sofa, PartyPopper, Baby, Monitor, MessageCircle, RotateCcw, ThumbsDown,
-  Clock, Popcorn, Globe, Palette, Drama, Flame, Shield
+  Clock, Popcorn, Globe, Palette, Drama, Flame, Shield, Link2, Copy, Loader2
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { UserStats, Challenge } from "./types/GamificationTypes";
 import { Movie } from "@/types/movie";
@@ -178,6 +180,7 @@ const MOVIE_POOL: Movie[] = [
 const EnhancedQuiz: React.FC<EnhancedQuizProps> = ({ onBack, onComplete, userPreferences = {} }) => {
   const { t } = useTranslation();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -185,6 +188,7 @@ const EnhancedQuiz: React.FC<EnhancedQuizProps> = ({ onBack, onComplete, userPre
   const [recommendations, setRecommendations] = useState<Movie[]>([]);
   const [currentMovieIndex, setCurrentMovieIndex] = useState(0);
   const [likedMovie, setLikedMovie] = useState<Movie | null>(null);
+  const [isCreatingGroup, setIsCreatingGroup] = useState(false);
 
   const currentQuizStep = quizSteps[currentStep];
   const totalSteps = quizSteps.length;
@@ -260,6 +264,41 @@ const EnhancedQuiz: React.FC<EnhancedQuizProps> = ({ onBack, onComplete, userPre
     setRecommendations([]);
     setCurrentMovieIndex(0);
     setLikedMovie(null);
+  };
+
+  const handleCreateGroupQuiz = async () => {
+    setIsCreatingGroup(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({ title: "Log in first", description: "You need an account to create a group quiz.", variant: "destructive" });
+        navigate("/auth");
+        return;
+      }
+      const { data: group, error } = await supabase
+        .from("quiz_groups")
+        .insert({ name: `Movie Night ${new Date().toLocaleDateString()}`, created_by: user.id })
+        .select()
+        .single();
+      if (error) throw error;
+      
+      // Also submit this user's answers to the group
+      await supabase.from("quiz_responses").insert({
+        group_id: group.id,
+        user_id: user.id,
+        answers: answers as any,
+      });
+
+      const shareUrl = `${window.location.origin}/quiz/group/${group.id}`;
+      await navigator.clipboard.writeText(shareUrl);
+      toast({ title: "Group quiz created! 🔗", description: "Link copied to clipboard — share it with friends!" });
+      navigate(`/quiz/group/${group.id}`);
+    } catch (e) {
+      console.error("Error creating group quiz:", e);
+      toast({ title: "Could not create group", variant: "destructive" });
+    } finally {
+      setIsCreatingGroup(false);
+    }
   };
 
   const currentMovie = recommendations[currentMovieIndex];
@@ -417,9 +456,22 @@ const EnhancedQuiz: React.FC<EnhancedQuizProps> = ({ onBack, onComplete, userPre
                   )}
                 </div>
 
-                {/* Secondary retake on non-last movies */}
-                {!isLastMovie && (
-                  <div className="mt-3 text-center">
+                {/* Group quiz & retake links */}
+                <div className="mt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCreateGroupQuiz}
+                    disabled={isCreatingGroup}
+                    className="rounded-xl border-accent/30 text-accent hover:bg-accent/10"
+                  >
+                    {isCreatingGroup ? (
+                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Creating...</>
+                    ) : (
+                      <><Users className="w-4 h-4 mr-2" /> Generate link for friends</>
+                    )}
+                  </Button>
+                  {!isLastMovie && (
                     <button
                       onClick={handleRetakeQuiz}
                       className="text-sm text-muted-foreground hover:text-foreground underline underline-offset-4 transition-colors"
@@ -427,8 +479,8 @@ const EnhancedQuiz: React.FC<EnhancedQuizProps> = ({ onBack, onComplete, userPre
                       <RotateCcw className="w-3 h-3 inline mr-1" />
                       Start over with a new quiz
                     </button>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
           </motion.div>
