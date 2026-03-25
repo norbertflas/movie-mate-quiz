@@ -456,9 +456,22 @@ const EnhancedQuiz: React.FC<EnhancedQuizProps> = ({ onBack, onComplete, userPre
                   )}
                 </div>
 
-                {/* Secondary retake on non-last movies */}
-                {!isLastMovie && (
-                  <div className="mt-3 text-center">
+                {/* Group quiz & retake links */}
+                <div className="mt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCreateGroupQuiz}
+                    disabled={isCreatingGroup}
+                    className="rounded-xl border-accent/30 text-accent hover:bg-accent/10"
+                  >
+                    {isCreatingGroup ? (
+                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Creating...</>
+                    ) : (
+                      <><Users className="w-4 h-4 mr-2" /> Generate link for friends</>
+                    )}
+                  </Button>
+                  {!isLastMovie && (
                     <button
                       onClick={handleRetakeQuiz}
                       className="text-sm text-muted-foreground hover:text-foreground underline underline-offset-4 transition-colors"
@@ -466,8 +479,8 @@ const EnhancedQuiz: React.FC<EnhancedQuizProps> = ({ onBack, onComplete, userPre
                       <RotateCcw className="w-3 h-3 inline mr-1" />
                       Start over with a new quiz
                     </button>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
           </motion.div>
