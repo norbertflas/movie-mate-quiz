@@ -47,6 +47,7 @@ const Auth = () => {
         />
       </Card>
     </motion.div>
+    </div>
   );
 };
 
