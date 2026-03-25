@@ -109,33 +109,33 @@ export const EnhancedMovieModal = ({
           initial={{ opacity: 0, scale: 0.95, y: 40 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 40 }}
-          className="relative w-full max-w-7xl bg-[#0a0a12] rounded-[3.5rem] overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.8)] flex flex-col max-h-[95vh] border border-white/5"
+          className="relative w-full max-w-7xl bg-[#0a0a12] rounded-2xl sm:rounded-[3.5rem] overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.8)] flex flex-col max-h-[95vh] border border-white/5"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header Controls */}
-          <div className="absolute top-8 right-8 z-50 flex items-center gap-4">
+          <div className="absolute top-4 right-4 sm:top-8 sm:right-8 z-50 flex items-center gap-2 sm:gap-4">
             <button
               onClick={() =>
                 setUserActions((p) => ({ ...p, isWatchlisted: !p.isWatchlisted }))
               }
-              className={`p-4 rounded-2xl backdrop-blur-xl border border-white/10 transition-all ${
+              className={`p-2.5 sm:p-4 rounded-xl sm:rounded-2xl backdrop-blur-xl border border-white/10 transition-all ${
                 userActions.isWatchlisted
                   ? "bg-purple-600 text-white"
                   : "bg-white/5 text-white hover:bg-white/10"
               }`}
             >
-              {userActions.isWatchlisted ? <Check size={24} /> : <Plus size={24} />}
+              {userActions.isWatchlisted ? <Check size={18} className="sm:w-6 sm:h-6" /> : <Plus size={18} className="sm:w-6 sm:h-6" />}
             </button>
             <button
               onClick={onClose}
-              className="p-4 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl text-white hover:bg-white/10 transition-all"
+              className="p-2.5 sm:p-4 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl sm:rounded-2xl text-white hover:bg-white/10 transition-all"
             >
-              <X size={24} />
+              <X size={18} className="sm:w-6 sm:h-6" />
             </button>
           </div>
 
           {/* Hero Backdrop - 70% height */}
-          <div className="relative h-[350px] w-full shrink-0">
+          <div className="relative h-[200px] sm:h-[350px] w-full shrink-0">
             <img
               src={
                 movieDetails.backdrop_path
@@ -154,8 +154,8 @@ export const EnhancedMovieModal = ({
             <div className="absolute inset-0 bg-gradient-to-r from-[#0a0a12]/80 via-transparent to-[#0a0a12]/40" />
 
             {/* Title overlay */}
-            <div className="absolute bottom-0 left-0 right-0 p-12">
-              <div className="flex items-end gap-8">
+            <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-12">
+              <div className="flex items-end gap-4 sm:gap-8">
                 {/* Poster */}
                 <motion.div
                   initial={{ y: 20, opacity: 0 }}
@@ -177,7 +177,7 @@ export const EnhancedMovieModal = ({
 
                 {/* Title & meta */}
                 <div className="flex-1">
-                  <h1 className="text-5xl sm:text-7xl font-black font-display tracking-tighter leading-none text-white italic mb-4">
+                  <h1 className="text-2xl sm:text-5xl md:text-7xl font-black font-display tracking-tighter leading-none text-white italic mb-2 sm:mb-4">
                     {movieDetails.title}
                   </h1>
                   <div className="flex flex-wrap items-center gap-4 text-white/40 text-sm font-bold">
@@ -220,13 +220,13 @@ export const EnhancedMovieModal = ({
           </div>
 
           {/* Tabs Navigation */}
-          <div className="px-12 pt-4">
-            <div className="flex gap-1 border-b border-white/5 pb-0">
+          <div className="px-4 sm:px-12 pt-2 sm:pt-4 overflow-x-auto">
+            <div className="flex gap-1 border-b border-white/5 pb-0 min-w-max">
               {tabs.map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`px-6 py-3 text-sm font-bold transition-all border-b-2 -mb-px ${
+                  className={`px-3 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm font-bold transition-all border-b-2 -mb-px whitespace-nowrap ${
                     activeTab === tab
                       ? "border-purple-500 text-white"
                       : "border-transparent text-white/30 hover:text-white/60"
@@ -239,7 +239,7 @@ export const EnhancedMovieModal = ({
           </div>
 
           {/* Tab Content */}
-          <div className="flex-1 overflow-y-auto p-12 custom-scrollbar">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-12 custom-scrollbar">
             <AnimatePresence mode="wait">
               {activeTab === "Overview" && (
                 <motion.div

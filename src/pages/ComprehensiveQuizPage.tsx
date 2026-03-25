@@ -143,9 +143,9 @@ export const ComprehensiveQuizPage = () => {
       <MouseGlow />
       <Navigation />
 
-      <div className="relative z-10 pt-24 pb-16 px-4 sm:px-8">
+      <div className="relative z-10 pt-20 sm:pt-24 pb-8 sm:pb-16 px-3 sm:px-8">
         <div className="max-w-6xl mx-auto">
-          <div className="relative bg-[#02020a] rounded-[3rem] p-8 sm:p-12 overflow-hidden shadow-[0_0_100px_rgba(139,92,246,0.2)] border border-white/10 min-h-[70vh]">
+          <div className="relative bg-[#02020a] rounded-2xl sm:rounded-[3rem] p-4 sm:p-12 overflow-hidden shadow-[0_0_100px_rgba(139,92,246,0.2)] border border-white/10 min-h-[60vh] sm:min-h-[70vh]">
             {/* Film grain & projector beam */}
             <div className="absolute inset-0 pointer-events-none opacity-[0.03] mix-blend-overlay z-50 overflow-hidden">
               <div
@@ -164,9 +164,9 @@ export const ComprehensiveQuizPage = () => {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="text-center py-32 relative z-10"
+                  className="text-center py-16 sm:py-32 relative z-10"
                 >
-                  <div className="relative w-40 h-40 mx-auto mb-16">
+                  <div className="relative w-28 h-28 sm:w-40 sm:h-40 mx-auto mb-8 sm:mb-16">
                     <motion.div
                       animate={{ rotate: 360 }}
                       transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
@@ -192,7 +192,7 @@ export const ComprehensiveQuizPage = () => {
                       />
                     ))}
                   </div>
-                  <h2 className="text-4xl sm:text-5xl font-black mb-6 font-display tracking-tighter uppercase italic text-white">
+                  <h2 className="text-2xl sm:text-5xl font-black mb-4 sm:mb-6 font-display tracking-tighter uppercase italic text-white">
                     Developing Your Film...
                   </h2>
                   <div className="flex items-center justify-center gap-3 text-purple-400 font-bold tracking-widest uppercase text-xs">
@@ -208,14 +208,14 @@ export const ComprehensiveQuizPage = () => {
                   initial={{ opacity: 0, scale: 0.5 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 2 }}
-                  className="text-center py-40 relative z-10"
+                  className="text-center py-20 sm:py-40 relative z-10"
                 >
                   <motion.div
                     key={countdown}
                     initial={{ scale: 0.5, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ type: "spring", damping: 12 }}
-                    className="text-[10rem] sm:text-[12rem] font-black font-display text-white leading-none drop-shadow-[0_0_30px_rgba(255,255,255,0.3)]"
+                    className="text-[6rem] sm:text-[10rem] md:text-[12rem] font-black font-display text-white leading-none drop-shadow-[0_0_30px_rgba(255,255,255,0.3)]"
                   >
                     {countdown === 0 ? "ACTION!" : countdown}
                   </motion.div>
@@ -242,7 +242,7 @@ export const ComprehensiveQuizPage = () => {
                       <Trophy className="w-4 h-4" />
                       Your Cinematic Persona
                     </motion.div>
-                    <h2 className="text-5xl sm:text-7xl font-black font-display tracking-tighter italic uppercase text-white">
+                    <h2 className="text-3xl sm:text-5xl md:text-7xl font-black font-display tracking-tighter italic uppercase text-white">
                       The Cosmic Dreamer
                     </h2>
                     <p className="text-white/40 text-lg max-w-xl mx-auto">
@@ -250,7 +250,7 @@ export const ComprehensiveQuizPage = () => {
                     </p>
                   </div>
 
-                  <div className="grid lg:grid-cols-2 gap-16 items-center">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-16 items-center">
                     {/* Movie poster */}
                     <motion.div
                       whileHover={{ scale: 1.02 }}
@@ -289,7 +289,7 @@ export const ComprehensiveQuizPage = () => {
                             Sci-Fi
                           </span>
                         </div>
-                        <h3 className="text-5xl sm:text-6xl font-black font-display tracking-tighter leading-none text-white">
+                        <h3 className="text-3xl sm:text-5xl md:text-6xl font-black font-display tracking-tighter leading-none text-white">
                           Interstellar
                         </h3>
                         <p className="text-xl text-white/40 leading-relaxed font-medium italic">
@@ -326,9 +326,9 @@ export const ComprehensiveQuizPage = () => {
                 /* QUIZ STEPS */
                 <>
                   {/* Header with progress */}
-                  <div className="mb-20 relative z-10">
-                    <div className="flex items-center justify-between mb-8">
-                      <div className="flex items-center gap-6">
+                  <div className="mb-10 sm:mb-20 relative z-10">
+                    <div className="flex items-center justify-between mb-4 sm:mb-8">
+                      <div className="flex items-center gap-3 sm:gap-6">
                         {step > 1 && (
                           <button
                             onClick={prevStep}
@@ -541,15 +541,15 @@ export const ComprehensiveQuizPage = () => {
                   </AnimatePresence>
 
                   {/* Bottom nav */}
-                  <div className="mt-20 flex items-center justify-between border-t border-white/5 pt-10 relative z-10">
-                    <button className="text-white/30 font-black uppercase tracking-widest text-xs hover:text-white transition-colors">
+                    <div className="mt-10 sm:mt-20 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-white/5 pt-6 sm:pt-10 relative z-10">
+                    <button className="text-white/30 font-black uppercase tracking-widest text-xs hover:text-white transition-colors order-3 sm:order-1">
                       Skip Production
                     </button>
-                    <div className="flex gap-6">
+                    <div className="flex gap-3 sm:gap-6 w-full sm:w-auto order-2">
                       {step > 1 && (
                         <button
                           onClick={prevStep}
-                          className="px-8 h-14 rounded-xl bg-white/5 border border-white/10 text-white font-black uppercase tracking-widest text-xs hover:bg-white/10 transition-all"
+                          className="flex-1 sm:flex-none px-6 sm:px-8 h-12 sm:h-14 rounded-xl bg-white/5 border border-white/10 text-white font-black uppercase tracking-widest text-xs hover:bg-white/10 transition-all"
                         >
                           Previous Scene
                         </button>
@@ -557,7 +557,7 @@ export const ComprehensiveQuizPage = () => {
                       <button
                         onClick={nextStep}
                         disabled={step === 2 && (answers[2] as string[]).length === 0}
-                        className={`flex items-center gap-3 px-10 h-14 rounded-xl font-black uppercase tracking-widest text-xs transition-all ${
+                        className={`flex-1 sm:flex-none flex items-center justify-center gap-3 px-6 sm:px-10 h-12 sm:h-14 rounded-xl font-black uppercase tracking-widest text-xs transition-all ${
                           step === 2 && (answers[2] as string[]).length === 0
                             ? "bg-white/5 text-white/20 cursor-not-allowed"
                             : "bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-500/20 active:scale-95"
