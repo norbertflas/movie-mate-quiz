@@ -103,6 +103,7 @@ const Favorites = () => {
           movie={selectedMovie}
         />
       </div>
+      </div>
     </div>
   );
 };
