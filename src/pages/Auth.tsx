@@ -5,17 +5,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
+import { Navigation } from "@/components/Navigation";
 
 const Auth = () => {
   const { toast } = useToast();
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="container max-w-md mx-auto p-4"
-    >
+    <div className="min-h-screen bg-background">
+      <Navigation />
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="container max-w-md mx-auto p-4 pt-24"
+      >
       <Card className="p-6">
         <SupabaseAuth
           supabaseClient={supabase}
@@ -44,6 +47,7 @@ const Auth = () => {
         />
       </Card>
     </motion.div>
+    </div>
   );
 };
 
