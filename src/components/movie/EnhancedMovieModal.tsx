@@ -1,19 +1,16 @@
 import { useState, useEffect } from "react";
 import { 
-  X, Heart, Star, Play, Calendar, Clock, Users, MapPin, 
-  Award, TrendingUp, Eye, EyeOff, Bookmark, Share2, 
-  Download, ExternalLink, Copy, ThumbsUp, ThumbsDown,
-  Film, Camera, Mic, Edit3, DollarSign, Globe, Languages
+  X, Heart, Star, Play, Calendar, Clock, Users, 
+  Award, TrendingUp, Bookmark, Share2, 
+  Copy, ExternalLink, Film, Camera, Mic, Edit3, DollarSign
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { motion, AnimatePresence } from "framer-motion";
 import { TMDBMovie } from "@/services/tmdb";
 import { useTranslation } from "react-i18next";
-import { useStreamingPro } from "@/hooks/use-streaming-pro";
 import StreamingServiceButtons from "../streaming/StreamingServiceButtons";
 
 interface EnhancedMovieModalProps {
@@ -33,7 +30,6 @@ export const EnhancedMovieModal = ({
 }: EnhancedMovieModalProps) => {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("overview");
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showTrailer, setShowTrailer] = useState(false);
   const [userActions, setUserActions] = useState({
     isFavorite: false,
@@ -45,25 +41,12 @@ export const EnhancedMovieModal = ({
   const [movieDetails, setMovieDetails] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // Remove unused streaming state
-  // const { fetchSingleMovie, getStreamingData } = useStreamingPro();
-  // const [streamingAvailability, setStreamingAvailability] = useState<any[]>([]);
-
-  // Format utility functions
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0
-    }).format(amount);
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(amount);
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric'
-    });
+    return new Date(dateString).toLocaleDateString('en-US', { day: '2-digit', month: 'long', year: 'numeric' });
   };
 
   const formatRuntime = (minutes: number) => {
@@ -72,90 +55,44 @@ export const EnhancedMovieModal = ({
     return `${hours}h ${mins}m`;
   };
 
-  const getRatingColor = (rating: number) => {
-    if (rating >= 8.0) return 'text-green-400';
-    if (rating >= 7.0) return 'text-yellow-400';
-    if (rating >= 6.0) return 'text-orange-400';
-    return 'text-red-400';
-  };
-
-  // Fetch detailed movie data from TMDB
   useEffect(() => {
     if (!movie || !isOpen) return;
-
     const fetchMovieDetails = async () => {
       setLoading(true);
       try {
-        // Fetch real TMDB data
         const userLocale = navigator.language || "en-US";
         const movieLang = userLocale.split('-')[0];
-        
         const response = await fetch(
           `https://api.themoviedb.org/3/movie/${movie.id}?api_key=${await import('@/services/tmdb/config').then(m => m.getTMDBApiKey())}&append_to_response=credits,videos,images,similar,reviews&language=${movieLang}`
         );
-        
         if (response.ok) {
           const data = await response.json();
           setMovieDetails(data);
-          
-          // Remove the old streaming fetch logic that was causing infinite loops
         } else {
           throw new Error('API failed');
         }
       } catch (error) {
         console.error("Error fetching movie details:", error);
-        // Enhanced fallback with more realistic data
         setMovieDetails({
           ...movie,
           runtime: Math.floor(Math.random() * 60) + 90,
           budget: Math.floor(Math.random() * 100000000) + 10000000,
           revenue: Math.floor(Math.random() * 500000000) + 50000000,
           status: "Released",
-          production_companies: [
-            { name: "Warner Bros. Pictures" }, 
-            { name: "Universal Pictures" }
-          ],
+          production_companies: [{ name: "Warner Bros. Pictures" }],
           production_countries: [{ name: "United States" }],
           spoken_languages: [{ english_name: "English" }],
-          credits: { 
-            cast: [
-              { id: 1, name: "Leading Actor", character: "Main Character", profile_path: null },
-              { id: 2, name: "Supporting Actor", character: "Supporting Role", profile_path: null },
-              { id: 3, name: "Character Actor", character: "Villain", profile_path: null }
-            ], 
-            crew: [
-              { id: 1, name: "Acclaimed Director", job: "Director", department: "Directing" },
-              { id: 2, name: "Screenwriter", job: "Writer", department: "Writing" },
-              { id: 3, name: "Producer", job: "Producer", department: "Production" }
-            ] 
-          },
-          videos: { 
-            results: [
-              { key: "dQw4w9WgXcQ", name: "Official Trailer", type: "Trailer", site: "YouTube" },
-              { key: "def456", name: "Behind the Scenes", type: "Featurette", site: "YouTube" }
-            ] 
-          },
-          images: { backdrops: [{ file_path: movie.backdrop_path }] },
+          credits: { cast: [], crew: [] },
+          videos: { results: [] },
+          images: { backdrops: [] },
           similar: { results: [] },
-          reviews: { 
-            results: [
-              {
-                author: "MovieCritic",
-                content: "A compelling and well-crafted film that delivers on both entertainment and emotional depth. The performances are strong and the direction is confident.",
-                created_at: new Date().toISOString(),
-                author_details: { rating: 8 }
-              }
-            ] 
-          }
+          reviews: { results: [] }
         });
       } finally {
         setLoading(false);
       }
     };
-
     fetchMovieDetails();
-    
-    // Remove the old streaming fetch logic that was causing infinite loops
   }, [movie, isOpen]);
 
   const handleUserAction = (action: string, value: any = null) => {
@@ -166,352 +103,260 @@ export const EnhancedMovieModal = ({
   };
 
   const handleShare = async (platform: string) => {
-    const shareData = {
-      title: movie?.title || '',
-      text: `Check out "${movie?.title}" - ${movie?.overview?.slice(0, 100)}...`,
-      url: `${window.location.origin}/movie/${movie?.id}`
-    };
-
+    const shareUrl = `${window.location.origin}/movie/${movie?.id}`;
     switch(platform) {
-      case 'copy':
-        navigator.clipboard.writeText(shareData.url);
-        break;
-      case 'native':
-        if (navigator.share) {
-          await navigator.share(shareData);
-        }
-        break;
+      case 'copy': navigator.clipboard.writeText(shareUrl); break;
+      case 'native': if (navigator.share) await navigator.share({ title: movie?.title || '', url: shareUrl }); break;
     }
     setShowShareMenu(false);
   };
-
-  // Remove unused streaming data getter
-  // const streamingData = movie?.id ? getStreamingData(movie.id) : null;
 
   if (!isOpen || !movie) return null;
 
   if (loading || !movieDetails) {
     return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-      >
-        <div className="bg-gray-900 rounded-xl p-8">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto"></div>
-          <p className="text-white mt-4 text-center">Loading movie details...</p>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="neon-card p-8">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mx-auto" />
+          <p className="text-foreground mt-4 text-center">Loading movie details...</p>
         </div>
       </motion.div>
     );
   }
 
+  const director = movieDetails.credits?.crew?.find((c: any) => c.job === "Director");
+  const writers = movieDetails.credits?.crew?.filter((c: any) => c.job === "Writer" || c.job === "Screenplay")?.slice(0, 3);
+
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-    >
+      onClick={onClose}>
       <motion.div
         initial={{ scale: 0.9, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.9, opacity: 0, y: 20 }}
-        className="bg-gray-900 rounded-xl max-w-6xl w-full max-h-[95vh] overflow-hidden shadow-2xl border border-gray-700"
-      >
-        {/* Enhanced Header */}
-        <div className="relative h-96 overflow-hidden">
-          {/* Backdrop Image */}
+        className="relative max-w-6xl w-full max-h-[95vh] overflow-hidden rounded-2xl border border-border/50 shadow-2xl shadow-primary/10"
+        style={{ background: 'linear-gradient(135deg, hsl(230 25% 10%), hsl(250 30% 12%), hsl(230 25% 8%))' }}
+        onClick={(e) => e.stopPropagation()}>
+        
+        {/* Header with backdrop */}
+        <div className="relative h-64 overflow-hidden">
           <div className="absolute inset-0">
             <img
               src={movieDetails.backdrop_path ? `https://image.tmdb.org/t/p/w1280${movieDetails.backdrop_path}` : "/placeholder.svg"}
               alt={movieDetails.title}
               className="w-full h-full object-cover"
-              onError={(e) => {
-                e.currentTarget.src = "/placeholder.svg";
-              }}
+              onError={(e) => { e.currentTarget.src = "/placeholder.svg"; }}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/60 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-r from-gray-900/80 via-transparent to-gray-900/40" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[hsl(230,25%,10%)] via-[hsl(230,25%,10%)]/70 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[hsl(230,25%,10%)]/80 via-transparent to-[hsl(230,25%,10%)]/40" />
           </div>
 
-          {/* Close Button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            className="absolute top-4 right-4 h-10 w-10 rounded-full bg-black/50 hover:bg-black/70 text-white z-10"
-          >
+          <Button variant="ghost" size="sm" onClick={onClose}
+            className="absolute top-4 right-4 h-10 w-10 rounded-full bg-black/50 hover:bg-black/70 text-foreground z-10">
             <X className="h-5 w-5" />
           </Button>
 
-          {/* Main Content Overlay */}
-          <div className="absolute bottom-0 left-0 right-0 p-8">
-            <div className="flex items-end space-x-6">
-              {/* Poster */}
-              <motion.div
-                initial={{ x: -50, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 0.2 }}
-                className="flex-shrink-0"
-              >
-                <img
-                  src={movieDetails.poster_path ? `https://image.tmdb.org/t/p/w500${movieDetails.poster_path}` : "/placeholder.svg"}
-                  alt={movieDetails.title}
-                  className="w-32 h-48 object-cover rounded-lg shadow-2xl border-2 border-white/20"
-                  onError={(e) => {
-                    e.currentTarget.src = "/placeholder.svg";
-                  }}
-                />
-              </motion.div>
-
-              {/* Movie Info */}
-              <motion.div
-                initial={{ y: 30, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.3 }}
-                className="flex-1 text-white"
-              >
-                <div className="mb-2">
-                  <h1 className="text-4xl font-bold mb-2">{movieDetails.title}</h1>
-                  {movieDetails.original_title !== movieDetails.title && (
-                    <p className="text-xl text-gray-300 italic mb-2">{movieDetails.original_title}</p>
-                  )}
-                  {movieDetails.tagline && (
-                    <p className="text-lg text-gray-400 italic">"{movieDetails.tagline}"</p>
-                  )}
+          {/* Poster + Title overlay */}
+          <div className="absolute bottom-0 left-0 right-0 p-6 flex items-end gap-6">
+            <motion.div initial={{ x: -30, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.2 }}
+              className="flex-shrink-0 relative">
+              <img
+                src={movieDetails.poster_path ? `https://image.tmdb.org/t/p/w500${movieDetails.poster_path}` : "/placeholder.svg"}
+                alt={movieDetails.title}
+                className="w-36 h-52 object-cover rounded-xl shadow-2xl border border-border/30"
+                onError={(e) => { e.currentTarget.src = "/placeholder.svg"; }}
+              />
+              {/* Rating badge */}
+              <div className="absolute -top-2 -right-2 w-12 h-12 rounded-full bg-gradient-to-br from-neon-purple to-neon-magenta flex items-center justify-center shadow-lg shadow-primary/30">
+                <div className="text-center">
+                  <Star className="h-3 w-3 text-yellow-300 fill-current mx-auto" />
+                  <span className="text-white text-xs font-bold">{(movieDetails.vote_average || 0).toFixed(1)}</span>
                 </div>
+              </div>
+            </motion.div>
 
-                {/* Meta Info */}
-                <div className="flex flex-wrap items-center space-x-4 text-sm text-gray-300 mb-4">
-                  <div className="flex items-center">
-                    <Calendar className="h-4 w-4 mr-1" />
-                    {formatDate(movieDetails.release_date)}
-                  </div>
-                  <div className="flex items-center">
-                    <Clock className="h-4 w-4 mr-1" />
-                    {formatRuntime(movieDetails.runtime || 120)}
-                  </div>
-                  <div className="flex items-center">
-                    <MapPin className="h-4 w-4 mr-1" />
-                    {movieDetails.production_countries?.[0]?.name || "Unknown"}
-                  </div>
-                  <Badge variant="outline" className="border-gray-400 text-gray-300">
-                    {movieDetails.status || "Released"}
-                  </Badge>
-                </div>
+            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }}
+              className="flex-1 min-w-0">
+              <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-1 truncate">{movieDetails.title}</h1>
+              <p className="text-muted-foreground text-sm mb-4">
+                {movieDetails.release_date?.split('-')[0]} | {formatRuntime(movieDetails.runtime || 120)}
+              </p>
 
-                {/* Rating and Genres */}
-                <div className="flex items-center space-x-4 mb-4">
-                  <div className="flex items-center space-x-2">
-                    <Star className="h-5 w-5 text-yellow-400 fill-current" />
-                    <span className={`text-xl font-bold ${getRatingColor(movieDetails.vote_average || 0)}`}>
-                      {(movieDetails.vote_average || 0).toFixed(1)}
-                    </span>
-                    <span className="text-gray-400">({(movieDetails.vote_count || 0).toLocaleString()} votes)</span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <TrendingUp className="h-4 w-4 text-blue-400" />
-                    <span className="text-blue-400 font-medium">{(movieDetails.popularity || 0).toFixed(1)}</span>
-                  </div>
-                </div>
-
-                {/* Genres */}
-                <div className="flex flex-wrap gap-2 mb-6">
-                  {movieDetails.genres?.map((genre: any) => (
-                    <Badge key={genre.id} className="bg-blue-600/20 text-blue-300 border-blue-600/30">
-                      {genre.name}
-                    </Badge>
-                  )) || movie.genre_ids?.map((genreId: number) => (
-                    <Badge key={genreId} className="bg-blue-600/20 text-blue-300 border-blue-600/30">
-                      Genre {genreId}
-                    </Badge>
-                  ))}
-                </div>
-
-                {/* Streaming Services */}
-                <div className="mb-4">
-                  <h4 className="text-sm font-medium text-gray-400 mb-2">Dostępne na:</h4>
-                  <StreamingServiceButtons 
-                    tmdbId={movie.id} 
-                    title={movieDetails.title} 
-                    year={movieDetails.release_date?.split('-')[0]}
-                  />
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex flex-wrap gap-3">
-                  {movieDetails.videos?.results?.length > 0 && (
-                    <Button
-                      size="lg"
-                      className="bg-red-600 hover:bg-red-700"
-                      onClick={() => setShowTrailer(true)}
-                    >
-                      <Play className="h-5 w-5 mr-2 fill-white" />
-                      Watch Trailer
-                    </Button>
-                  )}
-                  
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    onClick={() => handleUserAction('isFavorite')}
-                    className={`border-white/30 ${userActions.isFavorite ? 'bg-red-600/20 text-red-400 border-red-600/50' : 'text-white hover:bg-white/10'}`}
-                  >
-                    <Heart className={`h-5 w-5 mr-2 ${userActions.isFavorite ? 'fill-current' : ''}`} />
-                    {userActions.isFavorite ? 'Favorite' : 'Add to Favorites'}
-                  </Button>
-                  
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    onClick={() => handleUserAction('isWatchlisted')}
-                    className={`border-white/30 ${userActions.isWatchlisted ? 'bg-blue-600/20 text-blue-400 border-blue-600/50' : 'text-white hover:bg-white/10'}`}
-                  >
-                    <Bookmark className={`h-5 w-5 mr-2 ${userActions.isWatchlisted ? 'fill-current' : ''}`} />
-                    {userActions.isWatchlisted ? 'On Watchlist' : 'Add to Watchlist'}
-                  </Button>
-
-                  <div className="relative">
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      onClick={() => setShowShareMenu(!showShareMenu)}
-                      className="border-white/30 text-white hover:bg-white/10"
-                    >
-                      <Share2 className="h-5 w-5 mr-2" />
-                      Share
-                    </Button>
-                    
-                    <AnimatePresence>
-                      {showShareMenu && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -10 }}
-                          className="absolute top-full left-0 mt-2 bg-gray-800 rounded-lg shadow-xl border border-gray-600 p-2 z-10 min-w-32"
-                        >
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleShare('copy')}
-                            className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-700"
-                          >
-                            <Copy className="h-4 w-4 mr-2" />
-                            Copy Link
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleShare('native')}
-                            className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-700"
-                          >
-                            <ExternalLink className="h-4 w-4 mr-2" />
-                            Share
-                          </Button>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                </div>
-              </motion.div>
-            </div>
+              {/* Action buttons */}
+              <div className="flex flex-wrap gap-3">
+                <Button size="sm" onClick={() => handleUserAction('isWatchlisted')}
+                  className={`rounded-xl px-5 ${userActions.isWatchlisted 
+                    ? 'bg-accent/20 text-accent border border-accent/50' 
+                    : 'bg-gradient-to-r from-neon-purple/80 to-neon-magenta/80 hover:from-neon-purple hover:to-neon-magenta text-white border-0'}`}>
+                  <Bookmark className={`h-4 w-4 mr-2 ${userActions.isWatchlisted ? 'fill-current' : ''}`} />
+                  Add to Watchlist
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => handleUserAction('isFavorite')}
+                  className={`rounded-xl px-5 border-border/50 ${userActions.isFavorite ? 'bg-destructive/20 text-red-400 border-red-500/50' : 'text-foreground hover:bg-secondary'}`}>
+                  <Star className={`h-4 w-4 mr-2 ${userActions.isFavorite ? 'fill-current text-yellow-400' : ''}`} />
+                  Rate it
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setShowShareMenu(!showShareMenu)}
+                  className="rounded-xl px-5 border-border/50 text-foreground hover:bg-secondary relative">
+                  <Share2 className="h-4 w-4 mr-2" />
+                  Share
+                  <AnimatePresence>
+                    {showShareMenu && (
+                      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                        className="absolute top-full left-0 mt-2 neon-card p-2 z-10 min-w-32">
+                        <Button variant="ghost" size="sm" onClick={() => handleShare('copy')}
+                          className="w-full justify-start text-muted-foreground hover:text-foreground">
+                          <Copy className="h-4 w-4 mr-2" /> Copy Link
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleShare('native')}
+                          className="w-full justify-start text-muted-foreground hover:text-foreground">
+                          <ExternalLink className="h-4 w-4 mr-2" /> Share
+                        </Button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </Button>
+              </div>
+            </motion.div>
           </div>
         </div>
 
-        {/* Content Tabs */}
-        <div className="p-6 overflow-y-auto max-h-[calc(95vh-400px)]">
+        {/* Tabs + Content */}
+        <div className="p-6 overflow-y-auto max-h-[calc(95vh-280px)]">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-5 bg-gray-800 mb-6">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="cast">Cast</TabsTrigger>
-              <TabsTrigger value="media">Media</TabsTrigger>
-              <TabsTrigger value="details">Details</TabsTrigger>
-              <TabsTrigger value="reviews">Reviews</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-5 bg-secondary/50 border border-border/30 rounded-xl mb-6 p-1">
+              <TabsTrigger value="overview" className="rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:text-foreground">Overview</TabsTrigger>
+              <TabsTrigger value="cast" className="rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:text-foreground">Cast</TabsTrigger>
+              <TabsTrigger value="media" className="rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:text-foreground">Media</TabsTrigger>
+              <TabsTrigger value="details" className="rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:text-foreground">Details</TabsTrigger>
+              <TabsTrigger value="reviews" className="rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:text-foreground">Reviews</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 space-y-4">
+                {/* Left: Plot + Rating */}
+                <div className="lg:col-span-2 space-y-5">
                   <div>
-                    <h3 className="text-xl font-semibold text-white mb-3">Plot Summary</h3>
-                    <p className="text-gray-300 leading-relaxed">{movieDetails.overview || movie.overview}</p>
+                    <h3 className="text-xl font-semibold text-foreground mb-3">Plot Summary</h3>
+                    <p className="text-muted-foreground leading-relaxed">{movieDetails.overview || movie.overview}</p>
                   </div>
                   
                   {/* Personal Rating */}
-                  <div className="flex items-center space-x-4 p-4 bg-gray-800 rounded-lg">
-                    <span className="text-white font-medium">Your Rating:</span>
-                    <div className="flex space-x-1">
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((rating) => (
-                        <button
-                          key={rating}
-                          onClick={() => handleUserAction('personalRating', rating)}
-                          className={`w-8 h-8 rounded text-sm font-semibold transition-colors ${
-                            rating <= userActions.personalRating
-                              ? 'bg-yellow-400 text-gray-900'
-                              : 'bg-gray-600 text-gray-400 hover:bg-gray-500'
-                          }`}
-                        >
-                          {rating}
+                  <div className="flex items-center gap-3 p-4 bg-secondary/50 border border-border/30 rounded-xl">
+                    <span className="text-foreground font-medium whitespace-nowrap">Your Rating:</span>
+                    <div className="flex gap-1">
+                      {[1,2,3,4,5,6,7,8,9,10].map((r) => (
+                        <button key={r} onClick={() => handleUserAction('personalRating', r)}
+                          className={`w-8 h-8 rounded-lg text-sm font-semibold transition-all ${
+                            r <= userActions.personalRating
+                              ? 'bg-gradient-to-br from-neon-purple to-neon-magenta text-white shadow-md shadow-primary/30'
+                              : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+                          {r}
                         </button>
                       ))}
                     </div>
-                    {userActions.personalRating > 0 && (
-                      <span className="text-yellow-400 font-medium">{userActions.personalRating}/10</span>
-                    )}
+                  </div>
+
+                  {/* Production Info */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground mb-3">Production Info</h3>
+                    <div className="space-y-2 text-sm">
+                      {director && (
+                        <div><span className="text-muted-foreground">Director:</span> <span className="text-foreground ml-1">{director.name}</span></div>
+                      )}
+                      {writers && writers.length > 0 && (
+                        <div><span className="text-muted-foreground">Writers:</span> <span className="text-foreground ml-1">{writers.map((w: any) => w.name).join(', ')}</span></div>
+                      )}
+                      {movieDetails.budget > 0 && (
+                        <div><span className="text-muted-foreground">Budget:</span> <span className="text-foreground ml-1">{formatCurrency(movieDetails.budget)}</span></div>
+                      )}
+                      {movieDetails.revenue > 0 && (
+                        <div><span className="text-muted-foreground">Revenue:</span> <span className="text-foreground ml-1">{formatCurrency(movieDetails.revenue)}</span></div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Where to Watch */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground mb-3">Where to Watch</h3>
+                    <StreamingServiceButtons 
+                      tmdbId={movie.id} 
+                      title={movieDetails.title} 
+                      year={movieDetails.release_date?.split('-')[0]}
+                    />
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  {/* Stats */}
-                  <Card className="bg-gray-800 border-gray-700">
-                    <CardHeader>
-                      <CardTitle className="text-white">Movie Stats</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-400">TMDB Rating:</span>
-                        <span className="text-white font-medium">{(movieDetails.vote_average || 0).toFixed(1)}/10</span>
+                {/* Right Sidebar: Stats + Genres + Director + Cast */}
+                <div className="space-y-5">
+                  {/* Movie Stats Card */}
+                  <div className="neon-card p-5 space-y-3">
+                    <h4 className="text-foreground font-semibold text-lg">Movie Stats</h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">TMDB Rating:</span>
+                        <span className="text-foreground font-medium">{(movieDetails.vote_average || 0).toFixed(1)}/10</span>
                       </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-400">Votes:</span>
-                        <span className="text-white font-medium">{(movieDetails.vote_count || 0).toLocaleString()}</span>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Votes:</span>
+                        <span className="text-foreground font-medium">{(movieDetails.vote_count || 0).toLocaleString()}</span>
                       </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-400">Popularity:</span>
-                        <span className="text-white font-medium">{(movieDetails.popularity || 0).toFixed(1)}</span>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Popularity:</span>
+                        <span className="text-foreground font-medium">{(movieDetails.popularity || 0).toFixed(1)}</span>
                       </div>
-                      <div className="space-y-1">
-                        <div className="flex justify-between text-xs">
-                          <span className="text-gray-400">User Score</span>
-                          <span className="text-white">{Math.round((movieDetails.vote_average || 0) * 10)}%</span>
-                        </div>
-                        <Progress value={(movieDetails.vote_average || 0) * 10} className="h-2" />
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">User Score:</span>
+                        <span className="text-accent font-bold">{Math.round((movieDetails.vote_average || 0) * 10)}%</span>
                       </div>
-                    </CardContent>
-                  </Card>
+                      <Progress value={(movieDetails.vote_average || 0) * 10} className="h-2 mt-1" />
+                    </div>
+                  </div>
 
-                  {/* Similar Movies */}
-                  {movieDetails.similar?.results?.length > 0 && (
-                    <Card className="bg-gray-800 border-gray-700">
-                      <CardHeader>
-                        <CardTitle className="text-white">Similar Movies</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="grid grid-cols-3 gap-2">
-                          {movieDetails.similar.results.slice(0, 6).map((similarMovie: any) => (
-                            <div key={similarMovie.id} className="text-center">
-                              <img
-                                src={similarMovie.poster_path ? `https://image.tmdb.org/t/p/w200${similarMovie.poster_path}` : "/placeholder.svg"}
-                                alt={similarMovie.title}
-                                className="w-full h-20 object-cover rounded mb-1"
-                              />
-                              <p className="text-xs text-gray-300 truncate">{similarMovie.title}</p>
+                  {/* Genres */}
+                  <div>
+                    <h4 className="text-foreground font-semibold mb-2">Genres</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {movieDetails.genres?.map((genre: any) => (
+                        <Badge key={genre.id} className="bg-primary/20 text-primary border border-primary/30 rounded-lg">
+                          {genre.name}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Director */}
+                  {director && (
+                    <div>
+                      <h4 className="text-foreground font-semibold mb-1">Director</h4>
+                      <p className="text-muted-foreground text-sm">{director.name}</p>
+                    </div>
+                  )}
+
+                  {/* Cast Avatars */}
+                  {movieDetails.credits?.cast?.length > 0 && (
+                    <div>
+                      <h4 className="text-foreground font-semibold mb-3">Cast</h4>
+                      <div className="flex flex-wrap gap-3">
+                        {movieDetails.credits.cast.slice(0, 5).map((actor: any) => (
+                          <div key={actor.id} className="text-center w-14">
+                            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-border/50 mx-auto mb-1">
+                              {actor.profile_path ? (
+                                <img src={`https://image.tmdb.org/t/p/w185${actor.profile_path}`} alt={actor.name}
+                                  className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full bg-secondary flex items-center justify-center">
+                                  <Users className="h-5 w-5 text-muted-foreground" />
+                                </div>
+                              )}
                             </div>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
+                            <p className="text-xs text-muted-foreground truncate">{actor.name}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
@@ -520,134 +365,113 @@ export const EnhancedMovieModal = ({
             <TabsContent value="cast" className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div>
-                  <h3 className="text-xl font-semibold text-white mb-4">Main Cast</h3>
+                  <h3 className="text-xl font-semibold text-foreground mb-4">Main Cast</h3>
                   <div className="space-y-3">
                     {movieDetails.credits?.cast?.slice(0, 8).map((actor: any) => (
-                      <div key={actor.id} className="flex items-center space-x-3 p-3 bg-gray-800 rounded-lg">
-                        <div className="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center">
+                      <div key={actor.id} className="flex items-center gap-3 p-3 bg-secondary/30 border border-border/20 rounded-xl">
+                        <div className="w-12 h-12 rounded-full overflow-hidden border border-border/30 flex-shrink-0">
                           {actor.profile_path ? (
-                            <img
-                              src={`https://image.tmdb.org/t/p/w185${actor.profile_path}`}
-                              alt={actor.name}
-                              className="w-12 h-12 rounded-full object-cover"
-                            />
+                            <img src={`https://image.tmdb.org/t/p/w185${actor.profile_path}`} alt={actor.name}
+                              className="w-full h-full object-cover" />
                           ) : (
-                            <Users className="h-6 w-6 text-gray-400" />
+                            <div className="w-full h-full bg-secondary flex items-center justify-center">
+                              <Users className="h-5 w-5 text-muted-foreground" />
+                            </div>
                           )}
                         </div>
                         <div>
-                          <p className="text-white font-medium">{actor.name}</p>
-                          <p className="text-gray-400 text-sm">{actor.character}</p>
+                          <p className="text-foreground font-medium">{actor.name}</p>
+                          <p className="text-muted-foreground text-sm">{actor.character}</p>
                         </div>
                       </div>
-                    )) || (
-                      <p className="text-gray-400">No cast information available</p>
-                    )}
+                    )) || <p className="text-muted-foreground">No cast information available</p>}
                   </div>
                 </div>
-                
                 <div>
-                  <h3 className="text-xl font-semibold text-white mb-4">Key Crew</h3>
+                  <h3 className="text-xl font-semibold text-foreground mb-4">Key Crew</h3>
                   <div className="space-y-3">
-                    {movieDetails.credits?.crew?.slice(0, 8).map((member: any, index: number) => (
-                      <div key={index} className="flex items-center space-x-3 p-3 bg-gray-800 rounded-lg">
-                        <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center">
-                          {member.department === 'Directing' && <Film className="h-5 w-5 text-gray-400" />}
-                          {member.department === 'Writing' && <Edit3 className="h-5 w-5 text-gray-400" />}
-                          {member.department === 'Camera' && <Camera className="h-5 w-5 text-gray-400" />}
-                          {member.department === 'Sound' && <Mic className="h-5 w-5 text-gray-400" />}
-                          {!['Directing', 'Writing', 'Camera', 'Sound'].includes(member.department) &&
-                            <Users className="h-5 w-5 text-gray-400" />}
+                    {movieDetails.credits?.crew?.filter((m: any) => ['Director','Writer','Screenplay','Producer','Director of Photography'].includes(m.job)).slice(0, 8).map((member: any, i: number) => (
+                      <div key={i} className="flex items-center gap-3 p-3 bg-secondary/30 border border-border/20 rounded-xl">
+                        <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
+                          {member.job === 'Director' && <Film className="h-5 w-5 text-accent" />}
+                          {(member.job === 'Writer' || member.job === 'Screenplay') && <Edit3 className="h-5 w-5 text-neon-magenta" />}
+                          {member.job === 'Director of Photography' && <Camera className="h-5 w-5 text-neon-green" />}
+                          {member.job === 'Producer' && <DollarSign className="h-5 w-5 text-neon-purple" />}
                         </div>
                         <div>
-                          <p className="text-white font-medium">{member.name}</p>
-                          <p className="text-gray-400 text-sm">{member.job}</p>
+                          <p className="text-foreground font-medium">{member.name}</p>
+                          <p className="text-muted-foreground text-sm">{member.job}</p>
                         </div>
                       </div>
-                    )) || (
-                      <p className="text-gray-400">No crew information available</p>
-                    )}
+                    )) || <p className="text-muted-foreground">No crew information available</p>}
                   </div>
                 </div>
               </div>
             </TabsContent>
 
             <TabsContent value="media" className="space-y-6">
-              <div>
-                <h3 className="text-xl font-semibold text-white mb-4">Videos</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {movieDetails.videos?.results?.map((video: any, index: number) => (
-                    <div key={index} className="bg-gray-800 rounded-lg p-4">
-                      <div className="aspect-video bg-gray-700 rounded mb-2 overflow-hidden">
-                        {video.site === 'YouTube' ? (
-                          <iframe
-                            src={`https://www.youtube.com/embed/${video.key}`}
-                            title={video.name}
-                            frameBorder="0"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                            className="w-full h-full"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center cursor-pointer hover:bg-gray-600 transition-colors">
-                            <Play className="h-12 w-12 text-white" />
-                          </div>
-                        )}
-                      </div>
-                      <h4 className="text-white font-medium text-sm">{video.name}</h4>
-                      <p className="text-gray-400 text-xs">{video.type}</p>
+              <h3 className="text-xl font-semibold text-foreground mb-4">Videos</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {movieDetails.videos?.results?.slice(0, 4).map((video: any, i: number) => (
+                  <div key={i} className="neon-card overflow-hidden">
+                    <div className="aspect-video">
+                      {video.site === 'YouTube' ? (
+                        <iframe src={`https://www.youtube.com/embed/${video.key}`} title={video.name}
+                          frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen className="w-full h-full" />
+                      ) : (
+                        <div className="w-full h-full bg-secondary flex items-center justify-center">
+                          <Play className="h-12 w-12 text-accent" />
+                        </div>
+                      )}
                     </div>
-                  )) || (
-                    <p className="text-gray-400 col-span-2">No videos available</p>
-                  )}
-                </div>
+                    <div className="p-3">
+                      <h4 className="text-foreground font-medium text-sm">{video.name}</h4>
+                      <p className="text-muted-foreground text-xs">{video.type}</p>
+                    </div>
+                  </div>
+                )) || <p className="text-muted-foreground">No videos available</p>}
               </div>
             </TabsContent>
 
             <TabsContent value="details" className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <h3 className="text-xl font-semibold text-white">Production Info</h3>
-                  <div className="space-y-3 text-sm">
-                    <div className="flex justify-between py-2 border-b border-gray-700">
-                      <span className="text-gray-400">Budget:</span>
-                      <span className="text-white">{formatCurrency(movieDetails.budget || 0)}</span>
-                    </div>
-                    <div className="flex justify-between py-2 border-b border-gray-700">
-                      <span className="text-gray-400">Revenue:</span>
-                      <span className="text-white">{formatCurrency(movieDetails.revenue || 0)}</span>
-                    </div>
-                    <div className="flex justify-between py-2 border-b border-gray-700">
-                      <span className="text-gray-400">Status:</span>
-                      <span className="text-white">{movieDetails.status || "Released"}</span>
-                    </div>
-                    <div className="flex justify-between py-2 border-b border-gray-700">
-                      <span className="text-gray-400">Runtime:</span>
-                      <span className="text-white">{formatRuntime(movieDetails.runtime || 120)}</span>
-                    </div>
+                <div className="neon-card p-5 space-y-3">
+                  <h3 className="text-lg font-semibold text-foreground">Production Info</h3>
+                  <div className="space-y-2 text-sm">
+                    {[
+                      ['Budget', movieDetails.budget ? formatCurrency(movieDetails.budget) : 'N/A'],
+                      ['Revenue', movieDetails.revenue ? formatCurrency(movieDetails.revenue) : 'N/A'],
+                      ['Status', movieDetails.status || 'Released'],
+                      ['Runtime', formatRuntime(movieDetails.runtime || 120)],
+                    ].map(([label, value]) => (
+                      <div key={label} className="flex justify-between py-2 border-b border-border/20">
+                        <span className="text-muted-foreground">{label}:</span>
+                        <span className="text-foreground font-medium">{value}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
-                
-                <div className="space-y-4">
-                  <h3 className="text-xl font-semibold text-white">Companies & Countries</h3>
-                  <div className="space-y-3">
+                <div className="neon-card p-5 space-y-4">
+                  <h3 className="text-lg font-semibold text-foreground">Companies & Countries</h3>
+                  <div className="space-y-3 text-sm">
                     <div>
-                      <h4 className="text-sm font-medium text-gray-400 mb-2">Production Companies:</h4>
-                      {movieDetails.production_companies?.map((company: any, index: number) => (
-                        <p key={index} className="text-white text-sm">• {company.name}</p>
-                      )) || <p className="text-gray-400 text-sm">No information available</p>}
+                      <h4 className="text-muted-foreground mb-1">Production Companies:</h4>
+                      {movieDetails.production_companies?.map((c: any, i: number) => (
+                        <p key={i} className="text-foreground">• {c.name}</p>
+                      ))}
                     </div>
                     <div>
-                      <h4 className="text-sm font-medium text-gray-400 mb-2">Countries:</h4>
-                      {movieDetails.production_countries?.map((country: any, index: number) => (
-                        <p key={index} className="text-white text-sm">• {country.name}</p>
-                      )) || <p className="text-gray-400 text-sm">No information available</p>}
+                      <h4 className="text-muted-foreground mb-1">Countries:</h4>
+                      {movieDetails.production_countries?.map((c: any, i: number) => (
+                        <p key={i} className="text-foreground">• {c.name}</p>
+                      ))}
                     </div>
                     <div>
-                      <h4 className="text-sm font-medium text-gray-400 mb-2">Languages:</h4>
-                      {movieDetails.spoken_languages?.map((lang: any, index: number) => (
-                        <p key={index} className="text-white text-sm">• {lang.english_name}</p>
-                      )) || <p className="text-gray-400 text-sm">No information available</p>}
+                      <h4 className="text-muted-foreground mb-1">Languages:</h4>
+                      {movieDetails.spoken_languages?.map((l: any, i: number) => (
+                        <p key={i} className="text-foreground">• {l.english_name}</p>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -655,35 +479,27 @@ export const EnhancedMovieModal = ({
             </TabsContent>
 
             <TabsContent value="reviews" className="space-y-6">
-              <div>
-                <h3 className="text-xl font-semibold text-white mb-4">User Reviews</h3>
-                <div className="space-y-4">
-                  {movieDetails.reviews?.results?.length > 0 ? (
-                    movieDetails.reviews.results.map((review: any, index: number) => (
-                      <Card key={index} className="bg-gray-800 border-gray-700">
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-white font-medium">{review.author}</span>
-                            {review.author_details?.rating && (
-                              <div className="flex items-center space-x-1">
-                                <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                                <span className="text-white text-sm">{review.author_details.rating}/10</span>
-                              </div>
-                            )}
+              <h3 className="text-xl font-semibold text-foreground mb-4">User Reviews</h3>
+              <div className="space-y-4">
+                {movieDetails.reviews?.results?.length > 0 ? (
+                  movieDetails.reviews.results.map((review: any, i: number) => (
+                    <div key={i} className="neon-card p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-foreground font-medium">{review.author}</span>
+                        {review.author_details?.rating && (
+                          <div className="flex items-center gap-1">
+                            <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                            <span className="text-foreground text-sm">{review.author_details.rating}/10</span>
                           </div>
-                          <p className="text-gray-300 text-sm leading-relaxed mb-2">
-                            {review.content.length > 300 ? `${review.content.slice(0, 300)}...` : review.content}
-                          </p>
-                          <div className="text-xs text-gray-500">
-                            {formatDate(review.created_at)}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))
-                  ) : (
-                    <p className="text-gray-400">No reviews available</p>
-                  )}
-                </div>
+                        )}
+                      </div>
+                      <p className="text-muted-foreground text-sm leading-relaxed mb-2">
+                        {review.content.length > 300 ? `${review.content.slice(0, 300)}...` : review.content}
+                      </p>
+                      <div className="text-xs text-muted-foreground">{formatDate(review.created_at)}</div>
+                    </div>
+                  ))
+                ) : <p className="text-muted-foreground">No reviews available</p>}
               </div>
             </TabsContent>
           </Tabs>
@@ -693,55 +509,28 @@ export const EnhancedMovieModal = ({
       {/* Trailer Modal */}
       <AnimatePresence>
         {showTrailer && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="absolute inset-0 bg-black/95 flex items-center justify-center z-10"
-            onClick={() => setShowTrailer(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
-              className="relative w-full max-w-6xl mx-4"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="bg-black rounded-lg overflow-hidden shadow-2xl">
-                <div className="aspect-video bg-gray-800">
+            onClick={() => setShowTrailer(false)}>
+            <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} exit={{ scale: 0.8 }}
+              className="relative w-full max-w-6xl mx-4" onClick={(e) => e.stopPropagation()}>
+              <div className="bg-black rounded-xl overflow-hidden shadow-2xl">
+                <div className="aspect-video">
                   {movieDetails.videos?.results?.[0]?.key && movieDetails.videos.results[0].site === 'YouTube' ? (
-                    <iframe
-                      src={`https://www.youtube.com/embed/${movieDetails.videos.results[0].key}?autoplay=1&rel=0`}
-                      title={movieDetails.videos.results[0].name || `${movieDetails.title} - Trailer`}
-                      frameBorder="0"
+                    <iframe src={`https://www.youtube.com/embed/${movieDetails.videos.results[0].key}?autoplay=1&rel=0`}
+                      title={movieDetails.videos.results[0].name} frameBorder="0"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      className="w-full h-full"
-                    />
+                      allowFullScreen className="w-full h-full" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <div className="text-center text-white">
-                        <Play className="h-20 w-20 mx-auto mb-4 text-red-500" />
-                        <h3 className="text-2xl font-bold mb-2">{movieDetails.title} - Trailer</h3>
-                        <p className="text-gray-400 mb-4">
-                          {movieDetails.videos?.results?.[0]?.name || "Official Trailer"}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          No trailer available
-                        </p>
-                      </div>
+                      <Play className="h-20 w-20 text-accent" />
                     </div>
                   )}
                 </div>
               </div>
-              <Button
-                variant="secondary"
-                size="lg"
-                className="absolute -top-16 right-0 bg-gray-800 hover:bg-gray-700"
-                onClick={() => setShowTrailer(false)}
-              >
-                <X className="h-5 w-5 mr-2" />
-                Close Trailer
+              <Button variant="secondary" size="lg" className="absolute -top-14 right-0"
+                onClick={() => setShowTrailer(false)}>
+                <X className="h-5 w-5 mr-2" /> Close
               </Button>
             </motion.div>
           </motion.div>
