@@ -6,7 +6,7 @@ import type { MovieCardProps } from "@/types/movie";
 import type { StreamingPlatformData } from "@/types/streaming";
 import { UnifiedMovieDetails } from "./UnifiedMovieDetails";
 import { useTranslation } from "react-i18next";
-import { useOptimizedStreaming } from "@/hooks/use-optimized-streaming";
+import { useStreamingAvailability } from "@/hooks/use-streaming-availability";
 import { MovieRating } from "./MovieRating";
 import { Heart } from "lucide-react";
 import { OptimizedMovieImage } from "./OptimizedMovieImage";
@@ -31,8 +31,8 @@ export const MovieCard = memo(({
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const { t } = useTranslation();
   
-  // Use optimized streaming hook
-  const streamingData = useOptimizedStreaming(tmdbId && tmdbId > 0 ? tmdbId : 0, title, year);
+  // Use unified streaming hook
+  const streamingData = useStreamingAvailability(tmdbId && tmdbId > 0 ? tmdbId : 0, title, year);
 
   const handleCardClick = useCallback(() => {
     if (onClick) {

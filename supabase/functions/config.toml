@@ -1,5 +1,8 @@
 
-project_id = "haerhfrlzkvkmzllxpvu"
+project_id = "sjnpzjhyegtdqwmxeeob"
+
+[functions.streaming-availability]
+verify_jwt = false
 
 [functions.streaming-availability-deepseek]
 verify_jwt = false

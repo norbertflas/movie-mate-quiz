@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { ExternalLink } from "lucide-react";
 import { getUserRegion } from "@/utils/regionDetection";
-import { useStreamingPro } from "@/hooks/use-streaming-pro";
+import { useStreamingAvailability } from "@/hooks/use-streaming-availability";
 
 interface StreamingServiceButtonsProps {
   tmdbId: number;
@@ -59,74 +59,67 @@ export const StreamingServiceButtons = ({
 }: StreamingServiceButtonsProps) => {
   const [streamingServices, setStreamingServices] = useState<StreamingService[]>([]);
   const [userRegion, setUserRegion] = useState<string>('US');
-  const [isLoading, setIsLoading] = useState(false);
-  const [hasFetched, setHasFetched] = useState(false);
   const [isInTheaters, setIsInTheaters] = useState(false);
   
-  const { fetchSingleMovie } = useStreamingPro();
-  const fetchRef = useRef(fetchSingleMovie);
-  fetchRef.current = fetchSingleMovie;
+  const { services, isLoading, requested, fetchData } = useStreamingAvailability(
+    tmdbId && tmdbId > 0 ? tmdbId : 0, title, year
+  );
 
+  // Auto-fetch on mount
   useEffect(() => {
-    if (!tmdbId || !title || hasFetched) return;
+    if (!tmdbId || !title || requested) return;
+    
+    const init = async () => {
+      const region = await getUserRegion();
+      setUserRegion(region);
 
-    const initializeData = async () => {
-      setIsLoading(true);
-      
-      try {
-        const region = await getUserRegion();
-        setUserRegion(region);
-
-        // Check if movie is currently in theaters (released within last 3 months, no streaming)
-        if (year) {
-          const releaseDate = new Date(year);
-          const now = new Date();
-          const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
-          if (releaseDate > threeMonthsAgo && releaseDate <= now) {
-            setIsInTheaters(true);
-          }
+      // Check if movie is currently in theaters
+      if (year) {
+        const releaseDate = new Date(year);
+        const now = new Date();
+        const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+        if (releaseDate > threeMonthsAgo && releaseDate <= now) {
+          setIsInTheaters(true);
         }
-        
-        const result = await fetchRef.current(tmdbId, { country: region.toLowerCase() });
-        
-        if (result?.streamingOptions && result.streamingOptions.length > 0) {
-          setIsInTheaters(false); // If streaming is available, it's not just in theaters
-          const services: StreamingService[] = result.streamingOptions.map(option => ({
-            service: option.service,
-            logo: serviceLogos[option.service] || '/streaming-icons/default.svg',
-            link: option.link || defaultLinks[option.service]?.(title, year) || '#',
-            type: option.type as 'subscription' | 'rent' | 'buy' | 'free',
-            available: true
-          }));
-          
-          const uniqueServices = services.reduce((acc, service) => {
-            const existing = acc.find(s => s.service === service.service);
-            if (!existing) {
-              acc.push(service);
-            } else {
-              const priority = { subscription: 4, free: 3, rent: 2, buy: 1 };
-              if ((priority[service.type] || 0) > (priority[existing.type] || 0)) {
-                acc[acc.indexOf(existing)] = service;
-              }
-            }
-            return acc;
-          }, [] as StreamingService[]);
-          
-          setStreamingServices(uniqueServices);
-        } else {
-          setStreamingServices([]);
-        }
-      } catch (error) {
-        console.error('Error fetching streaming data:', error);
-        setStreamingServices([]);
-      } finally {
-        setIsLoading(false);
-        setHasFetched(true);
       }
+
+      fetchData();
     };
 
-    initializeData();
-  }, [tmdbId, title, hasFetched]);
+    init();
+  }, [tmdbId, title, requested]);
+
+  // Transform API results to StreamingService format
+  useEffect(() => {
+    if (services.length > 0) {
+      setIsInTheaters(false);
+      const mapped: StreamingService[] = services.map(s => ({
+        service: s.service,
+        logo: serviceLogos[s.service] || '/streaming-icons/default.svg',
+        link: s.link || defaultLinks[s.service]?.(title, year) || '#',
+        type: (s.type as 'subscription' | 'rent' | 'buy' | 'free') || 'subscription',
+        available: true
+      }));
+
+      // Deduplicate, prioritizing subscription > free > rent > buy
+      const uniqueServices = mapped.reduce((acc, service) => {
+        const existing = acc.find(s => s.service === service.service);
+        if (!existing) {
+          acc.push(service);
+        } else {
+          const priority = { subscription: 4, free: 3, rent: 2, buy: 1 };
+          if ((priority[service.type] || 0) > (priority[existing.type] || 0)) {
+            acc[acc.indexOf(existing)] = service;
+          }
+        }
+        return acc;
+      }, [] as StreamingService[]);
+
+      setStreamingServices(uniqueServices);
+    } else if (requested && !isLoading) {
+      setStreamingServices([]);
+    }
+  }, [services, requested, isLoading, title, year]);
 
   const handleServiceClick = (service: StreamingService) => {
     if (service.link && service.link !== '#') {
@@ -154,7 +147,7 @@ export const StreamingServiceButtons = ({
     );
   }
 
-  if (hasFetched && streamingServices.length === 0) {
+  if (requested && !isLoading && streamingServices.length === 0) {
     return (
       <div className={`text-sm text-muted-foreground ${className}`}>
         {isInTheaters ? (

@@ -140,7 +140,7 @@ serve(async (req) => {
       const streamingData = await getMovieStreamingData(tmdbId, country, title, year)
       
       // Cache the API results
-      const cacheHours = 24 * 3 // 3 days for API data
+      const cacheHours = 24 * 7 // 7 days for API data
       const expiresAt = new Date(Date.now() + cacheHours * 60 * 60 * 1000)
 
       await supabase
@@ -314,8 +314,7 @@ async function getMovieStreamingData(tmdbId: number, country: string, title?: st
 
   if (!movieData) {
     console.log(`❌ [MovieOfTheNight] No data found for TMDB ID ${tmdbId}`)
-    // Return fallback instead of throwing error
-    return generateFallbackServices(country)
+    return [] // Return empty array — movie not found on any streaming service
   }
 
   // Extract streaming services for the target country
@@ -344,7 +343,7 @@ async function getMovieStreamingData(tmdbId: number, country: string, title?: st
 
   console.log(`📺 [MovieOfTheNight] Found ${services.length} streaming options for ${country}`)
   
-  return services.length > 0 ? services : generateFallbackServices(country)
+  return services
 }
 
 // Helper functions for MovieOfTheNight API

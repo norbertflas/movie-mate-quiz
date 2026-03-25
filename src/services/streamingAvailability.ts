@@ -1,81 +1,61 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import type { StreamingPlatformData, StreamingAvailabilityCache } from "@/types/streaming";
-import { getMovieWatchProviders, getWatchmodeAvailability } from "./tmdb/movies";
+import type { StreamingPlatformData } from "@/types/streaming";
 import { getUserRegion } from "@/utils/regionDetection";
 
-const RETRY_DELAY = 2000;
-const MAX_RETRIES = 3;
-const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 godziny
-const ERROR_CACHE_DURATION = 30 * 60 * 1000; // 30 minut dla błędów
+const CACHE_VERSION = 'v4';
+const CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
+const ERROR_CACHE_TTL = 60 * 60 * 1000; // 1 hour for errors/empty results
 
-// Cache w pamięci z obsługą regionów
-const localCache: Record<string, StreamingAvailabilityCache> = {};
+interface LocalCacheEntry {
+  data: StreamingPlatformData[];
+  timestamp: number;
+  hasData: boolean;
+}
 
-// Funkcja retry z exponential backoff
-async function retryWithBackoff<T>(
-  fn: () => Promise<T>,
-  maxRetries: number = MAX_RETRIES,
-  baseDelay: number = RETRY_DELAY
-): Promise<T> {
-  let lastError: Error;
-  
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    try {
-      return await fn();
-    } catch (error) {
-      lastError = error as Error;
-      
-      if (attempt === maxRetries) {
-        break;
-      }
-      
-      const delay = baseDelay * Math.pow(2, attempt);
-      console.log(`Retry attempt ${attempt + 1}/${maxRetries + 1} after ${delay}ms`);
-      await new Promise(resolve => setTimeout(resolve, delay));
+function getCacheKey(tmdbId: number, region: string): string {
+  return `streaming_${CACHE_VERSION}_${tmdbId}_${region.toLowerCase()}`;
+}
+
+function getFromLocalCache(tmdbId: number, region: string): StreamingPlatformData[] | null {
+  try {
+    const key = getCacheKey(tmdbId, region);
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+
+    const entry: LocalCacheEntry = JSON.parse(raw);
+    const age = Date.now() - entry.timestamp;
+    const maxAge = entry.hasData ? CACHE_TTL : ERROR_CACHE_TTL;
+
+    if (age > maxAge) {
+      localStorage.removeItem(key);
+      return null;
     }
+
+    return entry.data;
+  } catch {
+    return null;
   }
-  
-  throw lastError!;
 }
 
-// Normalizacja nazw serwisów z obsługą regionów
-function normalizeServiceName(serviceName: string, region: string = 'US'): string {
-  if (!serviceName) return 'Unknown';
-  
-  const serviceMap: Record<string, Record<string, string>> = {
-    'US': {
-      'netflix': 'Netflix',
-      'prime': 'Amazon Prime Video',
-      'disney': 'Disney+',
-      'hulu': 'Hulu',
-      'hbo': 'HBO Max',
-      'apple': 'Apple TV+',
-      'paramount': 'Paramount+',
-      'peacock': 'Peacock',
-      'showtime': 'Showtime',
-      'starz': 'Starz'
-    },
-    'PL': {
-      'netflix': 'Netflix',
-      'prime': 'Amazon Prime Video',
-      'disney': 'Disney+',
-      'hbo': 'HBO Max',
-      'apple': 'Apple TV+',
-      'canalplus': 'Canal+',
-      'player': 'Player.pl',
-      'tvp': 'TVP VOD',
-      'polsat': 'Polsat Box Go',
-      'nc': 'nc+'
-    }
-  };
-  
-  const normalized = serviceName.toLowerCase().trim();
-  const regionMap = serviceMap[region.toUpperCase()] || serviceMap['US'];
-  return regionMap[normalized] || serviceName;
+function setToLocalCache(tmdbId: number, region: string, data: StreamingPlatformData[]): void {
+  try {
+    const key = getCacheKey(tmdbId, region);
+    const entry: LocalCacheEntry = {
+      data,
+      timestamp: Date.now(),
+      hasData: data.length > 0
+    };
+    localStorage.setItem(key, JSON.stringify(entry));
+  } catch (error) {
+    console.warn('[streamingAvailability] Failed to write localStorage:', error);
+  }
 }
 
-// Główna funkcja z automatyczną detekcją regionu
+/**
+ * Get streaming availability for a movie.
+ * Uses localStorage cache (7 days) → Supabase edge function (MovieOfTheNight API with server-side cache).
+ */
 export async function getStreamingAvailability(
   tmdbId: number,
   title?: string,
@@ -83,152 +63,61 @@ export async function getStreamingAvailability(
   region?: string
 ): Promise<StreamingPlatformData[]> {
   try {
-    // Auto-detect region if not provided
     const userRegion = region || await getUserRegion();
-    console.log(`[getStreamingAvailability] TMDB ID: ${tmdbId}, region: ${userRegion.toUpperCase()}`);
+    const normalizedRegion = userRegion.toUpperCase();
     
-    // Cache key uwzględnia region
-    const cacheKey = `${tmdbId}-${userRegion.toLowerCase()}`;
-    if (localCache[cacheKey]) {
-      const cached = localCache[cacheKey];
-      const age = Date.now() - cached.timestamp;
-      const maxAge = cached.data.length > 0 ? CACHE_DURATION : ERROR_CACHE_DURATION;
-      
-      if (age < maxAge) {
-        console.log(`[getStreamingAvailability] Using cached data for ${userRegion.toUpperCase()} (age: ${Math.round(age / 1000 / 60)}min)`);
-        return cached.data;
-      } else {
-        delete localCache[cacheKey];
-      }
+    console.log(`[getStreamingAvailability] TMDB ID: ${tmdbId}, region: ${normalizedRegion}`);
+
+    // Step 1: Check localStorage cache
+    const cached = getFromLocalCache(tmdbId, normalizedRegion);
+    if (cached !== null) {
+      console.log(`[getStreamingAvailability] localStorage cache HIT (${cached.length} services)`);
+      return cached;
     }
-    
-    // First try TMDB Watch Providers (most reliable)
-    console.log('[getStreamingAvailability] Trying TMDB Watch Providers API');
-    try {
-      const tmdbData = await getMovieWatchProviders(tmdbId, userRegion);
-      
-      if (tmdbData.services && tmdbData.services.length > 0) {
-        console.log(`[getStreamingAvailability] Found ${tmdbData.services.length} services from TMDB for ${userRegion.toUpperCase()}`);
-        
-        // Transform TMDB data to our format
-        const tmdbServices: StreamingPlatformData[] = tmdbData.services.map(service => ({
-          service: service.service,
-          available: service.available,
-          type: service.type as any,
-          link: service.link || '#',
-          source: 'tmdb',
-          logo: service.logo || `/streaming-icons/${service.service?.toLowerCase().replace(/\s+/g, '') || 'unknown'}.svg`
-        }));
 
-        // Cache TMDB result
-        localCache[cacheKey] = {
-          data: tmdbServices,
-          timestamp: Date.now()
-        };
+    // Step 2: Call Supabase edge function (has its own server-side cache + MovieOfTheNight API)
+    console.log('[getStreamingAvailability] Calling edge function streaming-availability');
 
-        return tmdbServices;
+    const { data, error } = await supabase.functions.invoke('streaming-availability', {
+      body: {
+        tmdbId,
+        country: normalizedRegion,
+        title: title?.trim(),
+        year: year ? parseInt(year, 10) : undefined
       }
-    } catch (tmdbError) {
-      console.warn('[getStreamingAvailability] TMDB API failed, trying Watchmode API:', tmdbError);
-    }
-    
-    // Second try: Watchmode API (very accurate and up-to-date)
-    console.log('[getStreamingAvailability] Trying Watchmode API');
-    try {
-      const watchmodeData = await getWatchmodeAvailability(tmdbId, userRegion);
-      
-      if (watchmodeData.services && watchmodeData.services.length > 0) {
-        console.log(`[getStreamingAvailability] Found ${watchmodeData.services.length} services from Watchmode for ${userRegion.toUpperCase()}`);
-        
-        // Transform Watchmode data to our format
-        const watchmodeServices: StreamingPlatformData[] = watchmodeData.services.map(service => ({
-          service: normalizeServiceName(service.service, userRegion),
-          available: service.available,
-          type: service.type as any,
-          link: service.link || '#',
-          source: 'watchmode',
-          price: service.price,
-          logo: `/streaming-icons/${service.service?.toLowerCase().replace(/\s+/g, '') || 'unknown'}.svg`
-        }));
-
-        // Cache Watchmode result
-        localCache[cacheKey] = {
-          data: watchmodeServices,
-          timestamp: Date.now()
-        };
-
-        return watchmodeServices;
-      }
-    } catch (watchmodeError) {
-      console.warn('[getStreamingAvailability] Watchmode API failed, falling back to legacy API:', watchmodeError);
-    }
-    
-    // Fallback to legacy Supabase Edge Function
-    console.log('[getStreamingAvailability] Falling back to legacy streaming API');
-    
-    const { data, error } = await retryWithBackoff(async () => {
-      return await supabase.functions.invoke('streaming-availability', {
-        body: { 
-          tmdbId, 
-          country: userRegion.toLowerCase(),
-          title: title?.trim(), 
-          year: year?.trim() 
-        }
-      });
     });
-    
+
     if (error) {
-      console.error('[getStreamingAvailability] Supabase error:', error);
-      throw new Error(`Supabase function error: ${error.message}`);
-    }
-    
-    if (!data) {
-      console.log('[getStreamingAvailability] No data received');
-      localCache[cacheKey] = { data: [], timestamp: Date.now() };
+      console.error('[getStreamingAvailability] Edge function error:', error);
+      setToLocalCache(tmdbId, normalizedRegion, []);
       return [];
     }
-    
-    if (data.error) {
-      console.error('[getStreamingAvailability] API error:', data.error);
+
+    if (!data || data.error) {
+      console.warn('[getStreamingAvailability] No data or API error:', data?.error);
+      setToLocalCache(tmdbId, normalizedRegion, []);
       return [];
     }
-    
-    const services = data.result || [];
-    console.log(`[getStreamingAvailability] Received ${services.length} services from legacy API for ${userRegion.toUpperCase()}`);
-    
-    if (!Array.isArray(services)) {
-      console.error('[getStreamingAvailability] Invalid response format');
-      return [];
-    }
-    
-    // Przetwórz i znormalizuj wyniki z uwzględnieniem regionu
-    const processedServices: StreamingPlatformData[] = services
-      .map((service: any) => ({
-        service: normalizeServiceName(service.service, userRegion.toUpperCase()),
-        link: service.link || '#',
-        available: true,
-        type: service.type || 'subscription',
-        source: service.source || 'api',
-        quality: service.quality || 'hd',
-        price: service.price,
-        logo: `/streaming-icons/${service.service?.toLowerCase().replace(/\s+/g, '') || 'unknown'}.svg`
-      }))
-      .filter((service: StreamingPlatformData) => 
-        service.service && 
-        service.service !== 'Unknown' && 
-        service.service.trim() !== ''
-      );
-    
-    // Cache result with region
-    localCache[cacheKey] = {
-      data: processedServices,
-      timestamp: Date.now()
-    };
-    
-    console.log(`[getStreamingAvailability] Final result: ${processedServices.length} services for ${userRegion.toUpperCase()}`);
-    
-    return processedServices;
-    
+
+    const services: StreamingPlatformData[] = (data.result || [])
+      .filter((s: any) => s && s.service && s.service !== 'Unknown' && s.service.trim() !== '')
+      .map((s: any) => ({
+        service: s.service,
+        available: s.available ?? true,
+        link: s.link || '#',
+        type: s.type || 'subscription',
+        source: data.source || 'streaming-availability-api',
+        quality: s.quality,
+        price: s.price ? (typeof s.price === 'object' ? s.price.amount : s.price) : undefined,
+        logo: `/streaming-icons/${(s.service || 'unknown').toLowerCase().replace(/\s+/g, '')}.svg`
+      }));
+
+    console.log(`[getStreamingAvailability] Got ${services.length} services from ${data.source || 'api'} for ${normalizedRegion}`);
+
+    // Step 3: Save to localStorage cache
+    setToLocalCache(tmdbId, normalizedRegion, services);
+
+    return services;
   } catch (error) {
     console.error('[getStreamingAvailability] Error:', error);
     return [];

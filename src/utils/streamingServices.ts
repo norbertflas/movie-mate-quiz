@@ -1,19 +1,17 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { StreamingPlatformData, StreamingService } from "@/types/streaming";
 
-// CRITICAL FIX: Always use US region for all queries
-const FORCE_REGION = 'US';
-
-// Function to get streaming availability from Supabase - FORCE US REGION
-export const getStreamingAvailability = async (tmdbId: number, type: 'movie' | 'tv', countryCode: string = 'US'): Promise<StreamingPlatformData[]> => {
+// Function to get streaming availability from Supabase
+export const getStreamingAvailabilityFromDB = async (tmdbId: number, type: 'movie' | 'tv', countryCode: string = 'US'): Promise<StreamingPlatformData[]> => {
   try {
-    console.log(`[getStreamingAvailability] TMDB ID: ${tmdbId}, forced region: ${FORCE_REGION}`);
+    const region = countryCode.toUpperCase();
+    console.log(`[getStreamingAvailabilityFromDB] TMDB ID: ${tmdbId}, region: ${region}`);
     
     const { data, error } = await supabase
       .from('movie_streaming_availability')
       .select('*')
       .eq('tmdb_id', tmdbId)
-      .eq('region', FORCE_REGION);
+      .eq('region', region);
 
     if (error) {
       console.error("Error fetching streaming availability:", error);
@@ -21,7 +19,7 @@ export const getStreamingAvailability = async (tmdbId: number, type: 'movie' | '
     }
 
     if (!data || data.length === 0) {
-      console.log(`No streaming data found for TMDB ID ${tmdbId} in region ${FORCE_REGION}`);
+      console.log(`No streaming data found for TMDB ID ${tmdbId} in region ${region}`);
       return [];
     }
 
