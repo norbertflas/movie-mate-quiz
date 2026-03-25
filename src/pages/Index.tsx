@@ -8,6 +8,9 @@ import { PopularMoviesSection } from "@/components/sections/PopularMoviesSection
 import { useQuery } from "@tanstack/react-query";
 import { getTrendingMovies, getPopularMovies } from "@/services/tmdb";
 import { Footer } from "@/components/Footer";
+import { MouseGlow } from "@/components/effects/MouseGlow";
+import { FilmGrain } from "@/components/effects/FilmGrain";
+import { DynamicBackground } from "@/components/effects/DynamicBackground";
 
 const Index = () => {
   const { data: trendingMovies, isLoading: trendingLoading } = useQuery({
@@ -21,25 +24,32 @@ const Index = () => {
   });
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <Navigation />
+    <div className="min-h-screen relative overflow-x-hidden bg-[#02020a] selection:bg-purple-500/30">
+      <DynamicBackground />
+      <MouseGlow />
+      <FilmGrain />
       
-      <main className="pt-16 flex-grow">
-        <HeroSection />
-        <StreamingServicesSelector />
-        <HowItWorks />
-
-        <div className="space-y-8 pb-12">
+      <div className="relative z-10">
+        <Navigation />
+        
+        <main>
+          <HeroSection />
+          
           {!trendingLoading && trendingMovies && (
             <TrendingMoviesSection movies={trendingMovies} />
           )}
-          
+
+          <StreamingServicesSelector />
+
           {!popularLoading && popularMovies && (
             <PopularMoviesSection movies={popularMovies} />
           )}
-        </div>
-      </main>
-      <Footer />
+
+          <HowItWorks />
+        </main>
+        
+        <Footer />
+      </div>
     </div>
   );
 };

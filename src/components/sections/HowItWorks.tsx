@@ -1,63 +1,67 @@
 
 import { motion } from "framer-motion";
-import { MonitorSmartphone, Clock, Trophy } from "lucide-react";
+import { MonitorSmartphone, Timer, Trophy } from "lucide-react";
 
 const steps = [
   {
-    number: "1",
-    icon: MonitorSmartphone,
+    number: "01",
+    icon: <MonitorSmartphone className="w-10 h-10 text-blue-400" />,
     title: "Select Your Services",
-    description: "Tell us which platforms you subscribe to.",
-    color: "text-neon-cyan",
-    borderColor: "border-[hsl(var(--neon-cyan)/0.3)]",
+    desc: "Tell us which platforms you subscribe to so we can find available content.",
+    color: "border-blue-500/30",
   },
   {
-    number: "2",
-    icon: Clock,
+    number: "02",
+    icon: <Timer className="w-10 h-10 text-purple-400" />,
     title: "Take the 1-minute Quiz",
-    description: "Answer a few quick questions about your mood and preferences.",
-    color: "text-neon-magenta",
-    borderColor: "border-[hsl(var(--neon-magenta)/0.3)]",
+    desc: "Answer a few quick questions about your mood, genre preferences, and past favorites.",
+    color: "border-purple-500/30",
   },
   {
-    number: "3",
-    icon: Trophy,
+    number: "03",
+    icon: <Trophy className="w-10 h-10 text-pink-400" />,
     title: "Get Your Perfect Match",
-    description: "Receive a curated list of top-rated recommendations instantly.",
-    color: "text-neon-green",
-    borderColor: "border-[hsl(var(--neon-green)/0.3)]",
+    desc: "Receive a curated list of top-rated recommendations tailored specifically for you.",
+    color: "border-pink-500/30",
   },
 ];
 
 export const HowItWorks = () => {
   return (
-    <section className="py-16 px-4">
-      <div className="max-w-7xl mx-auto">
-        <h2 className="text-3xl md:text-4xl font-bold text-center text-foreground mb-12">
+    <section className="px-8 py-32 max-w-7xl mx-auto">
+      <div className="text-center mb-20">
+        <h2 className="text-5xl font-black mb-6 font-display text-white">
           How it Works
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {steps.map((step, index) => (
-            <motion.div
-              key={step.number}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.15, duration: 0.5 }}
-              className={`neon-card ${step.borderColor} p-8 relative overflow-hidden group`}
-            >
-              {/* Large number */}
-              <span className={`text-5xl font-bold ${step.color} opacity-80 mb-3 block`}>
-                {step.number}
-              </span>
-              
-              {/* Icon */}
-              <step.icon className={`h-10 w-10 ${step.color} mb-4 opacity-70`} />
-              
-              <h3 className="text-xl font-bold text-foreground mb-2">{step.title}</h3>
-              <p className="text-muted-foreground text-sm leading-relaxed">{step.description}</p>
-            </motion.div>
-          ))}
-        </div>
+        <p className="text-white/40 max-w-2xl mx-auto text-lg">
+          Our AI engine analyzes thousands of data points to find your next
+          favorite watch in seconds.
+        </p>
+      </div>
+
+      <div className="grid md:grid-cols-3 gap-10">
+        {steps.map((step) => (
+          <motion.div
+            whileHover={{ y: -10 }}
+            key={step.number}
+            className={`relative p-10 rounded-[2.5rem] glass-card border-t-2 ${step.color} overflow-hidden group transition-all`}
+          >
+            <div className="absolute -top-6 -right-6 text-[10rem] font-black step-number-bg opacity-5 group-hover:opacity-10 transition-opacity select-none font-display">
+              {step.number}
+            </div>
+            <div className="relative z-10">
+              <div className="mb-8 p-4 bg-white/5 rounded-2xl w-fit shadow-inner">
+                {step.icon}
+              </div>
+              <h3 className="text-2xl font-bold mb-4 font-display text-white">
+                {step.title}
+              </h3>
+              <p className="text-white/40 leading-relaxed text-lg font-light">
+                {step.desc}
+              </p>
+            </div>
+          </motion.div>
+        ))}
       </div>
     </section>
   );

@@ -119,8 +119,8 @@ export const ProMovieCard = memo(({
       >
         <div className="relative h-[240px] overflow-hidden rounded-t-xl">
           <OptimizedMovieImage 
-            src={imageUrl} 
-            alt={title}
+            imageUrl={imageUrl} 
+            title={title}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
           />
           
@@ -147,8 +147,10 @@ export const ProMovieCard = memo(({
                 <StreamingBadge 
                   streamingOptions={streamingDataServices.map(s => ({
                     service: s.service,
-                    type: s.type || 'subscription',
-                    link: s.link || '#'
+                    serviceLogo: s.logo || '',
+                    type: (s.type === 'addon' ? 'subscription' : s.type || 'subscription') as 'subscription' | 'rent' | 'buy' | 'free',
+                    link: s.link || '#',
+                    quality: 'HD'
                   }))}
                   mode="compact"
                   maxServices={2}
