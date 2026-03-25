@@ -208,6 +208,7 @@ const Search = () => {
           </TabsContent>
         </Tabs>
       </div>
+      </div>
     </div>
   );
 };
