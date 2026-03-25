@@ -49,6 +49,7 @@ function App() {
               <Route path="/quickstart" element={<QuickStart />} />
               <Route path="/services" element={<Services />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/dashboard" element={<Dashboard />} />
             </Routes>
           </Suspense>
         </BrowserRouter>
