@@ -36,7 +36,7 @@ function App() {
           <Suspense fallback={<div>Loading...</div>}>
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/quiz" element={<ComprehensiveQuizPage />} />
+              <Route path="/quiz" element={<QuizPage />} />
               <Route path="/search" element={<Search />} />
               <Route path="/favorites" element={<Favorites />} />
               <Route path="/ratings" element={<Ratings />} />
