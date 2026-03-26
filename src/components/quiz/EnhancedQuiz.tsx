@@ -1,21 +1,20 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
-  ArrowLeft, ArrowRight, Check, Sparkles, Users, 
+  ArrowRight, Check, Sparkles, Users, 
   Trophy, Star, Laugh, Zap, Heart, Brain, Film, Tv, BookOpen, Clapperboard,
-  Sofa, PartyPopper, Baby, Monitor, MessageCircle, RotateCcw, ThumbsDown,
-  Clock, Popcorn, Globe, Palette, Drama, Flame, Shield, Link2, Copy, Loader2
+  Sofa, PartyPopper, Baby, Monitor, RotateCcw,
+  Clock, Globe, ChevronLeft, ChevronRight, Loader2,
+  Rocket, Skull, Sword, Search as SearchIcon, Ghost, Smile
 } from "lucide-react";
-import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { UserStats, Challenge } from "./types/GamificationTypes";
 import { Movie } from "@/types/movie";
-import { AchievementSystem } from "./engines/AchievementSystem";
+import { ProjectorBeam } from "@/components/effects/ProjectorBeam";
 
 interface EnhancedQuizProps {
   onBack?: () => void;
@@ -25,115 +24,160 @@ interface EnhancedQuizProps {
 
 interface QuizStep {
   id: string;
-  question: string;
+  title: string;
   subtitle?: string;
   type: "single" | "multiple" | "rating";
-  options: { label: string; icon: React.ReactNode; }[];
-  category: 'basic' | 'preferences' | 'social' | 'gamification' | 'streaming';
+  options: { label: string; icon: React.ReactNode; desc?: string }[];
+  sceneName: string;
 }
 
+const playClick = () => {
+  const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3");
+  audio.volume = 0.15;
+  audio.play().catch(() => {});
+};
+
+const playMagic = () => {
+  const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3");
+  audio.volume = 0.2;
+  audio.play().catch(() => {});
+};
+
+const Particles = () => (
+  <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+    {[...Array(30)].map((_, i) => (
+      <motion.div
+        key={i}
+        initial={{
+          x: Math.random() * 1200,
+          y: Math.random() * 1000,
+          opacity: 0,
+          scale: Math.random() * 0.3 + 0.1,
+        }}
+        animate={{
+          y: [null, Math.random() * -600 - 200],
+          opacity: [0, 0.4, 0],
+          x: [null, (Math.random() - 0.5) * 100 + Math.random() * 1200],
+        }}
+        transition={{
+          duration: Math.random() * 5 + 5,
+          repeat: Infinity,
+          ease: "linear",
+          delay: Math.random() * 5,
+        }}
+        className="absolute w-1 h-1 bg-white rounded-full blur-[1px]"
+      />
+    ))}
+  </div>
+);
+
 const STREAMING_SERVICES = [
-  { label: 'Netflix', icon: <Film className="w-8 h-8" /> },
-  { label: 'HBO Max', icon: <Tv className="w-8 h-8" /> },
-  { label: 'Disney+', icon: <Sparkles className="w-8 h-8" /> },
-  { label: 'Amazon Prime Video', icon: <Star className="w-8 h-8" /> },
-  { label: 'Apple TV+', icon: <Monitor className="w-8 h-8" /> },
-  { label: 'Hulu', icon: <Zap className="w-8 h-8" /> },
-  { label: 'Paramount+', icon: <Clapperboard className="w-8 h-8" /> },
-  { label: 'Canal+', icon: <Film className="w-8 h-8" /> },
-  { label: 'SkyShowtime', icon: <Globe className="w-8 h-8" /> },
-  { label: 'Player', icon: <Monitor className="w-8 h-8" /> },
+  { label: 'Netflix', icon: <Film className="w-6 h-6" />, desc: 'Movies & Series' },
+  { label: 'HBO Max', icon: <Tv className="w-6 h-6" />, desc: 'Premium Content' },
+  { label: 'Disney+', icon: <Sparkles className="w-6 h-6" />, desc: 'Family & Marvel' },
+  { label: 'Amazon Prime', icon: <Star className="w-6 h-6" />, desc: 'Wide Selection' },
+  { label: 'Apple TV+', icon: <Monitor className="w-6 h-6" />, desc: 'Original Series' },
+  { label: 'Hulu', icon: <Zap className="w-6 h-6" />, desc: 'TV & Streaming' },
+  { label: 'Paramount+', icon: <Clapperboard className="w-6 h-6" />, desc: 'Blockbusters' },
+  { label: 'Canal+', icon: <Film className="w-6 h-6" />, desc: 'European Cinema' },
+  { label: 'SkyShowtime', icon: <Globe className="w-6 h-6" />, desc: 'Sky Originals' },
+  { label: 'Player', icon: <Monitor className="w-6 h-6" />, desc: 'Polish Content' },
 ];
 
 const quizSteps: QuizStep[] = [
   {
     id: 'streaming_services',
-    question: 'Which streaming services do you use?',
-    subtitle: 'Select all that apply — we\'ll find movies on your platforms',
+    title: 'What\'s in your cinema toolkit?',
+    subtitle: 'Select all streaming services you have — we\'ll find films on your platforms.',
     type: 'multiple',
     options: STREAMING_SERVICES,
-    category: 'streaming'
+    sceneName: 'The Setup',
   },
   {
     id: 'content_type',
-    question: 'What type of content do you enjoy?',
+    title: 'What format speaks to you?',
+    subtitle: 'Choose the type of content for tonight\'s session.',
     type: 'single',
     options: [
-      { label: 'Movies', icon: <Film className="w-10 h-10" /> },
-      { label: 'TV Series', icon: <Tv className="w-10 h-10" /> },
-      { label: 'Documentaries', icon: <BookOpen className="w-10 h-10" /> },
-      { label: 'Mixed Content', icon: <Clapperboard className="w-10 h-10" /> },
+      { label: 'Movies', icon: <Film className="w-8 h-8" />, desc: 'Feature-length stories' },
+      { label: 'TV Series', icon: <Tv className="w-8 h-8" />, desc: 'Episodic adventures' },
+      { label: 'Documentaries', icon: <BookOpen className="w-8 h-8" />, desc: 'Real-world narratives' },
+      { label: 'Mixed Content', icon: <Clapperboard className="w-8 h-8" />, desc: 'Surprise me with anything' },
     ],
-    category: 'basic'
+    sceneName: 'The Format',
   },
   {
     id: 'mood_preference',
-    question: 'What is your current mood?',
+    title: 'What\'s the vibe for tonight\'s screening?',
+    subtitle: 'Select the emotional frequency of your next cinematic journey.',
     type: 'single',
     options: [
-      { label: 'Need a laugh', icon: <Laugh className="w-10 h-10" /> },
-      { label: 'Edge of my seat', icon: <Zap className="w-10 h-10" /> },
-      { label: 'Something romantic', icon: <Heart className="w-10 h-10" /> },
-      { label: 'Mind-bending', icon: <Brain className="w-10 h-10" /> },
+      { label: 'Need a laugh', icon: <Laugh className="w-8 h-8 text-yellow-400" />, desc: 'Comedy & light-hearted fun' },
+      { label: 'Edge of my seat', icon: <Zap className="w-8 h-8 text-orange-400" />, desc: 'Thrilling & suspenseful' },
+      { label: 'Something romantic', icon: <Heart className="w-8 h-8 text-pink-400" />, desc: 'Love stories & drama' },
+      { label: 'Mind-bending', icon: <Brain className="w-8 h-8 text-blue-400" />, desc: 'Deep & thought-provoking' },
     ],
-    category: 'preferences'
+    sceneName: 'The Vibe',
   },
   {
     id: 'era_preference',
-    question: 'What era of movies do you prefer?',
+    title: 'Select an era',
+    subtitle: 'When should this cinematic journey take place?',
     type: 'single',
     options: [
-      { label: 'Latest (2023-2025)', icon: <Sparkles className="w-10 h-10" /> },
-      { label: 'Modern (2010-2022)', icon: <Zap className="w-10 h-10" /> },
-      { label: 'Classic (2000s & older)', icon: <Clock className="w-10 h-10" /> },
-      { label: 'No preference', icon: <Globe className="w-10 h-10" /> },
+      { label: 'Latest (2023-2025)', icon: <Sparkles className="w-8 h-8" />, desc: 'Fresh off the reel' },
+      { label: 'Modern (2010-2022)', icon: <Zap className="w-8 h-8" />, desc: 'Contemporary classics' },
+      { label: 'Classic (2000s & older)', icon: <Clock className="w-8 h-8" />, desc: 'Timeless masterpieces' },
+      { label: 'Surprise Me!', icon: <Globe className="w-8 h-8" />, desc: 'AI Random Selection' },
     ],
-    category: 'preferences'
+    sceneName: 'The Era',
   },
   {
     id: 'social_watching',
-    question: 'How do you like to watch?',
+    title: 'Who\'s in the audience?',
+    subtitle: 'Tell us about tonight\'s screening crew.',
     type: 'single',
     options: [
-      { label: 'Solo binge sessions', icon: <Sofa className="w-10 h-10" /> },
-      { label: 'Movie nights with friends', icon: <PartyPopper className="w-10 h-10" /> },
-      { label: 'Family time', icon: <Baby className="w-10 h-10" /> },
-      { label: 'Online watch parties', icon: <Monitor className="w-10 h-10" /> },
+      { label: 'Solo binge', icon: <Sofa className="w-8 h-8" />, desc: 'Just me, myself & cinema' },
+      { label: 'Movie night with friends', icon: <PartyPopper className="w-8 h-8" />, desc: 'Group entertainment' },
+      { label: 'Family time', icon: <Baby className="w-8 h-8" />, desc: 'All ages welcome' },
+      { label: 'Online watch party', icon: <Monitor className="w-8 h-8" />, desc: 'Virtual cinema' },
     ],
-    category: 'social'
+    sceneName: 'The Audience',
   },
   {
     id: 'genre_rating',
-    question: 'Rate your genre preferences',
-    subtitle: 'Star the genres you love most',
+    title: 'Rate your genre preferences',
+    subtitle: 'Star the genres you love most — this powers our AI matching.',
     type: 'rating',
     options: [
-      { label: 'Action & Adventure', icon: <Zap className="w-5 h-5" /> },
+      { label: 'Action & Adventure', icon: <Sword className="w-5 h-5" /> },
       { label: 'Comedy', icon: <Laugh className="w-5 h-5" /> },
-      { label: 'Drama', icon: <Film className="w-5 h-5" /> },
-      { label: 'Horror & Thriller', icon: <Brain className="w-5 h-5" /> },
-      { label: 'Science Fiction', icon: <Sparkles className="w-5 h-5" /> },
+      { label: 'Drama', icon: <Heart className="w-5 h-5" /> },
+      { label: 'Horror & Thriller', icon: <Skull className="w-5 h-5" /> },
+      { label: 'Science Fiction', icon: <Rocket className="w-5 h-5" /> },
       { label: 'Romance', icon: <Heart className="w-5 h-5" /> },
       { label: 'Documentary', icon: <BookOpen className="w-5 h-5" /> },
       { label: 'Animation', icon: <Clapperboard className="w-5 h-5" /> },
     ],
-    category: 'preferences'
+    sceneName: 'The Taste',
   },
   {
     id: 'movie_length',
-    question: 'How long should the movie be?',
+    title: 'How long is tonight\'s feature?',
+    subtitle: 'Pick the runtime that fits your schedule.',
     type: 'single',
     options: [
-      { label: 'Short (< 90 min)', icon: <Clock className="w-10 h-10" /> },
-      { label: 'Standard (90-120 min)', icon: <Film className="w-10 h-10" /> },
-      { label: 'Long (2h+)', icon: <Clapperboard className="w-10 h-10" /> },
-      { label: 'No preference', icon: <Globe className="w-10 h-10" /> },
+      { label: 'Short (< 90 min)', icon: <Clock className="w-8 h-8" />, desc: 'Quick & punchy' },
+      { label: 'Standard (90-120 min)', icon: <Film className="w-8 h-8" />, desc: 'Classic runtime' },
+      { label: 'Long (2h+)', icon: <Clapperboard className="w-8 h-8" />, desc: 'Epic experience' },
+      { label: 'No preference', icon: <Globe className="w-8 h-8" />, desc: 'Time is no object' },
     ],
-    category: 'preferences'
+    sceneName: 'The Runtime',
   },
 ];
 
-// Sample movie pool for recommendations
+// Sample movie pool
 const MOVIE_POOL: Movie[] = [
   {
     id: 550, title: "Fight Club", poster_path: "/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg",
@@ -177,22 +221,64 @@ const MOVIE_POOL: Movie[] = [
   },
 ];
 
+const AI_PERSONAS = [
+  { name: "The Cosmic Dreamer", desc: "You're drawn to mind-bending narratives and visual spectacles that blur the line between reality and imagination." },
+  { name: "The Night Owl", desc: "You crave dark, atmospheric stories that keep you glued to the screen long after midnight." },
+  { name: "The Romantic Realist", desc: "You appreciate stories grounded in human connection, love, and raw emotional honesty." },
+  { name: "The Adrenaline Junkie", desc: "Your pulse quickens at high-speed chases, epic battles, and jaw-dropping stunts." },
+  { name: "The Silent Observer", desc: "You prefer slow-burn storytelling, appreciating every frame like a painting in a gallery." },
+];
+
 const EnhancedQuiz: React.FC<EnhancedQuizProps> = ({ onBack, onComplete, userPreferences = {} }) => {
-  const { t } = useTranslation();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, any>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [countdown, setCountdown] = useState<number | null>(null);
   const [showResults, setShowResults] = useState(false);
   const [recommendations, setRecommendations] = useState<Movie[]>([]);
   const [currentMovieIndex, setCurrentMovieIndex] = useState(0);
   const [likedMovie, setLikedMovie] = useState<Movie | null>(null);
   const [isCreatingGroup, setIsCreatingGroup] = useState(false);
+  const [matchPercentage, setMatchPercentage] = useState(0);
+  const [persona, setPersona] = useState(AI_PERSONAS[0]);
 
   const currentQuizStep = quizSteps[currentStep];
   const totalSteps = quizSteps.length;
-  const progressPercentage = ((currentStep + 1) / totalSteps) * 100;
+
+  // Match percentage animation
+  useEffect(() => {
+    const target = Math.round(((currentStep + 1) / totalSteps) * 100);
+    const timer = setInterval(() => {
+      setMatchPercentage(prev => {
+        if (prev < target) return prev + 1;
+        clearInterval(timer);
+        return prev;
+      });
+    }, 15);
+    return () => clearInterval(timer);
+  }, [currentStep, totalSteps]);
+
+  // Countdown logic
+  useEffect(() => {
+    if (countdown !== null) {
+      if (countdown > 0) {
+        const timer = setTimeout(() => {
+          playClick();
+          setCountdown(countdown - 1);
+        }, 1000);
+        return () => clearTimeout(timer);
+      } else {
+        const timer = setTimeout(() => {
+          setCountdown(null);
+          setShowResults(true);
+          playMagic();
+        }, 500);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [countdown]);
 
   const handleAnswerChange = (stepId: string, answer: any) => {
     if (currentQuizStep.type === 'multiple') {
@@ -218,35 +304,34 @@ const EnhancedQuiz: React.FC<EnhancedQuizProps> = ({ onBack, onComplete, userPre
       toast({ title: "Please select an answer", description: "Choose an option before continuing.", variant: "destructive" });
       return;
     }
+    playClick();
     if (currentStep < totalSteps - 1) setCurrentStep(prev => prev + 1);
     else handleSubmit();
   };
 
   const handlePrevious = () => {
+    playClick();
     if (currentStep > 0) setCurrentStep(prev => prev - 1);
     else onBack?.();
   };
 
   const handleSubmit = async () => {
-    setIsSubmitting(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      // Shuffle and pick 5 movies
+    setIsGenerating(true);
+    playMagic();
+    setTimeout(() => {
       const shuffled = [...MOVIE_POOL].sort(() => Math.random() - 0.5);
       setRecommendations(shuffled.slice(0, 5));
       setCurrentMovieIndex(0);
       setLikedMovie(null);
-      setShowResults(true);
+      setPersona(AI_PERSONAS[Math.floor(Math.random() * AI_PERSONAS.length)]);
+      setIsGenerating(false);
+      setCountdown(3);
       onComplete?.({ answers, recommendations: shuffled.slice(0, 5) });
-      toast({ title: "Quiz completed! 🎉", description: "Here's your first recommendation." });
-    } catch {
-      toast({ title: "Something went wrong", variant: "destructive" });
-    } finally {
-      setIsSubmitting(false);
-    }
+    }, 3000);
   };
 
   const handleShowNextMovie = () => {
+    playClick();
     if (currentMovieIndex < recommendations.length - 1) {
       setCurrentMovieIndex(prev => prev + 1);
     }
@@ -254,16 +339,21 @@ const EnhancedQuiz: React.FC<EnhancedQuizProps> = ({ onBack, onComplete, userPre
 
   const handleLikeMovie = (movie: Movie) => {
     setLikedMovie(movie);
+    playMagic();
     toast({ title: `❤️ ${movie.title} added!`, description: "Great choice! You can find it in your favorites." });
   };
 
   const handleRetakeQuiz = () => {
+    playClick();
     setShowResults(false);
+    setIsGenerating(false);
+    setCountdown(null);
     setCurrentStep(0);
     setAnswers({});
     setRecommendations([]);
     setCurrentMovieIndex(0);
     setLikedMovie(null);
+    setMatchPercentage(0);
   };
 
   const handleCreateGroupQuiz = async () => {
@@ -282,7 +372,6 @@ const EnhancedQuiz: React.FC<EnhancedQuizProps> = ({ onBack, onComplete, userPre
         .single();
       if (error) throw error;
       
-      // Also submit this user's answers to the group
       await supabase.from("quiz_responses").insert({
         group_id: group.id,
         user_id: user.id,
@@ -304,359 +393,515 @@ const EnhancedQuiz: React.FC<EnhancedQuizProps> = ({ onBack, onComplete, userPre
   const currentMovie = recommendations[currentMovieIndex];
   const isLastMovie = currentMovieIndex >= recommendations.length - 1;
   const moviesRemaining = recommendations.length - currentMovieIndex - 1;
+  const matchScore = Math.floor(Math.random() * 15) + 85;
 
-  // ─── RESULTS VIEW ─── one movie at a time
-  if (showResults && currentMovie) {
-    return (
-      <div className="max-w-4xl mx-auto px-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-6"
-        >
-          <p className="text-sm text-muted-foreground mb-1">
-            Recommendation {currentMovieIndex + 1} of {recommendations.length}
-          </p>
-          <div className="flex justify-center gap-2 mb-4">
-            {recommendations.map((_, i) => (
-              <div
-                key={i}
-                className={`h-1.5 w-8 rounded-full transition-all ${
-                  i === currentMovieIndex
-                    ? 'bg-accent shadow-lg shadow-accent/50'
-                    : i < currentMovieIndex
-                    ? 'bg-primary/40'
-                    : 'bg-secondary/50'
-                }`}
-              />
-            ))}
-          </div>
-        </motion.div>
+  // ─── WRAPPER ───
+  return (
+    <div className="max-w-6xl mx-auto px-3 sm:px-8">
+      <div className="relative rounded-2xl sm:rounded-[3rem] p-4 sm:p-12 overflow-hidden shadow-[0_0_100px_rgba(139,92,246,0.15)] border border-white/10 min-h-[60vh]"
+        style={{ background: 'hsl(var(--background))' }}>
+        {/* Film grain overlay */}
+        <div className="absolute inset-0 pointer-events-none opacity-[0.03] mix-blend-overlay z-50 overflow-hidden">
+          <div className="absolute inset-[-200%] animate-grain"
+            style={{ backgroundImage: "url('https://grainy-gradients.vercel.app/noise.svg')" }}
+          />
+        </div>
+        <ProjectorBeam />
+        {isGenerating && <Particles />}
 
         <AnimatePresence mode="wait">
-          <motion.div
-            key={currentMovie.id}
-            initial={{ opacity: 0, scale: 0.95, y: 30 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: -30 }}
-            transition={{ duration: 0.5 }}
-            className="relative"
-          >
-            {/* Movie Card - Large cinematic display */}
-            <div className="relative overflow-hidden rounded-3xl border border-border/30 bg-card/50 backdrop-blur-xl">
-              {/* Backdrop */}
-              <div className="relative h-[300px] md:h-[400px] overflow-hidden">
-                <img
-                  src={currentMovie.backdrop_path
-                    ? `https://image.tmdb.org/t/p/w1280${currentMovie.backdrop_path}`
-                    : `https://image.tmdb.org/t/p/w500${currentMovie.poster_path}`
-                  }
-                  alt={currentMovie.title}
-                  className="w-full h-full object-cover"
+          {/* ─── GENERATING STATE ─── */}
+          {isGenerating ? (
+            <motion.div
+              key="generating"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="text-center py-16 sm:py-32 relative z-10"
+            >
+              <div className="relative w-28 h-28 sm:w-40 sm:h-40 mx-auto mb-8 sm:mb-16">
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                  className="absolute inset-0 border-2 border-dashed border-primary/30 rounded-full"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
-                
-                {/* Match Score */}
-                <div className="absolute top-4 right-4">
-                  <div className="bg-gradient-to-r from-green-400 to-emerald-500 text-white text-sm font-bold px-4 py-2 rounded-full">
-                    {Math.floor(Math.random() * 15) + 85}% Match
+                <motion.div
+                  animate={{ rotate: -360 }}
+                  transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
+                  className="absolute inset-4 border-2 border-dashed border-neon-cyan/20 rounded-full"
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-20 h-20 rounded-full bg-primary/20 backdrop-blur-xl border border-primary/30 flex items-center justify-center animate-pulse shadow-[0_0_30px_hsl(var(--primary)/0.3)]">
+                    <Clapperboard className="w-10 h-10 text-foreground" />
                   </div>
                 </div>
+                {[...Array(8)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    animate={{ opacity: [0.1, 0.3, 0.1], scale: [1, 1.2, 1] }}
+                    transition={{ duration: 2, repeat: Infinity, delay: i * 0.2 }}
+                    className="absolute top-1/2 left-1/2 w-32 h-0.5 bg-gradient-to-r from-primary/40 to-transparent origin-left"
+                    style={{ transform: `rotate(${i * 45}deg) translateX(40px)` }}
+                  />
+                ))}
+              </div>
+              <h2 className="text-2xl sm:text-5xl font-black mb-4 sm:mb-6 font-display tracking-tighter uppercase italic text-foreground">
+                Developing Your Film...
+              </h2>
+              <div className="flex items-center justify-center gap-3 text-primary font-bold tracking-widest uppercase text-xs">
+                <span className="w-2 h-2 rounded-full bg-primary animate-ping" />
+                AI is scanning the cinematic multiverse
+              </div>
+            </motion.div>
 
-                {/* Rating */}
-                <div className="absolute top-4 left-4 bg-background/80 backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center gap-1.5">
-                  <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-                  <span className="text-sm font-bold text-foreground">{currentMovie.vote_average?.toFixed(1)}</span>
-                </div>
+          ) : countdown !== null ? (
+            /* ─── COUNTDOWN STATE ─── */
+            <motion.div
+              key="countdown"
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 2 }}
+              className="text-center py-20 sm:py-40 relative z-10"
+            >
+              <motion.div
+                key={countdown}
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: "spring", damping: 12 }}
+                className="text-[6rem] sm:text-[10rem] md:text-[12rem] font-black font-display text-foreground leading-none drop-shadow-[0_0_30px_rgba(255,255,255,0.3)]"
+              >
+                {countdown === 0 ? "ACTION!" : countdown}
+              </motion.div>
+              <div className="mt-8 text-primary font-black uppercase tracking-[0.5em] text-xl">
+                Get Ready
+              </div>
+            </motion.div>
+
+          ) : showResults && currentMovie ? (
+            /* ─── RESULTS VIEW ─── */
+            <motion.div
+              key="results"
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-10 relative z-10"
+            >
+              {/* AI Persona */}
+              <div className="text-center space-y-4">
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                  className="inline-flex items-center gap-3 px-6 py-2 rounded-full bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 text-sm font-black uppercase tracking-[0.2em]"
+                >
+                  <Trophy className="w-4 h-4" />
+                  Your Cinematic Persona
+                </motion.div>
+                <h2 className="text-3xl sm:text-5xl md:text-6xl font-black font-display tracking-tighter italic uppercase text-foreground">
+                  {persona.name}
+                </h2>
+                <p className="text-muted-foreground text-base sm:text-lg max-w-xl mx-auto">
+                  {persona.desc}
+                </p>
               </div>
 
-              {/* Info section */}
-              <div className="p-6 md:p-8 -mt-16 relative z-10">
-                <h2 className="text-3xl md:text-5xl font-black text-foreground mb-3">
-                  {currentMovie.title}
-                </h2>
-                
-                <div className="flex flex-wrap items-center gap-3 mb-4 text-sm text-muted-foreground">
-                  {currentMovie.release_date && (
-                    <span>{new Date(currentMovie.release_date).getFullYear()}</span>
-                  )}
-                  {currentMovie.runtime && (
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-3.5 w-3.5" /> {currentMovie.runtime} min
-                    </span>
-                  )}
-                </div>
-
-                {/* Genres */}
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {(Array.isArray(currentMovie.genres) ? currentMovie.genres : []).map((genre, i) => (
-                    <Badge key={i} variant="secondary" className="bg-primary/10 text-primary border border-primary/20">
-                      {typeof genre === 'string' ? genre : genre.name}
-                    </Badge>
+              {/* Progress dots */}
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground mb-2 uppercase tracking-widest font-bold">
+                  Recommendation {currentMovieIndex + 1} of {recommendations.length}
+                </p>
+                <div className="flex justify-center gap-2">
+                  {recommendations.map((_, i) => (
+                    <div key={i} className={`h-1.5 w-8 rounded-full transition-all ${
+                      i === currentMovieIndex
+                        ? 'bg-primary shadow-lg shadow-primary/50'
+                        : i < currentMovieIndex
+                        ? 'bg-primary/40'
+                        : 'bg-secondary/50'
+                    }`} />
                   ))}
                 </div>
+              </div>
 
-                <p className="text-muted-foreground leading-relaxed mb-6 text-base md:text-lg max-w-3xl">
-                  {currentMovie.overview}
-                </p>
+              {/* Movie display */}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentMovie.id}
+                  initial={{ opacity: 0, scale: 0.95, y: 30 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: -30 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 items-center">
+                    {/* Movie poster */}
+                    <motion.div
+                      whileHover={{ scale: 1.02 }}
+                      className="group relative aspect-[2/3] rounded-[2rem] overflow-hidden shadow-[0_0_80px_rgba(0,0,0,0.5)] border border-white/10"
+                    >
+                      <img
+                        src={`https://image.tmdb.org/t/p/w500${currentMovie.poster_path}`}
+                        alt={currentMovie.title}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-60" />
+                      
+                      {/* Match badge */}
+                      <div className="absolute top-4 left-4">
+                        <div className="px-4 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-black uppercase tracking-widest shadow-lg">
+                          {matchScore}% Match
+                        </div>
+                      </div>
 
-                {/* Streaming availability from answers */}
-                {answers.streaming_services && answers.streaming_services.length > 0 && (
-                  <div className="mb-6">
-                    <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">Your platforms</p>
-                    <div className="flex flex-wrap gap-2">
-                      {answers.streaming_services.map((service: string) => (
-                        <Badge key={service} className="bg-accent/10 text-accent border border-accent/20 text-xs">
-                          {service}
-                        </Badge>
-                      ))}
+                      {/* Rating */}
+                      <div className="absolute top-4 right-4 bg-background/80 backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center gap-1.5">
+                        <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+                        <span className="text-sm font-bold text-foreground">{currentMovie.vote_average?.toFixed(1)}</span>
+                      </div>
+
+                      {/* Spotlight on hover */}
+                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.15)_0%,transparent_70%)]" />
+                      </div>
+                    </motion.div>
+
+                    {/* Movie details */}
+                    <div className="space-y-6">
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3 flex-wrap">
+                          {currentMovie.release_date && (
+                            <span className="px-3 py-1 rounded bg-secondary border border-border text-muted-foreground text-xs font-bold">
+                              {new Date(currentMovie.release_date).getFullYear()}
+                            </span>
+                          )}
+                          {currentMovie.runtime && (
+                            <span className="px-3 py-1 rounded bg-secondary border border-border text-muted-foreground text-xs font-bold flex items-center gap-1">
+                              <Clock className="h-3 w-3" /> {currentMovie.runtime} min
+                            </span>
+                          )}
+                        </div>
+                        <h3 className="text-3xl sm:text-5xl font-black font-display tracking-tighter leading-none text-foreground">
+                          {currentMovie.title}
+                        </h3>
+                        {/* Genres */}
+                        <div className="flex flex-wrap gap-2">
+                          {(Array.isArray(currentMovie.genres) ? currentMovie.genres : []).map((genre, i) => (
+                            <span key={i} className="text-primary text-xs font-black uppercase tracking-widest">
+                              {typeof genre === 'string' ? genre : genre.name}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Why you'll love it */}
+                      <div className="p-6 rounded-3xl bg-white/[0.02] border border-white/5 space-y-3">
+                        <div className="flex items-center gap-2 text-primary font-black uppercase tracking-widest text-xs">
+                          <Sparkles className="w-4 h-4" />
+                          Why you'll love it
+                        </div>
+                        <p className="text-muted-foreground leading-relaxed text-sm sm:text-base">
+                          {currentMovie.overview}
+                        </p>
+                      </div>
+
+                      {/* Streaming platforms */}
+                      {answers.streaming_services && answers.streaming_services.length > 0 && (
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-2 uppercase tracking-widest font-bold">Your platforms</p>
+                          <div className="flex flex-wrap gap-2">
+                            {answers.streaming_services.map((service: string) => (
+                              <span key={service} className="px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 text-xs font-bold">
+                                {service}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Action buttons */}
+                      <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                        <button
+                          onClick={() => handleLikeMovie(currentMovie)}
+                          disabled={likedMovie?.id === currentMovie.id}
+                          className={`flex-1 h-14 rounded-2xl font-black uppercase tracking-widest text-sm transition-all duration-300 active:scale-95 flex items-center justify-center gap-2 ${
+                            likedMovie?.id === currentMovie.id
+                              ? 'bg-green-500/20 border border-green-500/30 text-green-400 cursor-default'
+                              : 'bg-gradient-to-r from-primary to-neon-cyan text-primary-foreground shadow-[0_8px_30px_hsl(var(--primary)/0.3)] hover:shadow-[0_0_25px_hsl(var(--primary)/0.6)] hover:scale-105'
+                          }`}
+                        >
+                          {likedMovie?.id === currentMovie.id ? (
+                            <><Check className="w-5 h-5" /> Added to Favorites</>
+                          ) : (
+                            <><Heart className="w-5 h-5" /> I love this!</>
+                          )}
+                        </button>
+
+                        {!isLastMovie ? (
+                          <button
+                            onClick={handleShowNextMovie}
+                            className="flex-1 h-14 rounded-2xl bg-white/5 border border-white/10 text-foreground font-black uppercase tracking-widest text-sm hover:bg-white/10 transition-all active:scale-95 flex items-center justify-center gap-2"
+                          >
+                            <ArrowRight className="w-5 h-5" />
+                            Show another ({moviesRemaining} left)
+                          </button>
+                        ) : (
+                          <button
+                            onClick={handleRetakeQuiz}
+                            className="flex-1 h-14 rounded-2xl bg-destructive/10 border border-destructive/30 text-destructive font-black uppercase tracking-widest text-sm hover:bg-destructive/20 transition-all active:scale-95 flex items-center justify-center gap-2"
+                          >
+                            <RotateCcw className="w-5 h-5" />
+                            Nothing fits — retake
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Group quiz & retake */}
+                      <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
+                        <button
+                          onClick={handleCreateGroupQuiz}
+                          disabled={isCreatingGroup}
+                          className="px-6 h-12 rounded-2xl bg-white/5 border border-white/10 text-primary font-black uppercase tracking-widest text-xs hover:bg-white/10 transition-all active:scale-95 flex items-center gap-2"
+                        >
+                          {isCreatingGroup ? (
+                            <><Loader2 className="w-4 h-4 animate-spin" /> Creating...</>
+                          ) : (
+                            <><Users className="w-4 h-4" /> Group quiz link</>
+                          )}
+                        </button>
+                        {!isLastMovie && (
+                          <button
+                            onClick={handleRetakeQuiz}
+                            className="text-muted-foreground hover:text-foreground text-xs font-bold uppercase tracking-widest underline underline-offset-4 transition-colors flex items-center gap-1"
+                          >
+                            <RotateCcw className="w-3 h-3" />
+                            New screening
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
-                )}
+                </motion.div>
+              </AnimatePresence>
+            </motion.div>
 
-                {/* Action Buttons */}
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <Button
-                    size="lg"
-                    onClick={() => handleLikeMovie(currentMovie)}
-                    disabled={likedMovie?.id === currentMovie.id}
-                    className="flex-1 rounded-xl btn-gradient text-base font-bold"
-                  >
-                    {likedMovie?.id === currentMovie.id ? (
-                      <>
-                        <Check className="w-5 h-5 mr-2" /> Added to Favorites
-                      </>
-                    ) : (
-                      <>
-                        <Heart className="w-5 h-5 mr-2" /> I like this one!
-                      </>
+          ) : (
+            /* ─── QUIZ STEPS VIEW ─── */
+            <div className="relative z-10">
+              {/* Header with progress */}
+              <div className="mb-10 sm:mb-16">
+                <div className="flex items-center justify-between mb-4 sm:mb-8">
+                  <div className="flex items-center gap-3 sm:gap-6">
+                    {currentStep > 0 && (
+                      <button
+                        onClick={handlePrevious}
+                        className="p-3 hover:bg-white/10 rounded-full transition-colors border border-white/5"
+                      >
+                        <ChevronLeft className="w-6 h-6 text-muted-foreground" />
+                      </button>
                     )}
-                  </Button>
-
-                  {!isLastMovie ? (
-                    <Button
-                      size="lg"
-                      variant="outline"
-                      onClick={handleShowNextMovie}
-                      className="flex-1 rounded-xl border-border/40 text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-                    >
-                      <ArrowRight className="w-5 h-5 mr-2" />
-                      Show another ({moviesRemaining} left)
-                    </Button>
-                  ) : (
-                    <Button
-                      size="lg"
-                      variant="outline"
-                      onClick={handleRetakeQuiz}
-                      className="flex-1 rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10"
-                    >
-                      <RotateCcw className="w-5 h-5 mr-2" />
-                      Nothing fits — retake quiz
-                    </Button>
-                  )}
+                    <div>
+                      <span className="text-primary font-black uppercase tracking-[0.3em] text-[10px] block mb-1">
+                        Production Phase
+                      </span>
+                      <span className="text-foreground font-black uppercase tracking-widest text-lg sm:text-xl font-display">
+                        Scene {currentStep + 1}: {currentQuizStep.sceneName}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-muted-foreground text-[10px] font-black uppercase tracking-[0.3em] block mb-1">
+                      Projection Quality
+                    </span>
+                    <span className="text-foreground font-display font-black text-2xl italic tracking-tighter">
+                      {matchPercentage}%
+                    </span>
+                  </div>
                 </div>
+                <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${((currentStep + 1) / totalSteps) * 100}%` }}
+                    className="h-full bg-gradient-to-r from-primary to-neon-cyan shadow-[0_0_20px_hsl(var(--primary)/0.5)]"
+                  />
+                </div>
+              </div>
 
-                {/* Group quiz & retake links */}
-                <div className="mt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleCreateGroupQuiz}
-                    disabled={isCreatingGroup}
-                    className="rounded-xl border-accent/30 text-accent hover:bg-accent/10"
-                  >
-                    {isCreatingGroup ? (
-                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Creating...</>
-                    ) : (
-                      <><Users className="w-4 h-4 mr-2" /> Generate link for friends</>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentStep}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-8 sm:space-y-12"
+                >
+                  {/* Question */}
+                  <div className="space-y-3">
+                    <h3 className="text-3xl sm:text-4xl md:text-5xl font-black font-display tracking-tighter uppercase italic text-foreground">
+                      {currentQuizStep.title}
+                    </h3>
+                    {currentQuizStep.subtitle && (
+                      <p className="text-muted-foreground text-base sm:text-lg font-medium">
+                        {currentQuizStep.subtitle}
+                      </p>
                     )}
-                  </Button>
-                  {!isLastMovie && (
+                  </div>
+
+                  {/* Multiple select (streaming services) */}
+                  {currentQuizStep.type === 'multiple' && (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                      {currentQuizStep.options.map((option, index) => {
+                        const selected: string[] = answers[currentQuizStep.id] || [];
+                        const isSelected = selected.includes(option.label);
+                        return (
+                          <button
+                            key={index}
+                            onClick={() => { playClick(); handleAnswerChange(currentQuizStep.id, option.label); }}
+                            className={`group p-5 sm:p-6 rounded-[2rem] border-2 transition-all duration-500 flex flex-col items-center gap-3 relative overflow-hidden ${
+                              isSelected
+                                ? 'bg-primary border-primary/60 shadow-[0_0_40px_hsl(var(--primary)/0.3)]'
+                                : 'bg-white/[0.02] border-white/5 hover:border-white/20 hover:bg-white/[0.05]'
+                            }`}
+                          >
+                            <div className={`transition-all duration-500 group-hover:scale-110 ${
+                              isSelected ? 'text-primary-foreground' : 'text-primary'
+                            }`}>
+                              {option.icon}
+                            </div>
+                            <span className={`text-xs sm:text-sm font-black uppercase tracking-tight text-center leading-tight ${
+                              isSelected ? 'text-primary-foreground' : 'text-foreground/80'
+                            }`}>
+                              {option.label}
+                            </span>
+                            {isSelected && (
+                              <motion.div
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                className="absolute top-2 right-2 w-5 h-5 rounded-full bg-white/30 flex items-center justify-center"
+                              >
+                                <Check className="w-3 h-3 text-white" />
+                              </motion.div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Single select */}
+                  {currentQuizStep.type === 'single' && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                      {currentQuizStep.options.map((option, index) => {
+                        const isSelected = answers[currentQuizStep.id] === option.label;
+                        return (
+                          <button
+                            key={index}
+                            onClick={() => { playClick(); handleAnswerChange(currentQuizStep.id, option.label); }}
+                            className={`group p-6 sm:p-8 rounded-[2.5rem] border-2 text-left transition-all duration-500 relative overflow-hidden ${
+                              isSelected
+                                ? 'bg-primary border-primary/60 shadow-[0_0_40px_hsl(var(--primary)/0.3)]'
+                                : 'bg-white/[0.02] border-white/5 hover:border-white/20 hover:bg-white/[0.05]'
+                            }`}
+                          >
+                            <div className={`mb-4 transition-all duration-500 group-hover:scale-110 group-hover:rotate-6 ${
+                              isSelected ? 'text-primary-foreground' : 'text-primary'
+                            }`}>
+                              {option.icon}
+                            </div>
+                            <div className={`text-xl sm:text-2xl font-black uppercase tracking-tight mb-1 ${
+                              isSelected ? 'text-primary-foreground' : 'text-foreground/90'
+                            }`}>
+                              {option.label}
+                            </div>
+                            {option.desc && (
+                              <p className={`text-sm font-medium ${
+                                isSelected ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                              }`}>
+                                {option.desc}
+                              </p>
+                            )}
+                            {isSelected && (
+                              <motion.div
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                className="absolute top-4 right-4 w-6 h-6 rounded-full bg-white/30 flex items-center justify-center"
+                              >
+                                <Check className="w-4 h-4 text-white" />
+                              </motion.div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Rating */}
+                  {currentQuizStep.type === 'rating' && (
+                    <div className="space-y-3 max-w-2xl mx-auto">
+                      {currentQuizStep.options.map((genre, index) => (
+                        <div key={index} className="flex items-center justify-between p-4 sm:p-5 bg-white/[0.02] border border-white/5 rounded-2xl transition-all hover:bg-white/[0.04]">
+                          <div className="flex items-center gap-3">
+                            <span className="text-primary">{genre.icon}</span>
+                            <span className="text-foreground font-bold text-sm sm:text-base">{genre.label}</span>
+                          </div>
+                          <div className="flex gap-1">
+                            {[1, 2, 3, 4, 5].map((rating) => (
+                              <button key={rating} className="p-1" onClick={() => {
+                                playClick();
+                                const cur = answers[currentQuizStep.id] || {};
+                                handleAnswerChange(currentQuizStep.id, { ...cur, [genre.label]: rating });
+                              }}>
+                                <Star className={`w-5 h-5 transition-colors ${
+                                  (answers[currentQuizStep.id]?.[genre.label] || 0) >= rating
+                                    ? 'fill-yellow-400 text-yellow-400'
+                                    : 'text-white/10 hover:text-white/30'
+                                }`} />
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </motion.div>
+              </AnimatePresence>
+
+              {/* Selected count for multi-select */}
+              {currentQuizStep.type === 'multiple' && (
+                <div className="text-center mt-6">
+                  <span className="text-muted-foreground text-xs font-bold uppercase tracking-widest">
+                    {(answers[currentQuizStep.id] || []).length} selected
+                  </span>
+                </div>
+              )}
+
+              {/* Bottom navigation */}
+              <div className="mt-10 sm:mt-16 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-white/5 pt-6 sm:pt-10">
+                <button
+                  onClick={handleRetakeQuiz}
+                  className="text-muted-foreground font-black uppercase tracking-widest text-xs hover:text-foreground transition-colors order-3 sm:order-1"
+                >
+                  Skip Production
+                </button>
+                <div className="flex gap-3 sm:gap-6 w-full sm:w-auto order-2">
+                  {currentStep > 0 && (
                     <button
-                      onClick={handleRetakeQuiz}
-                      className="text-sm text-muted-foreground hover:text-foreground underline underline-offset-4 transition-colors"
+                      onClick={handlePrevious}
+                      className="flex-1 sm:flex-none px-6 sm:px-8 h-12 sm:h-14 rounded-xl bg-white/5 border border-white/10 text-foreground font-black uppercase tracking-widest text-xs hover:bg-white/10 transition-all active:scale-95"
                     >
-                      <RotateCcw className="w-3 h-3 inline mr-1" />
-                      Start over with a new quiz
+                      Previous Scene
                     </button>
                   )}
+                  <button
+                    onClick={handleNext}
+                    className="flex-1 sm:flex-none px-8 sm:px-12 h-12 sm:h-14 rounded-xl btn-gradient font-black uppercase tracking-widest text-xs active:scale-95"
+                  >
+                    {currentStep === totalSteps - 1 ? 'Complete Quiz' : 'Next Scene'}
+                  </button>
                 </div>
               </div>
             </div>
-          </motion.div>
+          )}
         </AnimatePresence>
-      </div>
-    );
-  }
-
-  // ─── QUIZ STEPS VIEW ───
-  return (
-    <div className="max-w-4xl mx-auto px-4">
-      {/* Progress */}
-      <div className="mb-8">
-        <p className="text-sm text-muted-foreground mb-2">Question {currentStep + 1} of {totalSteps}</p>
-        <div className="relative h-2 w-full rounded-full bg-secondary/50 border border-border/20 overflow-hidden">
-          <motion.div
-            className="absolute inset-y-0 left-0 rounded-full"
-            style={{ background: 'linear-gradient(90deg, hsl(var(--neon-cyan)), hsl(var(--neon-purple)), hsl(var(--neon-magenta)))' }}
-            initial={false}
-            animate={{ width: `${progressPercentage}%` }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-          />
-          <motion.div
-            className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-accent shadow-lg shadow-accent/50 border-2 border-white/30"
-            initial={false}
-            animate={{ left: `calc(${progressPercentage}% - 8px)` }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-          />
-        </div>
-      </div>
-
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={currentStep}
-          initial={{ opacity: 0, x: 40 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -40 }}
-          transition={{ duration: 0.3 }}>
-          
-          {/* Question */}
-          <h2 className="text-3xl md:text-5xl font-bold text-center mb-3 text-gradient-neon">
-            {currentQuizStep.question}
-          </h2>
-          {currentQuizStep.subtitle && (
-            <p className="text-center text-muted-foreground mb-8 text-sm md:text-base">
-              {currentQuizStep.subtitle}
-            </p>
-          )}
-
-          {/* Multiple select (streaming services) */}
-          {currentQuizStep.type === 'multiple' && (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 max-w-4xl mx-auto">
-              {currentQuizStep.options.map((option, index) => {
-                const selected: string[] = answers[currentQuizStep.id] || [];
-                const isSelected = selected.includes(option.label);
-                return (
-                  <motion.button
-                    key={index}
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => handleAnswerChange(currentQuizStep.id, option.label)}
-                    className={`relative flex flex-col items-center justify-center gap-3 p-5 rounded-2xl border-2 transition-all duration-300 min-h-[120px] ${
-                      isSelected
-                        ? 'border-accent bg-accent/10 shadow-lg shadow-accent/20'
-                        : 'border-border/40 bg-secondary/30 hover:border-primary/40 hover:bg-secondary/50'
-                    }`}>
-                    <div className={`transition-colors ${isSelected ? 'text-accent' : 'text-neon-cyan'}`}>
-                      {option.icon}
-                    </div>
-                    <span className={`text-sm font-semibold text-center leading-tight ${isSelected ? 'text-foreground' : 'text-foreground/80'}`}>
-                      {option.label}
-                    </span>
-                    {isSelected && (
-                      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
-                        className="absolute top-2 right-2 w-5 h-5 rounded-full bg-accent flex items-center justify-center">
-                        <Check className="w-3 h-3 text-white" />
-                      </motion.div>
-                    )}
-                  </motion.button>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Single select */}
-          {currentQuizStep.type === 'single' && (
-            <div className="grid grid-cols-2 gap-5 max-w-3xl mx-auto">
-              {currentQuizStep.options.map((option, index) => {
-                const isSelected = answers[currentQuizStep.id] === option.label;
-                return (
-                  <motion.button
-                    key={index}
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => handleAnswerChange(currentQuizStep.id, option.label)}
-                    className={`relative flex flex-col items-center justify-center gap-4 p-8 rounded-2xl border-2 transition-all duration-300 min-h-[160px] ${
-                      isSelected
-                        ? 'border-accent bg-accent/10 shadow-lg shadow-accent/20'
-                        : 'border-border/40 bg-secondary/30 hover:border-primary/40 hover:bg-secondary/50'
-                    }`}>
-                    <div className={`transition-colors ${isSelected ? 'text-accent' : 'text-neon-cyan'}`}>
-                      {option.icon}
-                    </div>
-                    <span className={`text-lg font-semibold ${isSelected ? 'text-foreground' : 'text-foreground/80'}`}>
-                      {option.label}
-                    </span>
-                    {isSelected && (
-                      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
-                        className="absolute top-3 right-3 w-6 h-6 rounded-full bg-accent flex items-center justify-center">
-                        <Check className="w-4 h-4 text-white" />
-                      </motion.div>
-                    )}
-                  </motion.button>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Rating */}
-          {currentQuizStep.type === 'rating' && (
-            <div className="space-y-3 max-w-2xl mx-auto">
-              {currentQuizStep.options.map((genre, index) => (
-                <div key={index} className="flex items-center justify-between p-4 bg-secondary/30 border border-border/20 rounded-xl">
-                  <div className="flex items-center gap-3">
-                    <span className="text-accent">{genre.icon}</span>
-                    <span className="text-foreground font-medium">{genre.label}</span>
-                  </div>
-                  <div className="flex gap-1">
-                    {[1, 2, 3, 4, 5].map((rating) => (
-                      <button key={rating} className="p-1" onClick={() => {
-                        const cur = answers[currentQuizStep.id] || {};
-                        handleAnswerChange(currentQuizStep.id, { ...cur, [genre.label]: rating });
-                      }}>
-                        <Star className={`w-5 h-5 transition-colors ${
-                          (answers[currentQuizStep.id]?.[genre.label] || 0) >= rating
-                            ? 'fill-yellow-400 text-yellow-400'
-                            : 'text-muted-foreground/40'}`} />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </motion.div>
-      </AnimatePresence>
-
-      {/* Selected count for multi-select */}
-      {currentQuizStep.type === 'multiple' && (
-        <div className="text-center mt-4">
-          <Badge variant="secondary" className="text-sm">
-            {(answers[currentQuizStep.id] || []).length} selected
-          </Badge>
-        </div>
-      )}
-
-      {/* Navigation */}
-      <div className="flex justify-between mt-10 max-w-3xl mx-auto">
-        <Button variant="outline" size="lg" onClick={handlePrevious} disabled={isSubmitting}
-          className="rounded-xl px-8 border-border/40 text-muted-foreground hover:text-foreground hover:bg-secondary/50">
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Previous
-        </Button>
-        <Button size="lg" onClick={handleNext} disabled={isSubmitting}
-          className="rounded-xl px-8 btn-gradient">
-          {isSubmitting ? (
-            <div className="flex items-center">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-              Processing...
-            </div>
-          ) : currentStep === totalSteps - 1 ? (
-            <>Complete Quiz <Check className="w-4 h-4 ml-2" /></>
-          ) : (
-            <>Next <ArrowRight className="w-4 h-4 ml-2" /></>
-          )}
-        </Button>
       </div>
     </div>
   );
