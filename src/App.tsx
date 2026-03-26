@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Suspense } from "react";
 import Index from "./pages/Index";
-import { ComprehensiveQuizPage } from "./pages/ComprehensiveQuizPage";
+import QuizPage from "./pages/QuizPage";
 import GroupQuizPage from "./pages/GroupQuizPage";
 import Search from "./pages/Search";
 import Favorites from "./pages/Favorites";
@@ -36,7 +36,7 @@ function App() {
           <Suspense fallback={<div>Loading...</div>}>
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/quiz" element={<ComprehensiveQuizPage />} />
+              <Route path="/quiz" element={<QuizPage />} />
               <Route path="/search" element={<Search />} />
               <Route path="/favorites" element={<Favorites />} />
               <Route path="/ratings" element={<Ratings />} />
