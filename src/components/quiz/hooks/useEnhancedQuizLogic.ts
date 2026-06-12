@@ -1,6 +1,7 @@
 
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { getStreamingAvailabilityBatch } from '@/services/streamingAvailabilityPro';
 import type { EnhancedMovieRecommendation, EnhancedQuizAnswer, EnhancedQuizFilters } from '../QuizTypes';
 import { detectUserRegion } from '../QuizTypes';
 
@@ -102,35 +103,39 @@ export const useEnhancedQuizLogic = () => {
     recommendations: EnhancedMovieRecommendation[],
     region: string
   ): Promise<EnhancedMovieRecommendation[]> => {
-    const enrichedRecommendations = await Promise.all(
-      recommendations.map(async (movie) => {
-        try {
-          const { data } = await supabase.functions.invoke('get-streaming-availability', {
-            body: {
-              tmdbId: movie.tmdbId || movie.id,
-              country: region.toLowerCase(),
-              title: movie.title,
-              year: new Date(movie.release_date).getFullYear()
-            }
-          });
+    try {
+      const batchResults = await getStreamingAvailabilityBatch(
+        recommendations.map(movie => movie.tmdbId || movie.id),
+        'instant',
+        region.toLowerCase()
+      );
+      const streamingByMovie = new Map(batchResults.map(result => [result.tmdbId, result]));
 
-          if (data?.result && Array.isArray(data.result)) {
-            return {
-              ...movie,
-              streamingAvailability: data.result,
-              availableOn: data.result.map((service: any) => service.service),
-              primaryPlatform: data.result[0]?.service
-            };
-          }
-        } catch (error) {
-          console.error(`Failed to get streaming data for ${movie.title}:`, error);
-        }
+      return recommendations.map(movie => {
+        const streaming = streamingByMovie.get(movie.tmdbId || movie.id);
+        if (!streaming || streaming.streamingOptions.length === 0) return movie;
 
-        return movie;
-      })
-    );
-
-    return enrichedRecommendations;
+        return {
+          ...movie,
+          streamingAvailability: streaming.streamingOptions.map(option => ({
+            service: option.service,
+            link: option.link,
+            available: true,
+            type: option.type,
+            price: option.price?.formatted,
+            quality: 'hd' as const,
+            region,
+            source: 'streaming-availability' as const
+          })),
+          // Subscription/free services only — rent/buy stays in streamingAvailability
+          availableOn: streaming.availableServices,
+          primaryPlatform: streaming.availableServices[0]
+        };
+      });
+    } catch (error) {
+      console.error('Failed to get streaming data:', error);
+      return recommendations;
+    }
   };
 
   const handleQuizComplete = useCallback(async (answers: EnhancedQuizAnswer[]): Promise<EnhancedMovieRecommendation[]> => {

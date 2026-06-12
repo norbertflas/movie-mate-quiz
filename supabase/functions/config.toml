@@ -1,13 +1,7 @@
 
 project_id = "sjnpzjhyegtdqwmxeeob"
 
-[functions.streaming-availability]
-verify_jwt = false
-
-[functions.streaming-availability-deepseek]
-verify_jwt = false
-
-[functions.streaming-availability-gemini]
+[functions.streaming-availability-pro]
 verify_jwt = false
 
 [functions.get-ai-recommendations]

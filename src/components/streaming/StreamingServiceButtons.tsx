@@ -159,30 +159,55 @@ export const StreamingServiceButtons = ({
     );
   }
 
+  const subscriptionServices = streamingServices.filter(s => s.type === 'subscription' || s.type === 'free');
+  const rentBuyServices = streamingServices.filter(s => s.type === 'rent' || s.type === 'buy');
+
+  const renderServiceButton = (service: StreamingService, index: number) => (
+    <Button
+      key={`${service.service}-${index}`}
+      variant="outline"
+      size="sm"
+      onClick={() => handleServiceClick(service)}
+      className="h-10 px-3 py-2 flex items-center gap-2 hover:scale-105 transition-transform"
+      disabled={!service.link || service.link === '#'}
+    >
+      <img
+        src={service.logo}
+        alt={service.service}
+        className="w-4 h-4 object-contain"
+        onError={(e) => {
+          e.currentTarget.src = '/streaming-icons/default.svg';
+        }}
+      />
+      <span className="text-xs font-medium">{service.service}</span>
+      <span className="text-xs">{getTypeIcon(service.type)}</span>
+      <ExternalLink className="w-3 h-3" />
+    </Button>
+  );
+
   return (
-    <div className={`flex flex-wrap gap-2 ${className}`}>
-      {streamingServices.map((service, index) => (
-        <Button
-          key={`${service.service}-${index}`}
-          variant="outline"
-          size="sm"
-          onClick={() => handleServiceClick(service)}
-          className="h-10 px-3 py-2 flex items-center gap-2 hover:scale-105 transition-transform"
-          disabled={!service.link || service.link === '#'}
-        >
-          <img 
-            src={service.logo} 
-            alt={service.service}
-            className="w-4 h-4 object-contain"
-            onError={(e) => {
-              e.currentTarget.src = '/streaming-icons/default.svg';
-            }}
-          />
-          <span className="text-xs font-medium">{getTypeIcon(service.type)}</span>
-          <ExternalLink className="w-3 h-3" />
-        </Button>
-      ))}
-      <div className="text-xs text-muted-foreground mt-1">
+    <div className={`space-y-2 ${className}`}>
+      {subscriptionServices.length > 0 && (
+        <div>
+          <div className="text-xs font-medium text-muted-foreground mb-1">
+            Dostępne w abonamencie:
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {subscriptionServices.map(renderServiceButton)}
+          </div>
+        </div>
+      )}
+      {rentBuyServices.length > 0 && (
+        <div>
+          <div className="text-xs font-medium text-muted-foreground mb-1">
+            Do wypożyczenia lub kupienia:
+          </div>
+          <div className="flex flex-wrap gap-2 opacity-80">
+            {rentBuyServices.map(renderServiceButton)}
+          </div>
+        </div>
+      )}
+      <div className="text-xs text-muted-foreground">
         Region: {userRegion}
       </div>
     </div>

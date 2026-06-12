@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { StreamingOption } from "@/hooks/use-streaming-pro";
+import { StreamingOption } from "@/services/streamingAvailabilityPro";
 
 interface StreamingBadgeProps {
   streamingOptions: StreamingOption[];

@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { getUserCountry } from '@/services/streamingAvailabilityPro';
+import { getUserCountry, getStreamingAvailabilityBatch } from '@/services/streamingAvailabilityPro';
 import type { QuizPreferences, MovieRecommendation, TMDB_GENRE_MAPPING, SERVICE_LINKS } from '../types/comprehensiveQuizTypes';
 
 export const useComprehensiveQuizLogic = () => {
@@ -88,31 +88,17 @@ export const useComprehensiveQuizLogic = () => {
     if (movieIds.length === 0) return new Map();
 
     try {
-      const { data, error } = await supabase.functions.invoke('streaming-availability-pro', {
-        body: {
-          tmdbIds: movieIds,
-          country: userCountry,
-          mode: 'lazy'
-        }
-      });
-
-      if (error || !data?.success || !Array.isArray(data.data)) {
-        console.error('❌ Error calling streaming-availability-pro:', error || data);
-        return new Map();
-      }
+      // Shared service handles client- and server-side caching
+      const batchResults = await getStreamingAvailabilityBatch(movieIds, 'lazy', userCountry);
 
       const mapped = new Map<number, any[]>();
 
-      data.data.forEach((movie: any) => {
-        const normalizedStreaming = Array.isArray(movie.streamingOptions)
-          ? movie.streamingOptions.map((option: any) => ({
-              service: option.service,
-              type: option.type || 'subscription',
-              link: option.link || getServiceLink(option.service)
-            }))
-          : [];
-
-        mapped.set(movie.tmdbId, normalizedStreaming);
+      batchResults.forEach(movie => {
+        mapped.set(movie.tmdbId, movie.streamingOptions.map(option => ({
+          service: option.service,
+          type: option.type || 'subscription',
+          link: option.link || getServiceLink(option.service)
+        })));
       });
 
       return mapped;
