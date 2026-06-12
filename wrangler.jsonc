@@ -1,0 +1,44 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "moviefinder",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-05-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // The built SPA is served as static assets; only /api/* invokes the Worker.
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "moviefinder",
+      // Fill in after: wrangler d1 create moviefinder
+      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "migrations_dir": "worker/migrations"
+    }
+  ],
+
+  "vars": {
+    "APP_URL": "https://moviefinder.io"
+  },
+
+  "routes": [
+    { "pattern": "moviefinder.io", "custom_domain": true },
+    { "pattern": "www.moviefinder.io", "custom_domain": true }
+  ],
+
+  "observability": {
+    "enabled": true
+  }
+
+  // Secrets (set via `wrangler secret put <NAME>`):
+  //   BETTER_AUTH_SECRET  — long random string (openssl rand -base64 32)
+  //   TMDB_API_KEY        — themoviedb.org API key
+  //   RAPIDAPI_KEY        — optional, MovieOfTheNight enrichment
+  //   YOUTUBE_API_KEY     — optional, trailers
+}
