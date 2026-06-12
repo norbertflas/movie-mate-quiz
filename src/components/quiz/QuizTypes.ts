@@ -3,6 +3,8 @@
 // ROZSZERZONE TYPY DLA SYSTEMU QUIZ
 // =============================================================================
 
+import { detectUserRegion as detectRegionShared } from '@/utils/regionDetection';
+
 export interface StreamingAvailability {
   service: string;
   link: string;
@@ -283,13 +285,10 @@ export const detectUserRegion = (): string => {
       return savedRegion;
     }
 
-    const browserLang = navigator.language.toLowerCase();
-    if (browserLang.includes('pl')) return 'PL';
-    if (browserLang.includes('de')) return 'DE';
-    if (browserLang.includes('fr')) return 'FR';
-    if (browserLang.includes('gb') || browserLang.includes('uk')) return 'GB';
-    
-    return 'US';
+    // Shared detection (stored preference → locale → timezone → language),
+    // constrained to regions the quiz knows about
+    const region = detectRegionShared();
+    return REGION_INFO[region] ? region : 'US';
   } catch {
     return 'US';
   }

@@ -10,13 +10,18 @@ const TMDB_API_KEY = Deno.env.get("TMDB_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-const supabase = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY ? 
+const supabase = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY ?
   createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY) : null;
+
+// Server-side cache TTL: fresh data is kept for a day, empty results retried sooner
+const CACHE_TTL_HOURS_DATA = 24;
+const CACHE_TTL_HOURS_EMPTY = 6;
 
 interface StreamingRequest {
   tmdbIds: number[];
   country?: string;
   mode?: 'instant' | 'lazy';
+  forceRefresh?: boolean;
 }
 
 interface StreamingOption {
@@ -37,9 +42,13 @@ interface MovieStreamingData {
   title: string;
   streamingOptions: StreamingOption[];
   availableServices: string[];
+  rentBuyServices: string[];
   hasStreaming: boolean;
   lastUpdated: string;
+  source?: string;
 }
+
+const TYPE_PRIORITY: Record<string, number> = { subscription: 4, free: 3, rent: 2, buy: 1 };
 
 // Rate limiting state for RapidAPI
 let requestCount = 0;
@@ -58,13 +67,68 @@ const checkRateLimit = (): boolean => {
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 // =====================================================
-// SOURCE 1: TMDB Watch Providers (FREE, no rate limits)
+// Provider name normalization
+// TMDB/JustWatch report plan variants ("Netflix Standard with Ads")
+// and channel resellers ("HBO Max Amazon Channel") as separate
+// providers — collapse them onto the parent service.
+// =====================================================
+const PROVIDER_SUFFIXES = [
+  ' standard with ads',
+  ' basic with ads',
+  ' with ads',
+  ' amazon channels',
+  ' amazon channel',
+  ' apple tv channel',
+  ' premium',
+];
+
+function normalizeProviderName(rawName: string): string {
+  let key = rawName.toLowerCase().trim();
+  for (const suffix of PROVIDER_SUFFIXES) {
+    if (key.endsWith(suffix)) {
+      key = key.slice(0, -suffix.length).trim();
+      break;
+    }
+  }
+  return getServiceDisplayName(key);
+}
+
+const sortOptions = (options: StreamingOption[]): StreamingOption[] =>
+  [...options].sort((a, b) => (TYPE_PRIORITY[b.type] || 0) - (TYPE_PRIORITY[a.type] || 0));
+
+const buildResult = (tmdbId: number, title: string, options: StreamingOption[], source: string): MovieStreamingData => {
+  const sorted = sortOptions(options);
+  const availableServices: string[] = [];
+  const rentBuyServices: string[] = [];
+
+  for (const option of sorted) {
+    if (option.type === 'subscription' || option.type === 'free') {
+      if (!availableServices.includes(option.service)) availableServices.push(option.service);
+    } else {
+      if (!rentBuyServices.includes(option.service)) rentBuyServices.push(option.service);
+    }
+  }
+
+  return {
+    tmdbId,
+    title,
+    streamingOptions: sorted,
+    availableServices,
+    rentBuyServices,
+    hasStreaming: availableServices.length > 0,
+    lastUpdated: new Date().toISOString(),
+    source
+  };
+};
+
+// =====================================================
+// SOURCE 1: TMDB Watch Providers (FREE, JustWatch-backed, current data)
 // =====================================================
 const fetchTmdbWatchProviders = async (tmdbId: number, country: string): Promise<MovieStreamingData | null> => {
   if (!TMDB_API_KEY) return null;
 
   const region = country.toUpperCase();
-  
+
   // Try both movie and TV endpoints
   const endpoints = [
     { url: `https://api.themoviedb.org/3/movie/${tmdbId}?api_key=${TMDB_API_KEY}&append_to_response=watch/providers`, type: 'movie' },
@@ -76,12 +140,12 @@ const fetchTmdbWatchProviders = async (tmdbId: number, country: string): Promise
       const response = await fetch(endpoint.url, {
         headers: { 'Content-Type': 'application/json' }
       });
-      
+
       if (!response.ok) continue;
 
       const data = await response.json();
       const watchProviders = data['watch/providers']?.results?.[region];
-      
+
       if (!watchProviders) continue;
 
       const providerGroups: Array<{ key: string; type: StreamingOption['type'] }> = [
@@ -92,50 +156,39 @@ const fetchTmdbWatchProviders = async (tmdbId: number, country: string): Promise
         { key: 'buy', type: 'buy' }
       ];
 
-      const streamingOptions: StreamingOption[] = [];
-      const availableServices: string[] = [];
-      const seenProviders = new Set<string>();
       const movieTitle = data.title || data.name || data.original_title || data.original_name || '';
+      // Track best option per service so plan variants don't create duplicates
+      const bestByService = new Map<string, StreamingOption>();
 
       for (const group of providerGroups) {
         const providers = Array.isArray(watchProviders[group.key]) ? watchProviders[group.key] : [];
         for (const provider of providers) {
-          const serviceName = provider.provider_name || 'Unknown';
-          const normalizedName = getServiceDisplayName(serviceName.toLowerCase());
-          
-          if (seenProviders.has(normalizedName) && group.type !== 'subscription') continue;
-          seenProviders.add(normalizedName);
+          const rawName = provider.provider_name || 'Unknown';
+          const serviceName = normalizeProviderName(rawName);
 
-          // Use direct service search URL, NOT the TMDB referral link
-          const directLink = getServiceSearchUrl(serviceName.toLowerCase(), movieTitle);
-
-          streamingOptions.push({
-            service: normalizedName,
-            serviceLogo: provider.logo_path 
-              ? `https://image.tmdb.org/t/p/w154${provider.logo_path}` 
+          const option: StreamingOption = {
+            service: serviceName,
+            serviceLogo: provider.logo_path
+              ? `https://image.tmdb.org/t/p/w154${provider.logo_path}`
               : getServiceLogo(serviceName.toLowerCase()),
-            link: directLink,
+            // Use direct service search URL, NOT the TMDB referral link
+            link: getServiceSearchUrl(serviceName.toLowerCase(), movieTitle),
             type: group.type,
             quality: 'HD'
-          });
+          };
 
-          if (!availableServices.includes(normalizedName)) {
-            availableServices.push(normalizedName);
+          const existing = bestByService.get(serviceName);
+          if (!existing || (TYPE_PRIORITY[option.type] || 0) > (TYPE_PRIORITY[existing.type] || 0)) {
+            bestByService.set(serviceName, option);
           }
         }
       }
 
+      const streamingOptions = [...bestByService.values()];
       if (streamingOptions.length > 0) {
-        const title = data.title || data.name || data.original_title || data.original_name || '';
-        console.log(`✅ TMDB found ${streamingOptions.length} services for "${title}" (${tmdbId}) in ${region}: ${availableServices.join(', ')}`);
-        return {
-          tmdbId,
-          title,
-          streamingOptions,
-          availableServices,
-          hasStreaming: true,
-          lastUpdated: new Date().toISOString()
-        };
+        const result = buildResult(tmdbId, movieTitle, streamingOptions, 'tmdb');
+        console.log(`✅ TMDB found ${streamingOptions.length} services for "${movieTitle}" (${tmdbId}) in ${region}: ${result.availableServices.join(', ') || '(rent/buy only)'}`);
+        return result;
       }
     } catch (error) {
       console.error(`TMDB error for ${tmdbId} (${endpoint.type}):`, error);
@@ -150,7 +203,7 @@ const fetchTmdbWatchProviders = async (tmdbId: number, country: string): Promise
 // =====================================================
 const fetchRapidApiStreaming = async (tmdbId: number, country: string): Promise<MovieStreamingData | null> => {
   if (!RAPIDAPI_KEY) return null;
-  
+
   if (!checkRateLimit()) {
     console.log('RapidAPI rate limit reached, skipping...');
     return null;
@@ -158,8 +211,8 @@ const fetchRapidApiStreaming = async (tmdbId: number, country: string): Promise<
   requestCount++;
 
   const endpoints = [
-    `https://streaming-availability.p.rapidapi.com/shows/movie/${tmdbId}?country=${country}`,
-    `https://streaming-availability.p.rapidapi.com/shows/series/${tmdbId}?country=${country}`
+    `https://streaming-availability.p.rapidapi.com/shows/movie/${tmdbId}?country=${country.toLowerCase()}`,
+    `https://streaming-availability.p.rapidapi.com/shows/series/${tmdbId}?country=${country.toLowerCase()}`
   ];
 
   for (const endpoint of endpoints) {
@@ -178,7 +231,7 @@ const fetchRapidApiStreaming = async (tmdbId: number, country: string): Promise<
       if (!response.ok) continue;
 
       const data = await response.json();
-      
+
       // Try multiple data structures (v3 and v4 API)
       const countryLower = country.toLowerCase();
       const countryUpper = country.toUpperCase();
@@ -191,14 +244,16 @@ const fetchRapidApiStreaming = async (tmdbId: number, country: string): Promise<
       const rawOptions = extractStreamingOptions(countryData);
       if (rawOptions.length === 0) continue;
 
-      const streamingOptions: StreamingOption[] = [];
-      const availableServices: string[] = [];
+      const bestByService = new Map<string, StreamingOption>();
 
       for (const item of rawOptions) {
-        const serviceIdOrName = item?.service?.id || item?.service?.name || item?.service || item?.provider || 'unknown';
-        const serviceName = getServiceDisplayName(String(serviceIdOrName).toLowerCase());
+        // Skip offers that have already left the catalog
+        if (item?.expiresOn && item.expiresOn * 1000 < Date.now()) continue;
 
-        streamingOptions.push({
+        const serviceIdOrName = item?.service?.id || item?.service?.name || item?.service || item?.provider || 'unknown';
+        const serviceName = normalizeProviderName(String(serviceIdOrName));
+
+        const option: StreamingOption = {
           service: serviceName,
           serviceLogo: getServiceLogo(String(serviceIdOrName).toLowerCase()),
           link: item?.link || getServiceHomeUrl(String(serviceIdOrName).toLowerCase()),
@@ -209,23 +264,19 @@ const fetchRapidApiStreaming = async (tmdbId: number, country: string): Promise<
             currency: item.price.currency,
             formatted: item.price.formatted
           } : undefined
-        });
+        };
 
-        if (!availableServices.includes(serviceName)) {
-          availableServices.push(serviceName);
+        const existing = bestByService.get(serviceName);
+        if (!existing || (TYPE_PRIORITY[option.type] || 0) > (TYPE_PRIORITY[existing.type] || 0)) {
+          bestByService.set(serviceName, option);
         }
       }
 
+      const streamingOptions = [...bestByService.values()];
       if (streamingOptions.length > 0) {
-        console.log(`✅ RapidAPI found ${streamingOptions.length} services for ${tmdbId}: ${availableServices.join(', ')}`);
-        return {
-          tmdbId,
-          title: data.title || data.originalTitle || data.name || '',
-          streamingOptions,
-          availableServices,
-          hasStreaming: true,
-          lastUpdated: new Date().toISOString()
-        };
+        const result = buildResult(tmdbId, data.title || data.originalTitle || data.name || '', streamingOptions, 'rapidapi');
+        console.log(`✅ RapidAPI found ${streamingOptions.length} services for ${tmdbId}: ${result.availableServices.join(', ') || '(rent/buy only)'}`);
+        return result;
       }
     } catch (error) {
       console.error(`RapidAPI error for ${tmdbId}:`, error);
@@ -249,9 +300,11 @@ const extractStreamingOptions = (countryData: unknown): any[] => {
 };
 
 // =====================================================
-// COMBINED: Try TMDB first, then RapidAPI if needed
+// COMBINED: Try TMDB first, then RapidAPI if needed.
+// NEVER fabricate fallback data — an empty result means
+// "not available", which is shown honestly in the UI.
 // =====================================================
-const fetchStreamingData = async (tmdbId: number, country: string): Promise<MovieStreamingData | null> => {
+const fetchStreamingData = async (tmdbId: number, country: string): Promise<MovieStreamingData> => {
   // 1. Try TMDB Watch Providers first (free, reliable, good coverage)
   const tmdbResult = await fetchTmdbWatchProviders(tmdbId, country);
   if (tmdbResult && tmdbResult.streamingOptions.length > 0) {
@@ -265,7 +318,61 @@ const fetchStreamingData = async (tmdbId: number, country: string): Promise<Movi
   }
 
   console.log(`⚠️ No streaming data found for ${tmdbId} in ${country} from any source`);
-  return null;
+  return buildResult(tmdbId, '', [], 'none');
+};
+
+// =====================================================
+// Server-side cache (streaming_cache table, UNIQUE(tmdb_id, country))
+// =====================================================
+const readCache = async (tmdbIds: number[], country: string): Promise<Map<number, MovieStreamingData>> => {
+  const cached = new Map<number, MovieStreamingData>();
+  if (!supabase) return cached;
+
+  try {
+    const { data, error } = await supabase
+      .from('streaming_cache')
+      .select('tmdb_id, streaming_data')
+      .in('tmdb_id', tmdbIds)
+      .eq('country', country.toUpperCase())
+      .gte('expires_at', new Date().toISOString());
+
+    if (error) throw error;
+
+    for (const row of data || []) {
+      const entry = row.streaming_data as MovieStreamingData | null;
+      if (entry && Array.isArray(entry.streamingOptions)) {
+        cached.set(row.tmdb_id, { ...entry, source: 'cache' });
+      }
+    }
+  } catch (error) {
+    console.error('Cache read failed:', error);
+  }
+
+  return cached;
+};
+
+const writeCache = async (results: MovieStreamingData[], country: string): Promise<void> => {
+  if (!supabase || results.length === 0) return;
+
+  try {
+    const now = Date.now();
+    const rows = results.map(result => ({
+      tmdb_id: result.tmdbId,
+      country: country.toUpperCase(),
+      streaming_data: result,
+      source: result.source || 'api',
+      cached_at: new Date(now).toISOString(),
+      expires_at: new Date(now + (result.streamingOptions.length > 0 ? CACHE_TTL_HOURS_DATA : CACHE_TTL_HOURS_EMPTY) * 60 * 60 * 1000).toISOString()
+    }));
+
+    const { error } = await supabase
+      .from('streaming_cache')
+      .upsert(rows, { onConflict: 'tmdb_id,country' });
+
+    if (error) throw error;
+  } catch (error) {
+    console.error('Cache write failed:', error);
+  }
 };
 
 const processBatch = async (tmdbIds: number[], country: string): Promise<MovieStreamingData[]> => {
@@ -280,10 +387,11 @@ const processBatch = async (tmdbIds: number[], country: string): Promise<MovieSt
     const batchResults = await Promise.allSettled(batchPromises);
 
     batchResults.forEach((result, index) => {
-      if (result.status === 'fulfilled' && result.value) {
+      if (result.status === 'fulfilled') {
         results.push(result.value);
       } else {
-        console.log(`No data for TMDB ID ${batch[index]}`);
+        console.error(`Fetch failed for TMDB ID ${batch[index]}:`, result.reason);
+        results.push(buildResult(batch[index], '', [], 'error'));
       }
     });
 
@@ -301,7 +409,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { tmdbIds, country = 'pl', mode = 'lazy' }: StreamingRequest = await req.json();
+    const { tmdbIds, country = 'pl', mode = 'lazy', forceRefresh = false }: StreamingRequest = await req.json();
 
     if (!tmdbIds || !Array.isArray(tmdbIds) || tmdbIds.length === 0) {
       return new Response(
@@ -310,25 +418,41 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`Processing ${tmdbIds.length} movies for country: ${country} (TMDB primary, RapidAPI secondary)`);
+    const uniqueIds = [...new Set(tmdbIds.filter(id => Number.isInteger(id) && id > 0))];
 
-    if (supabase) {
-      await supabase.rpc('increment_api_usage', {
-        p_service: 'streaming-availability-pro',
-        p_date: new Date().toISOString().split('T')[0],
-        p_hour: new Date().getHours(),
-        p_minute: new Date().getMinutes()
-      });
+    console.log(`Processing ${uniqueIds.length} movies for country: ${country} (server cache → TMDB → RapidAPI)`);
+
+    // 1. Server-side cache
+    const cachedResults = forceRefresh
+      ? new Map<number, MovieStreamingData>()
+      : await readCache(uniqueIds, country);
+    const missingIds = uniqueIds.filter(id => !cachedResults.has(id));
+
+    // 2. Fetch only what's missing
+    let fetchedResults: MovieStreamingData[] = [];
+    if (missingIds.length > 0) {
+      if (supabase) {
+        await supabase.rpc('increment_api_usage', {
+          p_service: 'streaming-availability-pro',
+          p_date: new Date().toISOString().split('T')[0],
+          p_hour: new Date().getHours(),
+          p_minute: new Date().getMinutes()
+        });
+      }
+
+      fetchedResults = await processBatch(missingIds, country);
+      await writeCache(fetchedResults.filter(r => r.source !== 'error'), country);
     }
 
-    const results = await processBatch(tmdbIds, country);
+    const results = [...cachedResults.values(), ...fetchedResults];
 
     return new Response(
       JSON.stringify({
         success: true,
         data: results,
-        totalProcessed: tmdbIds.length,
-        totalFound: results.length,
+        totalProcessed: uniqueIds.length,
+        totalFound: results.filter(r => r.hasStreaming).length,
+        fromCache: cachedResults.size,
         mode,
         country,
         timestamp: new Date().toISOString()
@@ -352,8 +476,10 @@ function getServiceDisplayName(serviceId: string): string {
   const key = serviceId.toLowerCase().trim();
   const serviceNames: Record<string, string> = {
     'netflix': 'Netflix',
+    'netflix kids': 'Netflix',
     'prime': 'Amazon Prime Video',
     'amazon': 'Amazon Prime Video',
+    'amazon video': 'Amazon Video',
     'amazon prime video': 'Amazon Prime Video',
     'amazonprimevideo': 'Amazon Prime Video',
     'disney': 'Disney+',
@@ -362,14 +488,16 @@ function getServiceDisplayName(serviceId: string): string {
     'disney plus': 'Disney+',
     'hbo': 'HBO Max',
     'hbo max': 'HBO Max',
-    'max': 'Max',
+    'max': 'HBO Max',
     'hulu': 'Hulu',
     'apple': 'Apple TV+',
-    'apple tv': 'Apple TV+',
+    'apple tv': 'Apple TV',
     'apple tv+': 'Apple TV+',
+    'apple tv plus': 'Apple TV+',
     'appletv': 'Apple TV+',
     'paramount': 'Paramount+',
     'paramount+': 'Paramount+',
+    'paramount plus': 'Paramount+',
     'paramountplus': 'Paramount+',
     'canal': 'Canal+',
     'canal+': 'Canal+',
@@ -392,6 +520,9 @@ function getServiceDisplayName(serviceId: string): string {
     'starz': 'STARZ',
     'rakuten': 'Rakuten TV',
     'rakuten tv': 'Rakuten TV',
+    'google play movies': 'Google Play',
+    'youtube': 'YouTube',
+    'youtube premium': 'YouTube Premium',
   };
   return serviceNames[key] || serviceId.charAt(0).toUpperCase() + serviceId.slice(1);
 }
@@ -420,7 +551,7 @@ function getServiceLogo(serviceId: string): string {
 
 function getStreamingType(option: any): 'subscription' | 'rent' | 'buy' | 'free' {
   const t = option?.type?.toLowerCase?.() || '';
-  if (t === 'subscription' || t === 'flatrate' || t === 'sub') return 'subscription';
+  if (t === 'subscription' || t === 'flatrate' || t === 'sub' || t === 'addon') return 'subscription';
   if (t === 'rent') return 'rent';
   if (t === 'buy') return 'buy';
   if (t === 'free' || t === 'ads') return 'free';
@@ -459,37 +590,28 @@ function getServiceHomeUrl(serviceId: string): string {
 function getServiceSearchUrl(serviceId: string, title: string): string {
   const key = serviceId.toLowerCase().trim();
   const encoded = encodeURIComponent(title);
+  if (!title) return getServiceHomeUrl(key);
   const searchUrls: Record<string, string> = {
     'netflix': `https://www.netflix.com/search?q=${encoded}`,
     'prime': `https://www.primevideo.com/search/ref=atv_nb_sr?phrase=${encoded}`,
     'amazon': `https://www.primevideo.com/search/ref=atv_nb_sr?phrase=${encoded}`,
+    'amazon video': `https://www.primevideo.com/search/ref=atv_nb_sr?phrase=${encoded}`,
     'amazon prime video': `https://www.primevideo.com/search/ref=atv_nb_sr?phrase=${encoded}`,
-    'amazonprimevideo': `https://www.primevideo.com/search/ref=atv_nb_sr?phrase=${encoded}`,
     'disney': `https://www.disneyplus.com/search?q=${encoded}`,
     'disney+': `https://www.disneyplus.com/search?q=${encoded}`,
-    'disneyplus': `https://www.disneyplus.com/search?q=${encoded}`,
-    'disney plus': `https://www.disneyplus.com/search?q=${encoded}`,
-    'hbo': `https://www.max.com/search?q=${encoded}`,
     'hbo max': `https://www.max.com/search?q=${encoded}`,
     'max': `https://www.max.com/search?q=${encoded}`,
     'hulu': `https://www.hulu.com/search?q=${encoded}`,
-    'apple': `https://tv.apple.com/search?term=${encoded}`,
     'apple tv': `https://tv.apple.com/search?term=${encoded}`,
     'apple tv+': `https://tv.apple.com/search?term=${encoded}`,
-    'appletv': `https://tv.apple.com/search?term=${encoded}`,
-    'paramount': `https://www.paramountplus.com/search/${encoded}`,
     'paramount+': `https://www.paramountplus.com/search/${encoded}`,
-    'canal': `https://www.canalplus.com/pl/search?q=${encoded}`,
     'canal+': `https://www.canalplus.com/pl/search?q=${encoded}`,
-    'canal+ online': `https://www.canalplus.com/pl/search?q=${encoded}`,
-    'player': `https://player.pl/szukaj?query=${encoded}`,
     'player.pl': `https://player.pl/szukaj?query=${encoded}`,
-    'polsat': `https://polsatboxgo.pl/szukaj?query=${encoded}`,
     'polsat box go': `https://polsatboxgo.pl/szukaj?query=${encoded}`,
+    'tvp vod': `https://vod.tvp.pl/szukaj?query=${encoded}`,
     'skyshowtime': `https://www.skyshowtime.com/search?q=${encoded}`,
     'viaplay': `https://viaplay.pl/search?query=${encoded}`,
     'mubi': `https://mubi.com/search?query=${encoded}`,
-    'rakuten': `https://www.rakuten.tv/pl/search?q=${encoded}`,
     'rakuten tv': `https://www.rakuten.tv/pl/search?q=${encoded}`,
     'curiositystream': `https://curiositystream.com/search/${encoded}`,
     'crunchyroll': `https://www.crunchyroll.com/search?q=${encoded}`,

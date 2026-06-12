@@ -27,13 +27,37 @@ export const supportedRegions = [
 ];
 
 /**
- * Get user's region based on multiple detection methods
+ * Synchronous region detection. Priority:
+ * 1. Stored user preference (explicit choice always wins)
+ * 2. Locale country part (e.g. "pl-PL" -> PL)
+ * 3. Timezone heuristic
+ * 4. Browser language
  */
-export async function getUserRegion(): Promise<string> {
-  // Try browser language first
-  const browserLanguage = navigator.language.split('-')[0];
+export function detectUserRegion(): string {
+  // 1. Stored preference
+  try {
+    const stored = localStorage.getItem('user-region');
+    if (stored && supportedRegions.includes(stored.toUpperCase())) {
+      return stored.toUpperCase();
+    }
+  } catch (error) {
+    console.warn('Could not access localStorage:', error);
+  }
+
+  // 2. Locale country part
+  const locale = navigator.language || 'en-US';
+  const localeParts = locale.split('-');
+  if (localeParts.length >= 2) {
+    const localeCountry = localeParts[1].toUpperCase();
+    if (supportedRegions.includes(localeCountry)) {
+      return localeCountry;
+    }
+  }
+
+  const browserLanguage = localeParts[0].toLowerCase();
   let region = languageToRegion[browserLanguage] || 'US';
 
+  // 3. Timezone heuristic (refines the language-based guess)
   try {
     // Try to get more precise region from timezone
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -65,18 +89,14 @@ export async function getUserRegion(): Promise<string> {
     console.warn('Could not detect timezone:', error);
   }
 
-  // Fallback to stored preference
-  try {
-    const stored = localStorage.getItem('user-region');
-    if (stored && supportedRegions.includes(stored)) {
-      region = stored;
-    }
-  } catch (error) {
-    console.warn('Could not access localStorage:', error);
-  }
-
-  console.log(`Detected user region: ${region}`);
   return region;
+}
+
+/**
+ * Async wrapper kept for backwards compatibility with existing callers.
+ */
+export async function getUserRegion(): Promise<string> {
+  return detectUserRegion();
 }
 
 /**
