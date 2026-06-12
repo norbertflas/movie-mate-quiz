@@ -8,7 +8,11 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "worker:dev": "wrangler dev",
+    "worker:deploy": "npm run build && wrangler deploy",
+    "worker:typecheck": "tsc -p tsconfig.worker.json",
+    "worker:migrate": "wrangler d1 migrations apply moviefinder --remote"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -46,12 +50,15 @@
     "@tanstack/react-query": "^5.77.2",
     "@types/react-window": "^1.8.8",
     "axios": "^1.8.4",
+    "better-auth": "1.6.18",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
     "date-fns": "^3.6.0",
+    "drizzle-orm": "0.45.2",
     "embla-carousel-react": "^8.3.0",
     "framer-motion": "^11.18.0",
+    "hono": "4.12.25",
     "i18next": "^24.2.1",
     "i18next-browser-languagedetector": "^8.0.4",
     "input-otp": "^1.2.4",
@@ -74,6 +81,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "4.20260612.1",
     "@eslint/js": "^9.9.0",
     "@tailwindcss/typography": "^0.5.15",
     "@types/node": "^22.5.5",
@@ -91,6 +99,11 @@
     "tailwindcss": "^3.4.11",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
-    "vite": "^5.4.1"
+    "vite": "^5.4.1",
+    "wrangler": "4.100.0"
+  },
+  "overrides": {
+    "hasown": "2.0.2",
+    "@types/estree": "1.0.8"
   }
 }
