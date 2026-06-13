@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
-import { searchMovies } from '@/services/tmdb/search';
+import { searchTitles } from '@/services/tmdb/search';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { cn } from '@/lib/utils';
 
@@ -43,7 +43,7 @@ export const SearchCommandDialog = ({
   // Search results query
   const { data: searchResults = [], isLoading } = useQuery({
     queryKey: ['search', query],
-    queryFn: () => searchMovies(query),
+    queryFn: () => searchTitles(query),
     enabled: query.length >= 2,
     staleTime: 5 * 60 * 1000,
   });

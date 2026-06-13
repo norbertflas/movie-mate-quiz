@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
 import { and, eq, gte, inArray, sql } from "drizzle-orm";
 import { streamingCache } from "../db/schema";
-import { fetchStreamingData, buildResult, type MovieStreamingData } from "../lib/streaming";
+import { fetchStreamingData, buildResult, type MovieStreamingData, type MediaType } from "../lib/streaming";
 import type { Env } from "../env";
 
 const CACHE_TTL_HOURS_DATA = 24;
@@ -11,12 +11,25 @@ const MAX_BATCH = 50;
 
 export const streamingRoutes = new Hono<{ Bindings: Env }>();
 
-// POST /api/streaming-availability { tmdbIds: number[], country?: string, forceRefresh?: boolean }
+// POST /api/streaming-availability
+//   { tmdbIds: number[], country?, forceRefresh? }                  (movie heuristic)
+//   { items: {tmdbId, mediaType}[], country?, forceRefresh? }       (exact per title)
 // Same response contract as the streaming-availability-pro Supabase function.
 streamingRoutes.post("/streaming-availability", async (c) => {
-  const body = await c.req.json<{ tmdbIds?: number[]; country?: string; forceRefresh?: boolean }>().catch(() => null);
+  const body = await c.req.json<{
+    tmdbIds?: number[];
+    items?: { tmdbId: number; mediaType?: MediaType }[];
+    country?: string;
+    forceRefresh?: boolean;
+  }>().catch(() => null);
 
-  const tmdbIds = body?.tmdbIds;
+  // Accept either a plain id list or {tmdbId, mediaType} items.
+  const tmdbIds = body?.items
+    ? body.items.map(i => i.tmdbId)
+    : body?.tmdbIds;
+  const mediaTypeById = new Map<number, MediaType | undefined>(
+    (body?.items || []).map(i => [i.tmdbId, i.mediaType])
+  );
   // Client country wins (it carries the user's manual choice / edge-cached
   // region); fall back to the Cloudflare edge country, then PL.
   const cfCountry = (c.req.raw as unknown as { cf?: { country?: string } }).cf?.country;
@@ -62,7 +75,7 @@ streamingRoutes.post("/streaming-availability", async (c) => {
 
   if (missingIds.length > 0) {
     const keys = { tmdbApiKey: c.env.TMDB_API_KEY, rapidApiKey: c.env.RAPIDAPI_KEY };
-    const settled = await Promise.allSettled(missingIds.map(id => fetchStreamingData(id, country, keys)));
+    const settled = await Promise.allSettled(missingIds.map(id => fetchStreamingData(id, country, keys, mediaTypeById.get(id))));
 
     settled.forEach((result, index) => {
       if (result.status === "fulfilled") {
