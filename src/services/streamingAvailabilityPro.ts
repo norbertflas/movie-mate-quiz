@@ -1,5 +1,5 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api-client";
 import { detectUserRegion } from "@/utils/regionDetection";
 
 export interface StreamingOption {
@@ -115,18 +115,12 @@ export const getStreamingAvailabilityBatch = async (
   }
 
   try {
-    const { data, error } = await supabase.functions.invoke('streaming-availability-pro', {
-      body: {
-        tmdbIds: uncachedIds,
-        country: targetCountry,
-        mode
-      }
+    const response = await api.post<StreamingBatchResponse>('/streaming-availability', {
+      tmdbIds: uncachedIds,
+      country: targetCountry,
+      mode
     });
 
-    if (error) throw error;
-
-    const response = data as StreamingBatchResponse;
-    
     if (!response.success) {
       throw new Error('API call failed');
     }

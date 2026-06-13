@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api-client";
 
 interface YouTubeSearchResponse {
   items: Array<{
@@ -14,11 +14,16 @@ interface YouTubeSearchResponse {
 
 export const getMovieTrailer = async (movieTitle: string, year?: string): Promise<string> => {
   try {
-    const { data: { YOUTUBE_API_KEY }, error } = await supabase
-      .functions.invoke('get-youtube-key');
-
-    if (error || !YOUTUBE_API_KEY) {
+    let youtubeApiKey = "";
+    try {
+      const res = await api.get<{ key: string }>("/keys/youtube");
+      youtubeApiKey = res.key;
+    } catch (error) {
       console.error('Error fetching YouTube API key:', error);
+      return '';
+    }
+
+    if (!youtubeApiKey) {
       return '';
     }
 
@@ -26,7 +31,7 @@ export const getMovieTrailer = async (movieTitle: string, year?: string): Promis
     const response = await fetch(
       `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(
         searchQuery
-      )}&type=video&key=${YOUTUBE_API_KEY}&maxResults=1`
+      )}&type=video&key=${youtubeApiKey}&maxResults=1`
     );
 
     if (!response.ok) {
