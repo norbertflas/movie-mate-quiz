@@ -13,6 +13,15 @@ const app = new Hono<{ Bindings: Env }>();
 
 app.get("/api/health", (c) => c.json({ ok: true, timestamp: new Date().toISOString() }));
 
+// Authoritative region from the Cloudflare edge (the user's real country).
+// Far more accurate than guessing from browser locale/timezone; the SPA
+// caches this for streaming-availability lookups. "XX"/"T1" = unknown/Tor.
+app.get("/api/geo", (c) => {
+  const country = (c.req.raw as unknown as { cf?: { country?: string } }).cf?.country;
+  const valid = country && country !== "XX" && country !== "T1";
+  return c.json({ country: valid ? country.toUpperCase() : null });
+});
+
 // Better Auth: sign-up/sign-in/sign-out/session under /api/auth/*
 app.on(["GET", "POST"], "/api/auth/*", (c) => createAuth(c.env).handler(c.req.raw));
 
