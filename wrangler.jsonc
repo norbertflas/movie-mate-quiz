@@ -42,3 +42,4 @@
   //   RAPIDAPI_KEY        — optional, MovieOfTheNight enrichment
   //   YOUTUBE_API_KEY     — optional, trailers
 }
+// Cloudflare deployment ready
