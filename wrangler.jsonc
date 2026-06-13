@@ -25,7 +25,7 @@
 
   "vars": {
     "APP_URL": "https://moviefinder.io"
-  ],
+    },
 
   "observability": {
     "enabled": true
