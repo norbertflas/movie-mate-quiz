@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { supabase } from "@/integrations/supabase/client";
+import { getRatedMovies } from "@/services/watched";
 import { LoadingState } from "@/components/LoadingState";
 import { EmptyRatings } from "@/components/pages/EmptyRatings";
 import { OptimizedMovieGrid } from "@/components/movie/OptimizedMovieGrid";
@@ -25,14 +25,7 @@ const Ratings = () => {
 
   const fetchRatings = async () => {
     try {
-      const { data, error } = await supabase
-        .from('watched_movies')
-        .select('*')
-        .eq('user_id', user?.id)
-        .not('rating', 'is', null)
-        .order('watched_at', { ascending: false });
-
-      if (error) throw error;
+      const data = await getRatedMovies();
 
       // Convert watched movies to TMDBMovie format
       const movieData: TMDBMovie[] = data?.map(movie => ({

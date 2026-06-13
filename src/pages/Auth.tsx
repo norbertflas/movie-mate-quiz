@@ -1,8 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Auth as SupabaseAuth } from "@supabase/auth-ui-react";
-import { ThemeSupa } from "@supabase/auth-ui-shared";
-import { supabase } from "@/integrations/supabase/client";
+import { signIn, signUp } from "@/lib/auth-client";
 import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -13,6 +11,32 @@ const Auth = () => {
   const { session } = useAuth();
   const navigate = useNavigate();
   const [showFlash, setShowFlash] = useState(false);
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      const res =
+        mode === "signin"
+          ? await signIn.email({ email, password })
+          : await signUp.email({ email, password, name: name || email.split("@")[0] });
+      if (res.error) {
+        setError(res.error.message || "Authentication failed");
+      }
+      // On success, useSession updates and the effect below navigates home.
+    } catch {
+      setError("Authentication failed");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (session) {
@@ -132,74 +156,72 @@ const Auth = () => {
                 </p>
               </div>
 
-              <SupabaseAuth
-                supabaseClient={supabase}
-                appearance={{
-                  theme: ThemeSupa,
-                  variables: {
-                    default: {
-                      colors: {
-                        brand: "rgb(147, 51, 234)",
-                        brandAccent: "rgb(126, 34, 206)",
-                        inputBackground: "rgba(255,255,255,0.03)",
-                        inputBorder: "rgba(255,255,255,0.1)",
-                        inputText: "white",
-                        inputLabelText: "rgba(255,255,255,0.4)",
-                        inputPlaceholder: "rgba(255,255,255,0.2)",
-                        messageText: "rgb(248, 113, 113)",
-                        anchorTextColor: "rgb(147, 51, 234)",
-                        dividerBackground: "rgba(255,255,255,0.05)",
-                      },
-                      borderWidths: {
-                        buttonBorderWidth: "1px",
-                        inputBorderWidth: "0px",
-                      },
-                      radii: {
-                        borderRadiusButton: "1rem",
-                        buttonBorderRadius: "1rem",
-                        inputBorderRadius: "1rem",
-                      },
-                      space: {
-                        inputPadding: "14px 16px",
-                        buttonPadding: "14px 24px",
-                      },
-                      fonts: {
-                        bodyFontFamily: "'Outfit', sans-serif",
-                        buttonFontFamily: "'Space Grotesk', sans-serif",
-                        inputFontFamily: "'Outfit', sans-serif",
-                        labelFontFamily: "'Outfit', sans-serif",
-                      },
-                      fontSizes: {
-                        baseBodySize: "14px",
-                        baseInputSize: "15px",
-                        baseLabelSize: "12px",
-                        baseButtonSize: "14px",
-                      },
-                    },
-                  },
-                  className: {
-                    button:
-                      "!font-bold !uppercase !tracking-widest !shadow-lg !shadow-purple-500/20 !transition-all hover:!shadow-xl",
-                    container: "!gap-5",
-                    divider: "!opacity-20",
-                    label: "!uppercase !tracking-widest !text-[10px] !font-bold",
-                    input:
-                      "!bg-white/[0.03] !border-b-2 !border-white/10 !rounded-none !rounded-t-xl focus:!border-purple-500 !transition-colors",
-                    message: "!text-red-400 !text-xs",
-                    anchor: "!text-purple-400 !text-xs !font-bold hover:!text-purple-300",
-                  },
-                }}
-                theme="dark"
-                providers={["google"]}
-                redirectTo={window.location.origin}
-              />
+              <form onSubmit={handleSubmit} className="space-y-5">
+                {mode === "signup" && (
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-bold uppercase tracking-widest text-white/40">
+                      Name
+                    </label>
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Your name"
+                      className="w-full px-4 py-3.5 rounded-xl bg-white/[0.03] border-b-2 border-white/10 text-white placeholder:text-white/20 focus:border-purple-500 focus:outline-none transition-colors"
+                    />
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-white/40">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    className="w-full px-4 py-3.5 rounded-xl bg-white/[0.03] border-b-2 border-white/10 text-white placeholder:text-white/20 focus:border-purple-500 focus:outline-none transition-colors"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-white/40">
+                    Password
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    minLength={8}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full px-4 py-3.5 rounded-xl bg-white/[0.03] border-b-2 border-white/10 text-white placeholder:text-white/20 focus:border-purple-500 focus:outline-none transition-colors"
+                  />
+                </div>
 
-              <p className="text-center text-white/10 text-xs mt-8 font-medium">
-                Forgot password?{" "}
-                <span className="text-white/20 italic">
-                  Contact the projectionist.
-                </span>
-              </p>
+                {error && <p className="text-red-400 text-xs">{error}</p>}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3.5 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-60 text-white font-bold uppercase tracking-widest text-sm shadow-lg shadow-purple-500/20 transition-all active:scale-95"
+                >
+                  {loading ? "Please wait…" : mode === "signin" ? "Sign In" : "Create Account"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode(mode === "signin" ? "signup" : "signin");
+                    setError(null);
+                  }}
+                  className="w-full text-center text-purple-400 hover:text-purple-300 text-xs font-bold"
+                >
+                  {mode === "signin"
+                    ? "Need an account? Sign up"
+                    : "Have an account? Sign in"}
+                </button>
+              </form>
             </div>
           </motion.div>
         </div>

@@ -1,57 +1,60 @@
-import { supabase } from "@/integrations/supabase/client";
-import type { Database } from "@/integrations/supabase/types";
+import { api, ApiError } from "@/lib/api-client";
 
-type SavedMovie = Database["public"]["Tables"]["saved_movies"]["Row"];
+export interface SavedMovie {
+  id: string;
+  user_id: string;
+  tmdb_id: number;
+  title: string;
+  poster_path: string | null;
+  created_at: string;
+}
+
+interface SavedRow {
+  id: string;
+  userId: string;
+  tmdbId: number;
+  title: string;
+  posterPath: string | null;
+  createdAt: string;
+}
+
+const mapSaved = (r: SavedRow): SavedMovie => ({
+  id: r.id,
+  user_id: r.userId,
+  tmdb_id: r.tmdbId,
+  title: r.title,
+  poster_path: r.posterPath,
+  created_at: r.createdAt,
+});
 
 export const getSavedMovies = async (): Promise<SavedMovie[]> => {
-  const { data, error } = await supabase
-    .from("saved_movies")
-    .select("*");
-
-  if (error) throw error;
-  return data || [];
+  try {
+    const rows = await api.get<SavedRow[]>("/movies/saved");
+    return rows.map(mapSaved);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401) return [];
+    throw error;
+  }
 };
 
-export const saveMovies = async (movies: { tmdb_id: number; title: string; poster_path: string }[]) => {
-  const user = (await supabase.auth.getUser()).data.user;
-  if (!user) throw new Error("User not authenticated");
-
-  const moviesToSave = movies.map(movie => ({
-    ...movie,
-    user_id: user.id,
-  }));
-
-  const { error } = await supabase
-    .from("saved_movies")
-    .insert(moviesToSave);
-
-  if (error) throw error;
+export const saveMovies = async (
+  movies: { tmdb_id: number; title: string; poster_path?: string | null }[]
+): Promise<void> => {
+  // The Worker derives the user from the session cookie.
+  for (const movie of movies) {
+    await api.post("/movies/saved", {
+      tmdbId: movie.tmdb_id,
+      title: movie.title,
+      posterPath: movie.poster_path ?? null,
+    });
+  }
 };
 
-export const removeSavedMovie = async (tmdb_id: number) => {
-  const user = (await supabase.auth.getUser()).data.user;
-  if (!user) throw new Error("User not authenticated");
-
-  const { error } = await supabase
-    .from("saved_movies")
-    .delete()
-    .eq("tmdb_id", tmdb_id)
-    .eq("user_id", user.id);
-
-  if (error) throw error;
+export const removeSavedMovie = async (tmdb_id: number): Promise<void> => {
+  await api.delete(`/movies/saved/${tmdb_id}`);
 };
 
 export const isSavedMovie = async (tmdb_id: number): Promise<boolean> => {
-  const user = (await supabase.auth.getUser()).data.user;
-  if (!user) return false;
-
-  const { data, error } = await supabase
-    .from("saved_movies")
-    .select("id")
-    .eq("tmdb_id", tmdb_id)
-    .eq("user_id", user.id)
-    .single();
-
-  if (error && error.code !== "PGRST116") throw error;
-  return !!data;
+  const saved = await getSavedMovies();
+  return saved.some((m) => m.tmdb_id === tmdb_id);
 };
