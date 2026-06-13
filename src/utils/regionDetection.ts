@@ -28,13 +28,14 @@ export const supportedRegions = [
 
 /**
  * Synchronous region detection. Priority:
- * 1. Stored user preference (explicit choice always wins)
- * 2. Locale country part (e.g. "pl-PL" -> PL)
- * 3. Timezone heuristic
- * 4. Browser language
+ * 1. Stored user preference (explicit manual choice always wins)
+ * 2. Cloudflare edge country (the user's real location, cached at startup)
+ * 3. Locale country part (e.g. "pl-PL" -> PL)
+ * 4. Timezone heuristic
+ * 5. Browser language
  */
 export function detectUserRegion(): string {
-  // 1. Stored preference
+  // 1. Stored manual preference
   try {
     const stored = localStorage.getItem('user-region');
     if (stored && supportedRegions.includes(stored.toUpperCase())) {
@@ -44,7 +45,19 @@ export function detectUserRegion(): string {
     console.warn('Could not access localStorage:', error);
   }
 
-  // 2. Locale country part
+  // 2. Cloudflare edge country (cached by the startup geo bootstrap).
+  // Accept any ISO-3166 alpha-2 — TMDB watch providers covers far more
+  // countries than the app's UI region list.
+  try {
+    const cf = localStorage.getItem('cf-region');
+    if (cf && /^[A-Z]{2}$/.test(cf.toUpperCase())) {
+      return cf.toUpperCase();
+    }
+  } catch {
+    /* ignore */
+  }
+
+  // 3. Locale country part
   const locale = navigator.language || 'en-US';
   const localeParts = locale.split('-');
   if (localeParts.length >= 2) {

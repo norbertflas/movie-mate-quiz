@@ -17,7 +17,10 @@ streamingRoutes.post("/streaming-availability", async (c) => {
   const body = await c.req.json<{ tmdbIds?: number[]; country?: string; forceRefresh?: boolean }>().catch(() => null);
 
   const tmdbIds = body?.tmdbIds;
-  const country = (body?.country || "pl").toUpperCase();
+  // Client country wins (it carries the user's manual choice / edge-cached
+  // region); fall back to the Cloudflare edge country, then PL.
+  const cfCountry = (c.req.raw as unknown as { cf?: { country?: string } }).cf?.country;
+  const country = (body?.country || cfCountry || "pl").toUpperCase();
   const forceRefresh = body?.forceRefresh === true;
 
   if (!tmdbIds || !Array.isArray(tmdbIds) || tmdbIds.length === 0) {
