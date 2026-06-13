@@ -28,6 +28,8 @@ export interface MovieStreamingData {
   source?: string;
 }
 
+export type MediaType = "movie" | "tv";
+
 const TYPE_PRIORITY: Record<string, number> = { subscription: 4, free: 3, rent: 2, buy: 1 };
 
 // TMDB/JustWatch report plan variants ("Netflix Standard with Ads")
@@ -85,15 +87,18 @@ export const buildResult = (tmdbId: number, title: string, options: StreamingOpt
 // =====================================================
 // SOURCE 1: TMDB Watch Providers (FREE, JustWatch-backed, current data)
 // =====================================================
-const fetchTmdbWatchProviders = async (tmdbId: number, country: string, tmdbApiKey: string): Promise<MovieStreamingData | null> => {
+const fetchTmdbWatchProviders = async (tmdbId: number, country: string, tmdbApiKey: string, mediaType?: MediaType): Promise<MovieStreamingData | null> => {
   if (!tmdbApiKey) return null;
 
   const region = country.toUpperCase();
 
-  const endpoints = [
-    { url: `https://api.themoviedb.org/3/movie/${tmdbId}?api_key=${tmdbApiKey}&append_to_response=watch/providers`, type: 'movie' },
-    { url: `https://api.themoviedb.org/3/tv/${tmdbId}?api_key=${tmdbApiKey}&append_to_response=watch/providers`, type: 'tv' }
+  // Query the exact endpoint when the media type is known (from search);
+  // otherwise try movie first, then TV.
+  const allEndpoints = [
+    { url: `https://api.themoviedb.org/3/movie/${tmdbId}?api_key=${tmdbApiKey}&append_to_response=watch/providers`, type: 'movie' as MediaType },
+    { url: `https://api.themoviedb.org/3/tv/${tmdbId}?api_key=${tmdbApiKey}&append_to_response=watch/providers`, type: 'tv' as MediaType }
   ];
+  const endpoints = mediaType ? allEndpoints.filter(e => e.type === mediaType) : allEndpoints;
 
   for (const endpoint of endpoints) {
     try {
@@ -157,13 +162,14 @@ const fetchTmdbWatchProviders = async (tmdbId: number, country: string, tmdbApiK
 // =====================================================
 // SOURCE 2: RapidAPI Streaming Availability (enrichment)
 // =====================================================
-const fetchRapidApiStreaming = async (tmdbId: number, country: string, rapidApiKey: string): Promise<MovieStreamingData | null> => {
+const fetchRapidApiStreaming = async (tmdbId: number, country: string, rapidApiKey: string, mediaType?: MediaType): Promise<MovieStreamingData | null> => {
   if (!rapidApiKey) return null;
 
-  const endpoints = [
-    `https://streaming-availability.p.rapidapi.com/shows/movie/${tmdbId}?country=${country.toLowerCase()}`,
-    `https://streaming-availability.p.rapidapi.com/shows/series/${tmdbId}?country=${country.toLowerCase()}`
+  const allEndpoints = [
+    { url: `https://streaming-availability.p.rapidapi.com/shows/movie/${tmdbId}?country=${country.toLowerCase()}`, type: "movie" as MediaType },
+    { url: `https://streaming-availability.p.rapidapi.com/shows/series/${tmdbId}?country=${country.toLowerCase()}`, type: "tv" as MediaType }
   ];
+  const endpoints = (mediaType ? allEndpoints.filter(e => e.type === mediaType) : allEndpoints).map(e => e.url);
 
   for (const endpoint of endpoints) {
     try {
@@ -250,15 +256,16 @@ const extractStreamingOptions = (countryData: unknown): any[] => {
 export const fetchStreamingData = async (
   tmdbId: number,
   country: string,
-  keys: { tmdbApiKey: string; rapidApiKey?: string }
+  keys: { tmdbApiKey: string; rapidApiKey?: string },
+  mediaType?: MediaType
 ): Promise<MovieStreamingData> => {
-  const tmdbResult = await fetchTmdbWatchProviders(tmdbId, country, keys.tmdbApiKey);
+  const tmdbResult = await fetchTmdbWatchProviders(tmdbId, country, keys.tmdbApiKey, mediaType);
   if (tmdbResult && tmdbResult.streamingOptions.length > 0) {
     return tmdbResult;
   }
 
   if (keys.rapidApiKey) {
-    const rapidResult = await fetchRapidApiStreaming(tmdbId, country, keys.rapidApiKey);
+    const rapidResult = await fetchRapidApiStreaming(tmdbId, country, keys.rapidApiKey, mediaType);
     if (rapidResult && rapidResult.streamingOptions.length > 0) {
       return rapidResult;
     }
