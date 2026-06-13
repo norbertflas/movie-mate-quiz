@@ -25,11 +25,6 @@
 
   "vars": {
     "APP_URL": "https://moviefinder.io"
-  },
-
-  "routes": [
-    { "pattern": "moviefinder.io", "custom_domain": true },
-    { "pattern": "www.moviefinder.io", "custom_domain": true }
   ],
 
   "observability": {
