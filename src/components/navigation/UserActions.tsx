@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { LogOut, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { authClient } from "@/lib/auth-client";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { ThemeSwitcher } from "../ThemeSwitcher";
@@ -24,7 +24,7 @@ export const UserActions = () => {
 
   const handleLogout = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
+      const { error } = await authClient.signOut();
       if (error) {
         toast({
           variant: "destructive",

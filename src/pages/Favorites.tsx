@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { useAuth } from "@/hooks/use-auth";
-import { supabase } from "@/integrations/supabase/client";
+import { getSavedMovies, removeSavedMovie } from "@/services/user";
 import { MouseGlow } from "@/components/effects/MouseGlow";
 import { FilmGrain } from "@/components/effects/FilmGrain";
 import { EnhancedMovieModal } from "@/components/movie/EnhancedMovieModal";
@@ -39,13 +39,7 @@ const Favorites = () => {
 
   const fetchFavorites = async () => {
     try {
-      const { data, error } = await supabase
-        .from("saved_movies")
-        .select("*")
-        .eq("user_id", user?.id)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
+      const data = await getSavedMovies();
 
       const movieData: TMDBMovie[] =
         data?.map((movie) => ({
@@ -76,13 +70,7 @@ const Favorites = () => {
   const handleRemove = async (tmdbId: number, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      const { error } = await supabase
-        .from("saved_movies")
-        .delete()
-        .eq("tmdb_id", tmdbId)
-        .eq("user_id", user?.id);
-
-      if (error) throw error;
+      await removeSavedMovie(tmdbId);
       setFavorites((prev) => prev.filter((m) => m.id !== tmdbId));
       toast({ title: "Removed from collection" });
     } catch {

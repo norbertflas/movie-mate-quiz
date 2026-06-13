@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { useToast } from "./ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { getStreamingServices, getUserPreferences, setUserPreferences } from "@/services/preferences";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { ServiceList } from "./streaming/ServiceList";
@@ -20,93 +20,50 @@ export const UserStreamingPreferences = () => {
   }, []);
 
   const fetchStreamingServices = async () => {
-    const { data, error } = await supabase
-      .from('streaming_services')
-      .select('*');
-    
-    if (error) {
+    try {
+      const data = await getStreamingServices();
+      setServices(data);
+    } catch (error) {
       toast({
         variant: "destructive",
         title: "Error Loading Services",
-        description: error.message,
+        description: error instanceof Error ? error.message : "Failed to load services",
       });
-    } else if (data) {
-      setServices(data);
     }
     setIsLoading(false);
   };
 
   const fetchUserPreferences = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data: preferences, error } = await supabase
-      .from('user_streaming_preferences')
-      .select('service_id')
-      .eq('user_id', user.id);
-    
-    if (error) {
+    try {
+      const preferences = await getUserPreferences();
+      setSelectedServices(preferences);
+    } catch (error) {
       toast({
         variant: "destructive",
         title: "Error Loading Preferences",
-        description: error.message,
+        description: error instanceof Error ? error.message : "Failed to load preferences",
       });
-    } else if (preferences) {
-      setSelectedServices(preferences.map(pref => pref.service_id));
     }
   };
 
   const handleServiceToggle = async (serviceId: string) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    const isSelected = selectedServices.includes(serviceId);
+    const next = isSelected
+      ? selectedServices.filter(id => id !== serviceId)
+      : [...selectedServices, serviceId];
+
+    try {
+      await setUserPreferences(next);
+    } catch (error) {
       toast({
         variant: "destructive",
-        title: "Authentication Error",
-        description: "You must be logged in to manage streaming preferences",
+        title: "Error Updating Preferences",
+        description: error instanceof Error ? error.message : "You must be logged in to manage streaming preferences",
       });
       return;
     }
 
-    const isSelected = selectedServices.includes(serviceId);
-    
-    if (isSelected) {
-      const { error } = await supabase
-        .from('user_streaming_preferences')
-        .delete()
-        .eq('service_id', serviceId)
-        .eq('user_id', user.id);
-      
-      if (error) {
-        toast({
-          variant: "destructive",
-          title: "Error Removing Service",
-          description: error.message,
-        });
-        return;
-      }
-    } else {
-      const { error } = await supabase
-        .from('user_streaming_preferences')
-        .insert({ 
-          service_id: serviceId,
-          user_id: user.id
-        });
-      
-      if (error) {
-        toast({
-          variant: "destructive",
-          title: "Error Adding Service",
-          description: error.message,
-        });
-        return;
-      }
-    }
-
-    setSelectedServices(prev =>
-      isSelected
-        ? prev.filter(id => id !== serviceId)
-        : [...prev, serviceId]
-    );
+    setSelectedServices(next);
 
     toast({
       title: isSelected ? "Service Removed" : "Service Added",
