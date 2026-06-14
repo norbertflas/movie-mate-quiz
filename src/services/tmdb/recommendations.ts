@@ -1,4 +1,3 @@
-import { supabase } from "@/integrations/supabase/client";
 import { TMDB_BASE_URL, getTMDBApiKey } from "./config";
 import type { TMDBMovie, TMDBRecommendationParams } from "./types";
 import i18n from "@/i18n";

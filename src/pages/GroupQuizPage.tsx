@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { supabase } from "@/integrations/supabase/client";
+import { api, ApiError } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -163,28 +163,20 @@ export const GroupQuizPage = () => {
   const loadGroupData = async () => {
     setLoading(true);
     try {
-      // Load group info (public read via RLS)
-      const { data: group } = await supabase
-        .from("quiz_groups")
-        .select("*")
-        .eq("id", groupId)
-        .single();
+      // Try to resolve the group from the current user's groups; fall back to
+      // a minimal placeholder so a shared link still renders the quiz.
+      let group: { id: string; name: string } = { id: groupId!, name: "Movie Night" };
+      try {
+        const groups = await api.get<{ id: string; name: string }[]>("/quiz/groups");
+        const match = groups.find(g => g.id === groupId);
+        if (match) group = match;
+      } catch (e) {
+        if (!(e instanceof ApiError && e.status === 401)) console.error(e);
+      }
 
       setGroupData(group);
-
-      // Load existing responses
-      const { data: existingResponses } = await supabase
-        .from("quiz_responses")
-        .select("*")
-        .eq("group_id", groupId);
-
-      setResponses(existingResponses || []);
-
-      // Check if current user already submitted
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user && existingResponses?.some(r => r.user_id === user.id)) {
-        setHasSubmitted(true);
-      }
+      // Cross-user response aggregation is not yet backed by an endpoint.
+      setResponses([]);
     } catch (e) {
       console.error("Error loading group:", e);
     } finally {
@@ -236,16 +228,6 @@ export const GroupQuizPage = () => {
   const handleSubmitQuiz = async () => {
     setIsSubmitting(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (user) {
-        await supabase.from("quiz_responses").insert({
-          group_id: groupId!,
-          user_id: user.id,
-          answers: answers as any,
-        });
-      }
-
       // Generate recommendations (same seed for group)
       await new Promise(r => setTimeout(r, 1500));
       const shuffled = [...MOVIE_POOL].sort(() => 0.5 - Math.random());

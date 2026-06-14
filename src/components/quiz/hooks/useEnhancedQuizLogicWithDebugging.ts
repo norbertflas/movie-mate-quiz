@@ -2,7 +2,8 @@
 import { useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api-client";
+import { getRecommendations } from "@/services/recommendations";
 import type { EnhancedMovieRecommendation, EnhancedQuizAnswer } from "../QuizTypes";
 
 export const useEnhancedQuizLogicWithDebugging = () => {
@@ -236,16 +237,6 @@ export const useEnhancedQuizLogicWithDebugging = () => {
 
       console.log('📝 [Quiz] Number of answers:', quizAnswers.length);
       
-      // STEP 2: Check database connection
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      
-      if (userError) {
-        console.error('❌ [Quiz] Auth error:', userError);
-        // Continue without user - anonymous mode
-      }
-      
-      console.log('👤 [Quiz] User authenticated:', user?.id || 'Anonymous');
-
       // STEP 3: Parse answers
       const filters = parseQuizAnswersWithDebug(quizAnswers);
       console.log('🔍 [Quiz] Parsed filters:', filters);
@@ -256,90 +247,38 @@ export const useEnhancedQuizLogicWithDebugging = () => {
       console.log('🚀 [Quiz] Calling enhanced edge function...');
       
       let recommendations: EnhancedMovieRecommendation[] = [];
-      let apiAttempts: any[] = [];
+      const apiAttempts: any[] = [];
 
       try {
-        const { data, error } = await supabase.functions.invoke('get-enhanced-recommendations', {
-          body: { 
-            filters,
-            userId: user?.id,
-            debug: true // Enable debugging in edge function
-          }
+        const data = await getRecommendations({
+          filters: filters as unknown as Parameters<typeof getRecommendations>[0]["filters"],
+          region: (filters as { region?: string }).region,
+          maxResults: (filters as { maxResults?: number }).maxResults,
         });
 
         apiAttempts.push({
-          type: 'enhanced-edge-function',
-          success: !error,
-          error: error?.message,
+          type: 'worker-recommendations',
+          success: Array.isArray(data) && data.length > 0,
           dataReceived: !!data,
           dataLength: Array.isArray(data) ? data.length : 0
         });
 
-        if (error) {
-          console.error('❌ [Quiz] Enhanced edge function error:', error);
-          throw error;
-        }
-
-        if (data && Array.isArray(data)) {
-          recommendations = data;
-          console.log('✅ [Quiz] Enhanced edge function success:', recommendations.length, 'recommendations');
+        if (data && Array.isArray(data) && data.length > 0) {
+          recommendations = data as unknown as EnhancedMovieRecommendation[];
+          console.log('✅ [Quiz] Worker recommendations success:', recommendations.length);
         } else {
-          console.warn('⚠️ [Quiz] Enhanced edge function returned invalid data:', data);
-          throw new Error('Invalid data format from enhanced edge function');
+          throw new Error('No recommendations from Worker');
         }
-
-      } catch (enhancedError) {
-        console.error('❌ [Quiz] Enhanced edge function failed:', enhancedError);
-        
-        // STEP 5: Fallback to basic edge function
-        console.log('🔄 [Quiz] Trying basic edge function...');
-        
-        try {
-          const { data, error } = await supabase.functions.invoke('get-personalized-recommendations', {
-            body: { 
-              answers: quizAnswers,
-              debug: true
-            }
-          });
-
-          apiAttempts.push({
-            type: 'basic-edge-function',
-            success: !error,
-            error: error?.message,
-            dataReceived: !!data,
-            dataLength: Array.isArray(data) ? data.length : 0
-          });
-
-          if (error) {
-            console.error('❌ [Quiz] Basic edge function error:', error);
-            throw error;
-          }
-
-          if (data && Array.isArray(data)) {
-            recommendations = data;
-            console.log('✅ [Quiz] Basic edge function success:', recommendations.length, 'recommendations');
-          } else {
-            throw new Error('Invalid data from basic edge function');
-          }
-
-        } catch (basicError) {
-          console.error('❌ [Quiz] Basic edge function failed:', basicError);
-          
-          // STEP 6: Final fallback - local recommendations
-          console.log('🏠 [Quiz] Using local fallback recommendations...');
-          
-          recommendations = generateLocalFallbackRecommendations(filters);
-          
-          apiAttempts.push({
-            type: 'local-fallback',
-            success: true,
-            error: null,
-            dataReceived: true,
-            dataLength: recommendations.length
-          });
-          
-          console.log('✅ [Quiz] Local fallback generated:', recommendations.length, 'recommendations');
-        }
+      } catch (recoError) {
+        console.error('❌ [Quiz] Worker recommendations failed, using local fallback:', recoError);
+        recommendations = generateLocalFallbackRecommendations(filters);
+        apiAttempts.push({
+          type: 'local-fallback',
+          success: true,
+          error: null,
+          dataReceived: true,
+          dataLength: recommendations.length
+        });
       }
 
       // STEP 7: Validate recommendations
@@ -351,24 +290,12 @@ export const useEnhancedQuizLogicWithDebugging = () => {
         validRecommendations.push(...generateEmergencyFallback());
       }
 
-      // STEP 8: Save history (if user logged in) - Fixed the database insert
-      if (user) {
-        try {
-          const { error: historyError } = await supabase
-            .from('quiz_history')
-            .insert({ 
-              user_id: user.id, 
-              answers: quizAnswers as any // Cast to Json type
-            });
-          
-          if (historyError) {
-            console.error('⚠️ [Quiz] Failed to save history:', historyError);
-          } else {
-            console.log('💾 [Quiz] History saved successfully');
-          }
-        } catch (historyError) {
-          console.error('⚠️ [Quiz] History save error:', historyError);
-        }
+      // STEP 8: Save history (best-effort; Worker derives the user, no-op if anonymous)
+      try {
+        await api.post('/quiz/history', { answers: quizAnswers });
+        console.log('💾 [Quiz] History saved');
+      } catch (historyError) {
+        console.error('⚠️ [Quiz] History save error:', historyError);
       }
 
       // STEP 9: Set results

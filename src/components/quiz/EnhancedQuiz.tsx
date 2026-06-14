@@ -11,7 +11,7 @@ import {
   Rocket, Skull, Sword, Search as SearchIcon, Ghost, Smile
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { api, ApiError } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
 import { Movie } from "@/types/movie";
 import { ProjectorBeam } from "@/components/effects/ProjectorBeam";
@@ -359,23 +359,8 @@ const EnhancedQuiz: React.FC<EnhancedQuizProps> = ({ onBack, onComplete, userPre
   const handleCreateGroupQuiz = async () => {
     setIsCreatingGroup(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast({ title: "Log in first", description: "You need an account to create a group quiz.", variant: "destructive" });
-        navigate("/auth");
-        return;
-      }
-      const { data: group, error } = await supabase
-        .from("quiz_groups")
-        .insert({ name: `Movie Night ${new Date().toLocaleDateString()}`, created_by: user.id })
-        .select()
-        .single();
-      if (error) throw error;
-      
-      await supabase.from("quiz_responses").insert({
-        group_id: group.id,
-        user_id: user.id,
-        answers: answers as any,
+      const group = await api.post<{ id: string }>("/quiz/groups", {
+        name: `Movie Night ${new Date().toLocaleDateString()}`,
       });
 
       const shareUrl = `${window.location.origin}/quiz/group/${group.id}`;
@@ -383,6 +368,11 @@ const EnhancedQuiz: React.FC<EnhancedQuizProps> = ({ onBack, onComplete, userPre
       toast({ title: "Group quiz created! 🔗", description: "Link copied to clipboard — share it with friends!" });
       navigate(`/quiz/group/${group.id}`);
     } catch (e) {
+      if (e instanceof ApiError && e.status === 401) {
+        toast({ title: "Log in first", description: "You need an account to create a group quiz.", variant: "destructive" });
+        navigate("/auth");
+        return;
+      }
       console.error("Error creating group quiz:", e);
       toast({ title: "Could not create group", variant: "destructive" });
     } finally {

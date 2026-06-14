@@ -27,7 +27,6 @@ export default defineConfig(({ mode }) => ({
           'vendor': ['react', 'react-dom'],
           'ui': ['@radix-ui/react-dialog', '@radix-ui/react-toast'],
           'routing': ['react-router-dom'],
-          'supabase': ['@supabase/supabase-js'],
           'i18n': ['react-i18next', 'i18next']
         }
       }
@@ -44,10 +43,8 @@ export default defineConfig(({ mode }) => ({
       'react',
       'react-dom',
       'react-router-dom',
-      '@supabase/supabase-js',
       'react-i18next'
     ],
-    exclude: ['@supabase/auth-helpers-react'],
     // Force pre-bundling of problematic dependencies
     force: true
   },

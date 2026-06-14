@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { getRecommendations } from "@/services/recommendations";
 import { Loader2, Sparkles, Play, Star, Calendar } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -73,17 +73,7 @@ export const PersonalizedRecommendationsForm = () => {
     try {
       console.log('Sending recommendation request:', { prompt, selectedMovies });
       
-      const { data, error } = await supabase.functions.invoke('get-personalized-recommendations', {
-        body: {
-          prompt: prompt.trim(),
-          selectedMovies: selectedMovies
-        }
-      });
-
-      if (error) {
-        console.error('Edge function error:', error);
-        throw new Error(error.message || 'Error getting recommendations');
-      }
+      const data = await getRecommendations({ maxResults: 12 });
 
       console.log('Received recommendations:', data);
 
@@ -91,7 +81,7 @@ export const PersonalizedRecommendationsForm = () => {
         throw new Error('No recommendations in response');
       }
 
-      setRecommendations(data);
+      setRecommendations(data as unknown as Movie[]);
       toast({
         title: "Success!",
         description: `Found ${data.length} recommendations for you`,
