@@ -3,6 +3,7 @@ import { createAuth } from "./auth";
 import { streamingRoutes } from "./routes/streaming";
 import { searchRoutes } from "./routes/search";
 import { recommendationRoutes } from "./routes/recommendations";
+import { tmdbProxyRoutes } from "./routes/tmdb";
 import { dataRoutes } from "./routes/data";
 import type { Env } from "./env";
 
@@ -27,13 +28,13 @@ app.get("/api/geo", (c) => {
 // Better Auth: sign-up/sign-in/sign-out/session under /api/auth/*
 app.on(["GET", "POST"], "/api/auth/*", (c) => createAuth(c.env).handler(c.req.raw));
 
-// Same contract as the old get-tmdb-key / get-youtube-key Supabase functions
-app.get("/api/keys/tmdb", (c) => c.json({ key: c.env.TMDB_API_KEY }));
+// Same contract as the old get-youtube-key Supabase function
 app.get("/api/keys/youtube", (c) => c.json({ key: c.env.YOUTUBE_API_KEY || "" }));
 
 app.route("/api", streamingRoutes);
 app.route("/api", searchRoutes);
 app.route("/api", recommendationRoutes);
+app.route("/api", tmdbProxyRoutes);
 app.route("/api", dataRoutes);
 
 // Non-API requests that still reach the Worker fall back to the SPA assets

@@ -50,8 +50,11 @@ export const EnhancedMovieModal = ({
       try {
         const userLocale = navigator.language || "en-US";
         const movieLang = userLocale.split("-")[0];
+        // Via the Worker TMDB proxy (key stays server-side).
+        // include_image_language adds EN + language-agnostic images so the
+        // Media tab isn't empty for non-EN locales.
         const response = await fetch(
-          `https://api.themoviedb.org/3/movie/${movie.id}?api_key=${await import("@/services/tmdb/config").then((m) => m.getTMDBApiKey())}&append_to_response=credits,videos,images,similar,reviews&language=${movieLang}`
+          `/api/tmdb/movie/${movie.id}?append_to_response=credits,videos,images,similar,reviews&language=${movieLang}&include_image_language=${movieLang},en,null`
         );
         if (response.ok) {
           setMovieDetails(await response.json());

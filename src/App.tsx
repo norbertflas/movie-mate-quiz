@@ -22,6 +22,7 @@ import QuickStart from "./pages/QuickStart";
 import Services from "./pages/Services";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
+import NotFound from "./pages/NotFound";
 import "./App.css";
 
 const queryClient = new QueryClient();
@@ -52,6 +53,7 @@ function App() {
               <Route path="/auth" element={<Auth />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/quiz/group/:groupId" element={<GroupQuizPage />} />
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
         </BrowserRouter>

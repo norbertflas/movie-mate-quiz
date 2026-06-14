@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError } from "@/lib/api-client";
+import { saveMovies } from "@/services/user";
 import { useToast } from "@/hooks/use-toast";
 import { Movie } from "@/types/movie";
 import { ProjectorBeam } from "@/components/effects/ProjectorBeam";
@@ -337,10 +338,19 @@ const EnhancedQuiz: React.FC<EnhancedQuizProps> = ({ onBack, onComplete, userPre
     }
   };
 
-  const handleLikeMovie = (movie: Movie) => {
+  const handleLikeMovie = async (movie: Movie) => {
     setLikedMovie(movie);
     playMagic();
-    toast({ title: `❤️ ${movie.title} added!`, description: "Great choice! You can find it in your favorites." });
+    try {
+      await saveMovies([{ tmdb_id: movie.id, title: movie.title, poster_path: (movie as { poster_path?: string }).poster_path }]);
+      toast({ title: `❤️ ${movie.title} added!`, description: "Saved to your favorites." });
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 401) {
+        toast({ title: "Sign in to save favorites", description: "Create an account to keep your picks.", variant: "destructive" });
+      } else {
+        toast({ title: "Couldn't save to favorites", variant: "destructive" });
+      }
+    }
   };
 
   const handleRetakeQuiz = () => {
