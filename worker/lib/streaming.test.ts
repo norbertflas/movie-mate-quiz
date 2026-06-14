@@ -1,0 +1,116 @@
+import { describe, it, expect, vi, afterEach } from "vitest";
+import { fetchStreamingData, buildResult, type StreamingOption } from "./streaming";
+
+const KEYS = { tmdbApiKey: "test-key" };
+
+/** Minimal Response-like stub for the worker's fetch usage. */
+function res(status: number, body: unknown) {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    json: async () => body,
+  } as unknown as Response;
+}
+
+function mockFetch(handler: (url: string) => Response | Promise<Response>) {
+  globalThis.fetch = vi.fn((input: any) => Promise.resolve(handler(String(input)))) as unknown as typeof fetch;
+}
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
+describe("buildResult", () => {
+  it("separates subscription/free from rent/buy and sorts best-first", () => {
+    const options: StreamingOption[] = [
+      { service: "Apple TV", serviceLogo: "", link: "", type: "rent", quality: "HD" },
+      { service: "Netflix", serviceLogo: "", link: "", type: "subscription", quality: "HD" },
+      { service: "YouTube", serviceLogo: "", link: "", type: "buy", quality: "HD" },
+    ];
+    const r = buildResult(1, "X", options, "tmdb");
+    expect(r.availableServices).toEqual(["Netflix"]);
+    expect(r.rentBuyServices).toEqual(["Apple TV", "YouTube"]);
+    expect(r.hasStreaming).toBe(true);
+    expect(r.streamingOptions[0].type).toBe("subscription"); // sorted best-first
+  });
+
+  it("reports hasStreaming=false when only rent/buy exist", () => {
+    const r = buildResult(1, "X", [
+      { service: "Apple TV", serviceLogo: "", link: "", type: "buy", quality: "HD" },
+    ], "tmdb");
+    expect(r.hasStreaming).toBe(false);
+    expect(r.availableServices).toEqual([]);
+    expect(r.rentBuyServices).toEqual(["Apple TV"]);
+  });
+});
+
+describe("fetchStreamingData — TMDB watch providers", () => {
+  it("parses providers, dedupes plan variants, splits subscription vs rent/buy", async () => {
+    mockFetch((url) =>
+      url.includes("/movie/603")
+        ? res(200, {
+            title: "The Matrix",
+            "watch/providers": {
+              results: {
+                PL: {
+                  flatrate: [
+                    { provider_name: "Netflix", logo_path: "/n.jpg" },
+                    { provider_name: "Netflix Standard with Ads", logo_path: "/n2.jpg" },
+                  ],
+                  rent: [{ provider_name: "Apple TV", logo_path: "/a.jpg" }],
+                  buy: [{ provider_name: "Apple TV", logo_path: "/a.jpg" }],
+                },
+              },
+            },
+          })
+        : res(404, {})
+    );
+
+    const r = await fetchStreamingData(603, "PL", KEYS);
+    expect(r.source).toBe("tmdb");
+    expect(r.hasStreaming).toBe(true);
+    expect(r.availableServices).toEqual(["Netflix"]); // plan variant collapsed
+    expect(r.rentBuyServices).toEqual(["Apple TV"]); // rent+buy collapsed to one
+    expect(r.streamingOptions.filter((o) => o.service === "Netflix")).toHaveLength(1);
+  });
+
+  it("returns a genuine empty (cacheable) when TMDB responds with no region providers", async () => {
+    mockFetch((url) =>
+      url.includes("/movie/603")
+        ? res(200, { title: "X", "watch/providers": { results: { US: { flatrate: [] } } } })
+        : res(404, {})
+    );
+
+    const r = await fetchStreamingData(603, "PL", KEYS);
+    expect(r.source).toBe("none");
+    expect(r.hasStreaming).toBe(false);
+    expect(r.streamingOptions).toEqual([]);
+  });
+
+  it("THROWS (must not cache as empty) when TMDB is unreachable", async () => {
+    mockFetch(() => {
+      throw new Error("network down");
+    });
+    await expect(fetchStreamingData(603, "PL", KEYS)).rejects.toThrow();
+  });
+
+  it("THROWS on TMDB 5xx (transient), so it is retried rather than cached empty", async () => {
+    mockFetch(() => res(503, {}));
+    await expect(fetchStreamingData(603, "PL", KEYS)).rejects.toThrow();
+  });
+
+  it("queries only the TV endpoint when mediaType=tv", async () => {
+    const seen: string[] = [];
+    mockFetch((url) => {
+      seen.push(url);
+      return url.includes("/tv/1399")
+        ? res(200, { name: "GoT", "watch/providers": { results: { PL: { flatrate: [{ provider_name: "HBO Max" }] } } } })
+        : res(404, {});
+    });
+
+    const r = await fetchStreamingData(1399, "PL", KEYS, "tv");
+    expect(r.hasStreaming).toBe(true);
+    expect(r.availableServices).toEqual(["HBO Max"]);
+    expect(seen.every((u) => u.includes("/tv/"))).toBe(true); // never hit /movie/
+  });
+});

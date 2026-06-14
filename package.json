@@ -12,7 +12,8 @@
     "worker:dev": "wrangler dev",
     "worker:deploy": "npm run build && wrangler deploy",
     "worker:typecheck": "tsc -p tsconfig.worker.json",
-    "worker:migrate": "wrangler d1 migrations apply moviefinder --remote"
+    "worker:migrate": "wrangler d1 migrations apply moviefinder --remote",
+    "test": "vitest run"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -96,6 +97,7 @@
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
     "vite": "^5.4.1",
+    "vitest": "2.1.9",
     "wrangler": "4.100.0"
   },
   "overrides": {
