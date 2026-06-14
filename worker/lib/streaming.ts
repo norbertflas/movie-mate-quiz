@@ -141,6 +141,11 @@ const fetchTmdbWatchProviders = async (tmdbId: number, country: string, tmdbApiK
       ];
 
       const movieTitle = data.title || data.name || data.original_title || data.original_name || '';
+      // TMDB returns a real JustWatch "where to watch" link for the title in
+      // this region. TMDB has NO per-service deep links, so we use this real
+      // aggregator link instead of fabricating per-service URLs (which were
+      // dead/incorrect). Falls back to a service search only if absent.
+      const justWatchLink: string = (watchProviders as { link?: string }).link || '';
       const bestByService = new Map<string, StreamingOption>();
 
       for (const group of providerGroups) {
@@ -154,7 +159,7 @@ const fetchTmdbWatchProviders = async (tmdbId: number, country: string, tmdbApiK
             serviceLogo: provider.logo_path
               ? `https://image.tmdb.org/t/p/w154${provider.logo_path}`
               : getServiceLogo(serviceName.toLowerCase()),
-            link: getServiceSearchUrl(serviceName.toLowerCase(), movieTitle),
+            link: justWatchLink || getServiceSearchUrl(serviceName.toLowerCase(), movieTitle),
             type: group.type,
             quality: 'HD'
           };

@@ -206,7 +206,7 @@ export const useComprehensiveQuizLogic = () => {
       console.log('🎬 Quiz API call with params:', params.toString());
 
       const response = await fetch(
-        `https://api.themoviedb.org/3/discover/movie?${params}`
+        `/api/tmdb/discover/movie?${params}`
       );
 
       if (!response.ok) {
