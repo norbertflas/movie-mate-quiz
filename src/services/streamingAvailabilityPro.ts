@@ -26,6 +26,8 @@ export interface MovieStreamingData {
   rentBuyServices?: string[];
   hasStreaming: boolean;
   lastUpdated: string;
+  /** Origin: tmdb | rapidapi | cache | none | error */
+  source?: string;
 }
 
 export interface StreamingBatchResponse {
@@ -139,7 +141,11 @@ export const getStreamingAvailabilityBatch = async (
     );
 
     normalizedResponseData.forEach(movieData => {
-      setCachedData(movieData.tmdbId, targetCountry, movieData);
+      // Never cache transient failures — only real answers (incl. genuine
+      // "not available"). Synthetic placeholders have no source → skip.
+      if (movieData.source && movieData.source !== 'error') {
+        setCachedData(movieData.tmdbId, targetCountry, movieData);
+      }
     });
 
     // Combine cached and new results

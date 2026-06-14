@@ -100,14 +100,33 @@ const fetchTmdbWatchProviders = async (tmdbId: number, country: string, tmdbApiK
   ];
   const endpoints = mediaType ? allEndpoints.filter(e => e.type === mediaType) : allEndpoints;
 
+  // Track whether TMDB actually answered. If no endpoint responds (network
+  // error / 5xx / auth failure) we must NOT report "no providers" — that
+  // would be cached as unavailable. Throwing lets the caller treat it as a
+  // transient error (not cached, retried next time).
+  let respondedOk = false;
+
   for (const endpoint of endpoints) {
+    let response: Response;
     try {
-      const response = await fetch(endpoint.url, {
+      response = await fetch(endpoint.url, {
         headers: { 'Content-Type': 'application/json' }
       });
+    } catch (error) {
+      console.error(`TMDB network error for ${tmdbId} (${endpoint.type}):`, error);
+      continue; // transport failure — leave respondedOk false
+    }
 
-      if (!response.ok) continue;
+    // 404 = this id isn't that media type: a real answer, just not found.
+    if (response.status === 404) { respondedOk = true; continue; }
+    // 401/403/429/5xx = transient/config failure — do not treat as "empty".
+    if (!response.ok) {
+      console.error(`TMDB HTTP ${response.status} for ${tmdbId} (${endpoint.type})`);
+      continue;
+    }
+    respondedOk = true;
 
+    try {
       const data: any = await response.json();
       const watchProviders = data['watch/providers']?.results?.[region];
 
@@ -152,11 +171,14 @@ const fetchTmdbWatchProviders = async (tmdbId: number, country: string, tmdbApiK
         return buildResult(tmdbId, movieTitle, streamingOptions, 'tmdb');
       }
     } catch (error) {
-      console.error(`TMDB error for ${tmdbId} (${endpoint.type}):`, error);
+      console.error(`TMDB parse error for ${tmdbId} (${endpoint.type}):`, error);
     }
   }
 
-  return null;
+  // Responded but no providers for this region = genuine "not available".
+  if (respondedOk) return null;
+  // Nothing answered = transient failure; signal so it isn't cached as empty.
+  throw new Error(`TMDB unreachable for ${tmdbId}`);
 };
 
 // =====================================================
@@ -259,11 +281,21 @@ export const fetchStreamingData = async (
   keys: { tmdbApiKey: string; rapidApiKey?: string },
   mediaType?: MediaType
 ): Promise<MovieStreamingData> => {
-  const tmdbResult = await fetchTmdbWatchProviders(tmdbId, country, keys.tmdbApiKey, mediaType);
-  if (tmdbResult && tmdbResult.streamingOptions.length > 0) {
-    return tmdbResult;
+  // Primary, authoritative source: TMDB watch providers (JustWatch data).
+  // Throws if TMDB was unreachable; returns null if it responded with no
+  // providers for the region (a genuine "not available").
+  let tmdbResponded = false;
+  try {
+    const tmdbResult = await fetchTmdbWatchProviders(tmdbId, country, keys.tmdbApiKey, mediaType);
+    tmdbResponded = true;
+    if (tmdbResult && tmdbResult.streamingOptions.length > 0) {
+      return tmdbResult;
+    }
+  } catch (error) {
+    console.error(`TMDB failed for ${tmdbId}:`, error);
   }
 
+  // Secondary: RapidAPI can recover (TMDB unreachable) or add coverage.
   if (keys.rapidApiKey) {
     const rapidResult = await fetchRapidApiStreaming(tmdbId, country, keys.rapidApiKey, mediaType);
     if (rapidResult && rapidResult.streamingOptions.length > 0) {
@@ -271,7 +303,13 @@ export const fetchStreamingData = async (
     }
   }
 
-  return buildResult(tmdbId, '', [], 'none');
+  // Only report (and let the route cache) "not available" when the
+  // authoritative source actually answered. Otherwise signal a transient
+  // failure so it is NOT cached as empty and is retried next time.
+  if (tmdbResponded) {
+    return buildResult(tmdbId, '', [], 'none');
+  }
+  throw new Error(`streaming lookup failed for ${tmdbId} (no source responded)`);
 };
 
 // =====================================================
