@@ -1,6 +1,7 @@
 
 import { useState, useCallback, useRef } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api-client";
+import { getRecommendations } from "@/services/recommendations";
 import { getStreamingAvailabilityBatch, type MovieStreamingData } from "@/services/streamingAvailabilityPro";
 import type {
   EnhancedQuizAnswer,
@@ -242,52 +243,23 @@ export const useEnhancedQuizSubmission = ({
       const platformsAnswer = answers.find(a => a.questionId === 'platforms');
       const userPlatforms = platformsAnswer?.answer?.split(',') || [];
 
-      const { data, error } = await supabase.functions.invoke('get-enhanced-recommendations', {
-        body: { 
-          answers,
-          region,
-          sessionId,
-          includeStreaming: true,
-          maxResults: 20
-        }
+      const data = await getRecommendations({
+        answers: answers as { questionId: string; answer: string | string[] }[],
+        region,
+        maxResults: 20,
       });
 
       apiCallsRef.current++;
       onProgress?.(70);
 
-      if (error) {
-        console.error('Error from Enhanced Edge Function:', error);
-        errorsRef.current.push(`Edge function error: ${error.message}`);
-        
-        // Fallback to basic function
-        const { data: fallbackData, error: fallbackError } = await supabase.functions.invoke('get-personalized-recommendations', {
-          body: { answers }
-        });
-        
-        apiCallsRef.current++;
-        
-        if (fallbackError) {
-          throw new Error(`Both edge functions failed: ${error.message}, ${fallbackError.message}`);
-        }
-        
-        if (!fallbackData || !Array.isArray(fallbackData)) {
-          throw new Error('Invalid response format from fallback recommendations service');
-        }
-        
-        const basicRecommendations = fallbackData as EnhancedMovieRecommendation[];
-        const enrichedRecommendations = await enrichRecommendationsWithStreaming(basicRecommendations, userPlatforms);
-        
-        return enrichedRecommendations;
+      if (!data || !Array.isArray(data) || data.length === 0) {
+        throw new Error('Invalid response format from recommendations service');
       }
 
-      console.log('Received recommendations from Enhanced Edge Function:', data);
+      console.log('Received recommendations:', data.length);
       onProgress?.(80);
 
-      if (!data || !Array.isArray(data)) {
-        throw new Error('Invalid response format from enhanced recommendations service');
-      }
-
-      let recommendations = data as EnhancedMovieRecommendation[];
+      let recommendations = data as unknown as EnhancedMovieRecommendation[];
 
       // Enrich with streaming data if needed
       const needsStreamingData = recommendations.some(rec => !rec.streamingAvailability?.length);
@@ -306,48 +278,39 @@ export const useEnhancedQuizSubmission = ({
         .filter(rec => rec.recommendationScore && rec.recommendationScore > 30)
         .slice(0, 12);
 
-      // Save quiz history - Fix: Convert to JSON format expected by the table
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const endTime = Date.now();
-        const newAnalytics: QuizAnalytics = {
-          sessionId,
-          userId: user.id,
-          startTime: new Date(startTimeRef.current).toISOString(),
-          endTime: new Date(endTime).toISOString(),
-          completionRate: 1.0,
-          answers,
-          recommendations: {
-            total: filteredRecommendations.length,
-            withStreaming: filteredRecommendations.filter(r => r.streamingAvailability?.length).length,
-            avgRating: filteredRecommendations.reduce((sum, r) => sum + r.vote_average, 0) / filteredRecommendations.length,
-            topGenres: [...new Set(filteredRecommendations.flatMap(r => r.genres || []))].slice(0, 5)
-          },
-          performance: {
-            totalTime: endTime - startTimeRef.current,
-            avgQuestionTime: (endTime - startTimeRef.current) / answers.length,
-            apiCalls: apiCallsRef.current,
-            errors: errorsRef.current
-          }
-        };
-
-        // Convert answers to JSON format for the database
-        const answersForDb = answers.map(answer => ({
-          questionId: answer.questionId,
-          answer: answer.answer,
-          confidence: answer.confidence || 0.8,
-          metadata: answer.metadata || {}
-        }));
-
-        await supabase
-          .from('quiz_history')
-          .insert([{
-            user_id: user.id,
-            answers: answersForDb as any // Cast to satisfy JSON type
-          }]);
-
-        setAnalytics(newAnalytics);
+      // Save quiz history (best-effort; Worker derives the user, no-op if not logged in)
+      const answersForDb = answers.map(answer => ({
+        questionId: answer.questionId,
+        answer: answer.answer,
+        confidence: answer.confidence || 0.8,
+        metadata: answer.metadata || {}
+      }));
+      try {
+        await api.post('/quiz/history', { answers: answersForDb });
+      } catch (historyError) {
+        console.error('Error saving quiz history:', historyError);
       }
+
+      const endTime = Date.now();
+      setAnalytics({
+        sessionId,
+        startTime: new Date(startTimeRef.current).toISOString(),
+        endTime: new Date(endTime).toISOString(),
+        completionRate: 1.0,
+        answers,
+        recommendations: {
+          total: filteredRecommendations.length,
+          withStreaming: filteredRecommendations.filter(r => r.streamingAvailability?.length).length,
+          avgRating: filteredRecommendations.reduce((sum, r) => sum + r.vote_average, 0) / filteredRecommendations.length,
+          topGenres: [...new Set(filteredRecommendations.flatMap(r => r.genres || []))].slice(0, 5)
+        },
+        performance: {
+          totalTime: endTime - startTimeRef.current,
+          avgQuestionTime: (endTime - startTimeRef.current) / answers.length,
+          apiCalls: apiCallsRef.current,
+          errors: errorsRef.current
+        }
+      });
 
       onProgress?.(100);
 
@@ -417,25 +380,19 @@ export const useEnhancedQuizSubmission = ({
     recommendationIds?: number[]
   ): Promise<void> => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (user) {
-        // For now, we'll save to quiz_history or create a simple feedback log
-        // Since quiz_feedback table doesn't exist, we'll log it instead
-        console.log('Quiz Feedback:', {
-          user_id: user.id,
-          session_id: sessionId,
-          rating,
-          comment,
-          recommendation_ids: recommendationIds
-        });
+      // No feedback table; log + analytics event for now.
+      console.log('Quiz Feedback:', {
+        session_id: sessionId,
+        rating,
+        comment,
+        recommendation_ids: recommendationIds
+      });
 
-        trackEvent('feedback_submitted', {
-          rating,
-          has_comment: !!comment,
-          recommendations_rated: recommendationIds?.length || 0
-        });
-      }
+      trackEvent('feedback_submitted', {
+        rating,
+        has_comment: !!comment,
+        recommendations_rated: recommendationIds?.length || 0
+      });
     } catch (error) {
       console.error('Error submitting feedback:', error);
     }

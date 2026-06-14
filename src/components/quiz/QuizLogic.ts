@@ -3,7 +3,7 @@ import { useState } from "react";
 import type { QuizAnswer, MovieRecommendation, QuizLogicHook } from "./QuizTypes";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api-client";
 import { parseQuizAnswers, getPersonalizedRecommendations, generateFallbackRecommendations } from "./utils/quizRecommendationLogic";
 
 export const useQuizLogic = (): QuizLogicHook => {
@@ -30,19 +30,11 @@ export const useQuizLogic = (): QuizLogicHook => {
     console.log('🔄 [Quiz] Processing answers:', quizAnswers);
     
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      // Save quiz history if user is authenticated
-      if (user) {
-        const { error: historyError } = await supabase
-          .from('quiz_history')
-          .insert([{ user_id: user.id, answers: quizAnswers }]);
-
-        if (historyError) {
-          console.error('Error saving quiz history:', historyError);
-        } else {
-          console.log('✅ Quiz history saved');
-        }
+      // Save quiz history (best-effort; Worker derives the user, no-op if not logged in)
+      try {
+        await api.post('/quiz/history', { answers: quizAnswers });
+      } catch (historyError) {
+        console.error('Error saving quiz history:', historyError);
       }
 
       // Parse the quiz answers into structured filters

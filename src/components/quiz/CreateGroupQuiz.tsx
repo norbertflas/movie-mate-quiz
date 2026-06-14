@@ -4,7 +4,7 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Card } from "../ui/card";
 import { useToast } from "../ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api-client";
 
 export const CreateGroupQuiz = () => {
   const [groupName, setGroupName] = useState("");
@@ -24,17 +24,7 @@ export const CreateGroupQuiz = () => {
 
     setIsCreating(true);
     try {
-      const user = await supabase.auth.getUser();
-      const { data: group, error } = await supabase
-        .from("quiz_groups")
-        .insert({
-          name: groupName,
-          created_by: user.data.user!.id,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
+      const group = await api.post<{ id: string }>("/quiz/groups", { name: groupName });
 
       toast({
         title: "Sukces!",

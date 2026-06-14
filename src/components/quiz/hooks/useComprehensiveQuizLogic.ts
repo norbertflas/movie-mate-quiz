@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { getTMDBApiKey } from '@/services/tmdb/config';
 import { getUserCountry, getStreamingAvailabilityBatch } from '@/services/streamingAvailabilityPro';
 import type { QuizPreferences, MovieRecommendation, TMDB_GENRE_MAPPING, SERVICE_LINKS } from '../types/comprehensiveQuizTypes';
 
@@ -163,14 +163,8 @@ export const useComprehensiveQuizLogic = () => {
     setError(null);
 
     try {
-      // Get TMDB API key from Supabase edge function
-      const { data: tmdbKeyData, error: keyError } = await supabase.functions.invoke('get-tmdb-key');
-      
-      if (keyError || !tmdbKeyData?.TMDB_API_KEY) {
-        throw new Error('Failed to get TMDB API key');
-      }
-      
-      const TMDB_API_KEY = tmdbKeyData.TMDB_API_KEY;
+      // TMDB API key via the Worker proxy
+      const TMDB_API_KEY = await getTMDBApiKey();
 
       // Build query parameters
       const params = new URLSearchParams({

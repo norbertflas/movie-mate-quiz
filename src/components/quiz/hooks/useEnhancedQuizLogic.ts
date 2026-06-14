@@ -1,6 +1,6 @@
 
 import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { getRecommendations } from '@/services/recommendations';
 import { getStreamingAvailabilityBatch } from '@/services/streamingAvailabilityPro';
 import type { EnhancedMovieRecommendation, EnhancedQuizAnswer, EnhancedQuizFilters } from '../QuizTypes';
 import { detectUserRegion } from '../QuizTypes';
@@ -144,19 +144,14 @@ export const useEnhancedQuizLogic = () => {
     try {
       const filters = parseQuizAnswers(answers);
       
-      // Get recommendations from edge function
-      const { data, error } = await supabase.functions.invoke('get-enhanced-recommendations', {
-        body: {
-          answers: answers,
-          region: filters.region,
-          includeStreaming: true,
-          maxResults: filters.maxResults
-        }
+      // Get recommendations from the Worker (TMDB discover)
+      const data = await getRecommendations({
+        answers: answers as { questionId: string; answer: string | string[] }[],
+        region: filters.region,
+        maxResults: filters.maxResults,
       });
 
-      if (error) throw error;
-
-      let recommendations: EnhancedMovieRecommendation[] = data || [];
+      let recommendations: EnhancedMovieRecommendation[] = (data || []) as unknown as EnhancedMovieRecommendation[];
 
       // Enrich with streaming availability
       if (recommendations.length > 0) {

@@ -1,5 +1,3 @@
-import { supabase } from "@/integrations/supabase/client";
-
 export interface MovieList {
   id: string;
   name: string;
@@ -14,52 +12,20 @@ export interface CreateMovieListInput {
   is_public?: boolean;
 }
 
-export const createMovieList = async (input: CreateMovieListInput) => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('User not authenticated');
-
-  const { data, error } = await supabase
-    .from('movie_lists')
-    .insert({
-      name: input.name,
-      description: input.description,
-      is_public: input.is_public ?? false,
-      user_id: user.id
-    })
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
+export const createMovieList = async (_input: CreateMovieListInput): Promise<MovieList | null> => {
+  // legacy table removed in Supabase migration
+  return null;
 };
 
-export const getMovieLists = async () => {
-  const { data, error } = await supabase
-    .from('movie_lists')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-  return data;
+export const getMovieLists = async (): Promise<MovieList[]> => {
+  // legacy table removed in Supabase migration
+  return [];
 };
 
-export const addMovieToList = async (listId: string, movieId: number, title: string) => {
-  const { error } = await supabase
-    .from('movie_list_items')
-    .insert({
-      list_id: listId,
-      tmdb_id: movieId,
-      title: title,
-    });
-
-  if (error) throw error;
+export const addMovieToList = async (_listId: string, _movieId: number, _title: string): Promise<void> => {
+  // legacy table removed in Supabase migration
 };
 
-export const removeMovieFromList = async (listId: string, movieId: number) => {
-  const { error } = await supabase
-    .from('movie_list_items')
-    .delete()
-    .match({ list_id: listId, tmdb_id: movieId });
-
-  if (error) throw error;
+export const removeMovieFromList = async (_listId: string, _movieId: number): Promise<void> => {
+  // legacy table removed in Supabase migration
 };

@@ -1,6 +1,6 @@
 
 import type { QuizAnswer, MovieRecommendation } from "../QuizTypes";
-import { supabase } from "@/integrations/supabase/client";
+import { getRecommendations } from "@/services/recommendations";
 
 export interface QuizFilters {
   platforms: string[];
@@ -110,26 +110,18 @@ export const getPersonalizedRecommendations = async (filters: QuizFilters): Prom
   try {
     console.log('🚀 Getting personalized recommendations with filters:', filters);
     
-    const { data, error } = await supabase.functions.invoke('get-personalized-recommendations', {
-      body: {
-        filters,
-        maxResults: filters.maxResults || 20
-      }
+    const data = await getRecommendations({
+      filters: filters as unknown as Parameters<typeof getRecommendations>[0]["filters"],
+      maxResults: filters.maxResults || 20,
     });
 
-    if (error) {
-      console.error('❌ Error from edge function:', error);
-      throw error;
-    }
-
-    // Edge function returns array directly, not wrapped in recommendations
     if (!data || !Array.isArray(data)) {
-      console.warn('⚠️ No recommendations from edge function');
+      console.warn('⚠️ No recommendations from API');
       return [];
     }
 
     console.log('✅ Got recommendations:', data.length);
-    return data;
+    return data as unknown as MovieRecommendation[];
   } catch (error) {
     console.error('💥 Error getting personalized recommendations:', error);
     throw error;

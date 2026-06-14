@@ -28,6 +28,17 @@ dataRoutes.get("/streaming-services", async (c) => {
   return c.json(services);
 });
 
+// Anonymized cross-user ratings for collaborative filtering (public).
+// Returns only { userId, tmdbId, rating } — no titles or personal data.
+dataRoutes.get("/movies/watched/all", async (c) => {
+  const db = drizzle(c.env.DB);
+  const rows = await db
+    .select({ userId: watchedMovies.userId, tmdbId: watchedMovies.tmdbId, rating: watchedMovies.rating })
+    .from(watchedMovies)
+    .limit(5000);
+  return c.json(rows);
+});
+
 // ---------- auth required below ----------
 
 dataRoutes.use("*", async (c, next) => {

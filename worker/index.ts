@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { createAuth } from "./auth";
 import { streamingRoutes } from "./routes/streaming";
 import { searchRoutes } from "./routes/search";
+import { recommendationRoutes } from "./routes/recommendations";
 import { dataRoutes } from "./routes/data";
 import type { Env } from "./env";
 
@@ -32,6 +33,7 @@ app.get("/api/keys/youtube", (c) => c.json({ key: c.env.YOUTUBE_API_KEY || "" })
 
 app.route("/api", streamingRoutes);
 app.route("/api", searchRoutes);
+app.route("/api", recommendationRoutes);
 app.route("/api", dataRoutes);
 
 // Non-API requests that still reach the Worker fall back to the SPA assets

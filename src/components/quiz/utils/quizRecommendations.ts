@@ -1,34 +1,20 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { getRecommendations } from "@/services/recommendations";
 import type { QuizAnswer } from "../QuizTypes";
 
 export async function getQuizRecommendations(userId?: string, answers?: QuizAnswer[]) {
   try {
     console.log('Getting quiz recommendations for user:', userId);
     console.log('Quiz answers:', answers);
-    
-    // Call the Edge Function to get personalized recommendations
-    const { data, error } = await supabase.functions.invoke('get-personalized-recommendations', {
-      body: { 
-        userId,
-        answers: answers || [],
-        includeExplanations: true,
-        maxResults: 20,
-        region: 'PL'
-      }
+
+    const data = await getRecommendations({
+      answers: (answers || []) as { questionId: string; answer: string | string[] }[],
+      maxResults: 20,
+      region: 'PL',
     });
 
-    if (error) {
-      console.error('Error calling recommendations function:', error);
-      
-      // Enhanced fallback recommendations based on quiz answers
-      const fallbackRecommendations = getFallbackRecommendations(answers);
-      console.log('Using enhanced fallback recommendations:', fallbackRecommendations);
-      return fallbackRecommendations;
-    }
-
-    if (!data || !Array.isArray(data)) {
-      console.error('Invalid response from recommendations function:', data);
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      console.error('Invalid/empty recommendations response, using fallback');
       return getFallbackRecommendations(answers);
     }
 
