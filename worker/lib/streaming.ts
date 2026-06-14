@@ -1,5 +1,5 @@
-// Streaming availability lookup, ported from
-// supabase/functions/streaming-availability-pro.
+// Streaming availability lookup (formerly the streaming-availability-pro
+// Supabase edge function, now native to the Worker).
 // Sources: TMDB watch providers (primary), RapidAPI MovieOfTheNight
 // (enrichment). Never fabricates fallback data — an empty result
 // means the title is genuinely unavailable in the region.
