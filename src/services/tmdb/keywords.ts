@@ -1,4 +1,3 @@
-import { supabase } from "@/integrations/supabase/client";
 import { TMDB_BASE_URL, getTMDBApiKey } from "./config";
 
 export async function getMovieKeywords(movieId: number): Promise<string[]> {

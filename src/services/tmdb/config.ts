@@ -1,26 +1,17 @@
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api-client";
 
 export const TMDB_BASE_URL = "https://api.themoviedb.org/3";
 export const TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
 
 export async function getTMDBApiKey() {
   try {
-    const { data, error } = await supabase.functions.invoke('get-tmdb-key', {
-      method: 'POST',
-    });
-
-    if (error) {
-      console.error('Error fetching TMDB API key:', error);
-      throw error;
+    const { key } = await api.get<{ key: string }>("/keys/tmdb");
+    if (!key) {
+      throw new Error("TMDB API key not found in response");
     }
-
-    if (!data?.TMDB_API_KEY) {
-      throw new Error('TMDB API key not found in response');
-    }
-
-    return data.TMDB_API_KEY;
+    return key;
   } catch (error) {
-    console.error('Failed to get TMDB API key:', error);
+    console.error("Failed to get TMDB API key:", error);
     throw error;
   }
 }

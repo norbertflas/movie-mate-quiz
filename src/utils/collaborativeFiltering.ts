@@ -1,48 +1,56 @@
-import { supabase } from "@/integrations/supabase/client";
-import type { TMDBMovie } from "@/services/tmdb";
+import { api } from "@/lib/api-client";
+import { getWatchedMovies } from "@/services/watched";
 
 interface UserPreference {
   movieId: number;
   rating: number;
 }
 
+interface WatchedAllRow {
+  userId: string;
+  tmdbId: number;
+  rating: number | null;
+}
+
 export async function getCollaborativeRecommendations(userId: string): Promise<number[]> {
   try {
-    // Get user's watched movies and ratings
-    const { data: userWatched, error: watchError } = await supabase
-      .from('watched_movies')
-      .select('tmdb_id, rating')
-      .eq('user_id', userId);
+    // Current user's watched movies (Worker derives the user from the session cookie).
+    const watched = await getWatchedMovies();
+    const userWatched = watched.map((m) => ({ tmdb_id: m.tmdb_id, rating: m.rating }));
 
-    if (watchError) throw watchError;
+    // Cross-user anonymized watched list.
+    let allRows: WatchedAllRow[] = [];
+    try {
+      allRows = await api.get<WatchedAllRow[]>("/movies/watched/all");
+    } catch {
+      return [];
+    }
 
-    // Find similar users based on movie ratings
-    const { data: similarUsers, error: similarError } = await supabase
-      .from('watched_movies')
-      .select('user_id, tmdb_id, rating')
-      .in('tmdb_id', userWatched?.map(m => m.tmdb_id) || [])
-      .neq('user_id', userId);
+    const watchedIds = new Set(userWatched.map((m) => m.tmdb_id));
 
-    if (similarError) throw similarError;
+    // Find similar users based on overlapping watched movies.
+    const similarUsers = allRows.filter(
+      (r) => r.userId !== userId && watchedIds.has(r.tmdbId)
+    );
 
-    // Calculate similarity scores
+    // Calculate similarity scores.
     const userPreferences = new Map<string, UserPreference[]>();
-    similarUsers?.forEach(rating => {
-      if (!userPreferences.has(rating.user_id)) {
-        userPreferences.set(rating.user_id, []);
+    similarUsers.forEach((row) => {
+      if (!userPreferences.has(row.userId)) {
+        userPreferences.set(row.userId, []);
       }
-      userPreferences.get(rating.user_id)?.push({
-        movieId: rating.tmdb_id,
-        rating: rating.rating || 0
+      userPreferences.get(row.userId)?.push({
+        movieId: row.tmdbId,
+        rating: row.rating || 0,
       });
     });
 
-    // Get recommendations based on similar users' highly rated movies
+    // Get recommendations based on similar users' highly rated movies.
     const recommendedMovies = new Set<number>();
-    userPreferences.forEach((preferences, similarUserId) => {
+    userPreferences.forEach((preferences) => {
       preferences
-        .filter(p => p.rating >= 7 && !userWatched?.some(w => w.tmdb_id === p.movieId))
-        .forEach(p => recommendedMovies.add(p.movieId));
+        .filter((p) => p.rating >= 7 && !watchedIds.has(p.movieId))
+        .forEach((p) => recommendedMovies.add(p.movieId));
     });
 
     return Array.from(recommendedMovies);

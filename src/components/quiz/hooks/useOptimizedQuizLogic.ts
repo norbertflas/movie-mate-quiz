@@ -4,7 +4,6 @@ import type { QuizAnswer, MovieRecommendation } from "../QuizTypes";
 import type { EnhancedQuizFilters, EnhancedMovieRecommendation } from "../types/EnhancedQuizTypes";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
-import { supabase } from "@/integrations/supabase/client";
 
 export const useOptimizedQuizLogic = () => {
   const [showQuiz, setShowQuiz] = useState(false);

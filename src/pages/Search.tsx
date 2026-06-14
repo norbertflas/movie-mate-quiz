@@ -3,7 +3,7 @@ import { useState, useMemo } from "react";
 import { Navigation } from "@/components/Navigation";
 import { Search as SearchIcon, Star, ChevronRight, Film, User, Clapperboard } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { searchMovies, searchPeople, type TMDBMovie, type TMDBPerson } from "@/services/tmdb";
+import { searchTitles, searchPeople, type TMDBMovie, type TMDBPerson } from "@/services/tmdb";
 import { motion, AnimatePresence } from "framer-motion";
 import { MouseGlow } from "@/components/effects/MouseGlow";
 import { Footer } from "@/components/Footer";
@@ -20,8 +20,8 @@ const Search = () => {
   const { selectedMovie, isModalOpen, openModal, closeModal } = useMovieModal();
 
   const { data: movies = [], isLoading: isLoadingMovies } = useQuery({
-    queryKey: ["searchMovies", query],
-    queryFn: () => searchMovies(query),
+    queryKey: ["searchTitles", query],
+    queryFn: () => searchTitles(query),
     enabled: query.length > 1 && searchType === "Movies",
   });
 

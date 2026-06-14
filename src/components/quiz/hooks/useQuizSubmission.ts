@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api-client";
+import { getRecommendations } from "@/services/recommendations";
 import type { QuizAnswer, MovieRecommendation } from "../QuizTypes";
 
 export const useQuizSubmission = (
-  steps: any[], 
+  steps: any[],
   onFinish: (data: MovieRecommendation[]) => void
 ) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -12,34 +13,23 @@ export const useQuizSubmission = (
     setIsSubmitting(true);
     try {
       console.log('Submitting quiz answers:', answers);
-      
-      const { data, error } = await supabase.functions.invoke('get-personalized-recommendations', {
-        body: { answers }
+
+      const data = await getRecommendations({
+        answers: answers as { questionId: string; answer: string | string[] }[],
       });
 
-      if (error) {
-        console.error('Error from Edge Function:', error);
-        throw error;
-      }
-
-      console.log('Received recommendations from Edge Function:', data);
-      
       if (!data || !Array.isArray(data)) {
         throw new Error('Invalid response format from recommendations service');
       }
 
-      // Save quiz history
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase
-          .from('quiz_history')
-          .insert([{ 
-            user_id: user.id, 
-            answers 
-          }]);
+      // Save quiz history (best-effort; Worker derives the user, no-op if not logged in)
+      try {
+        await api.post('/quiz/history', { answers });
+      } catch (historyError) {
+        console.error('Error saving quiz history:', historyError);
       }
 
-      return data as MovieRecommendation[];
+      return data as unknown as MovieRecommendation[];
     } catch (error) {
       console.error('Error submitting quiz:', error);
       throw error;

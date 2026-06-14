@@ -1,6 +1,5 @@
 
 import { getTMDBApiKey } from "./config";
-import { supabase } from "@/integrations/supabase/client";
 import { TMDB_BASE_URL } from "./config";
 
 export async function getMovieDetails(movieId: number) {
@@ -77,41 +76,5 @@ export async function getMovieVideos(movieId: number) {
   } catch (error) {
     console.error('Error fetching movie videos:', error);
     throw error;
-  }
-}
-
-export async function getMovieWatchProviders(movieId: number, region: string = 'US') {
-  try {
-    const response = await supabase.functions.invoke('get-tmdb-watch-providers', {
-      body: { tmdb_id: movieId, region }
-    });
-
-    if (response.error) {
-      console.error('Error fetching watch providers:', response.error);
-      return { services: [], region, timestamp: new Date().toISOString(), source: 'tmdb' };
-    }
-
-    return response.data;
-  } catch (error) {
-    console.error('Error in getMovieWatchProviders:', error);
-    return { services: [], region, timestamp: new Date().toISOString(), source: 'tmdb' };
-  }
-}
-
-export async function getWatchmodeAvailability(movieId: number, region: string = 'US') {
-  try {
-    const { data, error } = await supabase.functions.invoke('get-watchmode-availability', {
-      body: { tmdb_id: movieId, region }
-    });
-
-    if (error) {
-      console.error('Error fetching Watchmode availability:', error);
-      return { services: [], region, timestamp: new Date().toISOString(), source: 'watchmode' };
-    }
-
-    return data;
-  } catch (error) {
-    console.error('Error in getWatchmodeAvailability:', error);
-    return { services: [], region, timestamp: new Date().toISOString(), source: 'watchmode' };
   }
 }

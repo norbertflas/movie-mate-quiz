@@ -1,7 +1,7 @@
 
 import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import type { StreamingPlatformData } from '@/types/streaming';
+import { getStreamingAvailabilityBatch, getUserCountry } from '@/services/streamingAvailabilityPro';
 
 interface QuizStreamingSearchOptions {
   country?: string;
@@ -34,9 +34,8 @@ export function useQuizStreamingSearch() {
     options: QuizStreamingSearchOptions = {}
   ) => {
     const {
-      country = 'pl',
-      maxResults = 20,
-      prioritizeSubscription = true
+      country = getUserCountry(),
+      maxResults = 20
     } = options;
 
     setIsSearching(true);
@@ -45,114 +44,56 @@ export function useQuizStreamingSearch() {
     try {
       console.log(`🔍 Quiz streaming search for ${movieIds.length} movies`);
 
-      // Call Supabase Edge Function for batch streaming lookup
-      const { data: streamingResponse, error: streamingError } = await supabase.functions.invoke(
-        'streaming-availability',
-        {
-          body: {
-            tmdbIds: movieIds,
-            country: country.toLowerCase(),
-            mode: 'quiz'
+      const batchResults = await getStreamingAvailabilityBatch(movieIds, 'instant', country.toLowerCase());
+
+      const scoredResults: StreamingSearchResult[] = batchResults.map(result => {
+        let score = 0;
+        let hasPreferredService = false;
+
+        const streamingData: StreamingPlatformData[] = result.streamingOptions.map(option => ({
+          service: option.service,
+          available: true,
+          link: option.link,
+          type: option.type,
+          source: 'streaming-availability-pro',
+          quality: option.quality,
+          price: option.price?.amount,
+          logo: option.serviceLogo
+        }));
+
+        // Base score for having any subscription/free streaming
+        if (result.hasStreaming) {
+          score += 10;
+        }
+
+        // Bonus for subscription services
+        score += result.availableServices.length * 5;
+
+        // Check if movie is on user's preferred platforms (subscription/free only)
+        if (userPreferences.platforms && userPreferences.platforms.length > 0) {
+          const userServices = userPreferences.platforms.map(p => p.toLowerCase());
+          const movieServices = result.availableServices.map(s => s.toLowerCase());
+
+          const matchingServices = movieServices.filter(service =>
+            userServices.some(userService =>
+              service.includes(userService) || userService.includes(service)
+            )
+          );
+
+          if (matchingServices.length > 0) {
+            hasPreferredService = true;
+            score += matchingServices.length * 15; // High bonus for preferred platforms
           }
         }
-      );
 
-      if (streamingError) {
-        throw new Error(`Streaming lookup failed: ${streamingError.message}`);
-      }
-
-      // Process results with scoring
-      const scoredResults: StreamingSearchResult[] = [];
-
-      if (streamingResponse?.results) {
-        for (const result of streamingResponse.results) {
-          let score = 0;
-          let hasPreferredService = false;
-
-          // Score based on streaming availability
-          const streamingData: StreamingPlatformData[] = result.data?.streamingOptions?.map((option: any) => ({
-            service: option.service,
-            available: true,
-            link: option.link || '#',
-            type: option.type || 'subscription',
-            source: 'streaming-availability-api',
-            quality: option.quality || 'hd',
-            price: option.price?.amount || 0,
-            logo: `/streaming-icons/${option.service?.toLowerCase()?.replace(/\s+/g, '') || 'unknown'}.svg`
-          })) || [];
-
-          // Base score for having any streaming
-          if (streamingData.length > 0) {
-            score += 10;
-          }
-
-          // Bonus for subscription services
-          const subscriptionServices = streamingData.filter(s => s.type === 'subscription');
-          score += subscriptionServices.length * 5;
-
-          // Check if movie is on user's preferred platforms
-          if (userPreferences.platforms && userPreferences.platforms.length > 0) {
-            const userServices = userPreferences.platforms.map(p => p.toLowerCase());
-            const movieServices = streamingData.map(s => s.service.toLowerCase());
-            
-            const matchingServices = movieServices.filter(service => 
-              userServices.some(userService => 
-                service.includes(userService) || userService.includes(service)
-              )
-            );
-
-            if (matchingServices.length > 0) {
-              hasPreferredService = true;
-              score += matchingServices.length * 15; // High bonus for preferred platforms
-            }
-          }
-
-          // Genre matching bonus
-          if (userPreferences.genres && result.data?.genres) {
-            const genreMatches = userPreferences.genres.filter(userGenre =>
-              result.data.genres.some((movieGenre: string) => 
-                movieGenre.toLowerCase().includes(userGenre.toLowerCase())
-              )
-            );
-            score += genreMatches.length * 3;
-          }
-
-          // Mood-based scoring
-          if (userPreferences.mood) {
-            const moodGenreMap: Record<string, string[]> = {
-              funny: ['comedy', 'animation'],
-              touching: ['drama', 'romance'],
-              adrenaline: ['action', 'thriller', 'adventure'],
-              relaxing: ['documentary', 'family']
-            };
-
-            const moodGenres = moodGenreMap[userPreferences.mood] || [];
-            if (result.data?.genres) {
-              const moodMatches = moodGenres.filter(moodGenre =>
-                result.data.genres.some((movieGenre: string) => 
-                  movieGenre.toLowerCase().includes(moodGenre)
-                )
-              );
-              score += moodMatches.length * 4;
-            }
-          }
-
-          // Rating bonus
-          if (result.data?.rating && result.data.rating > 70) {
-            score += Math.floor((result.data.rating - 70) / 5);
-          }
-
-          scoredResults.push({
-            tmdbId: result.tmdbId,
-            title: result.data?.title || `Movie ${result.tmdbId}`,
-            year: result.data?.year,
-            poster_path: result.data?.posterUrl,
-            streamingData,
-            hasPreferredService,
-            score
-          });
-        }
-      }
+        return {
+          tmdbId: result.tmdbId,
+          title: result.title || `Movie ${result.tmdbId}`,
+          streamingData,
+          hasPreferredService,
+          score
+        };
+      });
 
       // Sort by score (highest first) and limit results
       const sortedResults = scoredResults
@@ -160,7 +101,7 @@ export function useQuizStreamingSearch() {
           // First prioritize movies on preferred platforms
           if (a.hasPreferredService && !b.hasPreferredService) return -1;
           if (!a.hasPreferredService && b.hasPreferredService) return 1;
-          
+
           // Then by score
           return b.score - a.score;
         })
@@ -188,8 +129,8 @@ export function useQuizStreamingSearch() {
   }, [results]);
 
   const getMoviesOnPlatform = useCallback((platform: string) => {
-    return results.filter(result => 
-      result.streamingData.some(service => 
+    return results.filter(result =>
+      result.streamingData.some(service =>
         service.service.toLowerCase().includes(platform.toLowerCase())
       )
     );

@@ -13,6 +13,8 @@ export interface TMDBMovie {
   video_id?: string;
   genres?: Array<{ id: number; name: string; }>;
   explanations?: string[];
+  /** 'movie' | 'tv' when known (e.g. from multi search) — drives exact streaming lookup */
+  media_type?: 'movie' | 'tv';
 }
 
 export interface TMDBPerson {

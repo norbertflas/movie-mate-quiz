@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { getWatchedMovies } from "@/services/watched";
 import { MovieCard } from "@/components/MovieCard";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { LoadingState } from "@/components/LoadingState";
@@ -14,18 +14,8 @@ export const RecentlyViewedSection = () => {
   const { data: recentMovies, isLoading, error } = useQuery({
     queryKey: ['recentlyViewedMovies'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('watched_movies')
-        .select('*')
-        .order('watched_at', { ascending: false })
-        .limit(3);
-
-      if (error) {
-        console.error('Error fetching watched movies:', error);
-        throw error;
-      }
-
-      return data || [];
+      const data = await getWatchedMovies();
+      return data.slice(0, 3);
     },
     meta: {
       onError: (error: Error) => {

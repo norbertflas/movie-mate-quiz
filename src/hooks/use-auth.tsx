@@ -1,25 +1,30 @@
-import { useEffect, useState } from "react";
-import { Session } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
+import { authClient } from "@/lib/auth-client";
 
+export interface AppUser {
+  id: string;
+  email: string;
+  name?: string | null;
+  image?: string | null;
+}
+
+/**
+ * Auth hook backed by Better Auth (Cloudflare Worker + D1), replacing
+ * the previous Supabase auth. Keeps the `{ session }` shape so existing
+ * consumers that read `session?.user?.id` keep working.
+ */
 export const useAuth = () => {
-  const [session, setSession] = useState<Session | null>(null);
+  const { data, isPending } = authClient.useSession();
 
-  useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-    });
+  const user: AppUser | null = data?.user
+    ? {
+        id: data.user.id,
+        email: data.user.email,
+        name: data.user.name,
+        image: data.user.image ?? null,
+      }
+    : null;
 
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
+  const session = user ? { user } : null;
 
-    return () => subscription.unsubscribe();
-  }, []);
-
-  return { session };
+  return { session, user, isLoading: isPending };
 };

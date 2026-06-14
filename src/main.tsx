@@ -3,6 +3,11 @@ import { createRoot } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import App from './App.tsx'
 import './index.css'
+import { bootstrapRegion } from './lib/region-bootstrap'
+
+// Resolve the user's real region from the Cloudflare edge as early as
+// possible so streaming-availability lookups use the correct country.
+bootstrapRegion();
 
 // Create a client
 const queryClient = new QueryClient({

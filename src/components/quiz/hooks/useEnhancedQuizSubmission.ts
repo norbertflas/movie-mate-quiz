@@ -1,12 +1,31 @@
 
 import { useState, useCallback, useRef } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import type { 
-  EnhancedQuizAnswer, 
-  EnhancedMovieRecommendation, 
+import { api } from "@/lib/api-client";
+import { getRecommendations } from "@/services/recommendations";
+import { getStreamingAvailabilityBatch, type MovieStreamingData } from "@/services/streamingAvailabilityPro";
+import type {
+  EnhancedQuizAnswer,
+  EnhancedMovieRecommendation,
   EnhancedQuizFilters,
-  StreamingAvailability 
+  StreamingAvailability
 } from "../QuizTypes";
+
+const toQuizStreamingAvailability = (
+  data: MovieStreamingData | undefined,
+  region: string
+): StreamingAvailability[] => {
+  if (!data) return [];
+  return data.streamingOptions.map(option => ({
+    service: option.service,
+    link: option.link,
+    available: true,
+    type: option.type,
+    price: option.price?.formatted,
+    quality: 'hd' as const,
+    region,
+    source: 'streaming-availability' as const
+  }));
+};
 
 interface QuizAnalytics {
   sessionId: string;
@@ -91,42 +110,42 @@ export const useEnhancedQuizSubmission = ({
     userPlatforms: string[]
   ): Promise<EnhancedMovieRecommendation[]> => {
     const enriched: EnhancedMovieRecommendation[] = [];
-    
+
     onProgress?.(10);
+
+    // Single batch request for all recommendations (cached client- and server-side)
+    let streamingByMovie = new Map<number, MovieStreamingData>();
+    try {
+      const batchResults = await getStreamingAvailabilityBatch(
+        recommendations.map(rec => rec.tmdbId || rec.id),
+        'instant',
+        region.toLowerCase()
+      );
+      apiCallsRef.current++;
+      streamingByMovie = new Map(batchResults.map(result => [result.tmdbId, result]));
+    } catch (error) {
+      errorsRef.current.push(`Streaming batch error: ${error.message}`);
+    }
+
+    onProgress?.(50);
 
     for (let i = 0; i < recommendations.length; i++) {
       const rec = recommendations[i];
-      
+
       try {
-        onProgress?.(10 + (i / recommendations.length) * 60);
-        
-        const { data, error } = await supabase.functions.invoke('streaming-availability', {
-          body: {
-            tmdbId: rec.tmdbId || rec.id,
-            country: region.toLowerCase(),
-            title: rec.title,
-            year: rec.release_date?.split('-')[0]
-          }
-        });
+        onProgress?.(50 + (i / recommendations.length) * 20);
 
-        apiCallsRef.current++;
+        const movieStreaming = streamingByMovie.get(rec.tmdbId || rec.id);
+        const streamingAvailability = toQuizStreamingAvailability(movieStreaming, region);
+        // "Available on" means subscription/free — rent/buy offers stay in streamingAvailability
+        const availableOn = movieStreaming?.availableServices || [];
 
-        let streamingAvailability: StreamingAvailability[] = [];
-        let availableOn: string[] = [];
-
-        if (!error && data?.result) {
-          streamingAvailability = data.result;
-          availableOn = streamingAvailability.map(s => s.service);
-          
+        if (availableOn.length > 0) {
           trackEvent('streaming_data_fetched', {
             tmdb_id: rec.tmdbId || rec.id,
             services_found: availableOn.length,
             region: region
           });
-        } else {
-          if (error) {
-            errorsRef.current.push(`Streaming API error for ${rec.title}: ${error.message}`);
-          }
         }
 
         const baseFilters: EnhancedQuizFilters = {
@@ -224,52 +243,23 @@ export const useEnhancedQuizSubmission = ({
       const platformsAnswer = answers.find(a => a.questionId === 'platforms');
       const userPlatforms = platformsAnswer?.answer?.split(',') || [];
 
-      const { data, error } = await supabase.functions.invoke('get-enhanced-recommendations', {
-        body: { 
-          answers,
-          region,
-          sessionId,
-          includeStreaming: true,
-          maxResults: 20
-        }
+      const data = await getRecommendations({
+        answers: answers as { questionId: string; answer: string | string[] }[],
+        region,
+        maxResults: 20,
       });
 
       apiCallsRef.current++;
       onProgress?.(70);
 
-      if (error) {
-        console.error('Error from Enhanced Edge Function:', error);
-        errorsRef.current.push(`Edge function error: ${error.message}`);
-        
-        // Fallback to basic function
-        const { data: fallbackData, error: fallbackError } = await supabase.functions.invoke('get-personalized-recommendations', {
-          body: { answers }
-        });
-        
-        apiCallsRef.current++;
-        
-        if (fallbackError) {
-          throw new Error(`Both edge functions failed: ${error.message}, ${fallbackError.message}`);
-        }
-        
-        if (!fallbackData || !Array.isArray(fallbackData)) {
-          throw new Error('Invalid response format from fallback recommendations service');
-        }
-        
-        const basicRecommendations = fallbackData as EnhancedMovieRecommendation[];
-        const enrichedRecommendations = await enrichRecommendationsWithStreaming(basicRecommendations, userPlatforms);
-        
-        return enrichedRecommendations;
+      if (!data || !Array.isArray(data) || data.length === 0) {
+        throw new Error('Invalid response format from recommendations service');
       }
 
-      console.log('Received recommendations from Enhanced Edge Function:', data);
+      console.log('Received recommendations:', data.length);
       onProgress?.(80);
 
-      if (!data || !Array.isArray(data)) {
-        throw new Error('Invalid response format from enhanced recommendations service');
-      }
-
-      let recommendations = data as EnhancedMovieRecommendation[];
+      let recommendations = data as unknown as EnhancedMovieRecommendation[];
 
       // Enrich with streaming data if needed
       const needsStreamingData = recommendations.some(rec => !rec.streamingAvailability?.length);
@@ -288,48 +278,39 @@ export const useEnhancedQuizSubmission = ({
         .filter(rec => rec.recommendationScore && rec.recommendationScore > 30)
         .slice(0, 12);
 
-      // Save quiz history - Fix: Convert to JSON format expected by the table
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const endTime = Date.now();
-        const newAnalytics: QuizAnalytics = {
-          sessionId,
-          userId: user.id,
-          startTime: new Date(startTimeRef.current).toISOString(),
-          endTime: new Date(endTime).toISOString(),
-          completionRate: 1.0,
-          answers,
-          recommendations: {
-            total: filteredRecommendations.length,
-            withStreaming: filteredRecommendations.filter(r => r.streamingAvailability?.length).length,
-            avgRating: filteredRecommendations.reduce((sum, r) => sum + r.vote_average, 0) / filteredRecommendations.length,
-            topGenres: [...new Set(filteredRecommendations.flatMap(r => r.genres || []))].slice(0, 5)
-          },
-          performance: {
-            totalTime: endTime - startTimeRef.current,
-            avgQuestionTime: (endTime - startTimeRef.current) / answers.length,
-            apiCalls: apiCallsRef.current,
-            errors: errorsRef.current
-          }
-        };
-
-        // Convert answers to JSON format for the database
-        const answersForDb = answers.map(answer => ({
-          questionId: answer.questionId,
-          answer: answer.answer,
-          confidence: answer.confidence || 0.8,
-          metadata: answer.metadata || {}
-        }));
-
-        await supabase
-          .from('quiz_history')
-          .insert([{
-            user_id: user.id,
-            answers: answersForDb as any // Cast to satisfy JSON type
-          }]);
-
-        setAnalytics(newAnalytics);
+      // Save quiz history (best-effort; Worker derives the user, no-op if not logged in)
+      const answersForDb = answers.map(answer => ({
+        questionId: answer.questionId,
+        answer: answer.answer,
+        confidence: answer.confidence || 0.8,
+        metadata: answer.metadata || {}
+      }));
+      try {
+        await api.post('/quiz/history', { answers: answersForDb });
+      } catch (historyError) {
+        console.error('Error saving quiz history:', historyError);
       }
+
+      const endTime = Date.now();
+      setAnalytics({
+        sessionId,
+        startTime: new Date(startTimeRef.current).toISOString(),
+        endTime: new Date(endTime).toISOString(),
+        completionRate: 1.0,
+        answers,
+        recommendations: {
+          total: filteredRecommendations.length,
+          withStreaming: filteredRecommendations.filter(r => r.streamingAvailability?.length).length,
+          avgRating: filteredRecommendations.reduce((sum, r) => sum + r.vote_average, 0) / filteredRecommendations.length,
+          topGenres: [...new Set(filteredRecommendations.flatMap(r => r.genres || []))].slice(0, 5)
+        },
+        performance: {
+          totalTime: endTime - startTimeRef.current,
+          avgQuestionTime: (endTime - startTimeRef.current) / answers.length,
+          apiCalls: apiCallsRef.current,
+          errors: errorsRef.current
+        }
+      });
 
       onProgress?.(100);
 
@@ -363,39 +344,34 @@ export const useEnhancedQuizSubmission = ({
     recommendations: EnhancedMovieRecommendation[],
     alternativeRegion: string
   ): Promise<EnhancedMovieRecommendation[]> => {
-    const updatedRecommendations: EnhancedMovieRecommendation[] = [];
+    const missing = recommendations.filter(rec => rec.streamingAvailability?.length === 0);
+    if (missing.length === 0) return recommendations;
 
-    for (const rec of recommendations) {
-      if (rec.streamingAvailability?.length === 0) {
-        try {
-          const { data } = await supabase.functions.invoke('streaming-availability', {
-            body: {
-              tmdbId: rec.tmdbId || rec.id,
-              country: alternativeRegion.toLowerCase(),
-              title: rec.title,
-              year: rec.release_date?.split('-')[0]
-            }
-          });
-
-          if (data?.result?.length > 0) {
-            updatedRecommendations.push({
-              ...rec,
-              alternativeRegions: [alternativeRegion],
-              streamingAvailability: data.result.map(s => ({ ...s, region: alternativeRegion }))
-            });
-          } else {
-            updatedRecommendations.push(rec);
-          }
-        } catch (error) {
-          console.error(`Error checking alternative region ${alternativeRegion} for ${rec.title}:`, error);
-          updatedRecommendations.push(rec);
-        }
-      } else {
-        updatedRecommendations.push(rec);
-      }
+    let streamingByMovie = new Map<number, MovieStreamingData>();
+    try {
+      const batchResults = await getStreamingAvailabilityBatch(
+        missing.map(rec => rec.tmdbId || rec.id),
+        'lazy',
+        alternativeRegion.toLowerCase()
+      );
+      streamingByMovie = new Map(batchResults.map(result => [result.tmdbId, result]));
+    } catch (error) {
+      console.error(`Error checking alternative region ${alternativeRegion}:`, error);
+      return recommendations;
     }
 
-    return updatedRecommendations;
+    return recommendations.map(rec => {
+      if (rec.streamingAvailability?.length !== 0) return rec;
+
+      const movieStreaming = streamingByMovie.get(rec.tmdbId || rec.id);
+      if (!movieStreaming || movieStreaming.streamingOptions.length === 0) return rec;
+
+      return {
+        ...rec,
+        alternativeRegions: [alternativeRegion],
+        streamingAvailability: toQuizStreamingAvailability(movieStreaming, alternativeRegion)
+      };
+    });
   }, []);
 
   const submitFeedback = useCallback(async (
@@ -404,25 +380,19 @@ export const useEnhancedQuizSubmission = ({
     recommendationIds?: number[]
   ): Promise<void> => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (user) {
-        // For now, we'll save to quiz_history or create a simple feedback log
-        // Since quiz_feedback table doesn't exist, we'll log it instead
-        console.log('Quiz Feedback:', {
-          user_id: user.id,
-          session_id: sessionId,
-          rating,
-          comment,
-          recommendation_ids: recommendationIds
-        });
+      // No feedback table; log + analytics event for now.
+      console.log('Quiz Feedback:', {
+        session_id: sessionId,
+        rating,
+        comment,
+        recommendation_ids: recommendationIds
+      });
 
-        trackEvent('feedback_submitted', {
-          rating,
-          has_comment: !!comment,
-          recommendations_rated: recommendationIds?.length || 0
-        });
-      }
+      trackEvent('feedback_submitted', {
+        rating,
+        has_comment: !!comment,
+        recommendations_rated: recommendationIds?.length || 0
+      });
     } catch (error) {
       console.error('Error submitting feedback:', error);
     }

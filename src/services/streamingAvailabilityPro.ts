@@ -1,5 +1,6 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api-client";
+import { detectUserRegion } from "@/utils/regionDetection";
 
 export interface StreamingOption {
   service: string;
@@ -17,8 +18,12 @@ export interface StreamingOption {
 export interface MovieStreamingData {
   tmdbId: number;
   title: string;
+  /** All offers, sorted best-first (subscription > free > rent > buy) */
   streamingOptions: StreamingOption[];
+  /** Services where the title is included with a subscription or free */
   availableServices: string[];
+  /** Services where the title can only be rented or bought */
+  rentBuyServices?: string[];
   hasStreaming: boolean;
   lastUpdated: string;
 }
@@ -34,8 +39,10 @@ export interface StreamingBatchResponse {
 }
 
 // Cache management
-const CACHE_DURATION = 3 * 60 * 60 * 1000; // 3 hours for Pro plan
-const CACHE_PREFIX = 'pro_streaming_cache';
+const CACHE_DURATION = 3 * 60 * 60 * 1000; // 3 hours (server keeps its own 24h cache)
+const CACHE_PREFIX = 'pro_streaming_cache_v2';
+// Old cache keys from previous (buggy) implementations — purged on startup
+const LEGACY_CACHE_PREFIXES = ['pro_streaming_cache_', 'streaming_v'];
 
 const getCacheKey = (country: string, tmdbId: number): string => {
   return `${CACHE_PREFIX}_${country}_${tmdbId}`;
@@ -75,25 +82,9 @@ const setCachedData = (tmdbId: number, country: string, data: MovieStreamingData
   }
 };
 
-// Get user's country based on locale with dynamic detection
+// Get user's country (lowercase, e.g. "pl") via the shared region detection
 export const getUserCountry = (): string => {
-  const language = navigator.language || 'en-US';
-  
-  // Try to extract country from locale (e.g., "pl-PL" -> "PL", "en-US" -> "US")
-  const parts = language.split('-');
-  if (parts.length >= 2) {
-    const country = parts[1].toLowerCase();
-    console.log(`🌍 Detected country from locale: ${country}`);
-    return country;
-  }
-  
-  // Fallback: use language code as country hint
-  const langToCountry: Record<string, string> = {
-    'pl': 'pl', 'en': 'us', 'de': 'de', 'fr': 'fr', 'es': 'es', 'it': 'it'
-  };
-  const country = langToCountry[parts[0].toLowerCase()] || 'pl';
-  console.log(`🌍 Detected country from language: ${country}`);
-  return country;
+  return detectUserRegion().toLowerCase();
 };
 
 // Get streaming data for multiple movies
@@ -124,18 +115,12 @@ export const getStreamingAvailabilityBatch = async (
   }
 
   try {
-    const { data, error } = await supabase.functions.invoke('streaming-availability-pro', {
-      body: {
-        tmdbIds: uncachedIds,
-        country: targetCountry,
-        mode
-      }
+    const response = await api.post<StreamingBatchResponse>('/streaming-availability', {
+      tmdbIds: uncachedIds,
+      country: targetCountry,
+      mode
     });
 
-    if (error) throw error;
-
-    const response = data as StreamingBatchResponse;
-    
     if (!response.success) {
       throw new Error('API call failed');
     }
@@ -204,7 +189,8 @@ export const getSupportedServices = (country: string): string[] => {
   return servicesByCountry[country] || servicesByCountry['us'];
 };
 
-// Clean old cache entries
+// Clean expired entries and purge caches left by previous implementations
+// (they may contain fabricated "fallback" platform lists)
 export const cleanCache = (): void => {
   try {
     const keys = Object.keys(localStorage);
@@ -219,6 +205,8 @@ export const cleanCache = (): void => {
         } catch {
           localStorage.removeItem(key);
         }
+      } else if (LEGACY_CACHE_PREFIXES.some(prefix => key.startsWith(prefix))) {
+        localStorage.removeItem(key);
       }
     });
   } catch (error) {

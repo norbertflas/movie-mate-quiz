@@ -5,7 +5,10 @@ import { Footer } from "@/components/Footer";
 import { MouseGlow } from "@/components/effects/MouseGlow";
 import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { authClient } from "@/lib/auth-client";
+import { api } from "@/lib/api-client";
+import { getSavedMovies, type SavedMovie } from "@/services/user";
+import { getWatchedMovies } from "@/services/watched";
 import { motion } from "framer-motion";
 import {
   Film, Clock, Trophy, User, Settings, Sparkles,
@@ -20,7 +23,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [stats, setStats] = useState({ saved: 0, watched: 0, quizzes: 0 });
-  const [recentFavorites, setRecentFavorites] = useState<any[]>([]);
+  const [recentFavorites, setRecentFavorites] = useState<SavedMovie[]>([]);
   const [cinemaMode, setCinemaMode] = useState(false);
   const [audioFeedback, setAudioFeedback] = useState(true);
 
@@ -34,34 +37,27 @@ const Dashboard = () => {
 
   const fetchStats = async () => {
     try {
-      const [savedRes, watchedRes, quizRes] = await Promise.all([
-        supabase.from("saved_movies").select("*", { count: "exact", head: true }).eq("user_id", user!.id),
-        supabase.from("watched_movies").select("*", { count: "exact", head: true }).eq("user_id", user!.id),
-        supabase.from("quiz_history").select("*", { count: "exact", head: true }).eq("user_id", user!.id),
+      const [saved, watched, quizzes] = await Promise.all([
+        getSavedMovies(),
+        getWatchedMovies(),
+        api.get<unknown[]>("/quiz/history").catch(() => [] as unknown[]),
       ]);
 
       setStats({
-        saved: savedRes.count || 0,
-        watched: watchedRes.count || 0,
-        quizzes: quizRes.count || 0,
+        saved: saved.length,
+        watched: watched.length,
+        quizzes: quizzes.length,
       });
 
-      // Fetch recent favorites for activity feed
-      const { data: recent } = await supabase
-        .from("saved_movies")
-        .select("*")
-        .eq("user_id", user!.id)
-        .order("created_at", { ascending: false })
-        .limit(5);
-
-      setRecentFavorites(recent || []);
+      // Recent favorites for activity feed (already ordered newest-first)
+      setRecentFavorites(saved.slice(0, 5));
     } catch (err) {
       console.error("Dashboard stats error:", err);
     }
   };
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    await authClient.signOut();
     navigate("/");
     toast({ title: "Signed out successfully" });
   };
@@ -71,8 +67,8 @@ const Dashboard = () => {
   if (!user) return null;
 
   const userEmail = user.email || "";
-  const userName = user.user_metadata?.full_name || user.user_metadata?.name || userEmail.split("@")[0];
-  const userAvatar = user.user_metadata?.avatar_url;
+  const userName = user.name || userEmail.split("@")[0];
+  const userAvatar = user.image || undefined;
 
   // Rank based on activity
   const getRank = () => {

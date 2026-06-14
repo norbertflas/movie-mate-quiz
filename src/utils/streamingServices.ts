@@ -1,66 +1,16 @@
-import { supabase } from "@/integrations/supabase/client";
+import { getStreamingServices } from "@/services/preferences";
 import type { StreamingPlatformData, StreamingService } from "@/types/streaming";
 
-// Function to get streaming availability from Supabase
-export const getStreamingAvailabilityFromDB = async (tmdbId: number, type: 'movie' | 'tv', countryCode: string = 'US'): Promise<StreamingPlatformData[]> => {
-  try {
-    const region = countryCode.toUpperCase();
-    console.log(`[getStreamingAvailabilityFromDB] TMDB ID: ${tmdbId}, region: ${region}`);
-    
-    const { data, error } = await supabase
-      .from('movie_streaming_availability')
-      .select('*')
-      .eq('tmdb_id', tmdbId)
-      .eq('region', region);
-
-    if (error) {
-      console.error("Error fetching streaming availability:", error);
-      return [];
-    }
-
-    if (!data || data.length === 0) {
-      console.log(`No streaming data found for TMDB ID ${tmdbId} in region ${region}`);
-      return [];
-    }
-
-    const streamingData: StreamingPlatformData[] = data.map(item => ({
-      service: item.service_id || 'unknown',
-      available: true,
-      link: null,
-      type: 'subscription'
-    }));
-
-    return streamingData;
-  } catch (error) {
-    console.error("Error in getStreamingAvailability:", error);
-    return [];
-  }
+// movie_streaming_availability is a legacy table removed in Supabase migration.
+export const getStreamingAvailabilityFromDB = async (_tmdbId: number, _type: 'movie' | 'tv', _countryCode: string = 'US'): Promise<StreamingPlatformData[]> => {
+  // legacy table removed in Supabase migration
+  return [];
 };
 
-// Function to update the streaming link for a service
-export const updateStreamingLink = async (id: number, link: string) => {
-  try {
-    // Since 'link' column doesn't exist, we should use a column that does exist
-    // or create a new column in the database table if needed
-    const { data, error } = await supabase
-      .from('movie_streaming_availability')
-      // Remove the link update since the column doesn't exist
-      // For now, just return success without updating anything
-      .select('*')  // We're just selecting instead of updating for now
-      .eq('id', id.toString()); // Convert id to string as expected by the table
-
-    if (error) {
-      console.error("Error updating streaming link:", error);
-      return false;
-    }
-
-    // For now, we'll just log this and return success
-    console.log(`Would update link to ${link} for id ${id}, but link column doesn't exist`);
-    return true;
-  } catch (error) {
-    console.error("Error in updateStreamingLink:", error);
-    return false;
-  }
+// movie_streaming_availability is a legacy table removed in Supabase migration.
+export const updateStreamingLink = async (_id: number, _link: string): Promise<boolean> => {
+  // legacy table removed in Supabase migration
+  return true;
 };
 
 // Map of known direct links for specific movies
@@ -172,23 +122,9 @@ export const languageToRegion: Record<string, string> = {
 export const getStreamingServicesByRegion = async (region: string): Promise<StreamingService[]> => {
   try {
     console.log(`[getStreamingServicesByRegion] Fetching for region: ${region.toUpperCase()}`);
-    
-    // First try with regions column, fallback to all services if column doesn't have data yet
-    const { data, error } = await supabase
-      .from('streaming_services')
-      .select('*');
 
-    if (error) {
-      console.error("Error fetching streaming services:", error);
-      return [];
-    }
-
-    // Filter client-side if regions data exists
-    const filtered = data?.filter((s: any) => 
-      !s.regions || s.regions.length === 0 || s.regions.includes(region.toLowerCase())
-    );
-
-    return filtered || [];
+    // The Worker catalog endpoint is region-agnostic; return the full catalog.
+    return await getStreamingServices();
   } catch (error) {
     console.error("Error in getStreamingServicesByRegion:", error);
     return [];

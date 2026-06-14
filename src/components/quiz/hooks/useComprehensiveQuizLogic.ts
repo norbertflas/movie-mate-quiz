@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { getUserCountry } from '@/services/streamingAvailabilityPro';
+import { getTMDBApiKey } from '@/services/tmdb/config';
+import { getUserCountry, getStreamingAvailabilityBatch } from '@/services/streamingAvailabilityPro';
 import type { QuizPreferences, MovieRecommendation, TMDB_GENRE_MAPPING, SERVICE_LINKS } from '../types/comprehensiveQuizTypes';
 
 export const useComprehensiveQuizLogic = () => {
@@ -88,31 +88,17 @@ export const useComprehensiveQuizLogic = () => {
     if (movieIds.length === 0) return new Map();
 
     try {
-      const { data, error } = await supabase.functions.invoke('streaming-availability-pro', {
-        body: {
-          tmdbIds: movieIds,
-          country: userCountry,
-          mode: 'lazy'
-        }
-      });
-
-      if (error || !data?.success || !Array.isArray(data.data)) {
-        console.error('❌ Error calling streaming-availability-pro:', error || data);
-        return new Map();
-      }
+      // Shared service handles client- and server-side caching
+      const batchResults = await getStreamingAvailabilityBatch(movieIds, 'lazy', userCountry);
 
       const mapped = new Map<number, any[]>();
 
-      data.data.forEach((movie: any) => {
-        const normalizedStreaming = Array.isArray(movie.streamingOptions)
-          ? movie.streamingOptions.map((option: any) => ({
-              service: option.service,
-              type: option.type || 'subscription',
-              link: option.link || getServiceLink(option.service)
-            }))
-          : [];
-
-        mapped.set(movie.tmdbId, normalizedStreaming);
+      batchResults.forEach(movie => {
+        mapped.set(movie.tmdbId, movie.streamingOptions.map(option => ({
+          service: option.service,
+          type: option.type || 'subscription',
+          link: option.link || getServiceLink(option.service)
+        })));
       });
 
       return mapped;
@@ -177,14 +163,8 @@ export const useComprehensiveQuizLogic = () => {
     setError(null);
 
     try {
-      // Get TMDB API key from Supabase edge function
-      const { data: tmdbKeyData, error: keyError } = await supabase.functions.invoke('get-tmdb-key');
-      
-      if (keyError || !tmdbKeyData?.TMDB_API_KEY) {
-        throw new Error('Failed to get TMDB API key');
-      }
-      
-      const TMDB_API_KEY = tmdbKeyData.TMDB_API_KEY;
+      // TMDB API key via the Worker proxy
+      const TMDB_API_KEY = await getTMDBApiKey();
 
       // Build query parameters
       const params = new URLSearchParams({
