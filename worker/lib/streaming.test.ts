@@ -114,3 +114,41 @@ describe("fetchStreamingData — TMDB watch providers", () => {
     expect(seen.every((u) => u.includes("/tv/"))).toBe(true); // never hit /movie/
   });
 });
+
+describe("fetchStreamingData — RapidAPI fallback (MovieOfTheNight v4)", () => {
+  it("uses /shows/tv/ (not /shows/series/) and parses streamingOptions for TV", async () => {
+    const seen: string[] = [];
+    mockFetch((url) => {
+      seen.push(url);
+      // TMDB (tv) responds but with no providers in PL -> genuine empty
+      if (url.includes("api.themoviedb.org")) {
+        return res(200, { name: "Show", "watch/providers": { results: { US: {} } } });
+      }
+      // RapidAPI v4 show endpoint
+      if (url.includes("streaming-availability.p.rapidapi.com/shows/tv/1399")) {
+        return res(200, {
+          showType: "series",
+          streamingOptions: {
+            pl: [
+              { service: { id: "netflix", name: "Netflix" }, type: "subscription", link: "https://www.netflix.com/title/1", quality: "hd" },
+              { service: { id: "apple", name: "Apple TV" }, type: "rent", link: "https://tv.apple.com/x", price: { amount: "14.99", currency: "PLN", formatted: "14,99 zł" } },
+            ],
+          },
+        });
+      }
+      return res(404, {});
+    });
+
+    const r = await fetchStreamingData(1399, "PL", { tmdbApiKey: "t", rapidApiKey: "r" }, "tv");
+
+    expect(r.source).toBe("rapidapi");
+    expect(r.hasStreaming).toBe(true);
+    expect(r.availableServices).toEqual(["Netflix"]); // subscription only
+    expect(r.rentBuyServices).toHaveLength(1); // the rent offer goes to rent/buy, not availableServices
+    // The RapidAPI TV call must use /shows/tv/, never the wrong /shows/series/
+    const rapidCalls = seen.filter((u) => u.includes("rapidapi.com"));
+    expect(rapidCalls.some((u) => u.includes("/shows/tv/1399"))).toBe(true);
+    expect(rapidCalls.some((u) => u.includes("/shows/series/"))).toBe(false);
+  });
+});
+

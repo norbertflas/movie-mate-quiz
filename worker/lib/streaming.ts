@@ -192,9 +192,11 @@ const fetchTmdbWatchProviders = async (tmdbId: number, country: string, tmdbApiK
 const fetchRapidApiStreaming = async (tmdbId: number, country: string, rapidApiKey: string, mediaType?: MediaType): Promise<MovieStreamingData | null> => {
   if (!rapidApiKey) return null;
 
+  // MovieOfTheNight v4: GET /shows/{type}/{tmdbId}; the TMDB id path uses
+  // "movie" / "tv" (matching TMDB media types), NOT "series".
   const allEndpoints = [
     { url: `https://streaming-availability.p.rapidapi.com/shows/movie/${tmdbId}?country=${country.toLowerCase()}`, type: "movie" as MediaType },
-    { url: `https://streaming-availability.p.rapidapi.com/shows/series/${tmdbId}?country=${country.toLowerCase()}`, type: "tv" as MediaType }
+    { url: `https://streaming-availability.p.rapidapi.com/shows/tv/${tmdbId}?country=${country.toLowerCase()}`, type: "tv" as MediaType }
   ];
   const endpoints = (mediaType ? allEndpoints.filter(e => e.type === mediaType) : allEndpoints).map(e => e.url);
 
