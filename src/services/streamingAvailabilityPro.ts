@@ -89,6 +89,31 @@ export const getUserCountry = (): string => {
   return detectUserRegion().toLowerCase();
 };
 
+/**
+ * Resolve an exact per-title deep link on a streaming service (via the
+ * Worker, which calls RapidAPI and caches in D1 for ~7 days). Returns
+ * null if unavailable — caller should then use its search-link fallback.
+ */
+export async function resolveServiceDeepLink(args: {
+  tmdbId: number;
+  country: string;
+  service: string;
+  mediaType?: 'movie' | 'tv';
+}): Promise<string | null> {
+  try {
+    const q = new URLSearchParams({
+      tmdbId: String(args.tmdbId),
+      country: args.country,
+      service: args.service,
+    });
+    if (args.mediaType) q.set('mediaType', args.mediaType);
+    const res = await api.get<{ link: string | null }>(`/streaming/deeplink?${q.toString()}`);
+    return res.link ?? null;
+  } catch {
+    return null;
+  }
+}
+
 // Get streaming data for multiple movies
 export const getStreamingAvailabilityBatch = async (
   tmdbIds: number[],

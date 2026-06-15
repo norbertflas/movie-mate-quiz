@@ -194,7 +194,7 @@ const fetchTmdbWatchProviders = async (tmdbId: number, country: string, tmdbApiK
 // =====================================================
 // SOURCE 2: RapidAPI Streaming Availability (enrichment)
 // =====================================================
-const fetchRapidApiStreaming = async (tmdbId: number, country: string, rapidApiKey: string, mediaType?: MediaType): Promise<MovieStreamingData | null> => {
+export const fetchRapidApiStreaming = async (tmdbId: number, country: string, rapidApiKey: string, mediaType?: MediaType): Promise<MovieStreamingData | null> => {
   if (!rapidApiKey) return null;
 
   // MovieOfTheNight v4: GET /shows/{type}/{tmdbId}; the TMDB id path uses
@@ -323,6 +323,50 @@ export const fetchStreamingData = async (
   }
   throw new Error(`streaming lookup failed for ${tmdbId} (no source responded)`);
 };
+
+// =====================================================
+// Deep links (RapidAPI / MovieOfTheNight) — exact per-title links
+// =====================================================
+
+/** Resolve exact per-service deep links for a title via RapidAPI.
+ *  Tries the hinted media type first, then the other. Returns a map of
+ *  normalized service name -> deep link (empty if none/unavailable). */
+export async function fetchRapidApiDeepLinks(
+  tmdbId: number,
+  country: string,
+  rapidApiKey: string,
+  mediaType?: MediaType
+): Promise<Record<string, string>> {
+  const order: MediaType[] = mediaType
+    ? [mediaType, mediaType === "movie" ? "tv" : "movie"]
+    : ["movie", "tv"];
+
+  for (const type of order) {
+    const data = await fetchRapidApiStreaming(tmdbId, country, rapidApiKey, type).catch(() => null);
+    if (data && data.streamingOptions.length > 0) {
+      const map: Record<string, string> = {};
+      for (const opt of data.streamingOptions) {
+        if (opt.link) map[opt.service] = opt.link;
+      }
+      if (Object.keys(map).length > 0) return map;
+    }
+  }
+  return {};
+}
+
+/** Find the deep link for a service name (exact, then fuzzy). */
+export function matchServiceLink(links: Record<string, string> | null, service: string): string | null {
+  if (!links) return null;
+  const keys = Object.keys(links);
+  const s = service.toLowerCase().trim();
+  const exact = keys.find((k) => k.toLowerCase() === s);
+  if (exact) return links[exact];
+  const fuzzy = keys.find((k) => {
+    const kl = k.toLowerCase();
+    return kl.includes(s) || s.includes(kl);
+  });
+  return fuzzy ? links[fuzzy] : null;
+}
 
 // =====================================================
 // Helper functions

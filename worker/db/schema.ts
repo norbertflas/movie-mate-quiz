@@ -125,3 +125,17 @@ export const streamingCache = sqliteTable("streaming_cache", {
 }, (table) => [
   primaryKey({ columns: [table.tmdbId, table.country] }),
 ]);
+
+// Per-title deep links to each streaming service, resolved on-click from
+// RapidAPI (MovieOfTheNight) and cached so RapidAPI gets at most ~one
+// request per title per week instead of one per page view.
+export const streamingDeeplinks = sqliteTable("streaming_deeplinks", {
+  tmdbId: integer("tmdb_id").notNull(),
+  country: text("country").notNull(),
+  // JSON: { "<serviceName>": "<deep link url>" }
+  links: text("links").notNull(),
+  cachedAt: integer("cached_at", { mode: "timestamp" }).notNull(),
+  expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+}, (table) => [
+  primaryKey({ columns: [table.tmdbId, table.country] }),
+]);
