@@ -72,6 +72,10 @@ describe("fetchStreamingData — TMDB watch providers", () => {
     expect(r.availableServices).toEqual(["Netflix"]); // plan variant collapsed
     expect(r.rentBuyServices).toEqual(["Apple TV"]); // rent+buy collapsed to one
     expect(r.streamingOptions.filter((o) => o.service === "Netflix")).toHaveLength(1);
+    // Buttons must link directly to the service (not to themoviedb.org)
+    const netflix = r.streamingOptions.find((o) => o.service === "Netflix");
+    expect(netflix?.link).toContain("netflix.com");
+    expect(netflix?.link).not.toContain("themoviedb.org");
   });
 
   it("returns a genuine empty (cacheable) when TMDB responds with no region providers", async () => {
