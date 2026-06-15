@@ -159,7 +159,12 @@ const fetchTmdbWatchProviders = async (tmdbId: number, country: string, tmdbApiK
             serviceLogo: provider.logo_path
               ? `https://image.tmdb.org/t/p/w154${provider.logo_path}`
               : getServiceLogo(serviceName.toLowerCase()),
-            link: justWatchLink || getServiceSearchUrl(serviceName.toLowerCase(), movieTitle),
+            // Prefer a direct link to the service (searching the title);
+            // fall back to the real JustWatch page only for services we
+            // don't have a mapping for (never a fabricated domain).
+            link: getServiceSearchUrl(serviceName.toLowerCase(), movieTitle)
+              || justWatchLink
+              || getServiceHomeUrl(serviceName.toLowerCase()),
             type: group.type,
             quality: 'HD'
           };
@@ -437,35 +442,37 @@ function getServiceHomeUrl(serviceId: string): string {
   return serviceUrls[key] || `https://${key.replace(/\s+/g, '')}.com`;
 }
 
+// Build a link that lands the user directly on the streaming service with
+// the title searched (correct domains, fuzzy-matched on the provider name).
+// Returns "" for unknown services so the caller can fall back to the real
+// JustWatch link rather than a fabricated domain.
 function getServiceSearchUrl(serviceId: string, title: string): string {
-  const key = serviceId.toLowerCase().trim();
-  const encoded = encodeURIComponent(title);
-  if (!title) return getServiceHomeUrl(key);
-  const searchUrls: Record<string, string> = {
-    'netflix': `https://www.netflix.com/search?q=${encoded}`,
-    'prime': `https://www.primevideo.com/search/ref=atv_nb_sr?phrase=${encoded}`,
-    'amazon': `https://www.primevideo.com/search/ref=atv_nb_sr?phrase=${encoded}`,
-    'amazon video': `https://www.primevideo.com/search/ref=atv_nb_sr?phrase=${encoded}`,
-    'amazon prime video': `https://www.primevideo.com/search/ref=atv_nb_sr?phrase=${encoded}`,
-    'disney': `https://www.disneyplus.com/search?q=${encoded}`,
-    'disney+': `https://www.disneyplus.com/search?q=${encoded}`,
-    'hbo max': `https://www.max.com/search?q=${encoded}`,
-    'max': `https://www.max.com/search?q=${encoded}`,
-    'hulu': `https://www.hulu.com/search?q=${encoded}`,
-    'apple tv': `https://tv.apple.com/search?term=${encoded}`,
-    'apple tv+': `https://tv.apple.com/search?term=${encoded}`,
-    'paramount+': `https://www.paramountplus.com/search/${encoded}`,
-    'canal+': `https://www.canalplus.com/pl/search?q=${encoded}`,
-    'player.pl': `https://player.pl/szukaj?query=${encoded}`,
-    'polsat box go': `https://polsatboxgo.pl/szukaj?query=${encoded}`,
-    'tvp vod': `https://vod.tvp.pl/szukaj?query=${encoded}`,
-    'skyshowtime': `https://www.skyshowtime.com/search?q=${encoded}`,
-    'viaplay': `https://viaplay.pl/search?query=${encoded}`,
-    'mubi': `https://mubi.com/search?query=${encoded}`,
-    'rakuten tv': `https://www.rakuten.tv/pl/search?q=${encoded}`,
-    'curiositystream': `https://curiositystream.com/search/${encoded}`,
-    'crunchyroll': `https://www.crunchyroll.com/search?q=${encoded}`,
-    'peacock': `https://www.peacocktv.com/search?q=${encoded}`,
-  };
-  return searchUrls[key] || getServiceHomeUrl(key);
+  const k = serviceId.toLowerCase().trim();
+  if (!title) return "";
+  const t = encodeURIComponent(title);
+
+  if (k.includes("netflix")) return `https://www.netflix.com/search?q=${t}`;
+  if (k.includes("prime") || k.includes("amazon")) return `https://www.primevideo.com/search/ref=atv_nb_sr?phrase=${t}`;
+  if (k.includes("disney")) return `https://www.disneyplus.com/search?q=${t}`;
+  if (k.includes("hbo") || k === "max" || k.includes("hbo max")) return `https://play.max.com/search?q=${t}`;
+  if (k.includes("apple")) return `https://tv.apple.com/search?term=${t}`;
+  if (k.includes("hulu")) return `https://www.hulu.com/search?q=${t}`;
+  if (k.includes("paramount")) return `https://www.paramountplus.com/search/?query=${t}`;
+  if (k.includes("canal")) return `https://www.canalplus.com/pl/szukaj?q=${t}`;
+  if (k.includes("player")) return `https://player.pl/szukaj?query=${t}`;
+  if (k.includes("polsat")) return `https://polsatboxgo.pl/szukaj?q=${t}`;
+  if (k.includes("cda")) return `https://www.cda.pl/szukaj/${t}`;
+  if (k.includes("rakuten")) return `https://www.rakuten.tv/pl/search?q=${t}`;
+  if (k.includes("tvp")) return `https://vod.tvp.pl/szukaj?query=${t}`;
+  if (k.includes("pilot")) return `https://pilot.wp.pl/szukaj/?query=${t}`;
+  if (k.includes("skyshowtime")) return `https://www.skyshowtime.com/pl/search?q=${t}`;
+  if (k.includes("viaplay")) return `https://viaplay.pl/search?query=${t}`;
+  if (k.includes("mubi")) return `https://mubi.com/search?query=${t}`;
+  if (k.includes("crunchyroll")) return `https://www.crunchyroll.com/search?q=${t}`;
+  if (k.includes("chili")) return `https://pl.chili.com/search?q=${t}`;
+  if (k.includes("google play")) return `https://play.google.com/store/search?q=${t}&c=movies`;
+  if (k.includes("youtube")) return `https://www.youtube.com/results?search_query=${t}`;
+  if (k.includes("peacock")) return `https://www.peacocktv.com/search?q=${t}`;
+  if (k.includes("curiosity")) return `https://curiositystream.com/search/${t}`;
+  return "";
 }
