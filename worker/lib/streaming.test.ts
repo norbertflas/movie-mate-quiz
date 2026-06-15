@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { fetchStreamingData, buildResult, type StreamingOption } from "./streaming";
+import { fetchStreamingData, buildResult, fetchRapidApiDeepLinks, matchServiceLink, type StreamingOption } from "./streaming";
 
 const KEYS = { tmdbApiKey: "test-key" };
 
@@ -156,3 +156,46 @@ describe("fetchStreamingData — RapidAPI fallback (MovieOfTheNight v4)", () => 
   });
 });
 
+
+describe("matchServiceLink", () => {
+  const links = { Netflix: "https://nf/title", "Amazon Prime Video": "https://amz/title" };
+
+  it("matches exact (case-insensitive)", () => {
+    expect(matchServiceLink(links, "netflix")).toBe("https://nf/title");
+  });
+  it("matches a plan variant by substring", () => {
+    expect(matchServiceLink(links, "Netflix Standard with Ads")).toBe("https://nf/title");
+  });
+  it("returns null when no service matches", () => {
+    expect(matchServiceLink(links, "Disney+")).toBeNull();
+  });
+  it("returns null for empty link maps", () => {
+    expect(matchServiceLink({}, "Netflix")).toBeNull();
+  });
+});
+
+describe("fetchRapidApiDeepLinks", () => {
+  it("returns a service->deeplink map and tries the hinted media type first", async () => {
+    const seen: string[] = [];
+    mockFetch((url) => {
+      seen.push(url);
+      return url.includes("/shows/tv/1399")
+        ? res(200, {
+            streamingOptions: {
+              pl: [{ service: { id: "netflix", name: "Netflix" }, type: "subscription", link: "https://nf/x" }],
+            },
+          })
+        : res(404, {});
+    });
+
+    const map = await fetchRapidApiDeepLinks(1399, "PL", "key", "tv");
+    expect(map["Netflix"]).toBe("https://nf/x");
+    expect(seen[0]).toContain("/shows/tv/"); // hinted type queried first
+  });
+
+  it("returns an empty map when RapidAPI has no data", async () => {
+    mockFetch(() => res(404, {}));
+    const map = await fetchRapidApiDeepLinks(603, "PL", "key", "movie");
+    expect(Object.keys(map)).toHaveLength(0);
+  });
+});

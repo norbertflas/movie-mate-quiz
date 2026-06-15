@@ -294,6 +294,7 @@ export const EnhancedMovieModal = ({
                         tmdbId={movie.id}
                         title={movieDetails.title}
                         year={movieDetails.release_date?.split("-")[0]}
+                        mediaType={(movie as { media_type?: 'movie' | 'tv' }).media_type}
                       />
                     </div>
                   </div>

@@ -3,11 +3,13 @@ import { Button } from "@/components/ui/button";
 import { ExternalLink } from "lucide-react";
 import { getUserRegion } from "@/utils/regionDetection";
 import { useStreamingAvailability } from "@/hooks/use-streaming-availability";
+import { resolveServiceDeepLink } from "@/services/streamingAvailabilityPro";
 
 interface StreamingServiceButtonsProps {
   tmdbId: number;
   title?: string;
   year?: string;
+  mediaType?: 'movie' | 'tv';
   className?: string;
 }
 
@@ -51,11 +53,12 @@ const defaultLinks: Record<string, (title: string, year?: string) => string> = {
   'Paramount Plus': (title: string, year?: string) => `https://www.paramountplus.com/search/${encodeURIComponent(title)}`
 };
 
-export const StreamingServiceButtons = ({ 
-  tmdbId, 
-  title = "", 
+export const StreamingServiceButtons = ({
+  tmdbId,
+  title = "",
   year,
-  className = "" 
+  mediaType,
+  className = ""
 }: StreamingServiceButtonsProps) => {
   const [streamingServices, setStreamingServices] = useState<StreamingService[]>([]);
   const [userRegion, setUserRegion] = useState<string>('US');
@@ -122,9 +125,27 @@ export const StreamingServiceButtons = ({
   }, [services, requested, isLoading, title, year]);
 
   const handleServiceClick = (service: StreamingService) => {
-    if (service.link && service.link !== '#') {
-      window.open(service.link, '_blank', 'noopener,noreferrer');
+    const fallback = service.link && service.link !== '#' ? service.link : null;
+    // Open a tab synchronously (preserves the user gesture / avoids popup
+    // blockers), then upgrade it to the exact per-title deep link once
+    // resolved; fall back to the service search link if none is found.
+    const win = window.open('about:blank', '_blank');
+    if (!win) {
+      if (fallback) window.open(fallback, '_blank', 'noopener,noreferrer');
+      return;
     }
+    try { (win as Window).opener = null; } catch { /* ignore */ }
+
+    resolveServiceDeepLink({ tmdbId, country: userRegion, service: service.service, mediaType })
+      .then((deep) => {
+        const target = deep || fallback;
+        if (target) win.location.href = target;
+        else win.close();
+      })
+      .catch(() => {
+        if (fallback) win.location.href = fallback;
+        else win.close();
+      });
   };
 
   const getTypeIcon = (type: string): string => {
