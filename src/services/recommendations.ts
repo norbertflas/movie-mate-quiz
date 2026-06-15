@@ -6,6 +6,9 @@ export interface RecommendationFilters {
   mood?: string;
   region?: string;
   minRating?: number;
+  mediaType?: "movie" | "tv";
+  releaseYearGte?: number;
+  releaseYearLte?: number;
   runtime?: { min?: number; max?: number };
 }
 
@@ -13,6 +16,7 @@ export interface RecommendationRequest {
   answers?: { questionId: string; answer: string | string[] }[];
   filters?: RecommendationFilters;
   region?: string;
+  mediaType?: "movie" | "tv";
   maxResults?: number;
 }
 

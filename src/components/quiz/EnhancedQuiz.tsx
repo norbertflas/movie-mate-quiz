@@ -13,8 +13,98 @@ import {
 import { useNavigate } from "react-router-dom";
 import { api, ApiError } from "@/lib/api-client";
 import { saveMovies } from "@/services/user";
+import { getRecommendations } from "@/services/recommendations";
+import { getStreamingAvailabilityBatch } from "@/services/streamingAvailabilityPro";
+import { detectUserRegion } from "@/utils/regionDetection";
 import { useToast } from "@/hooks/use-toast";
 import { Movie } from "@/types/movie";
+
+type QuizMovie = Movie & { matchScore?: number; availableServices?: string[] };
+
+// Map the quiz's genre labels to canonical genre names the recommendations API understands.
+const QUIZ_GENRE_LABELS: Record<string, string> = {
+  "Action & Adventure": "action",
+  "Comedy": "comedy",
+  "Drama": "drama",
+  "Horror & Thriller": "horror",
+  "Science Fiction": "science_fiction",
+  "Romance": "romance",
+  "Documentary": "documentary",
+  "Animation": "animation",
+};
+
+const QUIZ_MOOD_MAP: Record<string, string> = {
+  "Need a laugh": "funny",
+  "Edge of my seat": "adrenaline",
+  "Something romantic": "romantic",
+  "Mind-bending": "thoughtful",
+};
+
+interface QuizFilters {
+  genres: string[];
+  mood: string;
+  mediaType: "movie" | "tv";
+  platforms: string[];
+  releaseYearGte?: number;
+  releaseYearLte?: number;
+}
+
+function buildQuizFilters(answers: Record<string, any>): QuizFilters {
+  const ratings = (answers.genre_rating || {}) as Record<string, number>;
+  const genres = Object.entries(ratings)
+    .filter(([, stars]) => Number(stars) >= 1)
+    .sort((a, b) => Number(b[1]) - Number(a[1]))
+    .map(([label]) => QUIZ_GENRE_LABELS[label])
+    .filter(Boolean);
+
+  const era: string = answers.era_preference || "";
+  let releaseYearGte: number | undefined;
+  let releaseYearLte: number | undefined;
+  if (era.includes("2023")) { releaseYearGte = 2023; releaseYearLte = 2025; }
+  else if (era.includes("2010")) { releaseYearGte = 2010; releaseYearLte = 2022; }
+  else if (era.toLowerCase().includes("classic")) { releaseYearLte = 2009; }
+
+  const ct: string = answers.content_type || "";
+  const mediaType: "movie" | "tv" = ct === "TV Series" ? "tv" : "movie";
+  if (ct === "Documentaries" && !genres.includes("documentary")) genres.push("documentary");
+
+  return {
+    genres,
+    mood: QUIZ_MOOD_MAP[answers.mood_preference] || "",
+    mediaType,
+    platforms: (answers.streaming_services || []) as string[],
+    releaseYearGte,
+    releaseYearLte,
+  };
+}
+
+// Real, explainable match score (no randomness): rating + genre overlap +
+// availability on the user's platforms.
+function computeMatchScore(
+  rec: { vote_average: number; genres: string[] },
+  filters: QuizFilters,
+  availableServices: string[]
+): number {
+  let score = 45;
+  score += Math.min(25, (rec.vote_average / 10) * 25); // quality
+
+  const recGenres = (rec.genres || []).map((g) => g.toLowerCase());
+  const wanted = filters.genres.map((g) => g.toLowerCase());
+  if (wanted.length) {
+    const overlap = wanted.filter((w) => recGenres.some((rg) => rg.includes(w) || w.includes(rg))).length;
+    score += Math.min(20, (overlap / wanted.length) * 20);
+  }
+
+  const userPlatforms = filters.platforms.map((p) => p.toLowerCase());
+  if (userPlatforms.length) {
+    const onPlatform = availableServices.some((s) =>
+      userPlatforms.some((up) => s.toLowerCase().includes(up) || up.includes(s.toLowerCase()))
+    );
+    if (onPlatform) score += 10;
+  }
+
+  return Math.round(Math.min(99, Math.max(40, score)));
+}
 import { ProjectorBeam } from "@/components/effects/ProjectorBeam";
 
 interface EnhancedQuizProps {
@@ -238,7 +328,8 @@ const EnhancedQuiz: React.FC<EnhancedQuizProps> = ({ onBack, onComplete, userPre
   const [isGenerating, setIsGenerating] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [showResults, setShowResults] = useState(false);
-  const [recommendations, setRecommendations] = useState<Movie[]>([]);
+  const [recommendations, setRecommendations] = useState<QuizMovie[]>([]);
+  const [quizRegion, setQuizRegion] = useState<string>("PL");
   const [currentMovieIndex, setCurrentMovieIndex] = useState(0);
   const [likedMovie, setLikedMovie] = useState<Movie | null>(null);
   const [isCreatingGroup, setIsCreatingGroup] = useState(false);
@@ -319,16 +410,72 @@ const EnhancedQuiz: React.FC<EnhancedQuizProps> = ({ onBack, onComplete, userPre
   const handleSubmit = async () => {
     setIsGenerating(true);
     playMagic();
-    setTimeout(() => {
-      const shuffled = [...MOVIE_POOL].sort(() => Math.random() - 0.5);
-      setRecommendations(shuffled.slice(0, 5));
+    const region = detectUserRegion();
+    setQuizRegion(region);
+    try {
+      const f = buildQuizFilters(answers);
+      const recs = await getRecommendations({
+        region,
+        maxResults: 24,
+        mediaType: f.mediaType,
+        filters: {
+          genres: f.genres,
+          mood: f.mood,
+          region,
+          releaseYearGte: f.releaseYearGte,
+          releaseYearLte: f.releaseYearLte,
+          platforms: f.platforms,
+        },
+      });
+      if (!recs.length) throw new Error("no recommendations");
+
+      // Enrich with real availability and score with no randomness.
+      const avail = await getStreamingAvailabilityBatch(recs.map((r) => r.id), "instant", region.toLowerCase());
+      const availMap = new Map(avail.map((a) => [a.tmdbId, a]));
+
+      const scored: QuizMovie[] = recs.map((r) => {
+        const a = availMap.get(r.id);
+        const availableServices = a?.availableServices || [];
+        return {
+          id: r.id,
+          tmdbId: r.id,
+          title: r.title,
+          poster_path: r.poster_path,
+          backdrop_path: r.backdrop_path || "",
+          overview: r.overview,
+          release_date: r.release_date,
+          vote_average: r.vote_average,
+          vote_count: r.vote_count,
+          popularity: r.popularity,
+          runtime: 0,
+          cast: [],
+          genres: (r.genres || []).map((name, i) => ({ id: i, name })),
+          genre: r.genres?.[0] || "",
+          matchScore: computeMatchScore(r, f, availableServices),
+          availableServices,
+        };
+      });
+
+      scored.sort((x, y) => (y.matchScore || 0) - (x.matchScore || 0));
+      const top = scored.slice(0, 8);
+
+      setRecommendations(top);
       setCurrentMovieIndex(0);
       setLikedMovie(null);
       setPersona(AI_PERSONAS[Math.floor(Math.random() * AI_PERSONAS.length)]);
+      onComplete?.({ answers, recommendations: top });
+    } catch (error) {
+      console.error("Quiz recommendations failed, using fallback:", error);
+      const shuffled = [...MOVIE_POOL].sort(() => Math.random() - 0.5).slice(0, 5);
+      setRecommendations(shuffled);
+      setCurrentMovieIndex(0);
+      setLikedMovie(null);
+      setPersona(AI_PERSONAS[Math.floor(Math.random() * AI_PERSONAS.length)]);
+      onComplete?.({ answers, recommendations: shuffled });
+    } finally {
       setIsGenerating(false);
       setCountdown(3);
-      onComplete?.({ answers, recommendations: shuffled.slice(0, 5) });
-    }, 3000);
+    }
   };
 
   const handleShowNextMovie = () => {
@@ -393,7 +540,7 @@ const EnhancedQuiz: React.FC<EnhancedQuizProps> = ({ onBack, onComplete, userPre
   const currentMovie = recommendations[currentMovieIndex];
   const isLastMovie = currentMovieIndex >= recommendations.length - 1;
   const moviesRemaining = recommendations.length - currentMovieIndex - 1;
-  const matchScore = Math.floor(Math.random() * 15) + 85;
+  const matchScore = currentMovie?.matchScore ?? 80;
 
   // ─── WRAPPER ───
   return (
@@ -603,19 +750,25 @@ const EnhancedQuiz: React.FC<EnhancedQuizProps> = ({ onBack, onComplete, userPre
                         </p>
                       </div>
 
-                      {/* Streaming platforms */}
-                      {answers.streaming_services && answers.streaming_services.length > 0 && (
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-2 uppercase tracking-widest font-bold">Your platforms</p>
+                      {/* Real availability for this title in the user's region */}
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-2 uppercase tracking-widest font-bold">
+                          Gdzie obejrzeć ({quizRegion})
+                        </p>
+                        {currentMovie.availableServices && currentMovie.availableServices.length > 0 ? (
                           <div className="flex flex-wrap gap-2">
-                            {answers.streaming_services.map((service: string) => (
+                            {currentMovie.availableServices.map((service: string) => (
                               <span key={service} className="px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 text-xs font-bold">
                                 {service}
                               </span>
                             ))}
                           </div>
-                        </div>
-                      )}
+                        ) : (
+                          <p className="text-xs text-muted-foreground italic">
+                            Brak w abonamencie na Twoich serwisach — sprawdź wypożyczenie na stronie tytułu.
+                          </p>
+                        )}
+                      </div>
 
                       {/* Action buttons */}
                       <div className="flex flex-col sm:flex-row gap-3 pt-2">
